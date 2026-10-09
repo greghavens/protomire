@@ -1,4 +1,5 @@
 """Actual pinned ZenML/store/OS lifecycle tests, with sanitized evidence IDs."""
+import copy
 import hashlib
 import json
 import os
@@ -36,7 +37,14 @@ def recipe(fixture="custom", steps=12, coefficient=0.0, width=12, delay=0.0):
 
 
 def submit(backend, body, project_id=None):
-    payload = {"project_id": project_id or str(uuid.uuid4()), "operation_id": str(uuid.uuid4()), "recipe": body,
+    project_id = project_id or str(uuid.uuid4())
+    body = copy.deepcopy(body)
+    body["project_id"] = project_id
+    body["recipe_id"] = str(uuid.uuid5(uuid.NAMESPACE_URL, "modelbuilder-test-recipe:" + project_id))
+    previous = [read_json(path).get("recipe", {}).get("revision", 0) for path in (backend.root / "jobs").glob("*/request.json")
+                if read_json(path).get("project_id") == project_id]
+    body["revision"] = max(previous, default=0) + 1
+    payload = {"project_id": project_id, "project_recipe_id": body["recipe_id"], "operation_id": str(uuid.uuid4()), "recipe": body,
                "trusted": True, "idempotency_key": str(uuid.uuid4()), "target": "local-cpu", "max_runtime_seconds": 180}
     result = backend.invoke("run.submit", payload)
     assert result["operation_id"] == payload["operation_id"]
@@ -85,6 +93,9 @@ def test_native_custom_dag_variants_negative_and_models(tmp_path):
         assert result["metrics"]["consumed_dataset_artifact"] is True
         records.append(result)
     assert len({r["metrics"]["dataset_sha256"] for r in records}) == 1
+    assert len({r["recipe_id"] for r in records}) == 1
+    assert [r["recipe_revision"] for r in records] == [1, 2, 3]
+    assert len({r["backend_snapshot_id"] for r in records}) == 3
     assert records[2]["metrics"]["validation_loss"] > records[0]["metrics"]["validation_loss"]
     versions = backend.invoke("model.version.list", {"project_id": project})["versions"]
     assert len(versions) == 3
@@ -132,6 +143,8 @@ def test_actual_cancel_recovered_checkpoint_exact_resume(tmp_path):
     saved = load_checkpoint(Path(ref["path"]))
     final_steps = saved["step"] + 5
     resumed_recipe = recipe(steps=final_steps)
+    resumed_recipe.update(recipe_id=request["recipe"]["recipe_id"], project_id=request["project_id"],
+                          revision=request["recipe"]["revision"] + 1)
     resumed_request = {**request, "parent_operation_id": request["operation_id"], "operation_id": str(uuid.uuid4()),
                        "idempotency_key": str(uuid.uuid4()), "recipe": resumed_recipe, "steps": final_steps,
                        "mode": "exact_state", "checkpoint_id": ref["artifact_id"]}
@@ -146,6 +159,11 @@ def test_actual_cancel_recovered_checkpoint_exact_resume(tmp_path):
         assert same(a[field], b[field]), field
     assert resumed["parent_run_id"] == cancelled["backend_run_id"]
     assert resumed["parent_checkpoint_ref"] == ref["artifact_id"]
+    assert resumed["recipe_id"] == cancelled["recipe_id"]
+    assert resumed["recipe_revision"] == cancelled["recipe_revision"] + 1
+    assert resumed["parent_recipe_revision"] == cancelled["recipe_revision"]
+    assert resumed["parent_recipe_digest"] == cancelled["recipe_digest"]
+    assert resumed["backend_snapshot_id"] != cancelled["backend_snapshot_id"]
     save_evidence("native-cancel-exact-resume", {"running": running, "cancelled": cancelled, "resumed": resumed,
                                               "uninterrupted": full, "state_parity": True})
 
@@ -184,16 +202,23 @@ def test_pretrained_validation_selection_parent_and_export(tmp_path):
                                                         "decision": decision})
     assert promoted["selected_run_id"] == best["backend_run_id"]
     final_steps = best["metrics"]["best_step"] + 3
+    next_recipe = recipe("pretrained", steps=final_steps, coefficient=best["metrics"]["kl"]["coefficient"])
+    next_recipe.update(recipe_id=parent["recipe"]["recipe_id"], project_id=project,
+                       revision=max(r["recipe"]["revision"] for r in requests) + 1)
     next_request = {**parent, "operation_id": str(uuid.uuid4()), "parent_operation_id": parent["operation_id"],
-                    "idempotency_key": str(uuid.uuid4()), "recipe": recipe("pretrained", steps=final_steps,
-                                  coefficient=best["metrics"]["kl"]["coefficient"]), "mode": "exact_state",
+                    "idempotency_key": str(uuid.uuid4()), "recipe": next_recipe, "mode": "exact_state",
                     "steps": final_steps, "checkpoint_kind": "best", "decision": decision}
     backend.invoke("run.resume", next_request)
     child = wait(backend, next_request)
     assert child["status"] == "succeeded", child
     assert child["parent_run_id"] == best["backend_run_id"]
+    assert child["recipe_id"] == best["recipe_id"] == records[1]["recipe_id"]
+    assert child["recipe_revision"] == 3
+    assert child["parent_recipe_revision"] == best["recipe_revision"]
     lineage = backend.invoke("model.version.lineage", {"project_id": project, "model_version_id": child["model_version_ref"]})
     assert lineage["metadata"]["parent_run_id"] == best["backend_run_id"]
+    assert lineage["metadata"]["recipe_id"] == child["recipe_id"]
+    assert lineage["metadata"]["recipe_revision"] == child["recipe_revision"]
     assert lineage["pipeline_run_links"] and lineage["artifact_links"]
     save_evidence("native-pretrained-selection", {"runs": records, "promoted": promoted, "child": child, "lineage": lineage})
 

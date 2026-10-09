@@ -88,23 +88,27 @@ def create_project(service, slug="audit"):
 
 def create_run(service):
     project = create_project(service)
+    initial = service.invoke("project.open", {"project_id": project["project_id"]}, OWNER)["recipe"]
     recipe = service.invoke("recipe.create", {"project_id": project["project_id"],
-                            "recipe": small_recipe(), "idempotency_key": "recipe"}, OWNER)
+                            "recipe": small_recipe(), "expected_revision": initial["revision"],
+                            "idempotency_key": "recipe"}, OWNER)
     payload = {"project_id": project["project_id"], "recipe_id": recipe["recipe_id"],
-               "expected_revision": 1, "trusted": True, "idempotency_key": "submit"}
+               "expected_revision": recipe["revision"], "trusted": True, "idempotency_key": "submit"}
     run = service.invoke("run.submit", payload, OWNER)
     return project, recipe, run, payload
 
 
 def test_resume_respects_revoked_execution_target(service):
-    project, _, run, _ = create_run(service)
+    project, recipe, run, _ = create_run(service)
     service.invoke("policy.update", {"project_id": project["project_id"], "expected_revision": 1,
                    "changes": {"allowed_targets": []}, "idempotency_key": "disable"}, OWNER)
     service.backend.calls.clear()
-    with pytest.raises(ServiceError):
+    with pytest.raises(ServiceError) as error:
         service.invoke("run.resume", {"project_id": project["project_id"],
                        "operation_id": run["operation_id"], "mode": "exact_state", "steps": 5,
+                       "expected_recipe_revision": recipe["revision"],
                        "trusted": True, "idempotency_key": "resume"}, OWNER)
+    assert error.value.code == "target_disabled"
     assert service.backend.calls == []
 
 
@@ -156,16 +160,19 @@ def test_execution_parameter_overrides_cannot_be_silently_ignored(service, opera
     project, recipe, run, _ = create_run(service)
     payload = {"project_id": project["project_id"], "parameters": {"steps": 999}}
     if operation == "run.resume":
-        payload.update(operation_id=run["operation_id"], trusted=True, mode="exact_state", steps=5)
+        payload.update(operation_id=run["operation_id"], trusted=True, mode="exact_state", steps=5,
+                       expected_recipe_revision=recipe["revision"])
     else:
         payload["recipe_id"] = recipe["recipe_id"]
     if operation != "run.plan":
         payload["idempotency_key"] = "hidden-override"
     if operation == "run.submit":
-        payload.update(trusted=True, expected_revision=1)
+        payload.update(trusted=True, expected_revision=recipe["revision"])
     service.backend.calls.clear()
-    with pytest.raises(ServiceError):
+    with pytest.raises(ServiceError) as error:
         service.invoke(operation, payload, OWNER)
+    assert error.value.code == "validation_error"
+    assert {item["path"] for item in error.value.details["errors"]} == {"parameters"}
     assert service.backend.calls == []
 
 
@@ -179,7 +186,8 @@ def test_foreign_operation_ids_rejected_before_backend(service, operation):
     if operation in {"run.cancel", "run.resume"}:
         payload["idempotency_key"] = operation
     if operation == "run.resume":
-        payload.update(trusted=True, mode="exact_state", steps=5)
+        current = service.invoke("project.open", {"project_id": other["project_id"]}, scoped)["recipe"]
+        payload.update(trusted=True, mode="exact_state", steps=5, expected_recipe_revision=current["revision"])
     service.backend.calls.clear()
     with pytest.raises(ServiceError) as error:
         service.invoke(operation, payload, scoped)
@@ -282,14 +290,19 @@ def test_resume_rejects_foreign_checkpoint_identifier(tmp_path, monkeypatch):
     job = tmp_path / str(uuid4())
     parent = {"project_id": "audit-project", "recipe": small_recipe()}
     monkeypatch.setattr(backend, "_job", lambda payload: (job, parent))
-    monkeypatch.setattr(backend, "_rpc", lambda operation, payload: {
-        "backend_run_id": "parent-native-run", "artifact_id": "actual-parent-checkpoint", "path": str(job)})
+    def stopped_parent(operation, payload):
+        if operation == "run.status":
+            return {"status": "cancelled", "worker_alive": False}
+        assert operation == "model.checkpoint.get"
+        return {"backend_run_id": "parent-native-run", "artifact_id": "actual-parent-checkpoint", "path": str(job)}
+    monkeypatch.setattr(backend, "_rpc", stopped_parent)
     submitted = []
     monkeypatch.setattr(backend, "submit", lambda payload: submitted.append(payload) or {"status": "submitted"})
-    with pytest.raises(BackendError):
+    with pytest.raises(BackendError) as error:
         backend.resume({"project_id": "audit-project", "operation_id": str(uuid4()),
                         "checkpoint_id": "foreign-checkpoint", "trusted": True,
                         "mode": "exact_state", "steps": 5})
+    assert error.value.code == "dependency_mismatch"
     assert submitted == []
 
 

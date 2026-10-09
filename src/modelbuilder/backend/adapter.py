@@ -7,7 +7,6 @@ from __future__ import annotations
 import copy
 import fcntl
 import hashlib
-import json
 import os
 import signal
 import subprocess
@@ -15,7 +14,7 @@ import time
 import uuid
 from pathlib import Path
 
-from .common import alive, now, process_group_alive, read_json, write_json
+from .common import alive, now, process_group_alive, recipe_provenance, read_json, write_json
 
 BUILTINS = {"dataset.import", "dataset.synthetic", "dataset.validate", "model.initialize", "model.train", "model.evaluate", "model.checkpoint", "model.export", "model.compare"}
 
@@ -102,6 +101,12 @@ class ZenMLBackend:
         if payload.get("trusted") is not True:
             raise BackendError("untrusted_execution_blocked", "Explicit trust consent is required for repository-owned fixtures; untrusted code has no verified isolation boundary")
         recipe = payload.get("recipe", {})
+        if payload.get("project_recipe_id") and recipe.get("recipe_id") != payload["project_recipe_id"]:
+            raise BackendError("conflict", "Execution must use the project's single canonical recipe identity")
+        if payload.get("project_id") and recipe.get("project_id") and recipe["project_id"] != payload["project_id"]:
+            raise BackendError("conflict", "Recipe and execution project identities differ")
+        if recipe.get("digest") and recipe["digest"] != recipe_provenance(recipe)["recipe_digest"]:
+            raise BackendError("dependency_mismatch", "Declared recipe digest differs from executed immutable revision")
         if any(node.get("kind") == "code.python" for node in recipe.get("nodes", [])) and not self.trusted_code_roots:
             raise BackendError("untrusted_execution_blocked", "Arbitrary Python requires an operator-configured trusted source root")
         source = recipe.get("source", {})
@@ -252,7 +257,8 @@ class ZenMLBackend:
             else:
                 request = {**payload, "operation_id": operation_id, "root": str(self.root), "job_dir": str(job),
                            "run_name": f"modelbuilder-{operation_id}", "dependency_paths": self.dependency_paths, "source_root": str(self.repository),
-                           "submitted_at": now(), "trusted_code_roots": self.trusted_code_roots}
+                           "submitted_at": now(), "trusted_code_roots": self.trusted_code_roots,
+                           "executed_recipe_digest": recipe_provenance(payload["recipe"])["recipe_digest"]}
                 write_json(job / "request.json", request)
             write_json(job / "state.json", {"supervisor_state": "starting", "submitted_at": request["submitted_at"]})
             try:
@@ -270,7 +276,8 @@ class ZenMLBackend:
         native = read_json(job / "native.json")
         return {"operation_id": operation_id, "backend_run_id": native.get("backend_run_id"), "status": "submitted",
                 "backend": "zenml", "backend_version": "0.97.0", "project_id": payload["project_id"],
-                "submitted_at": request["submitted_at"], "last_reconciled_at": now(), "supervisor_pid": process.pid}
+                "submitted_at": request["submitted_at"], "last_reconciled_at": now(), "supervisor_pid": process.pid,
+                **recipe_provenance(request["recipe"])}
 
     def cancel(self, job: Path, request: dict) -> dict:
         status = self._rpc("run.status", {"project_id": request["project_id"], "job_dir": str(job)})
@@ -322,13 +329,24 @@ class ZenMLBackend:
                    "parent_run_id": checkpoint["backend_run_id"], "parent_checkpoint_ref": checkpoint["artifact_id"],
                    "resume_path": checkpoint["path"], "resume_mode": payload.get("mode", payload.get("resume_mode", "exact_state")),
                    "checkpoint_kind": payload.get("checkpoint_kind", "last")}
+        parent_identity = recipe_provenance(parent["recipe"])
+        current_identity = recipe_provenance(request["recipe"])
+        canonical_id = payload.get("project_recipe_id") or parent_identity["recipe_id"]
+        if current_identity["recipe_id"] != canonical_id:
+            raise BackendError("conflict", "Continuation must preserve the project's single recipe identity")
+        if parent_identity["recipe_id"] != canonical_id:
+            if payload.get("legacy_parent_recipe_id") != parent_identity["recipe_id"]:
+                raise BackendError("conflict", "A legacy parent recipe needs an explicit canonical migration mapping")
+        elif current_identity["recipe_digest"] != parent_identity["recipe_digest"]:
+            old_revision, new_revision = parent_identity["recipe_revision"], current_identity["recipe_revision"]
+            if type(old_revision) is not int or type(new_revision) is not int or new_revision <= old_revision:
+                raise BackendError("conflict", "Changed continuation settings require a new immutable revision of the same recipe")
         for node in request["recipe"]["nodes"]:
             if node["kind"] == "model.train":
                 if "steps" not in payload:
                     raise BackendError("validation_error", "Resume requires final total steps")
                 if node["parameters"]["steps"] != int(payload["steps"]):
-                    raise BackendError("validation_error", "Resume requires a new canonical recipe with the requested final steps")
-        request["parent_recipe_digest"] = parent["recipe"].get("digest")
-        body = {key: value for key, value in request["recipe"].items() if key != "digest"}
-        request["executed_recipe_digest"] = hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+                    raise BackendError("validation_error", "Resume requires a canonical recipe revision with the requested final steps")
+        request.update(parent_recipe_id=parent_identity["recipe_id"], parent_recipe_revision=parent_identity["recipe_revision"],
+                       parent_recipe_digest=parent_identity["recipe_digest"], executed_recipe_digest=current_identity["recipe_digest"])
         return self.submit(request)

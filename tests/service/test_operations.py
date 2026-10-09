@@ -26,7 +26,7 @@ def project(service, slug="test"):
 
 
 def recipe(service, p, key="recipe"):
-    return service.invoke("recipe.create", {"project_id": p["project_id"], "name": key, "idempotency_key": key}, OWNER)
+    return service.invoke("recipe.get", {"project_id": p["project_id"], "recipe_id": p["recipe_id"]}, OWNER)
 
 
 def test_restart_preserves_projects_recipes_history(tmp_path):
@@ -38,7 +38,7 @@ def test_restart_preserves_projects_recipes_history(tmp_path):
     second = OperationService(path)
     assert second.invoke("project.get", {"project_id": p["project_id"]}, OWNER) == p
     assert second.invoke("recipe.get", {"project_id": p["project_id"], "recipe_id": r["recipe_id"]}, OWNER) == r
-    assert len(second.invoke("project.history", {"project_id": p["project_id"]}, OWNER)["events"]) == 2
+    assert len(second.invoke("project.history", {"project_id": p["project_id"]}, OWNER)["events"]) == 1
     second.store.close()
 
 
@@ -127,14 +127,15 @@ def test_multiple_connections_cannot_lose_updates(tmp_path):
     initial.store.close()
 
 
-def test_clone_new_identity_same_project(service):
+def test_clone_preserves_identity_and_adds_historical_revision(service):
     p = project(service)
     r = recipe(service, p)
     clone = service.invoke("recipe.clone", {"project_id": p["project_id"], "recipe_id": r["recipe_id"],
                             "expected_revision": 1, "idempotency_key": "clone"}, OWNER)
-    assert clone["recipe_id"] != r["recipe_id"]
+    assert clone["recipe_id"] == r["recipe_id"]
     assert clone["project_id"] == r["project_id"]
-    assert clone["revision"] == 1
+    assert clone["revision"] == 2
+    assert service.store.get("recipe", r["recipe_id"], 1) == r
 
 
 def test_recipe_identity_immutable_and_unknown_schema_rejected(service):

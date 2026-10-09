@@ -903,7 +903,7 @@
       "scope": "modify"
     },
     {
-      "description": "Create a single-model lifecycle project.",
+      "description": "Create one model project with its one stable current recipe; optionally supply the initial recipe document.",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
@@ -942,6 +942,9 @@
           "model_name": {
             "minLength": 1,
             "type": "string"
+          },
+          "recipe": {
+            "type": "object"
           },
           "request_id": {
             "minLength": 1,
@@ -1109,7 +1112,7 @@
       "scope": "modify"
     },
     {
-      "description": "Clone a recipe into the same project with a fresh identity.",
+      "description": "Compatibility historical restore: copy a prior revision into the same stable recipe identity.",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
@@ -1137,6 +1140,10 @@
           "request_id": {
             "minLength": 1,
             "type": "string"
+          },
+          "source_revision": {
+            "minimum": 1,
+            "type": "integer"
           }
         },
         "required": [
@@ -1153,10 +1160,14 @@
       "scope": "modify"
     },
     {
-      "description": "Create a canonical recipe; defaults form an editable draft.",
+      "description": "Author the project recipe at the expected revision; never create a second recipe identity.",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
           "idempotency_key": {
             "maxLength": 200,
             "minLength": 1,
@@ -1180,6 +1191,7 @@
         },
         "required": [
           "project_id",
+          "expected_revision",
           "idempotency_key"
         ],
         "type": "object"
@@ -1292,12 +1304,40 @@
       "scope": "read"
     },
     {
-      "description": "Validate bundle integrity and import as a new untrusted recipe.",
+      "description": "Read immutable recipe revisions and retained legacy provenance, not selectable current recipes.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "recipe.history",
+      "operation": "recipe.history",
+      "scope": "read"
+    },
+    {
+      "description": "Open a verified bundle as the next untrusted revision of this model's single recipe.",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
           "bundle": {
             "type": "object"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
           },
           "idempotency_key": {
             "maxLength": 200,
@@ -1320,6 +1360,7 @@
         "required": [
           "project_id",
           "bundle",
+          "expected_revision",
           "idempotency_key"
         ],
         "type": "object"
@@ -1330,7 +1371,7 @@
       "scope": "modify"
     },
     {
-      "description": "List project recipes.",
+      "description": "Compatibility list containing exactly the project current recipe.",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
@@ -1695,6 +1736,10 @@
             "minLength": 1,
             "type": "string"
           },
+          "expected_recipe_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
           "idempotency_key": {
             "maxLength": 200,
             "minLength": 1,
@@ -1739,6 +1784,7 @@
         },
         "required": [
           "project_id",
+          "expected_recipe_revision",
           "idempotency_key"
         ],
         "type": "object"

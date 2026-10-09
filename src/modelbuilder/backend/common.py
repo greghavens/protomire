@@ -104,3 +104,11 @@ def termination_confirmed(state: dict) -> bool:
     except (PermissionError, OSError, IndexError):
         return False
     return original_gone and process_group_state(state["worker_pid"]) is False
+
+
+def recipe_provenance(recipe: dict) -> dict:
+    """Identity of one immutable revision of the project's single recipe."""
+    import hashlib
+    body = {key: value for key, value in recipe.items() if key != "digest"}
+    digest = hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+    return {"recipe_id": recipe.get("recipe_id"), "recipe_revision": recipe.get("revision"), "recipe_digest": digest}

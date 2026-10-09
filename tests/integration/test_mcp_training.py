@@ -35,6 +35,8 @@ async def test_mcp_real_training_and_service_crash(tmp_path):
 
             project = await call("project_create", {"slug": "mcp-trained", "model_name": "MCP CPU model", "idempotency_key": "p"})
             project_id = project["project_id"]
+            draft = await call("recipe_get", {"project_id": project_id, "recipe_id": project["recipe_id"]})
+            assert draft["revision"] == 1
             manifest = json.loads((ROOT / "examples/custom-pytorch/recipe.json").read_text())
             # This probes transport/restart, not clean portability. Pin the checked-out workload.
             commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -48,7 +50,10 @@ async def test_mcp_real_training_and_service_crash(tmp_path):
                 if node["kind"] == "model.train":
                     node["parameters"]["steps"] = 30
                     node["parameters"]["step_delay"] = 0.15
-            recipe = await call("recipe_create", {"project_id": project_id, "recipe": manifest, "idempotency_key": "r"})
+            recipe = await call("recipe_create", {"project_id": project_id, "recipe": manifest,
+                "expected_revision": draft["revision"], "idempotency_key": "r"})
+            assert recipe["recipe_id"] == draft["recipe_id"] == project["recipe_id"]
+            assert recipe["revision"] == draft["revision"] + 1
             run_payload = {"project_id": project_id, "recipe_id": recipe["recipe_id"],
                            "expected_revision": recipe["revision"], "trusted": True, "idempotency_key": "submit"}
             submitted = await call("run_submit", run_payload)
@@ -76,11 +81,20 @@ async def test_mcp_real_training_and_service_crash(tmp_path):
             assert status and status["status"] == "succeeded", status
             assert status["backend_run_id"]
             assert status["backend_version"] == "0.97.0"
+            assert status["recipe_id"] == recipe["recipe_id"]
+            assert status["recipe_revision"] == recipe["revision"]
+            assert status["recipe_digest"] == recipe["digest"]
+            assert await call("recipe_get", {"project_id": project_id, "recipe_id": recipe["recipe_id"]}) == recipe
+            assert await call("recipe_get", {"project_id": project_id, "recipe_id": recipe["recipe_id"],
+                                             "revision": draft["revision"]}) == draft
+            history = await call("recipe_history", {"project_id": project_id})
+            assert history["revisions"] == [draft, recipe]
+            assert history["legacy_recipes"] == []
             artifacts = await call("run_artifacts", {"project_id": project_id, "operation_id": submitted["operation_id"]})
             assert artifacts["artifacts"]
             assert all(a["artifact_id"] for a in artifacts["artifacts"])
             assert status["metrics"]["consumed_dataset_artifact"] is True
-            output = ROOT / "evidence/backend/mcp-training.json"
+            output = ROOT / "evidence/mcp/single-model/mcp-training.json"
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(json.dumps({"status": "PASS", "transport": "independent SDK stdio client",
                                           "service_generations": service.generation, "pre_restart_status": before_restart, "transcript": transcript}, indent=2) + "\n")

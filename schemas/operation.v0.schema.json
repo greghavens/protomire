@@ -1086,6 +1086,9 @@
               "minLength": 1,
               "type": "string"
             },
+            "recipe": {
+              "type": "object"
+            },
             "request_id": {
               "minLength": 1,
               "type": "string"
@@ -1316,6 +1319,10 @@
             "request_id": {
               "minLength": 1,
               "type": "string"
+            },
+            "source_revision": {
+              "minimum": 1,
+              "type": "integer"
             }
           },
           "required": [
@@ -1342,6 +1349,10 @@
         "payload": {
           "additionalProperties": false,
           "properties": {
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
             "idempotency_key": {
               "maxLength": 200,
               "minLength": 1,
@@ -1365,6 +1376,7 @@
           },
           "required": [
             "project_id",
+            "expected_revision",
             "idempotency_key"
           ],
           "type": "object"
@@ -1500,6 +1512,36 @@
       "additionalProperties": false,
       "properties": {
         "operation": {
+          "const": "recipe.history"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
           "const": "recipe.import"
         },
         "payload": {
@@ -1507,6 +1549,10 @@
           "properties": {
             "bundle": {
               "type": "object"
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
             },
             "idempotency_key": {
               "maxLength": 200,
@@ -1529,6 +1575,7 @@
           "required": [
             "project_id",
             "bundle",
+            "expected_revision",
             "idempotency_key"
           ],
           "type": "object"
@@ -1970,6 +2017,10 @@
               "minLength": 1,
               "type": "string"
             },
+            "expected_recipe_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
             "idempotency_key": {
               "maxLength": 200,
               "minLength": 1,
@@ -2014,6 +2065,7 @@
           },
           "required": [
             "project_id",
+            "expected_recipe_revision",
             "idempotency_key"
           ],
           "type": "object"

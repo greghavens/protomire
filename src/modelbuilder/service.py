@@ -25,6 +25,66 @@ class OperationService:
         self.store = store if isinstance(store, SQLiteStore) else SQLiteStore(db_path or store or "modelbuilder.sqlite3")
         self.backend = backend
         self.source_root = Path(source_root).resolve() if source_root else None
+        self._migrate_single_recipe()
+
+    def _migrate_single_recipe(self):
+        """Bind one editable identity; retain every legacy manifest and run reference byte-for-byte."""
+        with self.store.transaction():
+            for project in self.store.list("project"):
+                project_id = project["project_id"]
+                if self.store.recipe_binding(project_id):
+                    continue
+                recipes = self.store.list("recipe", project_id)
+                by_id = {recipe["recipe_id"]: recipe for recipe in recipes}
+                chosen = project.get("active_recipe_id")
+                reason = "existing_active_pointer"
+                if chosen not in by_id:
+                    chosen = next((run["recipe_id"] for run in reversed(self.store.list("operation", project_id))
+                                   if run.get("recipe_id") in by_id), None)
+                    reason = "most_recent_run"
+                if chosen is None and recipes:
+                    chosen, reason = recipes[-1]["recipe_id"], "most_recent_recipe"
+                if chosen is None:
+                    chosen, reason = str(uuid5(NAMESPACE_URL, f"modelbuilder:project-recipe:{project_id}")), "created_default_draft"
+                    self._save_recipe(recipe_module.default_recipe(project_id, chosen, project["model_name"] + " recipe"),
+                                      project_id, chosen, 1)
+                archived = [recipe_id for recipe_id in by_id if recipe_id != chosen]
+                report = {"version": "single-recipe-v1", "migrated_at": utcnow(), "selection_reason": reason,
+                          "archived_recipe_ids": archived, "review_required": bool(archived and reason != "existing_active_pointer"),
+                          "history_preserved": True, "run_references_rewritten": False}
+                self.store.bind_recipe(project_id, chosen, report)
+                updated = {**project, "recipe_id": chosen, "active_recipe_id": chosen,
+                           "recipe_migration": report, "revision": project["revision"] + 1, "updated_at": utcnow()}
+                self.store.put("project", project_id, project_id, updated, project["revision"])
+                self.store.audit(actor_id="system:single-recipe-migration", operation="project.recipe_migrate",
+                                 request_id=new_id(), outcome="succeeded", project_id=project_id, target_id=chosen,
+                                 before_revision=project["revision"], after_revision=updated["revision"], details=report)
+
+    def _current_recipe(self, project_id, requested_id=None):
+        binding = self.store.recipe_binding(project_id)
+        if not binding:
+            raise ServiceError("invariant_error", "Project has no canonical recipe binding", status_code=500)
+        if requested_id is not None and requested_id != binding["recipe_id"]:
+            self._get("recipe", requested_id, project_id)
+            raise ServiceError("recipe_not_current", "Historical recipes are read-only; open the model's current recipe",
+                               {"current_recipe_id": binding["recipe_id"]}, 409)
+        return self._get("recipe", binding["recipe_id"], project_id)
+
+    def _confirm_recipe_review(self, project_id):
+        binding = self.store.recipe_binding(project_id)
+        if binding and binding["migration"].get("review_required"):
+            report = {**binding["migration"], "review_required": False, "reviewed_at": utcnow()}
+            self.store.update_recipe_migration(project_id, report)
+            project = self._get("project", project_id, project_id)
+            self.store.put("project", project_id, project_id,
+                           {**project, "recipe_migration": report, "updated_at": utcnow(), "revision": project["revision"] + 1},
+                           project["revision"])
+
+    def _require_recipe_review(self, project_id):
+        binding = self.store.recipe_binding(project_id)
+        if binding and binding["migration"].get("review_required"):
+            raise ServiceError("migration_review_required", "Review and save the current recipe before execution; previous recipe identities remain in history",
+                               {"current_recipe_id": binding["recipe_id"], "migration": binding["migration"]}, 409)
 
     def catalog(self, actor: Actor | None = None) -> list[dict]:
         if actor is not None and "read" not in actor.scopes:
@@ -63,6 +123,7 @@ class OperationService:
                 if spec.mutating:
                     previous = self.store.idempotent_result(actor.id, payload["idempotency_key"], operation, payload_hash)
                     if previous is not None:
+                        self._check_idempotent_recipe_identity(operation, previous)
                         return previous
                 result = self._dispatch(operation, payload, actor)
                 if spec.mutating:
@@ -86,6 +147,20 @@ class OperationService:
                              request_id=request_id, outcome="denied" if error.status_code in {401, 403} else "failed",
                              project_id=project_id, details={"code": error.code})
             raise error from exc
+
+    def _check_idempotent_recipe_identity(self, operation, previous):
+        """A pre-migration cache cannot revive a retired editable identity."""
+        if operation not in {"project.create", "recipe.create", "recipe.update", "recipe.clone", "recipe.import"}:
+            return
+        project_id = previous.get("project_id")
+        binding = self.store.recipe_binding(project_id) if project_id else None
+        if not binding:
+            return
+        if previous.get("recipe_id") != binding["recipe_id"] or (
+            operation == "project.create" and previous.get("active_recipe_id") != binding["recipe_id"]
+        ):
+            raise ServiceError("migration_conflict", "This idempotency record predates the single-recipe migration; read the current project and use a new key for a new mutation",
+                               {"current_recipe_id": binding["recipe_id"], "historical_response_preserved": True}, 409)
 
     @staticmethod
     def _reject_secrets(value):
@@ -153,9 +228,14 @@ class OperationService:
                 raise ServiceError("capability_unavailable", "Automated research monitoring is not implemented", status_code=422)
             if body.get("active_recipe_id") or body.get("active_model_version_ref"):
                 raise ServiceError("validation_error", "Create the project before linking its resources")
+            recipe_id = str(uuid5(NAMESPACE_URL, f"modelbuilder:project-recipe:{project_id}"))
+            body.pop("active_recipe_id", None)
             project = ModelProject(project_id=project_id, id=project_id, created_at=now, updated_at=now,
-                                   revision=1, **body).model_dump()
+                                   recipe_id=recipe_id, active_recipe_id=recipe_id, revision=1, **body).model_dump()
             self.store.reserve_slug(project["slug"], project_id)
+            initial = p.get("recipe") or recipe_module.default_recipe(project_id, recipe_id, project["model_name"] + " recipe")
+            self._save_recipe(initial, project_id, recipe_id, 1)
+            self.store.bind_recipe(project_id, recipe_id)
             return self.store.put("project", project_id, project_id, project)
         if action == "list":
             projects = self.store.list("project")
@@ -167,15 +247,16 @@ class OperationService:
         if action == "history":
             return {"events": self.store.history(project_id, p.get("limit", 200))}
         if action == "open":
-            return {"project": project, "recipes": self.store.list("recipe", project_id),
+            current_recipe = self._current_recipe(project_id)
+            return {"project": project, "recipe": current_recipe, "recipes": [current_recipe],
                     "evidence": self.store.list("evidence", project_id), "claims": self.store.list("claim", project_id),
                     "hypotheses": self.store.list("hypothesis", project_id), "decisions": self.store.list("decision", project_id),
                     "runs": self.store.list("operation", project_id)}
         self._revision(project, p["expected_revision"])
         changes = p["changes"]
         self._allowed_changes(changes, PROJECT_FIELDS)
-        if changes.get("active_recipe_id"):
-            self._get("recipe", changes["active_recipe_id"], project_id)
+        if "active_recipe_id" in changes and changes["active_recipe_id"] != project["recipe_id"]:
+            raise ServiceError("recipe_identity_immutable", "A model project owns one stable recipe identity", status_code=409)
         if changes.get("active_model_version_ref"):
             raise ServiceError("validation_error", "Use model.version.promote to select an authoritative model version")
         if changes.get("research_watch_config"):
@@ -193,35 +274,47 @@ class OperationService:
 
     def _recipe(self, action, p):
         project_id = p["project_id"]
+        current = self._current_recipe(project_id)
         if action == "list":
-            return {"recipes": self.store.list("recipe", project_id)}
-        if action == "create":
-            recipe_id = new_id()
-            body = p.get("recipe") or recipe_module.default_recipe(project_id, recipe_id, p.get("name", "New recipe"))
+            return {"recipes": [current], "current_recipe_id": current["recipe_id"]}
+        if action == "history":
+            binding = self.store.recipe_binding(project_id)
+            legacy = [recipe for recipe in self.store.list("recipe", project_id) if recipe["recipe_id"] != current["recipe_id"]]
+            return {"recipe_id": current["recipe_id"], "current_revision": current["revision"],
+                    "revisions": self.store.resource_versions("recipe", current["recipe_id"]),
+                    "legacy_recipes": [{"recipe_id": recipe["recipe_id"], "name": recipe["name"],
+                                        "last_revision": recipe["revision"], "digest": recipe["digest"], "read_only": True}
+                                       for recipe in legacy], "migration": binding["migration"]}
+        if action in {"create", "import"}:
+            self._revision(current, p["expected_revision"], p.get("recipe"))
+            report = None
+            if action == "import":
+                report = recipe_module.import_bundle(p["bundle"])
+                body = report["recipe"]
+            else:
+                body = p.get("recipe") or recipe_module.default_recipe(project_id, current["recipe_id"], p.get("name", current["name"]))
             if "name" in p:
                 body = {**body, "name": p["name"]}
-            return self._save_recipe(body, project_id, recipe_id, 1)
-        if action == "import":
-            report = recipe_module.import_bundle(p["bundle"])
-            body = report["recipe"]
-            if p.get("name"):
-                body = {**body, "name": p["name"]}
-            result = self._save_recipe(body, project_id, new_id(), 1)
-            # Import never marks code trusted. Dependency inspection is explicit in its response.
-            return {**result, "import_report": {"unresolved_dependencies": report.get("unresolved_dependencies", []),
-                                                 "execution_allowed": False}}
+            result = self._save_recipe(body, project_id, current["recipe_id"], current["revision"] + 1, current["revision"])
+            self._confirm_recipe_review(project_id)
+            if report is not None:
+                return {**result, "import_report": {"unresolved_dependencies": report.get("unresolved_dependencies", []),
+                                                     "execution_allowed": False}}
+            return result
         if action == "validate" and "recipe" in p:
             body = dict(p["recipe"])
             body.setdefault("project_id", project_id)
-            body.setdefault("recipe_id", p.get("recipe_id", new_id()))
-            body.setdefault("revision", 1)
-            if body["project_id"] != project_id:
-                raise ServiceError("validation_error", "Recipe project identity differs from request")
+            body.setdefault("recipe_id", current["recipe_id"])
+            body.setdefault("revision", current["revision"])
+            if body["project_id"] != project_id or body["recipe_id"] != current["recipe_id"]:
+                raise ServiceError("validation_error", "Recipe identity differs from this model's canonical recipe")
             normalized = recipe_module.normalize_recipe({k: v for k, v in body.items() if k != "digest"})
             return {"valid": True, "errors": [], "normalized": normalized, "digest": recipe_module.recipe_digest(normalized)}
-        if "recipe_id" not in p:
-            raise ServiceError("validation_error", "recipe_id or a recipe document is required")
-        recipe = self._get("recipe", p["recipe_id"], project_id, p.get("revision") if action == "get" else None)
+        requested_id = p.get("recipe_id", current["recipe_id"])
+        if action == "get" and "revision" in p:
+            # Exact legacy manifests remain readable for historical native-run provenance.
+            return self._get("recipe", requested_id, project_id, p["revision"])
+        recipe = self._current_recipe(project_id, requested_id)
         if action == "get":
             return recipe
         if action == "validate":
@@ -238,14 +331,19 @@ class OperationService:
             return recipe_module.resolve_dependencies(recipe, base_path=self.source_root)
         self._revision(recipe, p["expected_revision"], p.get("recipe"))
         if action == "clone":
-            return self._save_recipe({**recipe, "name": p.get("name", recipe["name"] + " copy")}, project_id, new_id(), 1)
-        incoming = p["recipe"]
-        for key, expected in (("recipe_id", recipe["recipe_id"]), ("project_id", project_id)):
-            if key in incoming and incoming[key] != expected:
-                raise ServiceError("validation_error", "Recipe identity is immutable", {"field": key})
-        if "revision" in incoming and incoming["revision"] not in {p["expected_revision"], p["expected_revision"] + 1}:
-            raise ServiceError("validation_error", "Recipe body revision does not match update precondition")
-        return self._save_recipe(incoming, project_id, recipe["recipe_id"], recipe["revision"] + 1, recipe["revision"])
+            incoming = self._get("recipe", recipe["recipe_id"], project_id, p.get("source_revision", recipe["revision"]))
+            if "name" in p:
+                incoming = {**incoming, "name": p["name"]}
+        else:
+            incoming = p["recipe"]
+            for key, expected in (("recipe_id", recipe["recipe_id"]), ("project_id", project_id)):
+                if key in incoming and incoming[key] != expected:
+                    raise ServiceError("validation_error", "Recipe identity is immutable", {"field": key})
+            if "revision" in incoming and incoming["revision"] not in {p["expected_revision"], p["expected_revision"] + 1}:
+                raise ServiceError("validation_error", "Recipe body revision does not match update precondition")
+        result = self._save_recipe(incoming, project_id, recipe["recipe_id"], recipe["revision"] + 1, recipe["revision"])
+        self._confirm_recipe_review(project_id)
+        return result
 
     def _save_recipe(self, body, project_id, recipe_id, revision, expected=None):
         canonical = {key: value for key, value in body.items() if key not in {"digest", "import_report"}}
@@ -382,14 +480,15 @@ class OperationService:
     def _execution(self, op, p, actor):
         project_id = p["project_id"]
         project = self._get("project", project_id, project_id)
-        enriched = {**p, "model_name": project["model_name"]}
+        enriched = {**p, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"]}
         if op == "run.list":
             runs = []
             for operation in self.store.list("operation", project_id):
                 runs.append(self._execution("run.status", {"project_id": project_id, "operation_id": operation["operation_id"]}, actor))
             return {"runs": runs}
         if op in {"run.plan", "run.submit"}:
-            recipe = self._get("recipe", p["recipe_id"], project_id)
+            recipe = self._current_recipe(project_id, p["recipe_id"])
+            self._require_recipe_review(project_id)
             enriched["recipe"] = recipe
             target = p.get("target", "local-cpu")
             policy = self._policy("policy.get", p)
@@ -413,17 +512,22 @@ class OperationService:
                     raise ServiceError("target_disabled", "Local execution is disabled by project policy", status_code=403)
                 enriched["parent_operation_id"] = correlation["operation_id"]
                 enriched["operation_id"] = str(uuid5(NAMESPACE_URL, f"modelbuilder:{actor.id}:{op}:{p['idempotency_key']}"))
+                self._require_recipe_review(project_id)
+                current_recipe = self._current_recipe(project_id)
+                self._revision(current_recipe, p["expected_recipe_revision"])
                 parent_recipe = self._get("recipe", correlation["recipe_id"], project_id, correlation["recipe_revision"])
                 resumed_recipe = copy.deepcopy(parent_recipe)
+                if parent_recipe["recipe_id"] != current_recipe["recipe_id"]:
+                    enriched["legacy_parent_recipe_id"] = parent_recipe["recipe_id"]
                 if "steps" not in p:
                     raise ServiceError("validation_error", "Resume requires a declared final total step count")
                 for node in resumed_recipe["nodes"]:
                     if node["kind"] == "model.train":
                         node["parameters"]["steps"] = p["steps"]
-                resumed_recipe["name"] = parent_recipe["name"][:220] + " continuation"
-                resumed_recipe_id = str(uuid5(NAMESPACE_URL, f"modelbuilder:resume-recipe:{enriched['operation_id']}"))
-                enriched["recipe"] = self._save_recipe(resumed_recipe, project_id, resumed_recipe_id, 1)
-                enriched["recipe_id"] = resumed_recipe_id
+                resumed_recipe["name"] = current_recipe["name"]
+                enriched["recipe"] = self._save_recipe(resumed_recipe, project_id, current_recipe["recipe_id"],
+                                                       current_recipe["revision"] + 1, current_recipe["revision"])
+                enriched["recipe_id"] = current_recipe["recipe_id"]
                 enriched["max_runtime_seconds"] = policy["max_local_runtime_seconds"]
                 if not p.get("mode", p.get("resume_mode")):
                     raise ServiceError("validation_error", "Resume must explicitly select exact_state or warm_start")

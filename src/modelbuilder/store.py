@@ -39,6 +39,8 @@ class SQLiteStore:
             target_id TEXT, request_id TEXT NOT NULL, outcome TEXT NOT NULL,
             before_revision INTEGER, after_revision INTEGER, details TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS unique_slugs (slug TEXT PRIMARY KEY, project_id TEXT NOT NULL UNIQUE);
+        CREATE TABLE IF NOT EXISTS project_recipes (
+            project_id TEXT PRIMARY KEY, recipe_id TEXT NOT NULL UNIQUE, migration TEXT NOT NULL);
         """)
 
     @contextmanager
@@ -81,6 +83,11 @@ class SQLiteStore:
         revision = body.get("revision", 1)
         encoded = json.dumps(body, sort_keys=True, allow_nan=False)
         with self._lock:
+            if kind == "recipe":
+                binding = self.recipe_binding(project_id)
+                if binding and binding["recipe_id"] != resource_id:
+                    raise ServiceError("recipe_not_current", "Historical recipe identities are read-only; open the project's current recipe to restore content",
+                                       {"current_recipe_id": binding["recipe_id"]}, 409)
             if expected_revision is None:
                 try:
                     self.connection.execute("INSERT INTO resources VALUES(?,?,?,?,?)",
@@ -98,6 +105,25 @@ class SQLiteStore:
                         "current": current}, 409)
             self.connection.execute("INSERT INTO versions VALUES(?,?,?,?)", (kind, resource_id, revision, encoded))
         return body
+
+    def recipe_binding(self, project_id: str) -> dict | None:
+        with self._lock:
+            row = self.connection.execute("SELECT recipe_id,migration FROM project_recipes WHERE project_id=?", (project_id,)).fetchone()
+            return {"recipe_id": row[0], "migration": json.loads(row[1])} if row else None
+
+    def bind_recipe(self, project_id: str, recipe_id: str, migration: dict | None = None):
+        resource = self.get("recipe", recipe_id)
+        if resource["project_id"] != project_id:
+            raise ServiceError("not_found", "Recipe does not belong to this project", status_code=404)
+        self.connection.execute("INSERT INTO project_recipes VALUES(?,?,?)", (project_id, recipe_id, json.dumps(migration or {})))
+
+    def update_recipe_migration(self, project_id: str, migration: dict):
+        self.connection.execute("UPDATE project_recipes SET migration=? WHERE project_id=?", (json.dumps(migration), project_id))
+
+    def resource_versions(self, kind: str, resource_id: str) -> list[dict]:
+        with self._lock:
+            rows = self.connection.execute("SELECT body FROM versions WHERE kind=? AND id=? ORDER BY revision", (kind, resource_id))
+            return [json.loads(row[0]) for row in rows]
 
     def reserve_slug(self, slug: str, project_id: str):
         try:

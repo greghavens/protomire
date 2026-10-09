@@ -14,7 +14,7 @@ from zenml.enums import ExecutionStatus
 from zenml.models import ModelVersionArtifactRequest, PipelineRunUpdate
 
 from .adapter import BackendError
-from .common import alive, now, process_group_state, termination_confirmed, read_json, write_json
+from .common import alive, now, process_group_state, recipe_provenance, termination_confirmed, read_json, write_json
 
 if zenml.__version__ != "0.97.0":
     raise RuntimeError("The execution adapter requires exactly ZenML 0.97.0")
@@ -150,6 +150,10 @@ def status(job: Path) -> dict:
     state = read_json(job / "state.json")
     worker_alive = True if alive(state.get("worker_pid"), state.get("worker_identity")) else process_group_state(state.get("worker_pid"))
     native_status = run.status.value if run else None
+    identity = recipe_provenance(request["recipe"])
+    if run:
+        native_identity = getattr(getattr(run, "config", None), "extra", {})
+        identity.update({key: native_identity[key] for key in identity if key in native_identity})
     terminal = {"completed": "succeeded", "cached": "succeeded", "failed": "failed", "cancelled": "unknown"}
     termination = metadata_values(run).get("local_supervisor_termination", {}) if run else state.get("termination", {})
     if native_status in {"completed", "cached"}:
@@ -172,7 +176,8 @@ def status(job: Path) -> dict:
     if current == "cancelled" and worker_alive:
         current = "cancel_requested"
     return {"operation_id": job.name, "project_id": request["project_id"], "backend": "zenml", "backend_version": zenml.__version__,
-            "backend_run_id": str(run.id) if run else None, "backend_status": native_status, "status": current,
+            "backend_run_id": str(run.id) if run else None, "backend_snapshot_id": str(run.snapshot.id) if run and getattr(run, "snapshot", None) else None,
+            "backend_status": native_status, "status": current, **identity,
             "model_version_ref": str(run.model_version.id) if run and run.model_version else None,
             "worker_alive": worker_alive, "worker_pid": state.get("worker_pid"), "worker_exit_code": state.get("worker_exit_code"),
             "supervisor_alive": alive(state.get("supervisor_pid"), state.get("supervisor_identity")),
@@ -180,6 +185,8 @@ def status(job: Path) -> dict:
             "submitted_at": request["submitted_at"], "last_reconciled_at": now(),
             "metrics": metrics_for(run), "artifacts": artifacts_for(job, run),
             "parent_run_id": request.get("parent_run_id"), "parent_checkpoint_ref": request.get("parent_checkpoint_ref"),
+            "parent_recipe_id": request.get("parent_recipe_id"), "parent_recipe_revision": request.get("parent_recipe_revision"),
+            "parent_recipe_digest": request.get("parent_recipe_digest"),
             "resume_mode": request.get("resume_mode"), "termination": termination,
             "runtime_status_source": "verified_local_supervisor",
             "termination_record_source": "native_run_metadata" if run and termination else ("supervisor_journal" if termination else None),

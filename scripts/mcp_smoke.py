@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Real external MCP/stdio acceptance against a separate HTTP service process.
 
-Run: .venv/bin/python scripts/mcp_smoke.py --output evidence/mcp
+Run: .venv/bin/python scripts/mcp_smoke.py --output evidence/mcp/single-model
 The client imports the official MCP SDK, never modelbuilder's Python handlers.
 Only disposable randomly generated test credentials are used, and none are
 included in the trace. This is generic MCP acceptance, NOT Claude/Codex proof.
@@ -182,6 +182,7 @@ async def acceptance(service: ServiceProcess, evidence: dict):
             discovered = {tool.name: tool for tool in listed.tools}
             expected = {entry["name"].replace(".", "_"): entry for entry in catalog["operations"]}
             assert set(discovered) == set(expected)
+            assert "recipe_apply" not in discovered
             for name, tool in discovered.items():
                 assert tool.inputSchema == expected[name]["input_schema"]
             resources = await session.list_resources()
@@ -197,15 +198,28 @@ async def acceptance(service: ServiceProcess, evidence: dict):
             })
             project_id = project["project_id"]
             assert await operation("project.get", {"project_id": project_id}) == project
+            recipe_id = project["recipe_id"]
+            assert project["active_recipe_id"] == recipe_id
+            identity = {"project_id": project_id, "recipe_id": recipe_id}
+            draft = await call(session, "recipe_get", identity)
+            assert draft["revision"] == 1
+            assert (await call(session, "project_open", {"project_id": project_id}))["recipe"] == draft
+            assert (await call(session, "recipe_list", {"project_id": project_id}))["recipes"] == [draft]
             created = await call(session, "recipe_create", {
-                "project_id": project_id, "name": "MCP-created recipe", "idempotency_key": "mcp-recipe-create",
+                "project_id": project_id, "name": "MCP-created recipe", "expected_revision": draft["revision"],
+                "idempotency_key": "mcp-recipe-create",
             })
             duplicate = await call(session, "recipe_create", {
-                "project_id": project_id, "name": "MCP-created recipe", "idempotency_key": "mcp-recipe-create",
+                "project_id": project_id, "name": "MCP-created recipe", "expected_revision": draft["revision"],
+                "idempotency_key": "mcp-recipe-create",
             })
             assert duplicate == created
-            recipe_id = created["recipe_id"]
-            identity = {"project_id": project_id, "recipe_id": recipe_id}
+            assert created["recipe_id"] == recipe_id
+            assert created["revision"] == draft["revision"] + 1
+            await call(session, "recipe_create", {
+                "project_id": project_id, "name": "Stale author", "expected_revision": draft["revision"],
+                "idempotency_key": "mcp-stale-author",
+            }, error_status=409)
             assert await operation("recipe.get", identity) == created
             assert await call(session, "recipe_get", identity) == created
             validation = await call(session, "recipe_validate", identity)
@@ -261,6 +275,7 @@ async def acceptance(service: ServiceProcess, evidence: dict):
             assert winner["revision"] == api_updated["revision"] + 1
             assert loser["error"]["details"]["current_revision"] == winner["revision"]
             assert loser["error"]["details"]["diff"]
+            historical_api_updated = api_updated
             api_updated = winner
             assert await call(session, "recipe_get", identity) == api_updated
             assert await operation("recipe.get", identity) == api_updated
@@ -269,30 +284,56 @@ async def acceptance(service: ServiceProcess, evidence: dict):
             await call(session, "recipe_validate", {"project_id": project_id, "recipe": unknown_schema}, error_status=400)
             await call(session, "recipe_get", {**identity, "unexpected_argument": True}, error_status=400)
             clone = await call(session, "recipe_clone", {
-                **identity, "name": "External MCP clone", "expected_revision": api_updated["revision"],
+                **identity, "name": "External MCP historical restore", "expected_revision": api_updated["revision"],
+                "source_revision": created["revision"],
                 "idempotency_key": "mcp-clone",
             })
-            assert clone["recipe_id"] != recipe_id
+            assert clone["recipe_id"] == recipe_id
+            assert clone["revision"] == api_updated["revision"] + 1
+            assert clone["nodes"] == created["nodes"]
+            await call(session, "recipe_clone", {
+                **identity, "expected_revision": api_updated["revision"], "source_revision": draft["revision"],
+                "idempotency_key": "mcp-stale-restore",
+            }, error_status=409)
             assert clone["project_id"] == project_id
             bundle = await call(session, "recipe_export", identity)
             tampered = deepcopy(bundle)
             tampered["recipe"]["name"] = "Tampered without recomputing bundle digest"
             await call(session, "recipe_import", {
-                "project_id": project_id, "bundle": tampered, "idempotency_key": "mcp-tampered-import",
+                "project_id": project_id, "bundle": tampered, "expected_revision": clone["revision"],
+                "idempotency_key": "mcp-tampered-import",
             }, error_status=400)
             imported = await call(session, "recipe_import", {
-                "project_id": project_id, "bundle": bundle,
+                "project_id": project_id, "bundle": bundle, "expected_revision": clone["revision"],
                 "idempotency_key": "mcp-import", "name": "External MCP imported recipe",
             })
-            assert imported["recipe_id"] not in {recipe_id, clone["recipe_id"]}
+            assert imported["recipe_id"] == recipe_id
+            assert imported["revision"] == clone["revision"] + 1
+            assert await call(session, "recipe_import", {
+                "project_id": project_id, "bundle": bundle, "expected_revision": clone["revision"],
+                "idempotency_key": "mcp-import", "name": "External MCP imported recipe",
+            }) == imported
+            await call(session, "recipe_import", {
+                "project_id": project_id, "bundle": bundle, "expected_revision": clone["revision"],
+                "idempotency_key": "mcp-stale-import",
+            }, error_status=409)
             assert imported["import_report"]["execution_allowed"] is False
             imported = {key: value for key, value in imported.items() if key != "import_report"}
             assert await call(session, "recipe_get", {"project_id": project_id, "recipe_id": imported["recipe_id"]}) == imported
             assert await call(session, "recipe_validate", {"project_id": project_id, "recipe_id": imported["recipe_id"]})
 
+            snapshots = [draft, created, updated, historical_api_updated, api_updated, clone, imported]
+            for snapshot in snapshots:
+                assert await call(session, "recipe_get", {**identity, "revision": snapshot["revision"]}) == snapshot
+            recipe_history = await call(session, "recipe_history", {"project_id": project_id})
+            assert recipe_history["recipe_id"] == recipe_id
+            assert recipe_history["current_revision"] == imported["revision"]
+            assert recipe_history["revisions"] == snapshots
+            assert recipe_history["legacy_recipes"] == []
+            assert (await call(session, "recipe_list", {"project_id": project_id}))["recipes"] == [imported]
             async with service.mcp(readonly=True) as reader:
                 await reader.initialize()
-                assert await call(reader, "recipe_get", identity) == api_updated
+                assert await call(reader, "recipe_get", identity) == imported
                 denied_operations = []
                 for entry in catalog["operations"]:
                     if entry["scope"] == "read":
@@ -308,16 +349,23 @@ async def acceptance(service: ServiceProcess, evidence: dict):
                 record("mcp-stdio", {"method": "tools/call", "params": {"name": "recipe_publish", "arguments": identity}},
                        guessed.model_dump(mode="json", by_alias=True))
                 assert guessed.isError and guessed.structuredContent["error"]["code"] == "unknown_tool"
-                assert await call(reader, "recipe_get", identity) == api_updated
+                assert await call(reader, "recipe_get", identity) == imported
 
             # SIGKILL the HTTP service; preserve its on-disk database and port.
             # The independent MCP process remains alive across this restart.
             service.restart()
             after_restart = await call(session, "recipe_get", identity)
-            assert after_restart == api_updated
+            assert after_restart == imported
             assert await call(session, "project_get", {"project_id": project_id}) == project
-            assert await call(session, "recipe_get", {"project_id": project_id, "recipe_id": clone["recipe_id"]}) == clone
-            assert await call(session, "recipe_get", {"project_id": project_id, "recipe_id": imported["recipe_id"]}) == imported
+            for snapshot in snapshots:
+                assert await call(session, "recipe_get", {**identity, "revision": snapshot["revision"]}) == snapshot
+            assert await call(session, "recipe_history", {"project_id": project_id}) == recipe_history
+            assert (await call(session, "project_open", {"project_id": project_id}))["recipe"] == imported
+            assert await call(session, "recipe_create", {
+                "project_id": project_id, "name": "MCP-created recipe", "expected_revision": draft["revision"],
+                "idempotency_key": "mcp-recipe-create",
+            }) == created
+            assert await call(session, "recipe_get", identity) == imported
             history = await call(session, "project_history", {"project_id": project_id})
             denied_audits = {event["operation"] for event in history["events"]
                             if event["outcome"] == "denied" and event["actor_id"] == "mcp-acceptance-reader"}
@@ -326,8 +374,10 @@ async def acceptance(service: ServiceProcess, evidence: dict):
             evidence["summary"] = {
                 "status": "PASS", "tool_count": len(discovered),
                 "project_id": project_id, "recipe_id": recipe_id, "clone_recipe_id": clone["recipe_id"],
-                "imported_recipe_id": imported["recipe_id"], "revision": api_updated["revision"],
-                "digest": api_updated["digest"], "read_only_denied_operations": denied_operations,
+                "imported_recipe_id": imported["recipe_id"], "revision": imported["revision"],
+                "digest": imported["digest"], "read_only_denied_operations": denied_operations,
+                "single_recipe_identity": True, "immutable_revisions_verified": len(snapshots),
+                "author_import_restore_stale_conflicts": True, "idempotency_survives_restart": True,
                 "http_status_conflict": conflict["http_status"], "restart_method": "SIGKILL then same SQLite store",
                 "same_live_mcp_process_across_service_restart": True,
                 "api_mcp_full_resource_equality": True, "idempotency_verified": True,
@@ -345,7 +395,7 @@ async def run_smoke(output: Path):
     evidence: dict[str, Any] = {
         "started_at": datetime.now(timezone.utc).isoformat(),
         "python": sys.version.split()[0], "mcp_sdk": version("mcp"),
-        "command": ".venv/bin/python scripts/mcp_smoke.py --output evidence/mcp",
+        "command": f".venv/bin/python scripts/mcp_smoke.py --output {output}",
         "client_boundary": "Official MCP ClientSession in this process communicates via stdio with a separate server process.",
         "credentials": "Fresh test-only credentials are generated in memory and omitted from evidence.",
         "transcript": [],
@@ -376,7 +426,7 @@ async def run_smoke(output: Path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=ROOT / "evidence" / "mcp")
+    parser.add_argument("--output", type=Path, default=ROOT / "evidence" / "mcp" / "single-model")
     args = parser.parse_args()
     print(json.dumps(asyncio.run(run_smoke(args.output)), indent=2, sort_keys=True))
 

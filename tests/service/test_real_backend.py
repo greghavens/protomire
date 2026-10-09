@@ -39,10 +39,10 @@ def test_shared_service_native_execution_resume_research_and_scope(tmp_path):
     for node in manifest["nodes"]:
         if node["kind"] == "model.train":
             node["parameters"]["steps"] = 4
-    recipe = invoke("recipe.create", {"project_id": project_id, "recipe": manifest, "idempotency_key": "recipe"})
+    recipe = invoke("recipe.create", {"project_id": project_id, "recipe": manifest, "expected_revision": 1, "idempotency_key": "recipe"})
     plan = invoke("run.plan", {"project_id": project_id, "recipe_id": recipe["recipe_id"]})
     assert plan["executable"] is True
-    payload = {"project_id": project_id, "recipe_id": recipe["recipe_id"], "expected_revision": 1,
+    payload = {"project_id": project_id, "recipe_id": recipe["recipe_id"], "expected_revision": recipe["revision"],
                "trusted": True, "idempotency_key": "run-1"}
     submitted = invoke("run.submit", payload)
     assert invoke("run.submit", payload) == submitted
@@ -66,13 +66,15 @@ def test_shared_service_native_execution_resume_research_and_scope(tmp_path):
     assert all(artifact["artifact_id"] for artifact in artifacts["artifacts"])
     checkpoint = invoke("model.checkpoint.get", {"project_id": project_id, "operation_id": first["operation_id"]})
     resumed = invoke("run.resume", {"project_id": project_id, "operation_id": first["operation_id"],
-                                    "mode": "exact_state", "steps": 6, "trusted": True, "idempotency_key": "resume"})
+                                    "mode": "exact_state", "steps": 6, "trusted": True, "expected_recipe_revision": recipe["revision"], "idempotency_key": "resume"})
     assert resumed["operation_id"] != first["operation_id"]
     second = completed(resumed["operation_id"])
     assert second["backend_run_id"] != first["backend_run_id"]
     assert second["parent_run_id"] == first["backend_run_id"]
     assert second["resume_mode"] == "exact_state"
-    assert second["recipe_id"] != first["recipe_id"]
+    assert second["recipe_id"] == first["recipe_id"]
+    assert second["recipe_revision"] == first["recipe_revision"] + 1
+    assert invoke("recipe.get", {"project_id": project_id, "recipe_id": recipe["recipe_id"], "revision": first["recipe_revision"]}) == recipe
     assert second["recipe_digest"] != first["recipe_digest"]
     resumed_manifest = invoke("recipe.get", {"project_id": project_id, "recipe_id": second["recipe_id"]})
     assert next(n for n in resumed_manifest["nodes"] if n["kind"] == "model.train")["parameters"]["steps"] == 6
@@ -103,7 +105,7 @@ def test_shared_service_native_execution_resume_research_and_scope(tmp_path):
     assert invoke("hypothesis.get", {"project_id": project_id, "hypothesis_id": hypothesis["hypothesis_id"]})["claim_ids"] == [claim["claim_id"]]
     assert second["metrics"]["validation_loss"] < first["metrics"]["validation_loss"]
     decision = invoke("decision.record", {"project_id": project_id, "hypothesis_id": hypothesis["hypothesis_id"],
-                        "recipe_id": recipe["recipe_id"], "recipe_revision": 1,
+                        "recipe_id": recipe["recipe_id"], "recipe_revision": recipe["revision"],
                         "run_ids": [first["backend_run_id"], second["backend_run_id"]],
                         "selection_rule": {"metric": "validation_loss", "direction": "minimize"}, "outcome": "accepted",
                         "rationale": "Select the measured minimum on the declared validation split; citation is context, not proof.",
@@ -119,7 +121,8 @@ def test_shared_service_native_execution_resume_research_and_scope(tmp_path):
     assert error.value.code == "not_found"
     record = {"test": "shared_service_native_execution_resume_research_and_scope", "status": "passed",
               "project_id": project_id, "recipe_id": recipe["recipe_id"], "recipe_digest": recipe["digest"], "source_commit": source_commit,
-              "continuation_recipe_id": second["recipe_id"], "continuation_recipe_digest": second["recipe_digest"],
+              "recipe_revision": recipe["revision"], "continuation_recipe_id": second["recipe_id"],
+              "continuation_recipe_revision": second["recipe_revision"], "continuation_recipe_digest": second["recipe_digest"],
               "operation_ids": [first["operation_id"], second["operation_id"]],
               "backend_run_ids": [first["backend_run_id"], second["backend_run_id"]],
               "artifact_ids": [a["artifact_id"] for a in artifacts["artifacts"]],

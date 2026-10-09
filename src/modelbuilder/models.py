@@ -66,7 +66,9 @@ class ModelProject(DomainModel):
     updated_at: str
     git_remote: str | None = None
     head_commit: str | None = None
-    active_recipe_id: str | None = None
+    recipe_id: str
+    active_recipe_id: str
+    recipe_migration: dict = Field(default_factory=dict)
     active_model_version_ref: str | None = None
     research_watch_config: dict | None = None
     status: Literal["active", "archived"] = "active"
@@ -191,7 +193,7 @@ PROJECT_FIELDS = {"slug": S, "model_name": S, "description": {"type": "string"},
                   "research_watch_config": {"type": ["object", "null"]}, "status": S}
 
 OPERATIONS = {s.name: s for s in [
-    _spec("project.create", "modify", "Create a single-model lifecycle project.", PROJECT_FIELDS,
+    _spec("project.create", "modify", "Create one model project with its one stable current recipe; optionally supply the initial recipe document.", {**PROJECT_FIELDS, "recipe": OBJECT},
           ("slug", "model_name"), True),
     _spec("project.list", "read", "List authorized model projects."),
     _spec("project.get", "read", "Read a project.", P, ("project_id",)),
@@ -200,23 +202,25 @@ OPERATIONS = {s.name: s for s in [
           {**P, "expected_revision": POSITIVE_INT, "changes": OBJECT}, ("project_id", "expected_revision", "changes"), True),
     _spec("project.history", "read", "Read append-only project audit history.",
           {**P, "limit": {"type": "integer", "minimum": 1, "maximum": 1000}}, ("project_id",)),
-    _spec("recipe.create", "modify", "Create a canonical recipe; defaults form an editable draft.",
-          {**P, "recipe": OBJECT, "name": S}, ("project_id",), True),
+    _spec("recipe.create", "modify", "Author the project recipe at the expected revision; never create a second recipe identity.",
+          {**P, "recipe": OBJECT, "name": S, "expected_revision": POSITIVE_INT}, ("project_id", "expected_revision"), True),
     _spec("recipe.get", "read", "Read a recipe at its current or historical revision.",
           {**R, "revision": POSITIVE_INT}, ("project_id", "recipe_id")),
-    _spec("recipe.list", "read", "List project recipes.", P, ("project_id",)),
+    _spec("recipe.list", "read", "Compatibility list containing exactly the project current recipe.", P, ("project_id",)),
+    _spec("recipe.history", "read", "Read immutable recipe revisions and retained legacy provenance, not selectable current recipes.", P, ("project_id",)),
     _spec("recipe.validate", "read", "Validate a recipe without executing any code.",
           {**R, "recipe": OBJECT}, ("project_id",)),
     _spec("recipe.update", "modify", "Atomically replace the same recipe using its expected revision.",
           RECIPE_MUTATION, ("project_id", "recipe_id", "recipe", "expected_revision"), True),
     _spec("recipe.diff", "read", "Compare revisions or a draft against the current recipe.",
           {**R, "recipe": OBJECT, "from_revision": POSITIVE_INT, "to_revision": POSITIVE_INT}, ("project_id", "recipe_id")),
-    _spec("recipe.clone", "modify", "Clone a recipe into the same project with a fresh identity.",
-          {**R, "name": S, "expected_revision": POSITIVE_INT}, ("project_id", "recipe_id", "expected_revision"), True),
+    _spec("recipe.clone", "modify", "Compatibility historical restore: copy a prior revision into the same stable recipe identity.",
+          {**R, "name": S, "expected_revision": POSITIVE_INT, "source_revision": POSITIVE_INT}, ("project_id", "recipe_id", "expected_revision"), True),
     _spec("recipe.export", "read", "Export a portable, secret-checked bundle without execution.", R,
           ("project_id", "recipe_id")),
-    _spec("recipe.import", "modify", "Validate bundle integrity and import as a new untrusted recipe.",
-          {**P, "bundle": OBJECT, "name": S}, ("project_id", "bundle"), True),
+    _spec("recipe.import", "modify", "Open a verified bundle as the next untrusted revision of this model's single recipe.",
+          {**P, "bundle": OBJECT, "name": S, "expected_revision": POSITIVE_INT},
+          ("project_id", "bundle", "expected_revision"), True),
     _spec("recipe.resolve_dependencies", "read", "Inspect immutable dependency references and readiness.",
           R, ("project_id", "recipe_id")),
     _spec("evidence.add", "modify", "Store a citation; a citation alone does not prove a claim.",
@@ -268,7 +272,8 @@ OPERATIONS = {s.name: s for s in [
     _spec("run.resume", "execute", "Resume an actual checkpoint; distinguish exact state and warm start.",
           {**RUN, "checkpoint_ref": S, "checkpoint_id": S, "mode": {"enum": ["exact_state", "warm_start"]},
            "resume_mode": {"enum": ["exact_state", "warm_start"]}, "parameters": NO_OVERRIDES, "steps": POSITIVE_INT,
-           "checkpoint_kind": {"enum": ["last", "best"]}, "trusted": B}, ("project_id",), True),
+           "checkpoint_kind": {"enum": ["last", "best"]}, "trusted": B, "expected_recipe_revision": POSITIVE_INT},
+          ("project_id", "expected_recipe_revision"), True),
     _spec("run.artifacts", "read", "Read authoritative artifact identifiers and hashes.", RUN, ("project_id",)),
     _spec("run.compare", "read", "Compare metrics from actual backend runs by a declared criterion.",
           {**P, "run_ids": {"type": "array", "items": S, "minItems": 2}, "metric": S,

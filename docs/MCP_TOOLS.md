@@ -33,19 +33,20 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `operation_get` | `operation.get` | `read` | Read a stored application-operation correlation. |
 | `policy_get` | `policy.get` | `read` | Read project permissions and fail-closed remote-execution policy. |
 | `policy_update` | `policy.update` | `modify` | Update bounded local policy; remote spending remains disabled. |
-| `project_create` | `project.create` | `modify` | Create a single-model lifecycle project. |
+| `project_create` | `project.create` | `modify` | Create one model project with its one stable current recipe; optionally supply the initial recipe document. |
 | `project_get` | `project.get` | `read` | Read a project. |
 | `project_history` | `project.history` | `read` | Read append-only project audit history. |
 | `project_list` | `project.list` | `read` | List authorized model projects. |
 | `project_open` | `project.open` | `read` | Open a project and its lifecycle resources. |
 | `project_update` | `project.update` | `modify` | Update project with optimistic concurrency. |
-| `recipe_clone` | `recipe.clone` | `modify` | Clone a recipe into the same project with a fresh identity. |
-| `recipe_create` | `recipe.create` | `modify` | Create a canonical recipe; defaults form an editable draft. |
+| `recipe_clone` | `recipe.clone` | `modify` | Compatibility historical restore: copy a prior revision into the same stable recipe identity. |
+| `recipe_create` | `recipe.create` | `modify` | Author the project recipe at the expected revision; never create a second recipe identity. |
 | `recipe_diff` | `recipe.diff` | `read` | Compare revisions or a draft against the current recipe. |
 | `recipe_export` | `recipe.export` | `read` | Export a portable, secret-checked bundle without execution. |
 | `recipe_get` | `recipe.get` | `read` | Read a recipe at its current or historical revision. |
-| `recipe_import` | `recipe.import` | `modify` | Validate bundle integrity and import as a new untrusted recipe. |
-| `recipe_list` | `recipe.list` | `read` | List project recipes. |
+| `recipe_history` | `recipe.history` | `read` | Read immutable recipe revisions and retained legacy provenance, not selectable current recipes. |
+| `recipe_import` | `recipe.import` | `modify` | Open a verified bundle as the next untrusted revision of this model's single recipe. |
+| `recipe_list` | `recipe.list` | `read` | Compatibility list containing exactly the project current recipe. |
 | `recipe_resolve_dependencies` | `recipe.resolve_dependencies` | `read` | Inspect immutable dependency references and readiness. |
 | `recipe_update` | `recipe.update` | `modify` | Atomically replace the same recipe using its expected revision. |
 | `recipe_validate` | `recipe.validate` | `read` | Validate a recipe without executing any code. |
@@ -61,4 +62,4 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 
 Remote execution/spending, publication, discovery, and public recipe forking remain unavailable.
 A configured ZenML backend is required for execution and model records. The service never returns fabricated native runs.
-Resume creates a canonical continuation recipe with its own identity and digest; exact tensor continuation is verified separately.
+Resume advances the same canonical recipe identity to a new immutable revision and digest; parent runs retain their historical revision.

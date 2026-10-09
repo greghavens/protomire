@@ -172,8 +172,12 @@ def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: 
     project = call("project.create", {"slug": "portable-cpu", "model_name": report["recipe"]["name"],
                                       "idempotency_key": "portable:project"})
     pid = project["project_id"]
+    current = call("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"]})
     imported = call("recipe.import", {"project_id": pid, "bundle": export_bundle(report["recipe"], source_root=source_root),
+                                      "expected_revision": current["revision"],
                                       "idempotency_key": "portable:import"})
+    if imported["recipe_id"] != project["recipe_id"]:
+        raise AssertionError("Import created an independent recipe instead of updating the model project recipe")
     if imported["import_report"]["execution_allowed"] is not False:
         raise AssertionError("Import unexpectedly authorized execution")
     submitted = call("run.submit", {"project_id": pid, "recipe_id": imported["recipe_id"],

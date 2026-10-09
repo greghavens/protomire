@@ -15,16 +15,8 @@
       "title": "Active Model Version Ref"
     },
     "active_recipe_id": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Active Recipe Id"
+      "title": "Active Recipe Id",
+      "type": "string"
     },
     "created_at": {
       "title": "Created At",
@@ -72,6 +64,15 @@
     "project_id": {
       "title": "Project Id",
       "type": "string"
+    },
+    "recipe_id": {
+      "title": "Recipe Id",
+      "type": "string"
+    },
+    "recipe_migration": {
+      "additionalProperties": true,
+      "title": "Recipe Migration",
+      "type": "object"
     },
     "research_watch_config": {
       "anyOf": [
@@ -123,6 +124,8 @@
     "model_name",
     "created_at",
     "updated_at",
+    "recipe_id",
+    "active_recipe_id",
     "revision"
   ],
   "title": "ModelProject",

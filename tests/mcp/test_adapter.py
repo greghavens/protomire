@@ -138,3 +138,29 @@ def test_adapter_has_no_application_imports():
     assert not any(name and name.startswith("modelbuilder.") for name in modules)
     server = create_server(None, {"operations": []})
     assert server.name == "modelbuilder"
+
+
+@pytest.mark.parametrize("operation,payload", [
+    ("recipe.create", {"project_id": "project", "expected_revision": 4, "recipe": {"name": "Built recipe"},
+                       "idempotency_key": "author"}),
+    ("recipe.import", {"project_id": "project", "expected_revision": 4, "bundle": {"recipe": {}},
+                       "idempotency_key": "import"}),
+    ("recipe.clone", {"project_id": "project", "recipe_id": "stable-recipe", "expected_revision": 4,
+                      "source_revision": 2, "idempotency_key": "restore"}),
+])
+async def test_author_import_restore_preserve_shared_revision_contract(operation, payload):
+    """The adapter must not invent identities or strip service concurrency checks."""
+    received = []
+    revision = {"project_id": "project", "recipe_id": "stable-recipe", "revision": 5, "digest": "digest-r5"}
+
+    def responder(request):
+        received.append(request)
+        return httpx.Response(200, json=revision)
+
+    async with httpx.AsyncClient(base_url="http://localhost", transport=httpx.MockTransport(responder)) as client:
+        result = await OperationGateway(client).invoke(operation, payload)
+    assert len(received) == 1
+    assert received[0].url.path == "/v1/operations/" + operation
+    assert json.loads(received[0].content) == payload
+    assert result == revision
+    assert tool_result(result).structuredContent == revision

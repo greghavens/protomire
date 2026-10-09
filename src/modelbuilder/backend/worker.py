@@ -13,7 +13,7 @@ from zenml.client import Client
 from zenml.config import StepRetryConfig
 
 from . import fixtures
-from .common import read_json, write_json
+from .common import recipe_provenance, read_json, write_json
 
 
 def context(spec: dict) -> tuple[dict, Path]:
@@ -25,7 +25,8 @@ def context(spec: dict) -> tuple[dict, Path]:
     log_metadata({"application_operation_id": job.name, "recipe_digest": spec["recipe_digest"],
                   "node_id": spec["node_id"], "parent_run_id": spec.get("parent_run_id", ""),
                   "parent_checkpoint_ref": spec.get("parent_checkpoint_ref", ""),
-                  "resume_mode": spec.get("resume_mode", "")})
+                  "resume_mode": spec.get("resume_mode", ""), **spec.get("recipe_provenance", {})})
+    log_metadata(spec.get("recipe_provenance", {}), run_id_name_or_prefix=ctx.pipeline_run.id)
     out = job / "outputs" / spec["node_id"]
     return spec["parameters"], out
 
@@ -145,7 +146,12 @@ def run(job: Path) -> None:
         project = client.create_project(project_name, "Application model project " + request["project_id"])
     os.environ["ZENML_ACTIVE_PROJECT_ID"] = str(project.id)
     recipe = request["recipe"]
-    digest = recipe.get("digest") or hashlib.sha256(json.dumps(recipe, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    identity = recipe_provenance(recipe)
+    digest = identity["recipe_digest"]
+    provenance = {key: value for key, value in {
+        **identity, "application_project_id": request["project_id"],
+        "parent_recipe_id": request.get("parent_recipe_id"), "parent_recipe_revision": request.get("parent_recipe_revision"),
+        "parent_recipe_digest": request.get("parent_recipe_digest")}.items() if value is not None}
     ordered = topological_nodes(recipe)
     functions = {n["id"]: (python_step(n, request.get("trusted_code_roots", []), request["source_root"]) if n["kind"] == "code.python" else STEPS[n["kind"]]) for n in ordered}
 
@@ -164,7 +170,7 @@ def run(job: Path) -> None:
                 kwargs.update(node.get("parameters", {}))
             else:
                 kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "parameters": node.get("parameters", {}),
-                                  "recipe_digest": digest, "dependency_paths": request.get("dependency_paths", {}),
+                                  "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
                                   "dependencies": recipe.get("resources", []) + recipe.get("external_dependencies", []), **{k: request[k] for k in ("resume_path", "resume_mode", "checkpoint_kind", "parent_run_id", "parent_checkpoint_ref") if k in request}}
             result = function(id=node["id"], **kwargs)
             declared = node["outputs"]
@@ -177,12 +183,13 @@ def run(job: Path) -> None:
     model_name = f"model-{request['project_id']}"
     native = execute_recipe.with_options(model=Model(name=model_name, version=request["operation_id"],
                                                      description=request.get("model_name", "Modelbuilder model lifecycle")),
-                                         run_name=request["run_name"])()
+                                         run_name=request["run_name"], extra=provenance)()
+    log_metadata(provenance, run_id_name_or_prefix=native.id)
     write_json(job / "native.json", {"backend_run_id": str(native.id),
                                      "model_version_ref": str(native.model_version.id) if native.model_version else None,
                                      "backend_project_id": str(project.id)})
     if native.model_version:
-        log_metadata({"application_project_id": request["project_id"], "recipe_digest": digest,
+        log_metadata({**provenance,
                       "parent_run_id": request.get("parent_run_id", ""),
                       "parent_checkpoint_ref": request.get("parent_checkpoint_ref", ""),
                       "resume_mode": request.get("resume_mode", ""), "selection_decision": request.get("decision", {})},

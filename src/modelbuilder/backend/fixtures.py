@@ -113,6 +113,8 @@ def verify_data(data: dict) -> str:
 def build_model(fixture: str, width: int):
     if fixture == "custom":
         return CustomModel(width)
+    if fixture != "pretrained":
+        raise ValueError("Only explicit custom or pretrained fixture implementations are available")
     from transformers import BertForSequenceClassification
     return BertForSequenceClassification.from_pretrained(str(model_directory()), num_labels=2,
                                                          local_files_only=True, use_safetensors=False)
@@ -133,7 +135,16 @@ def load_checkpoint(path: Path, selected: bool = False) -> dict:
 
 def initialize(data: dict, parameters: dict, out: Path) -> Path:
     verify_data(data)
-    fixture, width = data["fixture"], int(parameters.get("width", 12))
+    fixture = parameters.get("fixture")
+    if fixture not in {"custom", "pretrained"}:
+        raise ValueError("model.initialize parameters.fixture must explicitly select custom or pretrained")
+    if data.get("fixture") != fixture:
+        raise ValueError("The selected model initialization is incompatible with the supplied dataset representation")
+    width = int(parameters.get("width", 12))
+    if width < 1 or width > 512:
+        raise ValueError("Custom fixture width must be between 1 and 512")
+    if fixture == "pretrained" and width != 12:
+        raise ValueError("Pretrained architecture is pinned; width changes apply only to the custom model")
     seed = int(parameters.get("seed", 701 if fixture == "pretrained" else 44))
     setup(seed)
     model = build_model(fixture, width)
@@ -141,7 +152,10 @@ def initialize(data: dict, parameters: dict, out: Path) -> Path:
     atomic_save({"fixture": fixture, "width": width, "seed": seed, "model": model.state_dict(),
                  "reference": copy.deepcopy(model.state_dict()), "step": 0,
                  "torch_rng": torch.get_rng_state(), "python_rng": random.getstate(),
-                 "dataset_sha256": data["sha256"]}, out / "checkpoint.pt")
+                 "dataset_sha256": data["sha256"],
+                 "initialization": {"fixture": fixture, "width": width if fixture == "custom" else None,
+                                    "model_id": MODEL_ID if fixture == "pretrained" else None,
+                                    "model_revision": MODEL_REVISION if fixture == "pretrained" else None}}, out / "checkpoint.pt")
     return out
 
 
@@ -160,8 +174,8 @@ def train(data: dict, initial: Path, parameters: dict, out: Path, resume: Path |
     mode = parameters.get("resume_mode", "exact_state")
     selected = parameters.get("checkpoint_kind", "last") == "best"
     ck = load_checkpoint(resume or initial, selected=selected and resume is not None)
-    fixture, width = data["fixture"], int(parameters.get("width", ck["width"]))
-    if ck["fixture"] != fixture or ck["width"] != width or ck["dataset_sha256"] != digest:
+    fixture, width = ck["fixture"], int(parameters.get("width", ck["width"]))
+    if data.get("fixture") != fixture or ck["width"] != width or ck["dataset_sha256"] != digest:
         raise ValueError("Checkpoint architecture/dataset identity mismatch")
     setup(ck["seed"])
     model = build_model(fixture, width)
@@ -247,7 +261,7 @@ def train(data: dict, initial: Path, parameters: dict, out: Path, resume: Path |
                  "torch_rng": torch.get_rng_state(), "python_rng": random.getstate(), "step": step_index + 1,
                  "epoch": epoch, "cursor": cursor, "order": order, "training_contract": contract,
                  "dataset_sha256": digest, "best_validation_loss": best, "best_step": best_step, "history": history,
-                 "resume_mode": mode if resume else None, "start_step": start}
+                 "resume_mode": mode if resume else None, "start_step": start, "initialization": ck.get("initialization")}
         atomic_save(state, out / "checkpoint.pt")
         if is_best:
             atomic_save(state, out / "best.pt")

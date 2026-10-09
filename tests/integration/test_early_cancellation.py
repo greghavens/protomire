@@ -105,7 +105,9 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
         "outputs": [{"name": "result", "type": "str"}], "parameters": {}})
     recipe["edges"].append({"source_node": "train", "source_port": "checkpoint", "target_node": "pause", "target_port": "checkpoint"})
     backend = ZenMLBackend(tmp_path / "data", python_executable=str(PYTHON), source_root=source, trusted_code_roots=[str(source)])
-    request = {"project_id": str(uuid.uuid4()), "operation_id": str(uuid.uuid4()), "trusted": True, "recipe": recipe,
+    project_id = str(uuid.uuid4())
+    recipe["project_id"] = project_id
+    request = {"project_id": project_id, "operation_id": str(uuid.uuid4()), "trusted": True, "recipe": recipe,
                "idempotency_key": str(uuid.uuid4()), "max_runtime_seconds": 90}
     backend.invoke("run.submit", request)
     deadline = time.monotonic() + 45
@@ -116,6 +118,7 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
     assert before["status"] == "running"
     assert any(a["port"] == "checkpoint" for a in before["artifacts"])
     continued = copy.deepcopy(recipe)
+    continued["revision"] = recipe["revision"] + 1
     continued["nodes"] = [n for n in continued["nodes"] if n["id"] != "pause"]
     continued["edges"] = [e for e in continued["edges"] if e["target_node"] != "pause"]
     next(n for n in continued["nodes"] if n["kind"] == "model.train")["parameters"]["steps"] = 5

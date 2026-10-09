@@ -394,16 +394,8 @@
             "title": "Active Model Version Ref"
           },
           "active_recipe_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Active Recipe Id"
+            "title": "Active Recipe Id",
+            "type": "string"
           },
           "created_at": {
             "title": "Created At",
@@ -451,6 +443,15 @@
           "project_id": {
             "title": "Project Id",
             "type": "string"
+          },
+          "recipe_id": {
+            "title": "Recipe Id",
+            "type": "string"
+          },
+          "recipe_migration": {
+            "additionalProperties": true,
+            "title": "Recipe Migration",
+            "type": "object"
           },
           "research_watch_config": {
             "anyOf": [
@@ -502,6 +503,8 @@
           "model_name",
           "created_at",
           "updated_at",
+          "recipe_id",
+          "active_recipe_id",
           "revision"
         ],
         "title": "ModelProject",
@@ -3753,6 +3756,9 @@
                     "minLength": 1,
                     "type": "string"
                   },
+                  "recipe": {
+                    "type": "object"
+                  },
                   "request_id": {
                     "minLength": 1,
                     "type": "string"
@@ -3870,7 +3876,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create a single-model lifecycle project.",
+        "summary": "Create one model project with its one stable current recipe; optionally supply the initial recipe document.",
         "x-required-scope": "modify"
       }
     },
@@ -4511,6 +4517,10 @@
                   "request_id": {
                     "minLength": 1,
                     "type": "string"
+                  },
+                  "source_revision": {
+                    "minimum": 1,
+                    "type": "integer"
                   }
                 },
                 "required": [
@@ -4612,7 +4622,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Clone a recipe into the same project with a fresh identity.",
+        "summary": "Compatibility historical restore: copy a prior revision into the same stable recipe identity.",
         "x-required-scope": "modify"
       }
     },
@@ -4625,6 +4635,10 @@
               "schema": {
                 "additionalProperties": false,
                 "properties": {
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
                   "idempotency_key": {
                     "maxLength": 200,
                     "minLength": 1,
@@ -4648,6 +4662,7 @@
                 },
                 "required": [
                   "project_id",
+                  "expected_revision",
                   "idempotency_key"
                 ],
                 "type": "object"
@@ -4743,7 +4758,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create a canonical recipe; defaults form an editable draft.",
+        "summary": "Author the project recipe at the expected revision; never create a second recipe identity.",
         "x-required-scope": "modify"
       }
     },
@@ -5131,6 +5146,124 @@
         "x-required-scope": "read"
       }
     },
+    "/v1/operations/recipe.history": {
+      "post": {
+        "operationId": "recipe_history",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read immutable recipe revisions and retained legacy provenance, not selectable current recipes.",
+        "x-required-scope": "read"
+      }
+    },
     "/v1/operations/recipe.import": {
       "post": {
         "operationId": "recipe_import",
@@ -5142,6 +5275,10 @@
                 "properties": {
                   "bundle": {
                     "type": "object"
+                  },
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
                   },
                   "idempotency_key": {
                     "maxLength": 200,
@@ -5164,6 +5301,7 @@
                 "required": [
                   "project_id",
                   "bundle",
+                  "expected_revision",
                   "idempotency_key"
                 ],
                 "type": "object"
@@ -5259,7 +5397,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Validate bundle integrity and import as a new untrusted recipe.",
+        "summary": "Open a verified bundle as the next untrusted revision of this model's single recipe.",
         "x-required-scope": "modify"
       }
     },
@@ -5377,7 +5515,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "List project recipes.",
+        "summary": "Compatibility list containing exactly the project current recipe.",
         "x-required-scope": "read"
       }
     },
@@ -6573,6 +6711,10 @@
                     "minLength": 1,
                     "type": "string"
                   },
+                  "expected_recipe_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
                   "idempotency_key": {
                     "maxLength": 200,
                     "minLength": 1,
@@ -6617,6 +6759,7 @@
                 },
                 "required": [
                   "project_id",
+                  "expected_recipe_revision",
                   "idempotency_key"
                 ],
                 "type": "object"

@@ -240,4 +240,7 @@ def test_explicitly_trusted_python_uses_public_native_step_boundary(tmp_path):
     result = wait(backend, request)
     assert result["status"] == "succeeded", result
     assert len(result["artifacts"]) == 1 and result["artifacts"][0]["node_id"] == "custom_hash"
+    job = backend.root / "jobs" / request["operation_id"]
+    assert "Failed to run" not in (job / "worker.log").read_text()
+    assert not (job / "active-node.json").exists(), "Native deadline_end hook must clear the active node"
     save_evidence("native-trusted-python", result)

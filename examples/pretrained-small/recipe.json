@@ -6,7 +6,7 @@
   "name": "Pinned BERT-tiny CPU adaptation",
   "source": {
     "repository": "https://github.com/greghavens/modelbuilder",
-    "commit": "76c0c288b0b5ae9f5273c61244d2c59df7e1f967",
+    "commit": "da9b67c361088aa49fefb7dcea1ab53efa805ce8",
     "files": [
       {
         "path": "pyproject.toml",
@@ -90,11 +90,11 @@
       },
       {
         "path": "src/modelbuilder/backend/adapter.py",
-        "sha256": "5697f09f94dfef52e24f997828eff5e2faf4628977716bcc6fe3e5c0fcb28aa1"
+        "sha256": "3bbff03eeb760d5757fdbe1957fc87b350eb7872c5f88f09fe98bfe4fbdf4fb6"
       },
       {
         "path": "src/modelbuilder/backend/admission.py",
-        "sha256": "e784f06d5234e73fa007680d759de2a2490fceef416a6fffe5f299e4df29ef81"
+        "sha256": "1cb7c595eecf68e5bdc2e404e0ddf323ae9fa1174ba0f52b704e72319f376e6d"
       },
       {
         "path": "src/modelbuilder/backend/calibration.py",
@@ -110,7 +110,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/runtime.py",
-        "sha256": "12362c4210568062451c97322b233aff0f3c4478a591a163a147c135aeee2a02"
+        "sha256": "f0aa5c7e966c4c9bf6f69ae4b3cc87271ced612bbde2ae77189af4c6a4ab1d23"
       },
       {
         "path": "src/modelbuilder/backend/execution_limits.py",

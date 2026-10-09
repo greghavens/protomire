@@ -6,7 +6,7 @@
   "name": "Pinned BERT-tiny CPU adaptation",
   "source": {
     "repository": "https://github.com/greghavens/modelbuilder",
-    "commit": "da9b67c361088aa49fefb7dcea1ab53efa805ce8",
+    "commit": "a18a0587fce6c04ef5f79e50e0446f089eff8e02",
     "files": [
       {
         "path": "pyproject.toml",
@@ -182,7 +182,11 @@
       },
       {
         "path": "src/modelbuilder/service.py",
-        "sha256": "f006c892f74aabd7fad17a189da7bf4d6b3baaa7d8a5eeaf725ed8b894d0f80c"
+        "sha256": "9aa62474dfc2c472b68268ceff0ca0d0b7b1447da4ec80f941efc1f4a8611d1f"
+      },
+      {
+        "path": "src/modelbuilder/source_provenance.py",
+        "sha256": "3f2af6615d851667bd41e8fb23415ad712e4f0ebaba6f37efd82d14f45f82ad2"
       },
       {
         "path": "src/modelbuilder/store.py",

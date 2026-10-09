@@ -9,7 +9,7 @@ No aggregate below is a full-product completion claim.
 
 ## Current integration checkpoint
 
-Runtime source: `da9b67c361088aa49fefb7dcea1ab53efa805ce8` (46-file source/lock closure). Work is directly on `main`; no new pull request is required.
+Runtime source: `a18a0587fce6c04ef5f79e50e0446f089eff8e02` (47-file source/lock closure). The preceding broad replay gate used da9b67c; the current warm-start/export safety follow-up is listed in `CURRENT_VERIFICATION.md`. Work is directly on `main`; no new pull request is required.
 
 Implemented since the earlier fixture snapshot: generic source-bound framework/harness components, immutable dataset versions and consumption lineage, scientifically compatible evaluation/promotion, live checkpoint evaluation and durable events, configurable IDE notifications, opt-in isolated W&B tracking, optional assistant setup, research watches and reviewed proposals, and native-target build/bootstrap selection.
 

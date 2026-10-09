@@ -306,6 +306,10 @@ class ZenMLBackend:
 
     def resume(self, payload: dict) -> dict:
         job, parent = self._job({**payload, "operation_id": payload.get("parent_operation_id")})
+        parent_status = self._rpc("run.status", {"project_id": payload["project_id"], "job_dir": str(job)})
+        if (parent_status.get("status") not in {"succeeded", "failed", "cancelled"}
+                or parent_status.get("worker_alive") is not False):
+            raise BackendError("conflict", "Checkpoint continuation requires the parent worker to stop and cancellation to reconcile")
         checkpoint = self._rpc("model.checkpoint.get", {"project_id": payload["project_id"], "job_dir": str(job),
                                                        "checkpoint_kind": payload.get("checkpoint_kind", "last")})
         requested_checkpoint = payload.get("checkpoint_ref") or payload.get("checkpoint_id")

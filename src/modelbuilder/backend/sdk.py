@@ -62,13 +62,27 @@ def _reconcile(job: Path):
     supervisor_alive = alive(state.get("supervisor_pid"), state.get("supervisor_identity"))
     try:
         client, run = native_run(job)
-    except BackendError:
-        return None
-    if not run:
-        return None
+    except BackendError as error:
+        if error.code != "not_found":
+            raise
+        client, run = None, None
     terminated = worker_alive is False and termination_confirmed(state)
+    if not run:
+        # There may be no native run yet (for example, a trusted module is still
+        # importing). Keep IDs null, but preserve positive process termination
+        # evidence in the supervisor journal instead of waiting forever.
+        if terminated and not read_json(job / "native.json").get("backend_run_id") and not state.get("termination"):
+            state["termination"] = {"confirmed": True, "reason": "cancelled" if (job / "cancel.json").exists() else "worker_failure",
+                                    "worker_pid": state["worker_pid"], "worker_identity": state["worker_identity"],
+                                    "runtime_identity": state.get("runtime_identity"), "process_group_terminated": True,
+                                    "confirmed_at": state.get("worker_terminated_at", now()),
+                                    "proof_source": "local_os_identity_and_group_observation"}
+            write_json(job / "state.json", state)
+        return None
     if terminated:
-        cancelled = (job / "cancel.json").exists()
+        local_termination = state.get("termination", {})
+        cancelled = (local_termination.get("reason") == "cancelled" if local_termination.get("confirmed") is True
+                     else (job / "cancel.json").exists())
         # ZenML 0.97 static pipelines derive FAILED from an interrupted step;
         # CANCELLED is not a representable terminal static-pipeline status.
         # Preserve that native state, and record verified runtime termination
@@ -78,9 +92,10 @@ def _reconcile(job: Path):
                 client.zen_store.update_run(run.id, PipelineRunUpdate(status=ExecutionStatus.FAILED, status_reason=(
                     "Local supervisor confirmed cancellation and process-group termination" if cancelled else
                     "Local worker terminated without completed pipeline")))
-            termination = {"reason": "cancelled" if cancelled else "worker_failure", "confirmed": True,
-                           "worker_pid": state.get("worker_pid"), "process_group_terminated": True,
-                           "confirmed_at": state.get("worker_terminated_at", now())}
+            termination = local_termination if local_termination.get("confirmed") is True else {
+                "reason": "cancelled" if cancelled else "worker_failure", "confirmed": True,
+                "worker_pid": state.get("worker_pid"), "process_group_terminated": True,
+                "confirmed_at": state.get("worker_terminated_at", now()), "proof_source": "local_os_identity_and_group_observation"}
             if metadata_values(run).get("local_supervisor_termination", {}).get("confirmed") is not True:
                 log_metadata({"local_supervisor_termination": termination}, run_id_name_or_prefix=run.id)
             run = client.get_pipeline_run(run.id, include_full_metadata=True)
@@ -132,10 +147,11 @@ def metrics_for(run) -> dict:
 def status(job: Path) -> dict:
     request, state = read_json(job / "request.json"), read_json(job / "state.json")
     run = reconcile(job)
+    state = read_json(job / "state.json")
     worker_alive = True if alive(state.get("worker_pid"), state.get("worker_identity")) else process_group_state(state.get("worker_pid"))
     native_status = run.status.value if run else None
     terminal = {"completed": "succeeded", "cached": "succeeded", "failed": "failed", "cancelled": "unknown"}
-    termination = metadata_values(run).get("local_supervisor_termination", {}) if run else {}
+    termination = metadata_values(run).get("local_supervisor_termination", {}) if run else state.get("termination", {})
     if native_status in {"completed", "cached"}:
         current = "succeeded"
     elif termination.get("reason") == "cancelled" and termination.get("confirmed") is True and termination.get("process_group_terminated") is True and termination_confirmed(state) and not worker_alive:
@@ -166,6 +182,7 @@ def status(job: Path) -> dict:
             "parent_run_id": request.get("parent_run_id"), "parent_checkpoint_ref": request.get("parent_checkpoint_ref"),
             "resume_mode": request.get("resume_mode"), "termination": termination,
             "runtime_status_source": "verified_local_supervisor",
+            "termination_record_source": "native_run_metadata" if run and termination else ("supervisor_journal" if termination else None),
             "error": (str(run.exception_info) if run and run.exception_info else
                       state.get("submission_error") or ("Worker terminated before creating a native run; inspect run.logs" if current == "failed" and not run else None)),
             "log_available": (job / "worker.log").exists(), "executed_recipe_digest": request.get("executed_recipe_digest") or request["recipe"].get("digest") }

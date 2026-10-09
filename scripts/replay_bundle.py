@@ -186,7 +186,13 @@ def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: 
         if status["status"] in {"succeeded", "failed", "cancelled"} and not status.get("worker_alive"):
             break
         if time.monotonic() > deadline:
-            cancelled = call("run.cancel", payload)
+            try:
+                cancelled = call("run.cancel", {**payload, "idempotency_key": "portable:timeout-cancel"})
+            except Exception as error:
+                write_json(output, {"status": "FAIL", "reason": "timeout", "transcript": transcript,
+                                    "cancellation_error": {"type": type(error).__name__, "message": str(error)},
+                                    "termination_confirmed": False})
+                raise TimeoutError("Replay timed out; cancellation failed, so worker termination is unconfirmed") from error
             write_json(output, {"status": "FAIL", "reason": "timeout", "cancellation": cancelled, "transcript": transcript})
             raise TimeoutError("Replay timed out; cancellation result recorded")
         time.sleep(1)

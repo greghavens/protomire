@@ -29,10 +29,10 @@ WORK="$ROOT/.runtime/portability"
 mkdir -p "$WORK" evidence/portability
 PYTHONPATH="$ROOT/src" .venv/bin/python scripts/replay_bundle.py export \
   examples/custom-pytorch/recipe.json --root "$ROOT" --commit "$COMMIT" \
-  --output "$WORK/custom.recipe.tar.gz"
+  --output "$WORK/custom.recipe.tar"
 for copy in origin replay; do
   PYTHONPATH="$ROOT/src" .venv/bin/python scripts/replay_bundle.py import \
-    "$WORK/custom.recipe.tar.gz" --destination "$WORK/$copy-source"
+    "$WORK/custom.recipe.tar" --destination "$WORK/$copy-source"
 done
 PYTHONPATH="$ROOT/src" .venv/bin/python scripts/replay_bundle.py wheel \
   "$WORK/origin-source" --kind service --destination "$WORK/wheels"

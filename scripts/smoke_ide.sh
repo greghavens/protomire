@@ -8,6 +8,7 @@ SUITE=${MODELBUILDER_GUI_SUITE:-smoke}
 if [[ "$SUITE" == workbench ]]; then DEFAULT_EVIDENCE="$ROOT/evidence/gui/workbench"; REPORT=workbench-host-results.json; else DEFAULT_EVIDENCE="$ROOT/evidence/gui/distribution"; REPORT=smoke-results.json; fi
 EVIDENCE=${MODELBUILDER_GUI_EVIDENCE:-"$DEFAULT_EVIDENCE"}
 mkdir -p "$EVIDENCE" "$ROOT/.runtime/gui-workspace" "$ROOT/.runtime/gui-user-data/User"
+rm -f "$EVIDENCE/$REPORT" "$EVIDENCE/runner-error.json" "$EVIDENCE/stage.txt"
 blocked() {
   python3 - "$EVIDENCE" "$1" <<'PY'
 import json,pathlib,sys

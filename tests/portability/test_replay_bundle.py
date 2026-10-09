@@ -78,6 +78,34 @@ def test_execution_requires_separate_explicit_trust(tmp_path):
     assert not (tmp_path / "data").exists()
 
 
+@pytest.mark.parametrize("cancel_fails", [False, True])
+def test_timeout_uses_valid_cancel_contract_and_always_records_evidence(snapshot, tmp_path, monkeypatch, cancel_fails):
+    """Real operation validation with a fake process boundary; no runtime claim."""
+    import modelbuilder.backend
+    calls = []
+
+    class BoundaryBackend:
+        def invoke(self, operation, payload, actor):
+            calls.append((operation, payload))
+            if operation == "run.cancel" and cancel_fails:
+                raise RuntimeError("Simulated transport loss")
+            return {"operation_id": payload["operation_id"], "backend_run_id": "native-contract-test",
+                    "status": "cancel_requested" if operation == "run.cancel" else "running", "worker_alive": True}
+
+    monkeypatch.setattr(modelbuilder.backend, "ZenMLBackend", lambda *args, **kwargs: BoundaryBackend())
+    output = tmp_path / "timeout.json"
+    with pytest.raises(TimeoutError, match="timed out"):
+        replay.run_recipe(snapshot, tmp_path / "data", Path("/unused-python"), output, trusted=True, timeout=0)
+    evidence = json.loads(output.read_text())
+    assert evidence["status"] == "FAIL" and evidence["reason"] == "timeout"
+    cancellation = next(payload for operation, payload in calls if operation == "run.cancel")
+    assert cancellation["idempotency_key"] == "portable:timeout-cancel"
+    if cancel_fails:
+        assert evidence["termination_confirmed"] is False and evidence["cancellation_error"]
+    else:
+        assert evidence["cancellation"]["status"] == "cancel_requested"
+
+
 def result(root):
     identity = {"prefix": root + "/env", "python": "3.12.14", "distributions": {"modelbuilder": "0.1.0"},
                 "pythonpath": None, "modules": {"modelbuilder": root + "/env/lib/modelbuilder/__init__.py"},

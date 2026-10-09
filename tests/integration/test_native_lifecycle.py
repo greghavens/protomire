@@ -196,3 +196,21 @@ def test_pretrained_validation_selection_parent_and_export(tmp_path):
     assert lineage["metadata"]["parent_run_id"] == best["backend_run_id"]
     assert lineage["pipeline_run_links"] and lineage["artifact_links"]
     save_evidence("native-pretrained-selection", {"runs": records, "promoted": promoted, "child": child, "lineage": lineage})
+
+
+def test_explicitly_trusted_python_uses_public_native_step_boundary(tmp_path):
+    body = recipe(steps=1)
+    node = body["nodes"][0]
+    source = body["source"]["files"][0]
+    node.update(id="custom_hash", kind="code.python", inputs=[], outputs=[{"name": "result", "type": "str"}],
+                implementation_ref={"module": "modelbuilder.backend.fixtures", "entrypoint": "canonical_hash",
+                                    "commit": body["source"]["commit"], "path": source["path"], "sha256": source["sha256"]},
+                parameters={"value": {"answer": 42}})
+    node.pop("parameter_schema", None)
+    body.update(nodes=[node], edges=[], resources=[], external_dependencies=[])
+    backend = ZenMLBackend(tmp_path, trusted_code_roots=[str(ROOT / "src/modelbuilder/backend")])
+    request = submit(backend, body)
+    result = wait(backend, request)
+    assert result["status"] == "succeeded", result
+    assert len(result["artifacts"]) == 1 and result["artifacts"][0]["node_id"] == "custom_hash"
+    save_evidence("native-trusted-python", result)

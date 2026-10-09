@@ -53,6 +53,13 @@ def main(job: Path, lease_fd: int | None = None) -> None:
         code = process.wait()
         state.update(worker_reaped=True, process_group_terminated=process_group_state(process.pid) is False, worker_exit_code=code, worker_terminated_at=now(),
                      supervisor_state="reconciling", cancelled=(job / "cancel.json").exists())
+        if state["process_group_terminated"] is True:
+            state["termination"] = {"confirmed": True,
+                                    "reason": "cancelled" if cancelled_at is not None else ("completed" if code == 0 else "worker_failure"),
+                                    "worker_pid": process.pid, "worker_identity": state["worker_identity"],
+                                    "runtime_identity": state["runtime_identity"], "process_group_terminated": True,
+                                    "confirmed_at": state["worker_terminated_at"],
+                                    "proof_source": "local_supervisor_wait_and_group_observation"}
         write_json(job / "state.json", state)
         # Public SDK store reconciliation follows confirmed termination, never precedes it.
         from .sdk import reconcile

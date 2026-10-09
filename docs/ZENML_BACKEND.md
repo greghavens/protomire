@@ -44,3 +44,9 @@ Selection compares actual validation artifacts from completed native runs and ve
 - `evidence/backend/`: actual IDs, metrics, logs and JUnit outputs
 
 Initial failures remain documented as failures rather than being counted as passes. The evaluated 0.96.4 source checkout is not this runtime: all adapter acceptance uses the installed 0.97.0 release. This is a conditional go for the trusted local CPU vertical slice, not approval for untrusted recipes, GPU/cloud spending or production deployment.
+
+### Cancellation before a native run exists
+
+A trusted Python module can be interrupted during import, before ZenML creates a pipeline run. The supervisor now durably records its wait result, original worker identity, runtime identity and positively empty process group. In that case, status returns `cancelled` with `backend_run_id: null`, `backend_status: null`, and `termination_record_source: supervisor_journal`. It never invents a native run. Missing or uncertain process evidence remains pending/unknown. A prior observed worker failure cannot be reclassified by a late cancellation request.
+
+Continuation is rejected while the parent worker is running, while cancellation is pending, or while process state is unknown. Once termination is reconciled, continuation still requires a real native checkpoint; a pre-pipeline cancellation has none and is rejected clearly.

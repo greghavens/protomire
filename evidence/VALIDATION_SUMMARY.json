@@ -1,0 +1,100 @@
+{
+  "status": "IMPLEMENTED_WITH_EXPLICIT_BLOCKED_GATES",
+  "runtime_source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "acceptance": {
+    "passed": [
+      "T01",
+      "T02",
+      "T03",
+      "T04",
+      "T05",
+      "T06",
+      "T07",
+      "T08",
+      "T09",
+      "T10",
+      "T11",
+      "T12",
+      "T13",
+      "T14",
+      "T15",
+      "T16",
+      "T17",
+      "T18",
+      "T19",
+      "T20",
+      "T23",
+      "T24"
+    ],
+    "blocked": {
+      "T21": "Vendor authentication absent; Codex bundled app-server local thread also hits a read-only sandbox mount lock. Installation, activation and MCP discovery passed, authenticated tool behavior not verified.",
+      "T22": "P5 paid-provider authorization not granted; remote execution and spend remain disabled."
+    }
+  },
+  "validation_profiles": {
+    "service_contract": {
+      "passed": 238,
+      "skipped_collection_modules": 2,
+      "why_skipped": "Torch modules execute separately in backend environment",
+      "evidence": "evidence/tests/final-contracts.xml"
+    },
+    "service_mcp_sdk_integration": {
+      "passed": 3,
+      "evidence": "evidence/tests/integration.xml"
+    },
+    "actual_cpu_native_lifecycle": {
+      "passed": 15,
+      "evidence": "evidence/tests/cpu-fixtures.xml"
+    },
+    "frontend_unit": {
+      "passed": 42,
+      "evidence": "evidence/ide/dropdown-unit-tests.log"
+    },
+    "frontend_external_mcp_http": {
+      "passed": 7,
+      "evidence": "evidence/ide/real-service-mcp-parity.json"
+    },
+    "editor_gui": {
+      "passed": 8,
+      "evidence": "evidence/gui/distribution/smoke-results.json"
+    },
+    "graph_mcp_gui": {
+      "passed": 8,
+      "native_monaco_save": true,
+      "evidence": "evidence/gui/final-caption/workbench-host-results.json",
+      "includes_latest_dropdown_revision_assertion": true
+    },
+    "actual_gui_training": {
+      "passed": 3,
+      "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+      "evidence": "evidence/gui/execution/gui-execution-dom-results.json"
+    },
+    "clean_replay": {
+      "fixtures": 2,
+      "real_native_runs": 4,
+      "checks_per_fixture": 29,
+      "evidence": "evidence/portability/summary.json"
+    },
+    "portability_helper": {
+      "passed": 17,
+      "overlaps_service_contract_profile": true
+    }
+  },
+  "verified_ci": {
+    "sha": "9f0732f803fb2cc4d79898e6292a7a159a644cbf",
+    "run_id": 37947375390,
+    "url": "https://github.com/greghavens/modelbuilder/actions/runs/37947375390",
+    "jobs": {
+      "contracts": "success",
+      "cpu-lifecycle": "success"
+    }
+  },
+  "final_publication_ci": "Runs after this evidence commit; consult the current pull request head checks. The verified_ci entry is a separately identified already-passed run.",
+  "limits": [
+    "Linux development distribution, not signed multi-OS installer",
+    "Trusted local CPU only; no verified arbitrary untrusted-code sandbox",
+    "OS keyring unavailable on test host; ephemeral test credentials removed",
+    "Same-host independent-environment replay, not cross-hardware determinism",
+    "Full product and paid P5 not declared complete"
+  ]
+}

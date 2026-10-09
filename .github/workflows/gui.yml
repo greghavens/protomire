@@ -9,6 +9,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12.14'
@@ -31,6 +33,12 @@ jobs:
         env:
           MODELBUILDER_GUI_APPROVE_FIXTURE_TRUST: '1'
         run: xvfb-run -a ./scripts/smoke_ide.sh --workbench
+      - name: Bootstrap the pinned CPU backend
+        run: ./scripts/bootstrap.sh --backend
+      - name: Submit the shipping CPU fixture through the actual Runs UI
+        env:
+          MODELBUILDER_GUI_APPROVE_FIXTURE_TRUST: '1'
+        run: xvfb-run -a ./scripts/smoke_ide.sh --execution
       - name: Preserve actual screenshots, failures and manifests
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,0 +1,37 @@
+[1382:1009/093056.663782:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[1382:1009/093056.876939:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[1382:1009/093056.877065:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[1382:1009/093056.899705:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:234] Floss manager service not available, cannot set Floss enable/disable.
+[1426:1009/093056.975780:ERROR:components/viz/service/main/viz_main_impl.cc:184] Exiting GPU process due to errors during initialization
+[1462:1009/093057.008857:WARNING:ui/gfx/linux/gpu_memory_buffer_support_x11.cc:49] dri3 extension not supported.
+[1462:1009/093057.010031:WARNING:sandbox/policy/linux/sandbox_linux.cc:415] InitializeSandbox() called with multiple threads in process gpu-process.
+[1382:1009/093057.278479:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[1382:1009/093057.278530:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[1382:1009/093057.278540:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[1382:1009/093057.282240:WARNING:electron/shell/browser/lib/power_observer_linux.cc:181] Failed to connect to PrepareForShutdown
+[1382:1009/093057.282283:WARNING:electron/shell/browser/lib/power_observer_linux.cc:181] Failed to connect to PrepareForSleep
+[1382:1009/093057.282289:WARNING:electron/shell/browser/lib/power_observer_linux.cc:70] org.freedesktop.login1 not available
+[90m[main 2026-10-09T14:30:57.314Z][0m [CSS_DEV] DONE, 273 css modules (28ms)
+[90m[main 2026-10-09T14:30:57.375Z][0m update#setState disabled
+[1382:1009/093101.260352:ERROR:ui/gfx/platform_font_skia.cc:255] Could not find any font: OpenAI Sans, sans. Falling back to the default
+ChatSessionStore: Migrating 0 chat sessions from storage service to file system
+Started local extension host with pid 1571.
+Loading development extension at /workspace/scratch/f9ccb8889bfe/modelbuilder/tests/gui
+[1382:1009/093101.813296:INFO:CONSOLE:48] "Overwriting extension <<copilot-instructions.md>> to now point to mime <<text/x-instructions>>", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/editor/common/services/languagesAssociations.js (48)
+No default agent contributed
+[1382:1009/093102.238551:INFO:CONSOLE:297] "AI generated workspace trust dialog contents not available.", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/contrib/workspace/browser/workspace.contribution.js (297)
+DialogService: refused to show dialog in tests. Contents: Do you trust the authors of the files in this folder?: Error: DialogService: refused to show dialog in tests. Contents: Do you trust the authors of the files in this folder?
+    at DialogService.prompt (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/dialogs/common/dialogService.js:47:19)
+    at WorkspaceTrustUXHandler.doShowModal (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/contrib/workspace/browser/workspace.contribution.js:335:34)
+    at UniqueContainer.value (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/contrib/workspace/browser/workspace.contribution.js:311:18)
+[1462:1009/093112.976808:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1095] [GroupMarkerNotSet(crbug.com/242999)!:A0F027004C060000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.
+[1462:1009/093113.015541:ERROR:gpu/command_buffer/service/gl_utils.cc:443] [.WebGL-0x6402aab100]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[1382:1009/093113.037336:INFO:CONSOLE:0] "[GroupMarkerNotSet(crbug.com/242999)!:A0F027004C060000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/code/electron-browser/workbench/workbench-dev.html (0)
+[1382:1009/093113.037646:INFO:CONSOLE:0] "[.WebGL-0x6402aab100]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/code/electron-browser/workbench/workbench-dev.html (0)
+[1462:1009/093113.044309:ERROR:gpu/command_buffer/service/gl_utils.cc:443] [.WebGL-0x6402aab100]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[1382:1009/093113.047300:INFO:CONSOLE:0] "[.WebGL-0x6402aab100]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/code/electron-browser/workbench/workbench-dev.html (0)
+[1382:1009/093135.430168:WARNING:components/os_crypt/sync/key_storage_linux.cc:166] OSCrypt tried Libsecret but couldn't initialise.
+[1382:1009/093135.529307:INFO:CONSOLE:357] "An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing.", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/contrib/webview/browser/webviewElement.js (357)
+[1382:1009/093135.607927:INFO:CONSOLE:303] "No service worker controller found. Waiting for controllerchange.", source: vscode-webview://072v7qb8is2pdlllavblkahadl7pi224ahflntckabh18bfhv41i/index.html?id=315addc4-4946-4058-8cfa-b736a0ac8599&parentId=1&origin=bfd33f0a-b772-4197-929c-f8f6044e17c4&swVersion=4&extensionId=&platform=electron&vscode-resource-base-authority=vscode-resource.vscode-cdn.net&parentOrigin=vscode-file%3A%2F%2Fvscode-app&purpose=notebookRenderer (303)
+[1462:1009/093135.753362:ERROR:gpu/command_buffer/service/gl_utils.cc:443] [.WebGL-0x6402aab100]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[1382:1009/093135.767347:INFO:CONSOLE:0] "[.WebGL-0x6402aab100]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/code/electron-browser/workbench/workbench-dev.html (0)

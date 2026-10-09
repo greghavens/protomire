@@ -1,4 +1,4 @@
-import { newNode, removeNode, replaceNode, readVisualSource, assertNodePanelCurrent } from './document';
+import { newNode, removeNode, replaceNode, readVisualSource, assertNodePanelCurrent, recipeChoiceRecords } from './document';
 import { OperationSpec, Recipe, RecipeEdge, RecipeNode, RecordValue } from './types';
 declare function acquireVsCodeApi(): {postMessage(message:unknown):void;setState(value:unknown):void;getState():any};
 const vscode=acquireVsCodeApi();
@@ -38,6 +38,7 @@ app.innerHTML=`
 let catalog:OperationSpec[]=[];
 let snapshot:RecordValue={};
 let recipe:Recipe|undefined;
+let loadedRecipe:Recipe|undefined;
 let selectedNode:string|undefined;
 let nodePanelDirty=false;
 let nodePanelBaseline="";
@@ -75,13 +76,14 @@ $<HTMLTextAreaElement>('source').addEventListener('input',()=>{
   catch(error){$('parse-error').textContent=`Source parse: ${(error as Error).message}`;}
 });
 function updateDraft(value:Recipe):boolean {try{readVisualSource($<HTMLTextAreaElement>('source').value);}catch(error){report((error as Error).message);return false;}recipe=value;$<HTMLTextAreaElement>('source').value=pretty(value);markDirty(true);renderGraph();renderReferences();return true;}
-function renderRecipe(value:Recipe|undefined) {recipe=value;selectedNode=undefined;nodePanelDirty=false;layouts.clear();markDirty(false);$('conflict').hidden=true;$('remote').hidden=true;$('parse-error').textContent='';$<HTMLTextAreaElement>('source').value=value?pretty(value):'';$('identity').textContent=value?`${value.name}  ·  ${value.recipe_id}  ·  revision ${value.revision}\nSHA256 ${value.digest}`:'Select or create a recipe.';if(value)$<HTMLSelectElement>('recipe-select').value=value.recipe_id;renderGraph();renderReferences();}
+function renderRecipe(value:Recipe|undefined) {$('error').hidden=true;$('error').textContent='';$('notice').hidden=true;loadedRecipe=value;recipe=value;selectedNode=undefined;nodePanelDirty=false;layouts.clear();markDirty(false);$('conflict').hidden=true;$('remote').hidden=true;$('parse-error').textContent='';$<HTMLTextAreaElement>('source').value=value?pretty(value):'';$('identity').textContent=value?`${value.name}  ·  ${value.recipe_id}  ·  revision ${value.revision}\nSHA256 ${value.digest}`:'Select or create a recipe.';renderRecipeChoices();renderGraph();renderReferences();}
 function renderReferences() {$('code-info').textContent=pretty({project:snapshot.project?.project_id,source:recipe?.source,python_nodes:recipe?.nodes.filter(n=>n.kind==='code.python')});$('data-info').textContent=pretty({external_dependencies:recipe?.external_dependencies,dataset_nodes:recipe?.nodes.filter(n=>n.kind.startsWith('dataset.'))});$('compute-info').textContent=pretty({resources:recipe?.resources,environment:recipe?.environment,remote_spending:'disabled'});}
+function renderRecipeChoices(){const records=recipeChoiceRecords(snapshot.project?.project_id,snapshot.recipes??[],loadedRecipe);options($<HTMLSelectElement>('recipe-select'),[{value:'',label:'Choose a recipe'},...records.map(r=>({value:r.recipe_id,label:`${r.name} · r${r.revision}`}))],recipe?.recipe_id);}
 function renderSnapshot() {
   const project=snapshot.project;if(!project)return;
   $('project-id').textContent=`${project.project_id} · r${project.revision}`;
   const select=$<HTMLSelectElement>('project');if(![...select.options].some(o=>o.value===project.project_id)){const opt=node('option',project.model_name);opt.value=project.project_id;select.append(opt);}select.value=project.project_id;
-  options($<HTMLSelectElement>('recipe-select'),[{value:'',label:'Choose a recipe'},...(snapshot.recipes??[]).map((r:Recipe)=>({value:r.recipe_id,label:`${r.name} · r${r.revision}`}))],recipe?.recipe_id);
+  renderRecipeChoices();
   const records=$('research-records');records.replaceChildren();
   for(const [key,label] of [['evidence','Evidence'],['claims','Claims'],['hypotheses','Hypotheses'],['decisions','Decisions']]){const group=node('section');group.append(node('h3',label));for(const record of snapshot[key]??[]){const details=node('details');details.append(node('summary',record.title??record.proposition??record.proposed_change??`${record.outcome}: ${record.rationale}`));details.append(node('pre',pretty(record)));group.append(details);}if(!(snapshot[key]??[]).length)group.append(node('p','No records yet.','muted'));records.append(group);}
   const runs=$('run-list');runs.replaceChildren();for(const run of snapshot.runs??[]){const card=button(`${run.status??'unknown'} · ${run.operation_id}`,()=>{activeRun=run.operation_id;send('selectRun',{operationId:run.operation_id});});card.className='run-card';card.append(node('small',`Backend: ${run.backend_run_id??'Not yet assigned'}`));runs.append(card);}if(!(snapshot.runs??[]).length)runs.append(node('p','No runs yet. Preview an execution plan first.','muted'));
@@ -156,7 +158,7 @@ window.addEventListener('message',event=>{
     case 'project':snapshot=message.snapshot;renderSnapshot();showSection(message.section??'Recipes');if(message.runId)activeRun=message.runId;break;
     case 'snapshot':snapshot=message.snapshot;renderSnapshot();break;
     case 'recipe':renderRecipe(message.recipe??undefined);break;
-    case 'savedRetained':$('identity').textContent=`${message.recipe.name} · ${message.recipe.recipe_id} · saved revision ${message.recipe.revision}\nSHA256 ${message.recipe.digest}`;$('notice').hidden=false;$('notice').textContent='Saved the submitted revision. Your newer edits are still unsaved and have been preserved.';markDirty(true);break;
+    case 'savedRetained':loadedRecipe=message.recipe;renderRecipeChoices();$('identity').textContent=`${message.recipe.name} · ${message.recipe.recipe_id} · saved revision ${message.recipe.revision}\nSHA256 ${message.recipe.digest}`;$('notice').hidden=false;$('notice').textContent='Saved the submitted revision. Your newer edits are still unsaved and have been preserved.';markDirty(true);break;
     case 'restoreDraft':{const state=message.state;$<HTMLTextAreaElement>('source').value=state.source;try{recipe=readVisualSource(state.source);$('parse-error').textContent='';}catch(error){$('parse-error').textContent=(error as Error).message;}selectedNode=state.selectedNode;nodePanelDirty=Boolean(state.nodePanelDirty);nodePanelBaseline=state.nodePanelBaseline??'';renderGraph();if(selectedNode){fillNodePanel(selectedNode);nodePanelDirty=Boolean(state.nodePanelDirty);if(nodePanelDirty){nodePanelBaseline=state.nodePanelBaseline??nodePanelBaseline;for(const [id,value]of Object.entries(state.nodeFields??{}))if(['node-implementation','node-inputs','node-outputs','node-parameters'].includes(id))$<HTMLTextAreaElement>(id).value=String(value);}}markDirty(true);$('notice').hidden=false;$('notice').textContent='Recovered your unsaved recipe draft. The original base revision is retained for conflict checking.';break;}
     case 'busy':busy=message.busy;for(const control of document.querySelectorAll<HTMLButtonElement|HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('button,input,textarea,select'))control.disabled=busy;break;
     case 'error':report(`${message.code?message.code+': ':''}${message.message}${message.details?'\n'+pretty(message.details):''}`);break;

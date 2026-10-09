@@ -5,7 +5,9 @@ mkdir -p evidence/tests
 PYTHON="${MODELBUILDER_TEST_PYTHON:-$ROOT/.venv/bin/python}"
 "$PYTHON" -m pip check
 "$PYTHON" -m compileall -q src
-"$PYTHON" -m ruff check src tests
+"$PYTHON" -m ruff check src tests scripts distribution
+"$PYTHON" scripts/export_contracts.py --check
+"$PYTHON" scripts/validate_artifacts.py
 "$PYTHON" -m pytest -m 'not integration and not portability and not gui' -v --junitxml=evidence/tests/unit-service-mcp.xml "$@" | tee evidence/tests/unit-service-mcp.log
 if [[ -f packages/ide_feature/package-lock.json ]]; then
   (cd packages/ide_feature && npm run check && npm run compile && npm test && npm run test:service) | tee evidence/tests/workbench.log

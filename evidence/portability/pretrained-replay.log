@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "transport_recipe_digest": "bebb94afcb6a5ac7c1ee71bb0f5b81571b060be33c2cf901d29c0bcdcd997459",
+  "data_dir": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data"
+}

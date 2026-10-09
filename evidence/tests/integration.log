@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: platformdirs-4.12.4, asyncio-0.26.0, anyio-4.15.1
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 46 items / 43 deselected / 3 selected
+
+tests/service/test_real_backend.py::test_shared_service_native_execution_resume_research_and_scope PASSED [ 33%]
+tests/integration/test_mcp_training.py::test_mcp_real_training_and_service_crash PASSED [ 66%]
+tests/security/test_adversarial_review.py::test_native_sdk_cancellation_mapping_requires_positive_proof PASSED [100%]
+
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/integration.xml -
+================= 3 passed, 43 deselected in 75.05s (0:01:15) ==================

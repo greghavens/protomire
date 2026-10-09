@@ -1,0 +1,26 @@
+Some weights of BertForSequenceClassification were not initialized from the model checkpoint at /workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-resources/bert-tiny and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+Some weights of BertForSequenceClassification were not initialized from the model checkpoint at /workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-resources/bert-tiny and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+CHECKPOINT step=1 validation_loss=0.68626922
+CHECKPOINT step=2 validation_loss=0.67460161
+CHECKPOINT step=3 validation_loss=0.65590894
+CHECKPOINT step=4 validation_loss=0.59650195
+CHECKPOINT step=5 validation_loss=0.50023234
+CHECKPOINT step=6 validation_loss=0.41087526
+CHECKPOINT step=7 validation_loss=0.29078680
+CHECKPOINT step=8 validation_loss=0.21991590
+CHECKPOINT step=9 validation_loss=0.17024361
+CHECKPOINT step=10 validation_loss=0.13650858
+CHECKPOINT step=11 validation_loss=0.10955541
+CHECKPOINT step=12 validation_loss=0.08743823
+CHECKPOINT step=13 validation_loss=0.06969616
+CHECKPOINT step=14 validation_loss=0.05589613
+CHECKPOINT step=15 validation_loss=0.04529063
+CHECKPOINT step=16 validation_loss=0.03705192
+CHECKPOINT step=17 validation_loss=0.03065982
+CHECKPOINT step=18 validation_loss=0.02566987
+Some weights of BertForSequenceClassification were not initialized from the model checkpoint at /workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-resources/bert-tiny and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+Some weights of BertForSequenceClassification were not initialized from the model checkpoint at /workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-resources/bert-tiny and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.

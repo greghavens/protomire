@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="1.377" timestamp="2026-10-09T09:44:43.170229-05:00" hostname="42abdaea1484"><testcase classname="tests.security.test_adversarial_review" name="test_native_sdk_cancellation_mapping_requires_positive_proof" time="1.228" /></testsuite></testsuites>

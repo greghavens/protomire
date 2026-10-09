@@ -1,0 +1,32 @@
+[67:1009/092503.456966:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to open socket: Operation not permitted
+Unable to create argv.json configuration file in /home/agent/.modelbuilder-ide-dev/argv.json, falling back to defaults (Error: EROFS: read-only file system, mkdir '/home/agent/.modelbuilder-ide-dev')
+[67:1009/092503.687099:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:250] Missing X server or $DISPLAY
+[67:1009/092503.687111:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.
+Received signal 11 SI_KERNEL000000000000
+ Possibly a General Protection Fault, can be due to a non-canonical address dereference. See "Intel 64 and IA-32 Architectures Software Developer’s Manual", Volume 1, Section 3.3.7.1.
+#0 0x55d883b70b5a (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x70d1b59)
+#1 0x55d883b815e5 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x70e25e4)
+#2 0x7f91a14b7d70 (/usr/lib/x86_64-linux-gnu/libc.so.6+0x3fd6f)
+#3 0x55d87f7c4095 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x2d25094)
+#4 0x55d87f80a96e (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x2d6b96d)
+#5 0x55d87f718e1f (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x2c79e1e)
+#6 0x55d87f718ede (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x2c79edd)
+#7 0x55d88214d097 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x56ae096)
+#8 0x55d88214d1fe (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x56ae1fd)
+#9 0x55d88215103f (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x56b203e)
+#10 0x55d882150c48 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x56b1c47)
+#11 0x55d88214ccd5 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x56adcd4)
+#12 0x55d87fcf336d (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x325436c)
+#13 0x55d87fcf49b3 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x32559b2)
+#14 0x55d87fcf4813 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x3255812)
+#15 0x55d87fcf2365 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x3253364)
+#16 0x55d87fcf2440 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x325343f)
+#17 0x55d87f62ad18 (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/.build/electron/modelbuilder-ide+0x2b8bd17)
+#18 0x7f91a14a1ca8 (/usr/lib/x86_64-linux-gnu/libc.so.6+0x29ca7)
+  r8: 0000000000000001  r9: 00000000000000ca r10: 0000000000000000 r11: 0000000000000206
+ r12: 00007ffdb91b9270 r13: 0000000000000000 r14: 0000136c000cc388 r15: 00007ffdb91b9200
+  di: 0000136c00048750  si: 000055d87f5deb30  bp: 00007ffdb91b90c0  bx: 0000136c00048750
+  dx: 0000000000000000  ax: 3f79fbffffffffff  cx: 0000000000000000  sp: 00007ffdb91b90b0
+  ip: 000055d87f61647b efl: 0000000000010286 cgf: 002b000000000033 erf: 0000000000000000
+ trp: 000000000000000d msk: 0000000000000000 cr2: 0000000000000000
+[end of stack trace]

@@ -1,0 +1,1604 @@
+{
+  "backend_identity": {
+    "base_prefix": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python",
+    "distributions": {
+      "GitPython": "3.2.0",
+      "Jinja2": "3.1.6",
+      "Mako": "1.4.3",
+      "MarkupSafe": "3.0.4",
+      "PyJWT": "2.13.0",
+      "PyMySQL": "1.1.3",
+      "PyYAML": "6.0.3",
+      "Pygments": "2.21.0",
+      "SQLAlchemy": "2.0.54",
+      "SQLAlchemy-Utils": "0.42.1",
+      "aiohappyeyeballs": "2.7.1",
+      "aiohttp": "3.14.4",
+      "aiosignal": "1.4.0",
+      "alembic": "1.15.2",
+      "annotated-doc": "0.0.5",
+      "annotated-types": "0.8.0",
+      "anyio": "4.15.1",
+      "asgiref": "3.10.0",
+      "attrs": "26.1.0",
+      "bcrypt": "4.0.1",
+      "cachetools": "7.2.1",
+      "certifi": "2026.7.22",
+      "cffi": "2.1.1",
+      "charset-normalizer": "3.5.2",
+      "click": "8.5.0",
+      "cloudpickle": "3.1.2",
+      "croniter": "6.2.4",
+      "cryptography": "50.0.2",
+      "distro": "1.9.0",
+      "docker": "7.1.0",
+      "fastapi": "0.138.2",
+      "filelock": "4.0.12",
+      "frozenlist": "1.8.0",
+      "fsspec": "2026.9.0",
+      "gitdb": "4.0.12",
+      "greenlet": "3.5.6",
+      "h11": "0.16.0",
+      "hf-xet": "1.7.0",
+      "httptools": "0.8.0",
+      "huggingface_hub": "0.36.2",
+      "idna": "3.20",
+      "iniconfig": "2.3.1",
+      "ipinfo": "5.6.0",
+      "itsdangerous": "2.2.0",
+      "jsonref": "1.1.0",
+      "jsonschema": "4.26.0",
+      "jsonschema-specifications": "2025.9.1",
+      "markdown-it-py": "4.2.0",
+      "mdurl": "0.1.2",
+      "modelbuilder-runtime": "0.1.0",
+      "mpmath": "1.3.0",
+      "multidict": "6.9.1",
+      "networkx": "3.7",
+      "numpy": "2.2.6",
+      "opentelemetry-api": "1.43.0",
+      "opentelemetry-instrumentation": "0.64b0",
+      "opentelemetry-instrumentation-logging": "0.64b0",
+      "opentelemetry-sdk": "1.43.0",
+      "opentelemetry-semantic-conventions": "0.64b0",
+      "packaging": "26.3",
+      "passlib": "1.7.4",
+      "pluggy": "1.6.0",
+      "propcache": "0.5.4",
+      "psutil": "7.2.2",
+      "pycparser": "3.11",
+      "pydantic": "2.12.5",
+      "pydantic-settings": "2.15.0",
+      "pydantic_core": "2.41.5",
+      "pytest": "8.3.5",
+      "python-dateutil": "2.9.0.post0",
+      "python-dotenv": "1.2.4",
+      "python-multipart": "0.0.32",
+      "referencing": "0.37.0",
+      "regex": "2026.9.29",
+      "requests": "2.34.2",
+      "requests-file": "3.0.1",
+      "rich": "15.0.0",
+      "rpds-py": "2026.9.1",
+      "safetensors": "0.8.0",
+      "secure": "1.0.1",
+      "setuptools": "84.0.0",
+      "six": "1.17.0",
+      "smmap": "5.0.3",
+      "socksio": "1.0.0",
+      "sqlmodel": "0.0.38",
+      "starlette": "1.7.0",
+      "structlog": "26.1.0",
+      "sympy": "1.14.0",
+      "tldextract": "5.1.3",
+      "tokenizers": "0.22.2",
+      "torch": "2.9.0+cpu",
+      "tqdm": "4.70.1",
+      "transformers": "4.57.1",
+      "typing-inspection": "0.4.4",
+      "typing_extensions": "4.16.0",
+      "urllib3": "2.8.0",
+      "uvicorn": "0.54.0",
+      "uvloop": "0.23.0",
+      "watchfiles": "1.3.0",
+      "websockets": "17.2",
+      "wrapt": "2.5.0",
+      "yarl": "1.25.1",
+      "zenml": "0.97.0"
+    },
+    "executable": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/bin/python",
+    "installed_source_sha256": {
+      "src/modelbuilder/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
+      "src/modelbuilder/backend/__init__.py": "4d6b1d0be44fb3e8dc7111d3cbb42f6911aad66e957a559e16006d0ca3300fb4",
+      "src/modelbuilder/backend/adapter.py": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff",
+      "src/modelbuilder/backend/common.py": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb",
+      "src/modelbuilder/backend/fixtures.py": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9",
+      "src/modelbuilder/backend/sdk.py": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d",
+      "src/modelbuilder/backend/supervisor.py": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1",
+      "src/modelbuilder/backend/worker.py": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099"
+    },
+    "modules": {
+      "modelbuilder": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages/modelbuilder/__init__.py",
+      "modelbuilder.backend.adapter": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages/modelbuilder/backend/adapter.py",
+      "modelbuilder.backend.fixtures": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages/modelbuilder/backend/fixtures.py",
+      "numpy": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages/numpy/__init__.py",
+      "torch": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages/torch/__init__.py",
+      "zenml": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages/zenml/__init__.py"
+    },
+    "prefix": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend",
+    "pth_files": {
+      "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages/_virtualenv.pth": "import _virtualenv",
+      "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages/distutils-precedence.pth": "import os; var = 'SETUPTOOLS_USE_DISTUTILS'; enabled = os.environ.get(var, 'local') == 'local'; enabled and __import__('_distutils_hack').add_shim(); \n"
+    },
+    "python": "3.12.14",
+    "pythonpath": null,
+    "store": {
+      "artifact_store_id": "41f9baf6-7762-43b6-a1d2-49b04de169dc",
+      "artifact_store_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc",
+      "metadata_url": "sqlite:////workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/default_zen_store/zenml.db",
+      "stack_id": "edfdfee9-4a95-47ed-966f-6019bf28c5f5",
+      "zenml_config_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-config",
+      "zenml_local_stores_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores"
+    },
+    "sys_path": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python312.zip",
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12",
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/lib-dynload",
+      "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages"
+    ]
+  },
+  "data_dir": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data",
+  "executed_recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+  "external_resource_sha256": {
+    "bert-tiny-config-json": "cf3179684f7c360dd6185962d480e7d426ceb8fe49f5db7b64bdc15dba0b8798",
+    "bert-tiny-pytorch_model-bin": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+    "bert-tiny-vocab-txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
+  },
+  "import_execution_allowed": false,
+  "installed_source_verified": true,
+  "output_sha256": {
+    "evaluate/metrics.json": "fbc12402505cb27ae29df4e0393dc8e7a62716db28be4decc8d84dfe950a72ae",
+    "export/config.json": "74b4a4d06d94667e6d71e3cce4541f89d3f151d05380c6640d8c8c96c2a1de96",
+    "export/model.safetensors": "d6a3a635110f3640fa5fa3779a6a19c53aa1ff0e30052df17c14979f7202a66c",
+    "export/parity.json": "89037c7f703ea4d50bf20ca8af33ffa2f8cb56d977a092b27fef69379d092b58",
+    "export/special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+    "export/tokenizer_config.json": "e711904cac23112776b678356ccf702cf934babaa01125f698ac43bf9ad38e73",
+    "export/vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+    "initial/checkpoint.pt": "c5a456a4543f1c84e23d7f941ac0d8c27896b14ec05641195fa05a1e2f532988",
+    "train/best.pt": "5c1775749c37b4388182013fc74df4761157554804b2dccf2e6fc96ca95fa6e6",
+    "train/checkpoint.pt": "e6d3c25e2d8922d8ae3941823c9ce7d63f7c134231c0b60d045c3934a91e8f6a"
+  },
+  "run": {
+    "artifacts": [
+      {
+        "artifact_id": "4f31b415-6bd5-439e-baaf-c4ec2c48f718",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "name": "data",
+        "node_id": "data",
+        "port": "data",
+        "step_id": "ee5a08f8-ca3d-4d7c-8994-d3326729c806",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/data/data/ee5a08f8-ca3d-4d7c-8994-d3326729c806/cafaed23"
+      },
+      {
+        "artifact_id": "dd49c525-a604-4b74-aa2a-543be0424769",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "name": "initial",
+        "node_id": "initial",
+        "port": "initial",
+        "step_id": "5214b9c4-5336-4d75-92de-9ec90024c373",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/initial/initial/5214b9c4-5336-4d75-92de-9ec90024c373/a6546228"
+      },
+      {
+        "artifact_id": "0f08d9c9-110e-4818-b449-480f5cb32389",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "name": "checkpoint",
+        "node_id": "train",
+        "port": "checkpoint",
+        "step_id": "37573779-f6cb-4c25-a862-96b58a0a7a54",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/train/checkpoint/37573779-f6cb-4c25-a862-96b58a0a7a54/409be42d"
+      },
+      {
+        "artifact_id": "df4b93b3-36ca-4216-9a95-9ded99cee4f0",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "name": "metrics",
+        "node_id": "evaluate",
+        "port": "metrics",
+        "step_id": "287e106e-2eb2-43d8-a69d-0eaff7fe12b5",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/evaluate/metrics/287e106e-2eb2-43d8-a69d-0eaff7fe12b5/586877e2"
+      },
+      {
+        "artifact_id": "a0494200-ce44-4b10-b04c-826dd7cbd685",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "name": "export",
+        "node_id": "export",
+        "port": "export",
+        "step_id": "45ab7198-76ab-4f48-9188-e7fdff0c6cea",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/export/export/45ab7198-76ab-4f48-9188-e7fdff0c6cea/012124b8"
+      }
+    ],
+    "backend": "zenml",
+    "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+    "backend_status": "completed",
+    "backend_version": "0.97.0",
+    "created_at": "2026-10-09T14:52:23.024548+00:00",
+    "error": null,
+    "errors": [],
+    "executed_recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+    "last_reconciled_at": "2026-10-09T14:52:50.108103+00:00",
+    "log_available": true,
+    "metrics": {
+      "accuracy": 1.0,
+      "best_step": 18,
+      "best_validation_loss": 0.025669865310192108,
+      "brier": 0.0006469727959483862,
+      "checkpoint_kind": "best",
+      "consumed_dataset_artifact": true,
+      "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+      "device": "cpu",
+      "distinct_tokenized_examples": 48,
+      "fixture": "pretrained",
+      "heldout_count": 8,
+      "heldout_logits": [
+        [
+          -1.792744517326355,
+          1.76748788356781
+        ],
+        [
+          -1.8218815326690674,
+          1.766986608505249
+        ],
+        [
+          -1.8077808618545532,
+          1.7660657167434692
+        ],
+        [
+          -1.8145784139633179,
+          1.7715922594070435
+        ],
+        [
+          1.909166932106018,
+          -1.816420078277588
+        ],
+        [
+          1.9127990007400513,
+          -1.806302547454834
+        ],
+        [
+          1.9052528142929077,
+          -1.8256288766860962
+        ],
+        [
+          1.9134999513626099,
+          -1.8109992742538452
+        ]
+      ],
+      "kl": {
+        "batch_size": 32,
+        "coefficient": 0.0,
+        "direction": "model_to_reference",
+        "learning_rate": 0.001,
+        "scheduler_gamma": 0.99
+      },
+      "model_id": "prajjwal1/bert-tiny",
+      "resume_mode": null,
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "start_step": 0,
+      "step": 18,
+      "train_count": 32,
+      "upstream_weights_sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+      "validation_count": 8,
+      "validation_loss": 0.025669865310192108,
+      "vocabulary_size": 30522,
+      "width": 12
+    },
+    "model_version_ref": "932c90f3-806e-41a8-b10a-3dfcca788088",
+    "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
+    "parent_checkpoint_ref": null,
+    "parent_run_id": null,
+    "process_group_alive": false,
+    "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+    "recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+    "recipe_id": "ae092143-9a60-494d-a8f9-f1e29fe285ea",
+    "recipe_revision": 1,
+    "resume_mode": null,
+    "revision": 7,
+    "runtime_status_source": "verified_local_supervisor",
+    "status": "succeeded",
+    "submitted_at": "2026-10-09T14:52:22.758805+00:00",
+    "supervisor_alive": false,
+    "termination": {},
+    "termination_record_source": null,
+    "worker_alive": false,
+    "worker_exit_code": 0,
+    "worker_pid": 38
+  },
+  "service_identity": {
+    "base_prefix": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python",
+    "distributions": {
+      "PyJWT": "2.15.1",
+      "Pygments": "2.21.0",
+      "annotated-types": "0.8.0",
+      "anyio": "4.15.1",
+      "asttokens": "3.0.2",
+      "attrs": "26.1.0",
+      "build": "1.2.2.post1",
+      "certifi": "2026.7.22",
+      "cffi": "2.1.1",
+      "click": "8.5.0",
+      "comm": "0.2.3",
+      "cryptography": "50.0.2",
+      "debugpy": "1.8.22",
+      "editables": "0.5",
+      "executing": "2.2.1",
+      "fastapi": "0.115.12",
+      "h11": "0.16.0",
+      "hatchling": "1.28.0",
+      "httpcore": "1.0.9",
+      "httpx": "0.28.1",
+      "httpx-sse": "0.4.3",
+      "idna": "3.20",
+      "iniconfig": "2.3.1",
+      "ipykernel": "6.30.1",
+      "ipython": "9.17.1",
+      "ipython_pygments_lexers": "1.1.1",
+      "jedi": "0.20.0",
+      "jsonschema": "4.23.0",
+      "jsonschema-specifications": "2025.9.1",
+      "jupyter_client": "8.10.0",
+      "jupyter_core": "5.9.1",
+      "matplotlib-inline": "0.2.2",
+      "mcp": "1.30.0",
+      "modelbuilder": "0.1.0",
+      "nest-asyncio": "1.6.0",
+      "packaging": "26.3",
+      "parso": "0.8.7",
+      "pathspec": "1.1.1",
+      "pexpect": "4.9.0",
+      "platformdirs": "4.12.4",
+      "pluggy": "1.6.0",
+      "prompt_toolkit": "3.0.53",
+      "psutil": "7.2.2",
+      "ptyprocess": "0.7.0",
+      "pure_eval": "0.2.4",
+      "pycparser": "3.11",
+      "pydantic": "2.11.4",
+      "pydantic-settings": "2.15.0",
+      "pydantic_core": "2.33.2",
+      "pyproject_hooks": "1.3.3",
+      "pytest": "8.3.5",
+      "pytest-asyncio": "0.26.0",
+      "python-dateutil": "2.9.0.post0",
+      "python-dotenv": "1.2.4",
+      "python-multipart": "0.0.32",
+      "pyzmq": "27.2.0",
+      "referencing": "0.37.0",
+      "rpds-py": "2026.9.1",
+      "ruff": "0.11.8",
+      "six": "1.17.0",
+      "sse-starlette": "3.0.3",
+      "stack-data": "0.6.3",
+      "starlette": "0.46.2",
+      "tornado": "6.5.10",
+      "traitlets": "5.16.1",
+      "trove-classifiers": "2026.9.21.13",
+      "typing-inspection": "0.4.4",
+      "typing_extensions": "4.16.0",
+      "uv": "0.12.23",
+      "uvicorn": "0.34.2",
+      "wcwidth": "0.9.2"
+    },
+    "executable": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/bin/python",
+    "installed_source_sha256": {
+      "src/modelbuilder/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
+      "src/modelbuilder/api.py": "f2df4f30d1224e15a68e4df326557726199552ded7ca183e9f357e97cf13b3d7",
+      "src/modelbuilder/auth.py": "fbb19260a3059fe3ee6058a0cc63fa46f10f588dff854f71b7a8a9d431c10999",
+      "src/modelbuilder/backend/__init__.py": "4d6b1d0be44fb3e8dc7111d3cbb42f6911aad66e957a559e16006d0ca3300fb4",
+      "src/modelbuilder/backend/adapter.py": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff",
+      "src/modelbuilder/backend/common.py": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb",
+      "src/modelbuilder/backend/fixtures.py": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9",
+      "src/modelbuilder/backend/sdk.py": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d",
+      "src/modelbuilder/backend/supervisor.py": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1",
+      "src/modelbuilder/backend/worker.py": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099",
+      "src/modelbuilder/literature.py": "744fa1b146c11199e299bd38958626c2d774bf19fee563163e3f9e35ed24918a",
+      "src/modelbuilder/mcp_server.py": "6ab7dc4c4e45e3e39c13b0f63a8891e66ed485a487aae9489d6fcfaa3dff1e9d",
+      "src/modelbuilder/models.py": "f6596ef4395d2c1d990981dd004dc694af8482188a8a036035877c574c54f37f",
+      "src/modelbuilder/recipe.py": "1b5498b4378fc0e4ebf91c0594391773f93b4987d3c86a80c5d243de196b58c0",
+      "src/modelbuilder/service.py": "1fc9d7d1ce519420a3ae50b42f93dd33fbb2026c909c8119bcf3bd82524e7cc3",
+      "src/modelbuilder/store.py": "ef360987019db94be38c5f0d56e1a63d50d9cf26beff459ebfedccea5b8cce3b"
+    },
+    "modules": {
+      "jsonschema": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/lib/python3.12/site-packages/jsonschema/__init__.py",
+      "modelbuilder": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/lib/python3.12/site-packages/modelbuilder/__init__.py",
+      "modelbuilder.recipe": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/lib/python3.12/site-packages/modelbuilder/recipe.py",
+      "modelbuilder.service": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/lib/python3.12/site-packages/modelbuilder/service.py",
+      "pydantic": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/lib/python3.12/site-packages/pydantic/__init__.py"
+    },
+    "prefix": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay",
+    "pth_files": {
+      "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/lib/python3.12/site-packages/_virtualenv.pth": "import _virtualenv"
+    },
+    "python": "3.12.14",
+    "pythonpath": null,
+    "sys_path": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python312.zip",
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12",
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/lib-dynload",
+      "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/lib/python3.12/site-packages"
+    ]
+  },
+  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "source_root": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-source",
+  "status": "PASS",
+  "transcript": [
+    {
+      "operation": "project.create",
+      "result": {
+        "active_model_version_ref": null,
+        "active_recipe_id": null,
+        "created_at": "2026-10-09T14:52:17.978623+00:00",
+        "description": "",
+        "git_remote": null,
+        "head_commit": null,
+        "id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "model_name": "Pinned BERT-tiny CPU adaptation",
+        "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "research_watch_config": null,
+        "revision": 1,
+        "schema_version": "0",
+        "slug": "portable-cpu",
+        "status": "active",
+        "updated_at": "2026-10-09T14:52:17.978623+00:00"
+      }
+    },
+    {
+      "operation": "recipe.import",
+      "result": {
+        "capabilities": [
+          "local_cpu"
+        ],
+        "description": "Trusted repository-owned deterministic CPU smoke fixture. Metrics are not model-quality claims. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay.",
+        "digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "edges": [
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "evaluate",
+            "target_port": "data"
+          },
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "export",
+            "target_port": "data"
+          },
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "initial",
+            "target_port": "data"
+          },
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "train",
+            "target_port": "data"
+          },
+          {
+            "source_node": "initial",
+            "source_port": "initial",
+            "target_node": "train",
+            "target_port": "initial"
+          },
+          {
+            "source_node": "train",
+            "source_port": "checkpoint",
+            "target_node": "evaluate",
+            "target_port": "checkpoint"
+          },
+          {
+            "source_node": "train",
+            "source_port": "checkpoint",
+            "target_node": "export",
+            "target_port": "checkpoint"
+          }
+        ],
+        "environment": {
+          "lock_file": {
+            "path": "requirements/backend.lock",
+            "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+          },
+          "python": "3.12.14",
+          "requirements": [
+            "numpy==2.2.6",
+            "torch==2.9.0+cpu",
+            "transformers==4.57.1",
+            "zenml[server]==0.97.0"
+          ]
+        },
+        "evaluation": {
+          "checkpoint_kind": "best",
+          "heldout_split": "heldout",
+          "keep_negative_outcomes": true,
+          "selection_rule": {
+            "direction": "minimize",
+            "metric": "validation_loss",
+            "split": "validation"
+          },
+          "validation_metric": "validation_loss"
+        },
+        "external_dependencies": [],
+        "import_report": {
+          "execution_allowed": false,
+          "unresolved_dependencies": [
+            {
+              "id": "bert-tiny-config-json",
+              "reason": "external_reference_not_fetched",
+              "required": true,
+              "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/config.json"
+            },
+            {
+              "id": "bert-tiny-pytorch_model-bin",
+              "reason": "external_reference_not_fetched",
+              "required": true,
+              "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/pytorch_model.bin"
+            },
+            {
+              "id": "bert-tiny-vocab-txt",
+              "reason": "external_reference_not_fetched",
+              "required": true,
+              "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/vocab.txt"
+            },
+            {
+              "id": "source_license",
+              "reason": "license_review_required",
+              "required": true
+            },
+            {
+              "expected": "2.2.6",
+              "id": "numpy",
+              "reason": "environment_not_checked",
+              "required": true
+            },
+            {
+              "expected": "2.9.0+cpu",
+              "id": "torch",
+              "reason": "environment_not_checked",
+              "required": true
+            },
+            {
+              "expected": "4.57.1",
+              "id": "transformers",
+              "reason": "environment_not_checked",
+              "required": true
+            },
+            {
+              "expected": "0.97.0",
+              "id": "zenml",
+              "reason": "environment_not_checked",
+              "required": true
+            }
+          ]
+        },
+        "licenses": [
+          {
+            "license": "NOASSERTION",
+            "redistribution_allowed": false,
+            "scope": "source"
+          }
+        ],
+        "name": "Pinned BERT-tiny CPU adaptation",
+        "nodes": [
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "data",
+            "implementation_ref": "builtin:dataset.synthetic",
+            "inputs": [],
+            "kind": "dataset.synthetic",
+            "outputs": [
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              }
+            ],
+            "parameters": {
+              "fixture": "pretrained",
+              "seed": 1234
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          },
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "evaluate",
+            "implementation_ref": "builtin:model.evaluate",
+            "inputs": [
+              {
+                "name": "checkpoint",
+                "required": true,
+                "type": "checkpoint"
+              },
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              }
+            ],
+            "kind": "model.evaluate",
+            "outputs": [
+              {
+                "name": "metrics",
+                "required": true,
+                "type": "metrics"
+              }
+            ],
+            "parameters": {
+              "checkpoint_kind": "best",
+              "fixture": "pretrained"
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          },
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "export",
+            "implementation_ref": "builtin:model.export",
+            "inputs": [
+              {
+                "name": "checkpoint",
+                "required": true,
+                "type": "checkpoint"
+              },
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              }
+            ],
+            "kind": "model.export",
+            "outputs": [
+              {
+                "name": "export",
+                "required": true,
+                "type": "artifact"
+              }
+            ],
+            "parameters": {
+              "checkpoint_kind": "best",
+              "fixture": "pretrained"
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          },
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "initial",
+            "implementation_ref": "builtin:model.initialize",
+            "inputs": [
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              }
+            ],
+            "kind": "model.initialize",
+            "outputs": [
+              {
+                "name": "initial",
+                "required": true,
+                "type": "checkpoint"
+              }
+            ],
+            "parameters": {
+              "fixture": "pretrained",
+              "seed": 701,
+              "width": 12
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          },
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "train",
+            "implementation_ref": "builtin:model.train",
+            "inputs": [
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              },
+              {
+                "name": "initial",
+                "required": true,
+                "type": "checkpoint"
+              }
+            ],
+            "kind": "model.train",
+            "outputs": [
+              {
+                "name": "checkpoint",
+                "required": true,
+                "type": "checkpoint"
+              }
+            ],
+            "parameter_schema": {
+              "additionalProperties": false,
+              "properties": {
+                "batch_size": {
+                  "maximum": 10000,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "fixture": {
+                  "enum": [
+                    "custom",
+                    "pretrained"
+                  ]
+                },
+                "intentional_failure_step": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "kl": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "applies_to": {
+                      "enum": [
+                        "logits"
+                      ]
+                    },
+                    "coefficient": {
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    "direction": {
+                      "enum": [
+                        "reference_to_model",
+                        "model_to_reference"
+                      ]
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "frozen": {
+                      "type": "boolean"
+                    },
+                    "reference_model_ref": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "enabled",
+                    "coefficient",
+                    "direction",
+                    "reference_model_ref",
+                    "frozen",
+                    "applies_to"
+                  ],
+                  "type": "object"
+                },
+                "learning_rate": {
+                  "exclusiveMinimum": 0,
+                  "type": "number"
+                },
+                "scheduler_gamma": {
+                  "exclusiveMinimum": 0,
+                  "maximum": 1,
+                  "type": "number"
+                },
+                "seed": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "step_delay": {
+                  "maximum": 5,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "steps": {
+                  "maximum": 10000,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "width": {
+                  "maximum": 256,
+                  "minimum": 2,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "fixture",
+                "width",
+                "steps",
+                "learning_rate",
+                "seed",
+                "batch_size",
+                "kl"
+              ],
+              "type": "object"
+            },
+            "parameters": {
+              "batch_size": 32,
+              "fixture": "pretrained",
+              "kl": {
+                "applies_to": "logits",
+                "coefficient": 0.0,
+                "direction": "model_to_reference",
+                "enabled": false,
+                "frozen": true,
+                "reference_model_ref": "initial"
+              },
+              "learning_rate": 0.001,
+              "scheduler_gamma": 0.99,
+              "seed": 701,
+              "steps": 18,
+              "width": 12
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          }
+        ],
+        "outputs": [
+          {
+            "name": "export",
+            "type": "artifact"
+          },
+          {
+            "name": "metrics",
+            "type": "metrics"
+          }
+        ],
+        "permissions": {
+          "execute_on_import": false,
+          "network": false
+        },
+        "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "recipe_id": "ae092143-9a60-494d-a8f9-f1e29fe285ea",
+        "resources": [
+          {
+            "id": "bert-tiny-config-json",
+            "kind": "model",
+            "license": "MIT",
+            "private": false,
+            "redistribution_allowed": false,
+            "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+            "sha256": "cf3179684f7c360dd6185962d480e7d426ceb8fe49f5db7b64bdc15dba0b8798",
+            "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/config.json"
+          },
+          {
+            "id": "bert-tiny-pytorch_model-bin",
+            "kind": "model",
+            "license": "MIT",
+            "private": false,
+            "redistribution_allowed": false,
+            "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+            "sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+            "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/pytorch_model.bin"
+          },
+          {
+            "id": "bert-tiny-vocab-txt",
+            "kind": "model",
+            "license": "MIT",
+            "private": false,
+            "redistribution_allowed": false,
+            "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+            "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+            "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/vocab.txt"
+          }
+        ],
+        "revision": 1,
+        "schema_version": "0",
+        "source": {
+          "commit": "4d545df2b111de7f2365e8121a65717b37713054",
+          "files": [
+            {
+              "path": "pyproject.toml",
+              "sha256": "bd2e8fadd1fc3b8f8315a15844c1b45b180942128d9ade6bf5d51114919b1d46"
+            },
+            {
+              "path": "requirements/backend.lock",
+              "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+            },
+            {
+              "path": "requirements/service.lock",
+              "sha256": "02b3918fe148881089cf3ba31151ef1e387b2f4b902c34c74a1a70544b8477d7"
+            },
+            {
+              "path": "scripts/replay_bundle.py",
+              "sha256": "fc78e5814798da1bbe61111be3e0a74fbd98551e054ebe2d9251949a396c5af9"
+            },
+            {
+              "path": "src/modelbuilder/__init__.py",
+              "sha256": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed"
+            },
+            {
+              "path": "src/modelbuilder/api.py",
+              "sha256": "f2df4f30d1224e15a68e4df326557726199552ded7ca183e9f357e97cf13b3d7"
+            },
+            {
+              "path": "src/modelbuilder/auth.py",
+              "sha256": "fbb19260a3059fe3ee6058a0cc63fa46f10f588dff854f71b7a8a9d431c10999"
+            },
+            {
+              "path": "src/modelbuilder/backend/__init__.py",
+              "sha256": "4d6b1d0be44fb3e8dc7111d3cbb42f6911aad66e957a559e16006d0ca3300fb4"
+            },
+            {
+              "path": "src/modelbuilder/backend/adapter.py",
+              "sha256": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff"
+            },
+            {
+              "path": "src/modelbuilder/backend/common.py",
+              "sha256": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb"
+            },
+            {
+              "path": "src/modelbuilder/backend/fixtures.py",
+              "sha256": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9"
+            },
+            {
+              "path": "src/modelbuilder/backend/sdk.py",
+              "sha256": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d"
+            },
+            {
+              "path": "src/modelbuilder/backend/supervisor.py",
+              "sha256": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1"
+            },
+            {
+              "path": "src/modelbuilder/backend/worker.py",
+              "sha256": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099"
+            },
+            {
+              "path": "src/modelbuilder/literature.py",
+              "sha256": "744fa1b146c11199e299bd38958626c2d774bf19fee563163e3f9e35ed24918a"
+            },
+            {
+              "path": "src/modelbuilder/mcp_server.py",
+              "sha256": "6ab7dc4c4e45e3e39c13b0f63a8891e66ed485a487aae9489d6fcfaa3dff1e9d"
+            },
+            {
+              "path": "src/modelbuilder/models.py",
+              "sha256": "f6596ef4395d2c1d990981dd004dc694af8482188a8a036035877c574c54f37f"
+            },
+            {
+              "path": "src/modelbuilder/recipe.py",
+              "sha256": "1b5498b4378fc0e4ebf91c0594391773f93b4987d3c86a80c5d243de196b58c0"
+            },
+            {
+              "path": "src/modelbuilder/service.py",
+              "sha256": "1fc9d7d1ce519420a3ae50b42f93dd33fbb2026c909c8119bcf3bd82524e7cc3"
+            },
+            {
+              "path": "src/modelbuilder/store.py",
+              "sha256": "ef360987019db94be38c5f0d56e1a63d50d9cf26beff459ebfedccea5b8cce3b"
+            }
+          ],
+          "repository": "https://github.com/greghavens/modelbuilder"
+        }
+      }
+    },
+    {
+      "operation": "run.submit",
+      "result": {
+        "backend": "zenml",
+        "backend_run_id": null,
+        "backend_version": "0.97.0",
+        "created_at": "2026-10-09T14:52:23.024548+00:00",
+        "errors": [],
+        "last_reconciled_at": "2026-10-09T14:52:23.024550+00:00",
+        "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
+        "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "recipe_id": "ae092143-9a60-494d-a8f9-f1e29fe285ea",
+        "recipe_revision": 1,
+        "revision": 1,
+        "status": "submitted",
+        "submitted_at": "2026-10-09T14:52:22.758805+00:00",
+        "supervisor_pid": 37
+      }
+    },
+    {
+      "operation": "run.status",
+      "result": {
+        "artifacts": [],
+        "backend": "zenml",
+        "backend_run_id": null,
+        "backend_status": null,
+        "backend_version": "0.97.0",
+        "created_at": "2026-10-09T14:52:23.024548+00:00",
+        "error": null,
+        "errors": [],
+        "executed_recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "last_reconciled_at": "2026-10-09T14:52:26.562372+00:00",
+        "log_available": true,
+        "metrics": {},
+        "model_version_ref": null,
+        "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
+        "parent_checkpoint_ref": null,
+        "parent_run_id": null,
+        "process_group_alive": true,
+        "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "recipe_id": "ae092143-9a60-494d-a8f9-f1e29fe285ea",
+        "recipe_revision": 1,
+        "resume_mode": null,
+        "revision": 2,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "submitted",
+        "submitted_at": "2026-10-09T14:52:22.758805+00:00",
+        "supervisor_alive": true,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": true,
+        "worker_exit_code": null,
+        "worker_pid": 38
+      }
+    },
+    {
+      "operation": "run.status",
+      "result": {
+        "artifacts": [],
+        "backend": "zenml",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "backend_status": "running",
+        "backend_version": "0.97.0",
+        "created_at": "2026-10-09T14:52:23.024548+00:00",
+        "error": null,
+        "errors": [],
+        "executed_recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "last_reconciled_at": "2026-10-09T14:52:31.452615+00:00",
+        "log_available": true,
+        "metrics": {},
+        "model_version_ref": "932c90f3-806e-41a8-b10a-3dfcca788088",
+        "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
+        "parent_checkpoint_ref": null,
+        "parent_run_id": null,
+        "process_group_alive": true,
+        "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "recipe_id": "ae092143-9a60-494d-a8f9-f1e29fe285ea",
+        "recipe_revision": 1,
+        "resume_mode": null,
+        "revision": 3,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "running",
+        "submitted_at": "2026-10-09T14:52:22.758805+00:00",
+        "supervisor_alive": true,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": true,
+        "worker_exit_code": null,
+        "worker_pid": 38
+      }
+    },
+    {
+      "operation": "run.status",
+      "result": {
+        "artifacts": [
+          {
+            "artifact_id": "4f31b415-6bd5-439e-baaf-c4ec2c48f718",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "data",
+            "node_id": "data",
+            "port": "data",
+            "step_id": "ee5a08f8-ca3d-4d7c-8994-d3326729c806",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/data/data/ee5a08f8-ca3d-4d7c-8994-d3326729c806/cafaed23"
+          },
+          {
+            "artifact_id": "dd49c525-a604-4b74-aa2a-543be0424769",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "initial",
+            "node_id": "initial",
+            "port": "initial",
+            "step_id": "5214b9c4-5336-4d75-92de-9ec90024c373",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/initial/initial/5214b9c4-5336-4d75-92de-9ec90024c373/a6546228"
+          }
+        ],
+        "backend": "zenml",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "backend_status": "running",
+        "backend_version": "0.97.0",
+        "created_at": "2026-10-09T14:52:23.024548+00:00",
+        "error": null,
+        "errors": [],
+        "executed_recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "last_reconciled_at": "2026-10-09T14:52:36.128519+00:00",
+        "log_available": true,
+        "metrics": {},
+        "model_version_ref": "932c90f3-806e-41a8-b10a-3dfcca788088",
+        "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
+        "parent_checkpoint_ref": null,
+        "parent_run_id": null,
+        "process_group_alive": true,
+        "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "recipe_id": "ae092143-9a60-494d-a8f9-f1e29fe285ea",
+        "recipe_revision": 1,
+        "resume_mode": null,
+        "revision": 4,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "running",
+        "submitted_at": "2026-10-09T14:52:22.758805+00:00",
+        "supervisor_alive": true,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": true,
+        "worker_exit_code": null,
+        "worker_pid": 38
+      }
+    },
+    {
+      "operation": "run.status",
+      "result": {
+        "artifacts": [
+          {
+            "artifact_id": "4f31b415-6bd5-439e-baaf-c4ec2c48f718",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "data",
+            "node_id": "data",
+            "port": "data",
+            "step_id": "ee5a08f8-ca3d-4d7c-8994-d3326729c806",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/data/data/ee5a08f8-ca3d-4d7c-8994-d3326729c806/cafaed23"
+          },
+          {
+            "artifact_id": "dd49c525-a604-4b74-aa2a-543be0424769",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "initial",
+            "node_id": "initial",
+            "port": "initial",
+            "step_id": "5214b9c4-5336-4d75-92de-9ec90024c373",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/initial/initial/5214b9c4-5336-4d75-92de-9ec90024c373/a6546228"
+          },
+          {
+            "artifact_id": "0f08d9c9-110e-4818-b449-480f5cb32389",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "checkpoint",
+            "node_id": "train",
+            "port": "checkpoint",
+            "step_id": "37573779-f6cb-4c25-a862-96b58a0a7a54",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/train/checkpoint/37573779-f6cb-4c25-a862-96b58a0a7a54/409be42d"
+          }
+        ],
+        "backend": "zenml",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "backend_status": "running",
+        "backend_version": "0.97.0",
+        "created_at": "2026-10-09T14:52:23.024548+00:00",
+        "error": null,
+        "errors": [],
+        "executed_recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "last_reconciled_at": "2026-10-09T14:52:40.353002+00:00",
+        "log_available": true,
+        "metrics": {},
+        "model_version_ref": "932c90f3-806e-41a8-b10a-3dfcca788088",
+        "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
+        "parent_checkpoint_ref": null,
+        "parent_run_id": null,
+        "process_group_alive": true,
+        "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "recipe_id": "ae092143-9a60-494d-a8f9-f1e29fe285ea",
+        "recipe_revision": 1,
+        "resume_mode": null,
+        "revision": 5,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "running",
+        "submitted_at": "2026-10-09T14:52:22.758805+00:00",
+        "supervisor_alive": true,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": true,
+        "worker_exit_code": null,
+        "worker_pid": 38
+      }
+    },
+    {
+      "operation": "run.status",
+      "result": {
+        "artifacts": [
+          {
+            "artifact_id": "4f31b415-6bd5-439e-baaf-c4ec2c48f718",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "data",
+            "node_id": "data",
+            "port": "data",
+            "step_id": "ee5a08f8-ca3d-4d7c-8994-d3326729c806",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/data/data/ee5a08f8-ca3d-4d7c-8994-d3326729c806/cafaed23"
+          },
+          {
+            "artifact_id": "dd49c525-a604-4b74-aa2a-543be0424769",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "initial",
+            "node_id": "initial",
+            "port": "initial",
+            "step_id": "5214b9c4-5336-4d75-92de-9ec90024c373",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/initial/initial/5214b9c4-5336-4d75-92de-9ec90024c373/a6546228"
+          },
+          {
+            "artifact_id": "0f08d9c9-110e-4818-b449-480f5cb32389",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "checkpoint",
+            "node_id": "train",
+            "port": "checkpoint",
+            "step_id": "37573779-f6cb-4c25-a862-96b58a0a7a54",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/train/checkpoint/37573779-f6cb-4c25-a862-96b58a0a7a54/409be42d"
+          },
+          {
+            "artifact_id": "df4b93b3-36ca-4216-9a95-9ded99cee4f0",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "metrics",
+            "node_id": "evaluate",
+            "port": "metrics",
+            "step_id": "287e106e-2eb2-43d8-a69d-0eaff7fe12b5",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/evaluate/metrics/287e106e-2eb2-43d8-a69d-0eaff7fe12b5/586877e2"
+          },
+          {
+            "artifact_id": "a0494200-ce44-4b10-b04c-826dd7cbd685",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "export",
+            "node_id": "export",
+            "port": "export",
+            "step_id": "45ab7198-76ab-4f48-9188-e7fdff0c6cea",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/export/export/45ab7198-76ab-4f48-9188-e7fdff0c6cea/012124b8"
+          }
+        ],
+        "backend": "zenml",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "backend_status": "completed",
+        "backend_version": "0.97.0",
+        "created_at": "2026-10-09T14:52:23.024548+00:00",
+        "error": null,
+        "errors": [],
+        "executed_recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "last_reconciled_at": "2026-10-09T14:52:45.129295+00:00",
+        "log_available": true,
+        "metrics": {
+          "accuracy": 1.0,
+          "best_step": 18,
+          "best_validation_loss": 0.025669865310192108,
+          "brier": 0.0006469727959483862,
+          "checkpoint_kind": "best",
+          "consumed_dataset_artifact": true,
+          "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+          "device": "cpu",
+          "distinct_tokenized_examples": 48,
+          "fixture": "pretrained",
+          "heldout_count": 8,
+          "heldout_logits": [
+            [
+              -1.792744517326355,
+              1.76748788356781
+            ],
+            [
+              -1.8218815326690674,
+              1.766986608505249
+            ],
+            [
+              -1.8077808618545532,
+              1.7660657167434692
+            ],
+            [
+              -1.8145784139633179,
+              1.7715922594070435
+            ],
+            [
+              1.909166932106018,
+              -1.816420078277588
+            ],
+            [
+              1.9127990007400513,
+              -1.806302547454834
+            ],
+            [
+              1.9052528142929077,
+              -1.8256288766860962
+            ],
+            [
+              1.9134999513626099,
+              -1.8109992742538452
+            ]
+          ],
+          "kl": {
+            "batch_size": 32,
+            "coefficient": 0.0,
+            "direction": "model_to_reference",
+            "learning_rate": 0.001,
+            "scheduler_gamma": 0.99
+          },
+          "model_id": "prajjwal1/bert-tiny",
+          "resume_mode": null,
+          "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+          "start_step": 0,
+          "step": 18,
+          "train_count": 32,
+          "upstream_weights_sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+          "validation_count": 8,
+          "validation_loss": 0.025669865310192108,
+          "vocabulary_size": 30522,
+          "width": 12
+        },
+        "model_version_ref": "932c90f3-806e-41a8-b10a-3dfcca788088",
+        "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
+        "parent_checkpoint_ref": null,
+        "parent_run_id": null,
+        "process_group_alive": true,
+        "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "recipe_id": "ae092143-9a60-494d-a8f9-f1e29fe285ea",
+        "recipe_revision": 1,
+        "resume_mode": null,
+        "revision": 6,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "succeeded",
+        "submitted_at": "2026-10-09T14:52:22.758805+00:00",
+        "supervisor_alive": true,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": true,
+        "worker_exit_code": null,
+        "worker_pid": 38
+      }
+    },
+    {
+      "operation": "run.status",
+      "result": {
+        "artifacts": [
+          {
+            "artifact_id": "4f31b415-6bd5-439e-baaf-c4ec2c48f718",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "data",
+            "node_id": "data",
+            "port": "data",
+            "step_id": "ee5a08f8-ca3d-4d7c-8994-d3326729c806",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/data/data/ee5a08f8-ca3d-4d7c-8994-d3326729c806/cafaed23"
+          },
+          {
+            "artifact_id": "dd49c525-a604-4b74-aa2a-543be0424769",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "initial",
+            "node_id": "initial",
+            "port": "initial",
+            "step_id": "5214b9c4-5336-4d75-92de-9ec90024c373",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/initial/initial/5214b9c4-5336-4d75-92de-9ec90024c373/a6546228"
+          },
+          {
+            "artifact_id": "0f08d9c9-110e-4818-b449-480f5cb32389",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "checkpoint",
+            "node_id": "train",
+            "port": "checkpoint",
+            "step_id": "37573779-f6cb-4c25-a862-96b58a0a7a54",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/train/checkpoint/37573779-f6cb-4c25-a862-96b58a0a7a54/409be42d"
+          },
+          {
+            "artifact_id": "df4b93b3-36ca-4216-9a95-9ded99cee4f0",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "metrics",
+            "node_id": "evaluate",
+            "port": "metrics",
+            "step_id": "287e106e-2eb2-43d8-a69d-0eaff7fe12b5",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/evaluate/metrics/287e106e-2eb2-43d8-a69d-0eaff7fe12b5/586877e2"
+          },
+          {
+            "artifact_id": "a0494200-ce44-4b10-b04c-826dd7cbd685",
+            "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+            "name": "export",
+            "node_id": "export",
+            "port": "export",
+            "step_id": "45ab7198-76ab-4f48-9188-e7fdff0c6cea",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-pretrained-data/backend/zenml-stores/41f9baf6-7762-43b6-a1d2-49b04de169dc/export/export/45ab7198-76ab-4f48-9188-e7fdff0c6cea/012124b8"
+          }
+        ],
+        "backend": "zenml",
+        "backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+        "backend_status": "completed",
+        "backend_version": "0.97.0",
+        "created_at": "2026-10-09T14:52:23.024548+00:00",
+        "error": null,
+        "errors": [],
+        "executed_recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "last_reconciled_at": "2026-10-09T14:52:50.108103+00:00",
+        "log_available": true,
+        "metrics": {
+          "accuracy": 1.0,
+          "best_step": 18,
+          "best_validation_loss": 0.025669865310192108,
+          "brier": 0.0006469727959483862,
+          "checkpoint_kind": "best",
+          "consumed_dataset_artifact": true,
+          "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+          "device": "cpu",
+          "distinct_tokenized_examples": 48,
+          "fixture": "pretrained",
+          "heldout_count": 8,
+          "heldout_logits": [
+            [
+              -1.792744517326355,
+              1.76748788356781
+            ],
+            [
+              -1.8218815326690674,
+              1.766986608505249
+            ],
+            [
+              -1.8077808618545532,
+              1.7660657167434692
+            ],
+            [
+              -1.8145784139633179,
+              1.7715922594070435
+            ],
+            [
+              1.909166932106018,
+              -1.816420078277588
+            ],
+            [
+              1.9127990007400513,
+              -1.806302547454834
+            ],
+            [
+              1.9052528142929077,
+              -1.8256288766860962
+            ],
+            [
+              1.9134999513626099,
+              -1.8109992742538452
+            ]
+          ],
+          "kl": {
+            "batch_size": 32,
+            "coefficient": 0.0,
+            "direction": "model_to_reference",
+            "learning_rate": 0.001,
+            "scheduler_gamma": 0.99
+          },
+          "model_id": "prajjwal1/bert-tiny",
+          "resume_mode": null,
+          "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+          "start_step": 0,
+          "step": 18,
+          "train_count": 32,
+          "upstream_weights_sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+          "validation_count": 8,
+          "validation_loss": 0.025669865310192108,
+          "vocabulary_size": 30522,
+          "width": 12
+        },
+        "model_version_ref": "932c90f3-806e-41a8-b10a-3dfcca788088",
+        "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
+        "parent_checkpoint_ref": null,
+        "parent_run_id": null,
+        "process_group_alive": false,
+        "project_id": "24bf313b-3acf-485b-9608-07ce868a51f3",
+        "recipe_digest": "c5a757f8ad03d448a12ae6ecb485b5ff95fc0429be9706224a05e10c56d2e6cb",
+        "recipe_id": "ae092143-9a60-494d-a8f9-f1e29fe285ea",
+        "recipe_revision": 1,
+        "resume_mode": null,
+        "revision": 7,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "succeeded",
+        "submitted_at": "2026-10-09T14:52:22.758805+00:00",
+        "supervisor_alive": false,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": false,
+        "worker_exit_code": 0,
+        "worker_pid": 38
+      }
+    }
+  ],
+  "transport_recipe_digest": "bebb94afcb6a5ac7c1ee71bb0f5b81571b060be33c2cf901d29c0bcdcd997459",
+  "unresolved_dependencies_at_import": [
+    {
+      "id": "bert-tiny-config-json",
+      "reason": "external_reference_not_fetched",
+      "required": true,
+      "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/config.json"
+    },
+    {
+      "id": "bert-tiny-pytorch_model-bin",
+      "reason": "external_reference_not_fetched",
+      "required": true,
+      "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/pytorch_model.bin"
+    },
+    {
+      "id": "bert-tiny-vocab-txt",
+      "reason": "external_reference_not_fetched",
+      "required": true,
+      "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/vocab.txt"
+    },
+    {
+      "id": "source_license",
+      "reason": "license_review_required",
+      "required": true
+    },
+    {
+      "expected": "2.2.6",
+      "id": "numpy",
+      "reason": "environment_not_checked",
+      "required": true
+    },
+    {
+      "expected": "2.9.0+cpu",
+      "id": "torch",
+      "reason": "environment_not_checked",
+      "required": true
+    },
+    {
+      "expected": "4.57.1",
+      "id": "transformers",
+      "reason": "environment_not_checked",
+      "required": true
+    },
+    {
+      "expected": "0.97.0",
+      "id": "zenml",
+      "reason": "environment_not_checked",
+      "required": true
+    }
+  ]
+}

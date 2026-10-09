@@ -10,12 +10,21 @@ import zipfile
 
 import pytest
 
-from modelbuilder.recipe import RecipeValidationError, default_recipe
+from modelbuilder.recipe import RecipeValidationError, default_recipe, pin_source_files
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("replay_bundle", ROOT / "scripts/replay_bundle.py")
 replay = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(replay)
+
+
+@pytest.mark.parametrize("fixture", ["custom-pytorch", "pretrained-small"])
+def test_shipping_recipe_has_complete_verified_source_closure(fixture):
+    recipe = json.loads((ROOT / "examples" / fixture / "recipe.json").read_text())
+    inventory = replay.source_inventory(ROOT)
+    assert {item["path"] for item in recipe["source"]["files"]} == set(inventory)
+    pinned = pin_source_files(recipe, ROOT, inventory, recipe["source"]["commit"])
+    assert pinned == recipe
 
 
 @pytest.fixture

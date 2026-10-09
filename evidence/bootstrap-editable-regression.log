@@ -1,0 +1,21 @@
+WARNING: The directory '/home/agent/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
+Obtaining file:///workspace/scratch/f9ccb8889bfe/modelbuilder
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: modelbuilder
+  Building editable for modelbuilder (pyproject.toml): started
+  Building editable for modelbuilder (pyproject.toml): finished with status 'done'
+  Created wheel for modelbuilder: filename=modelbuilder-0.1.0-py3-none-any.whl size=1465 sha256=1dd2d8790889e698fe9ba35783ca25fa71a17aa7e88bdbd023f7d2da8be0fe74
+  Stored in directory: /tmp/pip-ephem-wheel-cache-kep_vlul/wheels/c1/22/22/6229464b0edab7f4ef613b7bc1be6ed8d1e193bee5a2212c0d
+Successfully built modelbuilder
+Installing collected packages: modelbuilder
+  Attempting uninstall: modelbuilder
+    Found existing installation: modelbuilder 0.1.0
+    Uninstalling modelbuilder-0.1.0:
+      Successfully uninstalled modelbuilder-0.1.0
+Successfully installed modelbuilder-0.1.0
+
+[notice] A new release of pip is available: 25.0.1 -> 26.2.1
+[notice] To update, run: python -m pip install --upgrade pip

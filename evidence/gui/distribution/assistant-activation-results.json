@@ -1,0 +1,84 @@
+{
+  "app": "Modelbuilder IDE Dev",
+  "editor": "1.105.0",
+  "status": "BLOCKED_AUTHENTICATED_MCP",
+  "extensions": [
+    {
+      "id": "openai.chatgpt",
+      "installed": true,
+      "authenticated": false,
+      "mcp_calls": "UNVERIFIED",
+      "version": "26.5908.31748",
+      "requiredEngine": "^1.96.2",
+      "activated": true,
+      "registeredCommands": [
+        "chatgpt.sidebarView.open",
+        "chatgpt.sidebarView.focus",
+        "chatgpt.sidebarView.resetViewLocation",
+        "chatgpt.sidebarSecondaryView.open",
+        "chatgpt.sidebarSecondaryView.focus",
+        "chatgpt.sidebarSecondaryView.resetViewLocation",
+        "chatgpt.sidebarView.toggleVisibility",
+        "chatgpt.sidebarView.removeView",
+        "chatgpt.implementTodo",
+        "chatgpt.openSidebar",
+        "chatgpt.openCommandMenu",
+        "chatgpt.newCodexPanel",
+        "chatgpt.addToThread",
+        "chatgpt.addFileToThread",
+        "chatgpt.showLspMcpCliArgs",
+        "chatgpt.newChat",
+        "chatgpt.dumpNuxState",
+        "chatgpt.resetNuxState"
+      ]
+    },
+    {
+      "id": "Anthropic.claude-code",
+      "installed": true,
+      "authenticated": false,
+      "mcp_calls": "UNVERIFIED",
+      "version": "2.1.295",
+      "requiredEngine": "^1.94.0",
+      "activated": true,
+      "registeredCommands": [
+        "claude-vscode.acceptProposedDiff",
+        "claude-vscode.rejectProposedDiff",
+        "claude-vscode.acceptProposedHunk",
+        "claude-vscode.rejectProposedHunk",
+        "claude-vscode.acceptProposedHunkFromBar",
+        "claude-vscode.rejectProposedHunkFromBar",
+        "claude-vscode.insertAtMention",
+        "claude-vscode.blur",
+        "claude-vscode.focus",
+        "claude-vscode.focusLastMessage",
+        "claude-vscode.terminal.open",
+        "claude-vscode.terminal.open.keyboard",
+        "claude-vscode.editor.open",
+        "claude-vscode.primaryEditor.open",
+        "claude-vscode.editor.openLast",
+        "claude-vscode.newConversation",
+        "claude-vscode.reopenClosedSession",
+        "claude-vscode.toggleDictation",
+        "claude-vscode.markSessionUnread",
+        "claude-vscode.renameSessionTab",
+        "claude-vscode.addSessionTabToGroup",
+        "claude-vscode.toggleFocusView",
+        "claude-vscode.sidebar.open",
+        "claude-vscode.window.open",
+        "claude-vscode.logout",
+        "claude-vscode.showLogs",
+        "claude-vscode.openWalkthrough"
+      ]
+    }
+  ],
+  "observed_ui": {
+    "openai.chatgpt": "Sign in with ChatGPT or Use API Key",
+    "Anthropic.claude-code": "Claude.ai Subscription, Anthropic Console, or Bedrock/Foundry/Vertex"
+  },
+  "blocker": "No account authentication or paid inference authorized/available in isolated probe profiles. No agent CRUD/run/error/permission comparison can be claimed.",
+  "compatibility_warnings": [
+    "Codex requests unavailable languageModelProxy API proposal",
+    "Claude secondary-sidebar contribSecondarySidebar unsupported in this version; editor tab rendered",
+    "Vendor webview font CSP warnings; no CSP relaxation used"
+  ]
+}

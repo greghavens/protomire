@@ -1,0 +1,58 @@
+{
+  "status": "FAIL",
+  "tests": [
+    {
+      "name": "graph-authoring-typed-python",
+      "status": "PASS",
+      "evidence": {
+        "revision": 3,
+        "digest": "fe233f57630b0869f4ce2a169fc8e793af384156ad4a0e45dfbe0d55c9e2ba71",
+        "nodes": [
+          "custom",
+          "data"
+        ],
+        "edge": {
+          "source_node": "data",
+          "source_port": "tensor",
+          "target_node": "custom",
+          "target_port": "data"
+        }
+      }
+    },
+    {
+      "name": "gui-to-external-mcp-digest-equality",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "bfa74a3a-dad9-4204-b6aa-123384b0f96c",
+        "revision": 3,
+        "digest": "fe233f57630b0869f4ce2a169fc8e793af384156ad4a0e45dfbe0d55c9e2ba71"
+      }
+    },
+    {
+      "name": "external-mcp-to-visible-gui",
+      "status": "PASS",
+      "evidence": {
+        "revision": 4,
+        "digest": "d944f17b23234d7a97ef647178c66faf6082e123e4b7b0ee3bbf7046ac92b85a"
+      }
+    },
+    {
+      "name": "concurrent-edit-conflict-preserves-draft",
+      "status": "PASS",
+      "evidence": {
+        "local_revision": 4,
+        "server_revision": 5,
+        "draft_preserved": true,
+        "diff_visible": "{\n  \"recipe_id\": \"bfa74a3a-dad9-4204-b6aa-123384b0f96c\",\n  \"current_revision\": 5,\n  \"equal\": false,\n  \"diff\": \"--- client\\n+++ server\\n@@ -2,7 +2,7 @@\\n   \\\"capabilities\\\": [\\n     \\\"local_cpu\\\"\\n   ],\\n-  \\\"digest\\\": \\\"d944f17b23234d7a97ef647178c66faf6082e123e4b7b0ee3bbf7046ac92b85a\\\",\\n+  \\\"digest\\\": \\\"1964df10dca1714cf89572530e8f9062bf6b6ccff1f146cd2951048065bba1e1\\\",\\n   \\\"edges\\\": [\\n     {\\n       \\\"source_node\\\": \\\"data\\\",\\n@@ -24,7 +24,7 @@\\n       \\\"scope\\\": \\\"source\\\"\\n     }\\n   ],\\n-  \\\"name\\\": \\\"Unsaved GUI draft\\\",\\n+  \\\"name\\\": \\\"Concurrent MCP revision\\\",\\n   \\\"nodes\\\": [\\n     {\\n       \\\"cache_policy\\\": \\\"disabled\\\",\\n@@ -93,7 +93,7 @@\\n   \\\"project_id\\\": \\\"c4c52af6-8756-4fe2-aa89-155c407dd59a\\\",\\n   \\\"recipe_id\\\": \\\"bfa74a3a-dad9-4204-b6aa-123384b0f96c\\\",\\n   \\\"resources\\\": [],\\n-  \\\"revision\\\": 4,\\n+  \\\"revision\\\": 5,\\n   \\\"schema_version\\\": \\\"0\\\",\\n   \\\"source\\\": {\\n     \\\"commit\\\": \\\"0000000000000000000000000000000000000000\\\",\"\n}"
+      }
+    },
+    {
+      "name": "invalid-source-visual-edit-protection",
+      "status": "PASS",
+      "evidence": {
+        "source_preserved": true
+      }
+    }
+  ],
+  "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Cancel', exact: true })\u001b[22m\n\n    at /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:25:206\n    at async check (/workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:11:43)\n    at async /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:25:3"
+}

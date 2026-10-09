@@ -1,0 +1,16 @@
+INFO:     Started server process [7]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:58257 (Press CTRL+C to quit)
+INFO:     127.0.0.1:45168 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45182 - "POST /v1/operations/project.create HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45182 - "POST /v1/operations/recipe.create HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45182 - "POST /v1/operations/evidence.add HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45182 - "POST /v1/operations/hypothesis.create HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45182 - "POST /v1/operations/run.submit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45182 - "POST /v1/operations/run.status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45182 - "POST /v1/operations/run.status HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [7]

@@ -45,6 +45,14 @@ fi
 (cd "$ROOT/packages/ide_feature" && npm ci --no-audit --no-fund && npm run compile)
 # Build the upstream product before overlaying the already-compiled feature.
 # This prevents upstream extension discovery from attempting to recompile it.
+python3 - "$SOURCE/extensions/modelbuilder-workbench" <<'PY'
+import json,pathlib,shutil,sys
+p=pathlib.Path(sys.argv[1])
+if p.exists():
+    manifest=json.loads((p/'package.json').read_text())
+    assert manifest['publisher']=='modelbuilder' and manifest['name']=='modelbuilder-workbench'
+    shutil.rmtree(p)  # Only the generated feature copy; source remains in packages/.
+PY
 (cd "$SOURCE" && npm run compile)
 if [[ -n ${HTTPS_PROXY:-} || -n ${HTTP_PROXY:-} ]]; then
   # The upstream Electron downloader needs its documented proxy bootstrap.

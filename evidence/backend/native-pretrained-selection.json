@@ -1,0 +1,841 @@
+{
+  "runs": [
+    {
+      "artifacts": [
+        {
+          "artifact_id": "87e32c78-b39d-45ef-9af9-683a2490990d",
+          "backend_run_id": "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+          "name": "data",
+          "node_id": "data",
+          "port": "data",
+          "step_id": "f53337a6-3ced-4fa0-88c1-dd03c49df282",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/data/data/f53337a6-3ced-4fa0-88c1-dd03c49df282/ee6e10c3"
+        },
+        {
+          "artifact_id": "d3ac6d8b-4506-4de1-8f24-277471635c5d",
+          "backend_run_id": "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+          "name": "initial",
+          "node_id": "initial",
+          "port": "initial",
+          "step_id": "c1954392-633a-459f-9545-8731e45a42a6",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/initial/initial/c1954392-633a-459f-9545-8731e45a42a6/35ad08ec"
+        },
+        {
+          "artifact_id": "41f81427-971d-4400-b5ed-79e8ae1de269",
+          "backend_run_id": "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+          "name": "checkpoint",
+          "node_id": "train",
+          "port": "checkpoint",
+          "step_id": "ef2502d5-e91c-44eb-bd6d-c033ba3a4d29",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/train/checkpoint/ef2502d5-e91c-44eb-bd6d-c033ba3a4d29/0ad95ccb"
+        },
+        {
+          "artifact_id": "7c12552f-a246-44a1-bb8a-91e8c5014a56",
+          "backend_run_id": "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+          "name": "metrics",
+          "node_id": "evaluate",
+          "port": "metrics",
+          "step_id": "2df51c34-660a-49d3-8916-ae28e835753f",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/evaluate/metrics/2df51c34-660a-49d3-8916-ae28e835753f/ffc28719"
+        },
+        {
+          "artifact_id": "f6c57ddf-56d1-4903-ab01-f20fc946f0e4",
+          "backend_run_id": "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+          "name": "export",
+          "node_id": "export",
+          "port": "export",
+          "step_id": "1ddad951-9326-40ed-96c4-d12aa7150286",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/export/export/1ddad951-9326-40ed-96c4-d12aa7150286/5333afc5"
+        }
+      ],
+      "backend": "zenml",
+      "backend_run_id": "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+      "backend_status": "completed",
+      "backend_version": "0.97.0",
+      "error": null,
+      "executed_recipe_digest": null,
+      "last_reconciled_at": "2026-10-09T14:54:10.435102+00:00",
+      "log_available": true,
+      "metrics": {
+        "accuracy": 1.0,
+        "best_step": 18,
+        "best_validation_loss": 0.025669865310192108,
+        "brier": 0.0006469727959483862,
+        "checkpoint_kind": "best",
+        "consumed_dataset_artifact": true,
+        "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+        "device": "cpu",
+        "distinct_tokenized_examples": 48,
+        "fixture": "pretrained",
+        "heldout_count": 8,
+        "heldout_logits": [
+          [
+            -1.792744517326355,
+            1.76748788356781
+          ],
+          [
+            -1.8218815326690674,
+            1.766986608505249
+          ],
+          [
+            -1.8077808618545532,
+            1.7660657167434692
+          ],
+          [
+            -1.8145784139633179,
+            1.7715922594070435
+          ],
+          [
+            1.909166932106018,
+            -1.816420078277588
+          ],
+          [
+            1.9127990007400513,
+            -1.806302547454834
+          ],
+          [
+            1.9052528142929077,
+            -1.8256288766860962
+          ],
+          [
+            1.9134999513626099,
+            -1.8109992742538452
+          ]
+        ],
+        "kl": {
+          "batch_size": 32,
+          "coefficient": 0.0,
+          "direction": "model_to_reference",
+          "learning_rate": 0.001,
+          "scheduler_gamma": 0.99
+        },
+        "model_id": "prajjwal1/bert-tiny",
+        "resume_mode": null,
+        "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+        "start_step": 0,
+        "step": 18,
+        "train_count": 32,
+        "upstream_weights_sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+        "validation_count": 8,
+        "validation_loss": 0.025669865310192108,
+        "vocabulary_size": 30522,
+        "width": 12
+      },
+      "model_version_ref": "1554972f-0900-45cc-8254-be8e5c241b2b",
+      "operation_id": "eee429b1-b042-40e7-b39c-4fa816596a72",
+      "parent_checkpoint_ref": null,
+      "parent_run_id": null,
+      "process_group_alive": false,
+      "project_id": "d0aa62db-b8dc-47c0-a943-81b6b3a52ec5",
+      "resume_mode": null,
+      "runtime_status_source": "verified_local_supervisor",
+      "status": "succeeded",
+      "submitted_at": "2026-10-09T14:53:50.218316+00:00",
+      "supervisor_alive": true,
+      "termination": {},
+      "termination_record_source": null,
+      "worker_alive": false,
+      "worker_exit_code": 0,
+      "worker_pid": 685
+    },
+    {
+      "artifacts": [
+        {
+          "artifact_id": "e771130e-4fc5-47f2-b53f-c7363bf0e17c",
+          "backend_run_id": "ae4de56b-87d9-464f-ae4e-f48204c598b1",
+          "name": "data",
+          "node_id": "data",
+          "port": "data",
+          "step_id": "fe16d6c6-bea3-49a8-a564-c870071d1d2e",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/data/data/fe16d6c6-bea3-49a8-a564-c870071d1d2e/faf62f06"
+        },
+        {
+          "artifact_id": "7830d6e4-c95b-4f8d-bdf9-f9b4e01cb4e1",
+          "backend_run_id": "ae4de56b-87d9-464f-ae4e-f48204c598b1",
+          "name": "initial",
+          "node_id": "initial",
+          "port": "initial",
+          "step_id": "3a9d83b0-061f-4441-ba6b-890657cf1251",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/initial/initial/3a9d83b0-061f-4441-ba6b-890657cf1251/2c8f62af"
+        },
+        {
+          "artifact_id": "e31c9d61-3a6d-4941-866b-fea8e86e1480",
+          "backend_run_id": "ae4de56b-87d9-464f-ae4e-f48204c598b1",
+          "name": "checkpoint",
+          "node_id": "train",
+          "port": "checkpoint",
+          "step_id": "26851d4d-da08-485c-a7ae-52e3b92647ca",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/train/checkpoint/26851d4d-da08-485c-a7ae-52e3b92647ca/996ab5af"
+        },
+        {
+          "artifact_id": "d77ad259-5b08-47d6-83ff-712ce1e043da",
+          "backend_run_id": "ae4de56b-87d9-464f-ae4e-f48204c598b1",
+          "name": "metrics",
+          "node_id": "evaluate",
+          "port": "metrics",
+          "step_id": "72e5766f-3b8a-4e9c-acea-39e629147c2d",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/evaluate/metrics/72e5766f-3b8a-4e9c-acea-39e629147c2d/22381388"
+        },
+        {
+          "artifact_id": "be0c3f21-60a0-4f10-a99c-7b42e00a765c",
+          "backend_run_id": "ae4de56b-87d9-464f-ae4e-f48204c598b1",
+          "name": "export",
+          "node_id": "export",
+          "port": "export",
+          "step_id": "f2ef8a25-e8e1-4e09-b2eb-a2053644f9be",
+          "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/export/export/f2ef8a25-e8e1-4e09-b2eb-a2053644f9be/04c54c94"
+        }
+      ],
+      "backend": "zenml",
+      "backend_run_id": "ae4de56b-87d9-464f-ae4e-f48204c598b1",
+      "backend_status": "completed",
+      "backend_version": "0.97.0",
+      "error": null,
+      "executed_recipe_digest": null,
+      "last_reconciled_at": "2026-10-09T14:54:36.219178+00:00",
+      "log_available": true,
+      "metrics": {
+        "accuracy": 1.0,
+        "best_step": 18,
+        "best_validation_loss": 0.0316569060087204,
+        "brier": 0.0009742958936840296,
+        "checkpoint_kind": "best",
+        "consumed_dataset_artifact": true,
+        "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+        "device": "cpu",
+        "distinct_tokenized_examples": 48,
+        "fixture": "pretrained",
+        "heldout_count": 8,
+        "heldout_logits": [
+          [
+            -1.7007440328598022,
+            1.6797559261322021
+          ],
+          [
+            -1.735011100769043,
+            1.6724557876586914
+          ],
+          [
+            -1.7203011512756348,
+            1.675095796585083
+          ],
+          [
+            -1.7284883260726929,
+            1.6726150512695312
+          ],
+          [
+            1.820666790008545,
+            -1.6573050022125244
+          ],
+          [
+            1.8205029964447021,
+            -1.6510097980499268
+          ],
+          [
+            1.8127110004425049,
+            -1.6766278743743896
+          ],
+          [
+            1.8229618072509766,
+            -1.6484739780426025
+          ]
+        ],
+        "kl": {
+          "batch_size": 32,
+          "coefficient": 0.2,
+          "direction": "model_to_reference",
+          "learning_rate": 0.001,
+          "scheduler_gamma": 0.99
+        },
+        "model_id": "prajjwal1/bert-tiny",
+        "resume_mode": null,
+        "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+        "start_step": 0,
+        "step": 18,
+        "train_count": 32,
+        "upstream_weights_sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+        "validation_count": 8,
+        "validation_loss": 0.0316569060087204,
+        "vocabulary_size": 30522,
+        "width": 12
+      },
+      "model_version_ref": "722c6dbe-bff7-4f20-beb7-153b07656339",
+      "operation_id": "64814dc7-1997-4be9-b329-9f4d60b2f41c",
+      "parent_checkpoint_ref": null,
+      "parent_run_id": null,
+      "process_group_alive": false,
+      "project_id": "d0aa62db-b8dc-47c0-a943-81b6b3a52ec5",
+      "resume_mode": null,
+      "runtime_status_source": "verified_local_supervisor",
+      "status": "succeeded",
+      "submitted_at": "2026-10-09T14:54:14.738384+00:00",
+      "supervisor_alive": true,
+      "termination": {},
+      "termination_record_source": null,
+      "worker_alive": false,
+      "worker_exit_code": 0,
+      "worker_pid": 713
+    }
+  ],
+  "promoted": {
+    "backend_project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+    "metadata": {
+      "accuracy": 1.0,
+      "application_project_id": "d0aa62db-b8dc-47c0-a943-81b6b3a52ec5",
+      "best_step": 18,
+      "best_validation_loss": 0.025669865310192108,
+      "brier": 0.0006469727959483862,
+      "checkpoint_kind": "best",
+      "consumed_dataset_artifact": true,
+      "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+      "device": "cpu",
+      "distinct_tokenized_examples": 48,
+      "fixture": "pretrained",
+      "heldout_count": 8,
+      "kl": {
+        "batch_size": 32,
+        "coefficient": 0.0,
+        "direction": "model_to_reference",
+        "learning_rate": 0.001,
+        "scheduler_gamma": 0.99
+      },
+      "model_id": "prajjwal1/bert-tiny",
+      "parent_checkpoint_ref": "",
+      "parent_run_id": "",
+      "recipe_digest": "3afd3df05de22389448389ede7c95cf3701d1b9cea789b4631154e29c81d8b35",
+      "resume_mode": "",
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "selection_candidate_run_ids": [
+        "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+        "ae4de56b-87d9-464f-ae4e-f48204c598b1"
+      ],
+      "selection_decision": {
+        "outcome": "accepted",
+        "rationale": "Measured validation criterion",
+        "run_ids": [
+          "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+          "ae4de56b-87d9-464f-ae4e-f48204c598b1"
+        ],
+        "selection_rule": {
+          "direction": "minimize",
+          "metric": "validation_loss"
+        }
+      },
+      "selection_rule": {
+        "direction": "minimize",
+        "metric": "validation_loss"
+      },
+      "selection_value": 0.025669865310192108,
+      "start_step": 0,
+      "step": 18,
+      "train_count": 32,
+      "upstream_weights_sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+      "validation_count": 8,
+      "validation_loss": 0.025669865310192108,
+      "vocabulary_size": 30522,
+      "width": 12
+    },
+    "model_id": "7fe16c7a-cea8-4631-a68f-ba55a0c3103b",
+    "model_version_id": "1554972f-0900-45cc-8254-be8e5c241b2b",
+    "model_version_ref": "1554972f-0900-45cc-8254-be8e5c241b2b",
+    "name": "eee429b1-b042-40e7-b39c-4fa816596a72",
+    "number": 1,
+    "selected_run_id": "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+    "selection_value": 0.025669865310192108,
+    "stage": "staging"
+  },
+  "child": {
+    "artifacts": [
+      {
+        "artifact_id": "c82f487c-470f-44df-af18-c2294b477020",
+        "backend_run_id": "fe28d8e2-0c0d-4d24-9b61-c53d57af7d95",
+        "name": "data",
+        "node_id": "data",
+        "port": "data",
+        "step_id": "11862537-4968-43f6-8abb-abfbc600ed72",
+        "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/data/data/11862537-4968-43f6-8abb-abfbc600ed72/76816adf"
+      },
+      {
+        "artifact_id": "bfc18258-b622-4417-b5bd-3216d4e555bc",
+        "backend_run_id": "fe28d8e2-0c0d-4d24-9b61-c53d57af7d95",
+        "name": "initial",
+        "node_id": "initial",
+        "port": "initial",
+        "step_id": "c1460050-cd26-4c51-8856-581c2bec7d16",
+        "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/initial/initial/c1460050-cd26-4c51-8856-581c2bec7d16/0cedb889"
+      },
+      {
+        "artifact_id": "2ec05051-82c7-4c04-a91b-7d19bdccb954",
+        "backend_run_id": "fe28d8e2-0c0d-4d24-9b61-c53d57af7d95",
+        "name": "checkpoint",
+        "node_id": "train",
+        "port": "checkpoint",
+        "step_id": "6e78bc16-8b8a-432c-b416-0535ad9859d3",
+        "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/train/checkpoint/6e78bc16-8b8a-432c-b416-0535ad9859d3/6c77f4b0"
+      },
+      {
+        "artifact_id": "7f1b6619-889a-467b-9f79-b3ff8de2f97e",
+        "backend_run_id": "fe28d8e2-0c0d-4d24-9b61-c53d57af7d95",
+        "name": "metrics",
+        "node_id": "evaluate",
+        "port": "metrics",
+        "step_id": "06ad4d41-196c-41fe-bd57-8809e9c3b5f7",
+        "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/evaluate/metrics/06ad4d41-196c-41fe-bd57-8809e9c3b5f7/b6fd7dc4"
+      },
+      {
+        "artifact_id": "d95fe636-8910-49de-afe7-b2cad1dbbdcb",
+        "backend_run_id": "fe28d8e2-0c0d-4d24-9b61-c53d57af7d95",
+        "name": "export",
+        "node_id": "export",
+        "port": "export",
+        "step_id": "9111c710-c34e-4113-8f54-7485c570b379",
+        "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/export/export/9111c710-c34e-4113-8f54-7485c570b379/5c37680a"
+      }
+    ],
+    "backend": "zenml",
+    "backend_run_id": "fe28d8e2-0c0d-4d24-9b61-c53d57af7d95",
+    "backend_status": "completed",
+    "backend_version": "0.97.0",
+    "error": null,
+    "executed_recipe_digest": "d2ea40cd71af72a6223f720782e3c6e1d084e288e463cd62dd2acb0fffae0565",
+    "last_reconciled_at": "2026-10-09T14:55:08.652507+00:00",
+    "log_available": true,
+    "metrics": {
+      "accuracy": 1.0,
+      "best_step": 21,
+      "best_validation_loss": 0.016049254685640335,
+      "brier": 0.00025505534722469747,
+      "checkpoint_kind": "best",
+      "consumed_dataset_artifact": true,
+      "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+      "device": "cpu",
+      "distinct_tokenized_examples": 48,
+      "fixture": "pretrained",
+      "heldout_count": 8,
+      "heldout_logits": [
+        [
+          -2.023357391357422,
+          2.022141456604004
+        ],
+        [
+          -2.0397162437438965,
+          2.026116132736206
+        ],
+        [
+          -2.0319950580596924,
+          2.0230517387390137
+        ],
+        [
+          -2.035111665725708,
+          2.0273263454437256
+        ],
+        [
+          2.110665798187256,
+          -2.0857930183410645
+        ],
+        [
+          2.113595962524414,
+          -2.074979066848755
+        ],
+        [
+          2.1078367233276367,
+          -2.0902903079986572
+        ],
+        [
+          2.1108360290527344,
+          -2.081144332885742
+        ]
+      ],
+      "kl": {
+        "batch_size": 32,
+        "coefficient": 0.0,
+        "direction": "model_to_reference",
+        "learning_rate": 0.001,
+        "scheduler_gamma": 0.99
+      },
+      "model_id": "prajjwal1/bert-tiny",
+      "resume_mode": "exact_state",
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "start_step": 18,
+      "step": 21,
+      "train_count": 32,
+      "upstream_weights_sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+      "validation_count": 8,
+      "validation_loss": 0.016049254685640335,
+      "vocabulary_size": 30522,
+      "width": 12
+    },
+    "model_version_ref": "7d49faad-9394-49e4-9f32-38576597b39a",
+    "operation_id": "b21fe6cf-ce56-4591-94a2-7ce1ccd909d0",
+    "parent_checkpoint_ref": "41f81427-971d-4400-b5ed-79e8ae1de269",
+    "parent_run_id": "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+    "process_group_alive": true,
+    "project_id": "d0aa62db-b8dc-47c0-a943-81b6b3a52ec5",
+    "resume_mode": "exact_state",
+    "runtime_status_source": "verified_local_supervisor",
+    "status": "succeeded",
+    "submitted_at": "2026-10-09T14:54:53.102703+00:00",
+    "supervisor_alive": true,
+    "termination": {},
+    "termination_record_source": null,
+    "worker_alive": true,
+    "worker_exit_code": null,
+    "worker_pid": 746
+  },
+  "lineage": {
+    "artifact_links": [
+      {
+        "body": {
+          "artifact_version": {
+            "body": {
+              "artifact": {
+                "body": {
+                  "created": "2026-10-09T14:53:56.324874",
+                  "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+                  "updated": "2026-10-09T14:53:56.324894",
+                  "user_id": "ea057a50-320d-4d79-802a-230822b44e3c"
+                },
+                "id": "9a13674d-6478-44bc-a6ed-2ad9c964f30f",
+                "metadata": null,
+                "name": "data",
+                "permission_denied": false,
+                "resources": null
+              },
+              "artifact_store_id": "e5533f4b-e999-46c6-9622-79e77336c049",
+              "content_hash": "beca68749e4b94ee51f6a53f7dc26212",
+              "created": "2026-10-09T14:54:58.733642",
+              "data_type": {
+                "attribute": "dict",
+                "module": "builtins",
+                "type": "builtin"
+              },
+              "item_count": null,
+              "materializer": {
+                "attribute": "BuiltInContainerMaterializer",
+                "module": "zenml.materializers.built_in_materializer",
+                "type": "internal"
+              },
+              "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+              "save_type": "step_output",
+              "type": "BaseArtifact",
+              "updated": "2026-10-09T14:54:58.733694",
+              "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/data/data/11862537-4968-43f6-8abb-abfbc600ed72/76816adf",
+              "user_id": "ea057a50-320d-4d79-802a-230822b44e3c",
+              "version": "3"
+            },
+            "id": "c82f487c-470f-44df-af18-c2294b477020",
+            "metadata": null,
+            "permission_denied": false,
+            "resources": null
+          },
+          "created": "2026-10-09T14:54:58.752256",
+          "model_version": "7d49faad-9394-49e4-9f32-38576597b39a",
+          "updated": "2026-10-09T14:54:58.752272"
+        },
+        "id": "b4708d65-e1b2-4e73-ad13-7e2e5fb13057",
+        "metadata": null,
+        "permission_denied": false,
+        "resources": null
+      },
+      {
+        "body": {
+          "artifact_version": {
+            "body": {
+              "artifact": {
+                "body": {
+                  "created": "2026-10-09T14:53:57.988138",
+                  "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+                  "updated": "2026-10-09T14:53:57.988155",
+                  "user_id": "ea057a50-320d-4d79-802a-230822b44e3c"
+                },
+                "id": "f66ed164-1f81-42c1-aff4-6849d63f2c8e",
+                "metadata": null,
+                "name": "initial",
+                "permission_denied": false,
+                "resources": null
+              },
+              "artifact_store_id": "e5533f4b-e999-46c6-9622-79e77336c049",
+              "content_hash": null,
+              "created": "2026-10-09T14:55:00.440815",
+              "data_type": {
+                "attribute": "PosixPath",
+                "module": "pathlib",
+                "type": "builtin"
+              },
+              "item_count": null,
+              "materializer": {
+                "attribute": "PathMaterializer",
+                "module": "zenml.materializers.path_materializer",
+                "type": "internal"
+              },
+              "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+              "save_type": "step_output",
+              "type": "ModelArtifact",
+              "updated": "2026-10-09T14:55:00.440839",
+              "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/initial/initial/c1460050-cd26-4c51-8856-581c2bec7d16/0cedb889",
+              "user_id": "ea057a50-320d-4d79-802a-230822b44e3c",
+              "version": "3"
+            },
+            "id": "bfc18258-b622-4417-b5bd-3216d4e555bc",
+            "metadata": null,
+            "permission_denied": false,
+            "resources": null
+          },
+          "created": "2026-10-09T14:55:00.449567",
+          "model_version": "7d49faad-9394-49e4-9f32-38576597b39a",
+          "updated": "2026-10-09T14:55:00.449586"
+        },
+        "id": "24d46e63-e344-44ee-b357-f6fe136729b7",
+        "metadata": null,
+        "permission_denied": false,
+        "resources": null
+      },
+      {
+        "body": {
+          "artifact_version": {
+            "body": {
+              "artifact": {
+                "body": {
+                  "created": "2026-10-09T14:54:04.692380",
+                  "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+                  "updated": "2026-10-09T14:54:04.692396",
+                  "user_id": "ea057a50-320d-4d79-802a-230822b44e3c"
+                },
+                "id": "67c62022-cb88-4a56-a134-8bd5a4b50409",
+                "metadata": null,
+                "name": "checkpoint",
+                "permission_denied": false,
+                "resources": null
+              },
+              "artifact_store_id": "e5533f4b-e999-46c6-9622-79e77336c049",
+              "content_hash": null,
+              "created": "2026-10-09T14:55:04.643474",
+              "data_type": {
+                "attribute": "PosixPath",
+                "module": "pathlib",
+                "type": "builtin"
+              },
+              "item_count": null,
+              "materializer": {
+                "attribute": "PathMaterializer",
+                "module": "zenml.materializers.path_materializer",
+                "type": "internal"
+              },
+              "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+              "save_type": "step_output",
+              "type": "ModelArtifact",
+              "updated": "2026-10-09T14:55:04.643493",
+              "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/train/checkpoint/6e78bc16-8b8a-432c-b416-0535ad9859d3/6c77f4b0",
+              "user_id": "ea057a50-320d-4d79-802a-230822b44e3c",
+              "version": "3"
+            },
+            "id": "2ec05051-82c7-4c04-a91b-7d19bdccb954",
+            "metadata": null,
+            "permission_denied": false,
+            "resources": null
+          },
+          "created": "2026-10-09T14:55:04.649661",
+          "model_version": "7d49faad-9394-49e4-9f32-38576597b39a",
+          "updated": "2026-10-09T14:55:04.649674"
+        },
+        "id": "569ee77e-5663-4069-b4f8-c40b78b8329c",
+        "metadata": null,
+        "permission_denied": false,
+        "resources": null
+      },
+      {
+        "body": {
+          "artifact_version": {
+            "body": {
+              "artifact": {
+                "body": {
+                  "created": "2026-10-09T14:54:05.895208",
+                  "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+                  "updated": "2026-10-09T14:54:05.895221",
+                  "user_id": "ea057a50-320d-4d79-802a-230822b44e3c"
+                },
+                "id": "aba55636-73a3-4b06-9951-f7ed06693bbe",
+                "metadata": null,
+                "name": "metrics",
+                "permission_denied": false,
+                "resources": null
+              },
+              "artifact_store_id": "e5533f4b-e999-46c6-9622-79e77336c049",
+              "content_hash": "88b1ab040c4aaec680dcbe67a243624a",
+              "created": "2026-10-09T14:55:05.778641",
+              "data_type": {
+                "attribute": "dict",
+                "module": "builtins",
+                "type": "builtin"
+              },
+              "item_count": null,
+              "materializer": {
+                "attribute": "BuiltInContainerMaterializer",
+                "module": "zenml.materializers.built_in_materializer",
+                "type": "internal"
+              },
+              "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+              "save_type": "step_output",
+              "type": "BaseArtifact",
+              "updated": "2026-10-09T14:55:05.778654",
+              "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/evaluate/metrics/06ad4d41-196c-41fe-bd57-8809e9c3b5f7/b6fd7dc4",
+              "user_id": "ea057a50-320d-4d79-802a-230822b44e3c",
+              "version": "3"
+            },
+            "id": "7f1b6619-889a-467b-9f79-b3ff8de2f97e",
+            "metadata": null,
+            "permission_denied": false,
+            "resources": null
+          },
+          "created": "2026-10-09T14:55:05.786496",
+          "model_version": "7d49faad-9394-49e4-9f32-38576597b39a",
+          "updated": "2026-10-09T14:55:05.786509"
+        },
+        "id": "17d94fd4-a441-404c-99e1-e223e48c4330",
+        "metadata": null,
+        "permission_denied": false,
+        "resources": null
+      },
+      {
+        "body": {
+          "artifact_version": {
+            "body": {
+              "artifact": {
+                "body": {
+                  "created": "2026-10-09T14:54:07.879325",
+                  "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+                  "updated": "2026-10-09T14:54:07.879346",
+                  "user_id": "ea057a50-320d-4d79-802a-230822b44e3c"
+                },
+                "id": "8f592ccc-2443-48ef-9b81-6a4e76acfb43",
+                "metadata": null,
+                "name": "export",
+                "permission_denied": false,
+                "resources": null
+              },
+              "artifact_store_id": "e5533f4b-e999-46c6-9622-79e77336c049",
+              "content_hash": null,
+              "created": "2026-10-09T14:55:07.576639",
+              "data_type": {
+                "attribute": "PosixPath",
+                "module": "pathlib",
+                "type": "builtin"
+              },
+              "item_count": null,
+              "materializer": {
+                "attribute": "PathMaterializer",
+                "module": "zenml.materializers.path_materializer",
+                "type": "internal"
+              },
+              "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+              "save_type": "step_output",
+              "type": "ModelArtifact",
+              "updated": "2026-10-09T14:55:07.576659",
+              "uri": "/tmp/pytest-of-agent/pytest-67/test_pretrained_validation_sel0/backend/zenml-stores/e5533f4b-e999-46c6-9622-79e77336c049/export/export/9111c710-c34e-4113-8f54-7485c570b379/5c37680a",
+              "user_id": "ea057a50-320d-4d79-802a-230822b44e3c",
+              "version": "3"
+            },
+            "id": "d95fe636-8910-49de-afe7-b2cad1dbbdcb",
+            "metadata": null,
+            "permission_denied": false,
+            "resources": null
+          },
+          "created": "2026-10-09T14:55:07.583872",
+          "model_version": "7d49faad-9394-49e4-9f32-38576597b39a",
+          "updated": "2026-10-09T14:55:07.583887"
+        },
+        "id": "8b296a0a-46d4-4c66-b5b1-d8fb55a2a184",
+        "metadata": null,
+        "permission_denied": false,
+        "resources": null
+      }
+    ],
+    "backend_project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+    "metadata": {
+      "accuracy": 1.0,
+      "application_project_id": "d0aa62db-b8dc-47c0-a943-81b6b3a52ec5",
+      "best_step": 21,
+      "best_validation_loss": 0.016049254685640335,
+      "brier": 0.00025505534722469747,
+      "checkpoint_kind": "best",
+      "consumed_dataset_artifact": true,
+      "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+      "device": "cpu",
+      "distinct_tokenized_examples": 48,
+      "fixture": "pretrained",
+      "heldout_count": 8,
+      "kl": {
+        "batch_size": 32,
+        "coefficient": 0.0,
+        "direction": "model_to_reference",
+        "learning_rate": 0.001,
+        "scheduler_gamma": 0.99
+      },
+      "model_id": "prajjwal1/bert-tiny",
+      "parent_checkpoint_ref": "41f81427-971d-4400-b5ed-79e8ae1de269",
+      "parent_run_id": "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+      "recipe_digest": "d2ea40cd71af72a6223f720782e3c6e1d084e288e463cd62dd2acb0fffae0565",
+      "resume_mode": "exact_state",
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "selection_decision": {
+        "outcome": "accepted",
+        "rationale": "Measured validation criterion",
+        "run_ids": [
+          "c1cccc5f-bf60-45aa-9fb1-58756b45482d",
+          "ae4de56b-87d9-464f-ae4e-f48204c598b1"
+        ],
+        "selection_rule": {
+          "direction": "minimize",
+          "metric": "validation_loss"
+        }
+      },
+      "start_step": 18,
+      "step": 21,
+      "train_count": 32,
+      "upstream_weights_sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+      "validation_count": 8,
+      "validation_loss": 0.016049254685640335,
+      "vocabulary_size": 30522,
+      "width": 12
+    },
+    "model_id": "7fe16c7a-cea8-4631-a68f-ba55a0c3103b",
+    "model_version_id": "7d49faad-9394-49e4-9f32-38576597b39a",
+    "model_version_ref": "7d49faad-9394-49e4-9f32-38576597b39a",
+    "name": "b21fe6cf-ce56-4591-94a2-7ce1ccd909d0",
+    "number": 3,
+    "pipeline_run_links": [
+      {
+        "body": {
+          "created": "2026-10-09T14:54:56.857875",
+          "model_version": "7d49faad-9394-49e4-9f32-38576597b39a",
+          "pipeline_run": {
+            "body": {
+              "child_key": null,
+              "created": "2026-10-09T14:54:56.806814",
+              "in_progress": false,
+              "index": 3,
+              "pipeline_id": "ce0fe29f-f588-4574-9480-c21bab274e82",
+              "project_id": "69744860-ea12-4746-acd4-1e75b77ce487",
+              "root_run_id": null,
+              "status": "completed",
+              "status_reason": null,
+              "updated": "2026-10-09T14:55:07.612289",
+              "user_id": "ea057a50-320d-4d79-802a-230822b44e3c"
+            },
+            "id": "fe28d8e2-0c0d-4d24-9b61-c53d57af7d95",
+            "metadata": null,
+            "name": "modelbuilder-b21fe6cf-ce56-4591-94a2-7ce1ccd909d0",
+            "permission_denied": false,
+            "resources": null
+          },
+          "updated": "2026-10-09T14:54:56.857890"
+        },
+        "id": "52bed037-b793-49cb-bb0b-e916da993906",
+        "metadata": null,
+        "permission_denied": false,
+        "resources": null
+      }
+    ],
+    "stage": null
+  }
+}

@@ -1,0 +1,4 @@
+Installing extensions...
+Extension 'anthropic.claude-code-2.1.295.vsix' was successfully installed.
+Debugger listening on ws://127.0.0.1:5874/f0650a0d-83cc-49ff-8fd6-1bfc3408ab61
+For help, see: https://nodejs.org/en/docs/inspector

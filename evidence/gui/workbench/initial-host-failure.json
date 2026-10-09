@@ -1,0 +1,20 @@
+{
+  "app": "Modelbuilder IDE Dev",
+  "editor": "1.105.0",
+  "status": "FAIL",
+  "tests": [
+    {
+      "name": "native-monaco-source-save",
+      "status": "PASS",
+      "evidence": {
+        "project_id": "d629f14c-d3c8-4645-bb61-d5345effa53c",
+        "recipe_id": "e4264569-470c-4336-8f5d-aa173811a62a",
+        "revision": 2,
+        "digest": "c81726a6b4d1ffffeb2d96fbde6087fa67e347767bd80eb49edb3a6edcdc1bc2",
+        "scheme": "modelrecipe",
+        "language": "json"
+      }
+    }
+  ],
+  "error": "Error: Command failed: /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/toolchains/node-v22.19.0-linux-x64/bin/node /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs {\"project_id\":\"d629f14c-d3c8-4645-bb61-d5345effa53c\",\"recipe_id\":\"e4264569-470c-4336-8f5d-aa173811a62a\",\"initial_revision\":2}\nError: Timed out waiting for actual GUI state\n    at wait (/workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:6:182)\n    at async /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:13:3\n\n\tat genericNodeError (node:internal/errors:983:15)\n\tat wrappedFn (node:internal/errors:537:14)\n\tat ChildProcess.exithandler (node:child_process:417:12)\n\tat ChildProcess.emit (node:events:519:28)\n\tat maybeClose (node:internal/child_process:1101:16)\n\tat Socket.<anonymous> (node:internal/child_process:456:11)\n\tat Socket.emit (node:events:519:28)\n\tat Pipe.<anonymous> (node:net:346:12)"
+}

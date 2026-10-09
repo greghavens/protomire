@@ -1,0 +1,63 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> modelbuilder-workbench@0.1.0 package
+> npm run compile && vsce package --no-dependencies --allow-missing-repository --out modelbuilder-workbench-0.1.0.vsix
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> modelbuilder-workbench@0.1.0 compile
+> node scripts/build.mjs
+
+Executing prepublish script 'npm run vscode:prepublish'...
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> modelbuilder-workbench@0.1.0 vscode:prepublish
+> npm run compile
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> modelbuilder-workbench@0.1.0 compile
+> node scripts/build.mjs
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+ INFO  Files included in the VSIX:
+modelbuilder-workbench-0.1.0.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ .gitignore [0.04 KB]
+   ├─ LICENSE.txt [0.18 KB]
+   ├─ package.json [3.55 KB]
+   ├─ readme.md 
+   ├─ media/
+   │  ├─ model.svg [0.32 KB]
+   │  ├─ workbench.css [5.82 KB]
+   │  ├─ workbench.js [33.72 KB]
+   │  └─ workbench.js.map [53.52 KB]
+   ├─ out/
+   │  ├─ client.js [3.4 KB]
+   │  ├─ client.js.map [5.35 KB]
+   │  ├─ document.js [4.17 KB]
+   │  ├─ document.js.map [5.5 KB]
+   │  ├─ extension.js [31.23 KB]
+   │  ├─ extension.js.map [50.49 KB]
+   │  ├─ security.js [2.89 KB]
+   │  └─ security.js.map [2.93 KB]
+   └─ schemas/
+      └─ recipe.v0.schema.json [13.5 KB]
+
+ DONE  Packaged: modelbuilder-workbench-0.1.0.vsix (19 files, 68.38 KB)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

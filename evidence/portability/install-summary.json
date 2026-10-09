@@ -1,0 +1,25 @@
+{
+  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "python": "3.12.14",
+  "locks": {
+    "requirements/service.lock": "02b3918fe148881089cf3ba31151ef1e387b2f4b902c34c74a1a70544b8477d7",
+    "requirements/backend.lock": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+  },
+  "environments": [
+    ".venv-portability-origin",
+    ".venv-portability-origin-backend",
+    ".venv-replay",
+    ".venv-replay-backend"
+  ],
+  "logs": [
+    "environment-install.log",
+    "service-lock-refresh.log",
+    "export-install.log"
+  ],
+  "final_packages": {
+    "service_environments": 71,
+    "runtime_environments": 103
+  },
+  "all_install_and_dependency_checks_passed": true,
+  "separation": "Ordinary wheel installs with distinct installed paths; shared package-download hardlink cache only."
+}

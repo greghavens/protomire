@@ -1,0 +1,49 @@
+[671:1009/092739.664418:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[671:1009/092739.950204:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[671:1009/092739.950274:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[671:1009/092739.970846:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:234] Floss manager service not available, cannot set Floss enable/disable.
+[718:1009/092740.059870:ERROR:components/viz/service/main/viz_main_impl.cc:184] Exiting GPU process due to errors during initialization
+[754:1009/092740.089347:WARNING:ui/gfx/linux/gpu_memory_buffer_support_x11.cc:49] dri3 extension not supported.
+[754:1009/092740.090453:WARNING:sandbox/policy/linux/sandbox_linux.cc:415] InitializeSandbox() called with multiple threads in process gpu-process.
+[671:1009/092740.315095:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[671:1009/092740.315132:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[671:1009/092740.315146:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[671:1009/092740.317909:WARNING:electron/shell/browser/lib/power_observer_linux.cc:181] Failed to connect to PrepareForShutdown
+[671:1009/092740.317944:WARNING:electron/shell/browser/lib/power_observer_linux.cc:181] Failed to connect to PrepareForSleep
+[671:1009/092740.317949:WARNING:electron/shell/browser/lib/power_observer_linux.cc:70] org.freedesktop.login1 not available
+[90m[main 2026-10-09T14:27:40.346Z][0m [CSS_DEV] DONE, 273 css modules (23ms)
+[90m[main 2026-10-09T14:27:40.429Z][0m update#setState disabled
+[671:1009/092744.412710:ERROR:ui/gfx/platform_font_skia.cc:255] Could not find any font: OpenAI Sans, sans. Falling back to the default
+ChatSessionStore: Migrating 0 chat sessions from storage service to file system
+Started local extension host with pid 866.
+Loading development extension at /workspace/scratch/f9ccb8889bfe/modelbuilder/tests/gui
+[671:1009/092745.032351:INFO:CONSOLE:48] "Overwriting extension <<copilot-instructions.md>> to now point to mime <<text/x-instructions>>", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/editor/common/services/languagesAssociations.js (48)
+No default agent contributed
+[671:1009/092745.570634:INFO:CONSOLE:297] "AI generated workspace trust dialog contents not available.", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/contrib/workspace/browser/workspace.contribution.js (297)
+DialogService: refused to show dialog in tests. Contents: Do you trust the authors of the files in this folder?: Error: DialogService: refused to show dialog in tests. Contents: Do you trust the authors of the files in this folder?
+    at DialogService.prompt (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/dialogs/common/dialogService.js:47:19)
+    at WorkspaceTrustUXHandler.doShowModal (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/contrib/workspace/browser/workspace.contribution.js:335:34)
+    at UniqueContainer.value (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/contrib/workspace/browser/workspace.contribution.js:311:18)
+CodeExpectedError: Unable to write to Workspace Settings because python.defaultInterpreterPath is not a registered configuration.
+    at ConfigurationEditing.toConfigurationEditingError (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:311:16)
+    at ConfigurationEditing.validate (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:466:28)
+    at ConfigurationEditing.doWriteConfiguration (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:141:20)
+    at Object.factory (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:130:28)
+    at Queue.consume (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/base/common/async.js:584:42)
+    at vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/base/common/async.js:577:18
+    at new Promise (<anonymous>)
+    at Queue.queue (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/base/common/async.js:575:16)
+    at ConfigurationEditing.writeConfiguration (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:128:27)
+    at WorkspaceService.writeConfigurationValue (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/browser/configurationService.js:877:49)
+[671:1009/092745.938987:INFO:CONSOLE:475] "CodeExpectedError: Unable to write to Workspace Settings because python.defaultInterpreterPath is not a registered configuration.
+    at ConfigurationEditing.toConfigurationEditingError (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:311:16)
+    at ConfigurationEditing.validate (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:466:28)
+    at ConfigurationEditing.doWriteConfiguration (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:141:20)
+    at Object.factory (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:130:28)
+    at Queue.consume (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/base/common/async.js:584:42)
+    at vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/base/common/async.js:577:18
+    at new Promise (<anonymous>)
+    at Queue.queue (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/base/common/async.js:575:16)
+    at ConfigurationEditing.writeConfiguration (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/common/configurationEditing.js:128:27)
+    at WorkspaceService.writeConfigurationValue (vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/configuration/browser/configurationService.js:877:49)", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/extensions/common/abstractExtensionService.js (475)
+[90m[main 2026-10-09T14:27:45.942Z][0m Extension host with pid 866 exited with code: 0, signal: unknown.

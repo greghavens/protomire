@@ -1,0 +1,30 @@
+[
+  {
+    "id": "openai/chatgpt",
+    "version": "26.5908.31748",
+    "target_platform": "linux-x64",
+    "license": "SEE LICENSE IN LICENSE.md",
+    "license_url": "https://open-vsx.org/api/openai/chatgpt/linux-x64/26.5908.31748/file/LICENSE.md",
+    "engine": {
+      "vscode": "^1.96.2"
+    },
+    "status": "INSTALLED_ACTIVATED_AUTH_BLOCKED",
+    "note": "Exact-fork installation/activation and sign-in UI observed. Bundled vendor transports connect to native MCP; authenticated agent calls are blocked on account authentication and inference authorization. Not bundled in distribution.",
+    "terms_url": "https://openai.com/policies/row-terms-of-use/",
+    "explicit_acceptance_prompt": false
+  },
+  {
+    "id": "anthropic/claude-code",
+    "version": "2.1.295",
+    "target_platform": "linux-x64",
+    "license": "\u00a9 Anthropic PBC. All rights reserved. Use is subject to the Legal Agreements outlined here: https://code.claude.com/docs/en/legal-and-compliance.",
+    "license_url": null,
+    "engine": {
+      "vscode": "^1.94.0"
+    },
+    "status": "INSTALLED_ACTIVATED_AUTH_BLOCKED",
+    "note": "Exact-fork installation/activation and sign-in UI observed. Bundled vendor transports connect to native MCP; authenticated agent calls are blocked on account authentication and inference authorization. Not bundled in distribution.",
+    "terms_url": "https://code.claude.com/docs/en/legal-and-compliance",
+    "explicit_acceptance_prompt": false
+  }
+]

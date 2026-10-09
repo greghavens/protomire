@@ -1,0 +1,84 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_actual_cancel_recovered_checkpoint_exact_resume _____________
+
+tmp_path = PosixPath('/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/cancel-fixed-state/test_actual_cancel_recovered_c0')
+
+    backend = ZenMLBackend(tmp_path)
+    body = recipe(steps=200, delay=0.15)
+    request = submit(backend, body)
+    running = wait(backend, request, lambda r: r["status"] == "running" and bool(r["backend_run_id"]))
+    output = backend.root / "jobs" / request["operation_id"] / "outputs/train/checkpoint.pt"
+    deadline = time.monotonic() + 20
+    while not output.exists() and time.monotonic() < deadline:
+        time.sleep(0.1)
+    cancelled = backend.invoke("run.cancel", request)
+    assert cancelled["status"] == "cancelled", cancelled
+    assert cancelled["backend_status"] == "failed"  # ZenML static-run terminal enum limitation is explicit.
+    assert cancelled["termination"]["reason"] == "cancelled" and cancelled["termination"]["confirmed"]
+    assert cancelled["cancellation_acknowledged"] is True
+    assert cancelled["worker_alive"] is False and cancelled["process_group_alive"] is False
+    ref = checkpoint(backend, request)
+    saved = load_checkpoint(Path(ref["path"]))
+    final_steps = saved["step"] + 5
+    resumed_recipe = recipe(steps=final_steps)
+    resumed_request = {**request, "parent_operation_id": request["operation_id"], "operation_id": str(uuid.uuid4()),
+                       "idempotency_key": str(uuid.uuid4()), "recipe": resumed_recipe, "steps": final_steps,
+                       "mode": "exact_state", "checkpoint_id": ref["artifact_id"]}
+    backend.invoke("run.resume", resumed_request)
+    resumed = wait(backend, resumed_request)
+    assert resumed["status"] == "succeeded", resumed
+    full_request = submit(backend, recipe(steps=final_steps), request["project_id"])
+    full = wait(backend, full_request)
+    a = load_checkpoint(Path(checkpoint(backend, full_request)["path"]))
+    b = load_checkpoint(Path(checkpoint(backend, resumed_request)["path"]))
+>   for field in ("model", "optimizer", "scheduler", "torch_rng", "python_rng", "order", "cursor", "epoch"):
+
+tests/integration/test_native_lifecycle.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/integration/test_native_lifecycle.py:63: in checkpoint
+    ???
+src/modelbuilder/backend/adapter.py:221: in invoke
+    return self._rpc(operation, {**payload, "job_dir": str(job)})
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <modelbuilder.backend.adapter.ZenMLBackend object at 0x7f23d98f5fd0>
+operation = 'model.checkpoint.get'
+payload = {'checkpoint_id': 'c62a2ea4-2354-4ff0-961e-5561a35bc651', 'idempotency_key': 'e19b61fd-9753-4bba-a076-48b2a46fad2e', '...te/test_actual_cancel_recovered_c0/backend/jobs/311ff282-c143-4dfb-814b-a5d082a827b0', 'max_runtime_seconds': 180, ...}
+
+    def _rpc(self, operation: str, payload: dict) -> dict:
+        if not Path(self.python).is_file():
+            raise BackendError("capability_unavailable", "Pinned ZenML backend environment is not installed; run scripts/bootstrap.sh --backend")
+        request_id = str(uuid.uuid4())
+        path = self.root / "requests" / f"{request_id}.json"
+        result = path.with_suffix(".result.json")
+        write_json(path, {"operation": operation, "payload": payload, "root": str(self.root), "result": str(result)})
+        with path.with_suffix(".log").open("w") as log:
+            try:
+                completed = subprocess.run([self.python, "-m", "modelbuilder.backend.sdk", str(path)], env=self._env(),
+                                           cwd=self.repository, stdout=log, stderr=subprocess.STDOUT, timeout=90)
+            except subprocess.TimeoutExpired as error:
+                raise BackendError("backend_timeout", "ZenML read did not complete", {"request_id": request_id}) from error
+        response = read_json(result)
+        if isinstance(response.get("error"), dict):
+            error = response["error"]
+>           raise BackendError(error.get("code", "backend_error"), error["message"], error.get("details"))
+E           modelbuilder.backend.adapter.BackendError: Requested checkpoint identity differs from resolved checkpoint
+
+src/modelbuilder/backend/adapter.py:77: BackendError
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/backend/cancel-targeted.xml -
+=========================== short test summary info ============================
+FAILED tests/integration/test_native_lifecycle.py::test_actual_cancel_recovered_checkpoint_exact_resume
+1 failed, 2 warnings in 59.35s

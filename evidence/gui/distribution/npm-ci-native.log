@@ -1,0 +1,259 @@
+npm warn skipping integrity check for git dependency ssh://git@github.com/parcel-bundler/watcher.git
+npm warn deprecated osenv@0.1.5: This package is no longer supported.
+npm warn deprecated is-data-descriptor@1.0.0: Please upgrade to v1.0.1
+npm warn deprecated is-accessor-descriptor@1.0.0: Please upgrade to v1.0.1
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
+npm warn deprecated rimraf@2.6.3: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated urix@0.1.0: Please see https://github.com/lydell/urix#deprecated
+npm warn deprecated source-map-resolve@0.6.0: See https://github.com/lydell/source-map-resolve#deprecated
+npm warn deprecated resolve-url@0.2.1: https://github.com/lydell/resolve-url#deprecated
+npm warn deprecated glob@5.0.15: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@8.1.0: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.1.7: Glob versions prior to v9 are no longer supported
+npm warn deprecated source-map-resolve@0.5.3: See https://github.com/lydell/source-map-resolve#deprecated
+npm warn deprecated glob@7.1.7: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+npm warn deprecated source-map-url@0.4.0: See https://github.com/lydell/source-map-url#deprecated
+npm warn deprecated asar@3.0.3: Please use @electron/asar moving forward.  There is no API change, just a package name change
+npm warn deprecated chokidar@2.1.8: Chokidar 2 does not receive security updates since 2019. Upgrade to chokidar 3 with 15x fewer dependencies
+npm warn deprecated gulp-vinyl-zip@2.1.2: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+npm warn deprecated fstream@1.0.12: This package is no longer supported.
+npm warn deprecated tar@2.2.2: This version of tar is no longer supported, and will not receive security updates. Please upgrade asap.
+npm warn deprecated sinon@12.0.1: 16.1.1
+npm warn deprecated @azure/core-http@2.3.2: This package is no longer supported. Please migrate to use @azure/core-rest-pipeline
+
+> code-oss-dev@1.105.0 preinstall
+> node build/npm/preinstall.js
+
+
+> code-oss-dev@1.105.0 postinstall
+> node build/npm/postinstall.js
+
+[build] Installing dependencies...
+[build] $ npm ci
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+
+added 511 packages in 23s
+[extensions] Installing dependencies...
+[extensions] $ npm ci
+npm warn skipping integrity check for git dependency ssh://git@github.com/parcel-bundler/watcher.git
+
+> vscode-extensions@0.0.1 postinstall
+> node ./postinstall.mjs
+
+Removed /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/extensions/node_modules/typescript/LICENSE.txt
+Removed /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/extensions/node_modules/typescript/README.md
+Removed /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/extensions/node_modules/typescript/SECURITY.md
+Removed /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/extensions/node_modules/typescript/ThirdPartyNoticeText.txt
+Removed /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/extensions/node_modules/typescript/bin
+removed '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/extensions/node_modules/typescript/lib/_tsc.js'
+removed '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/extensions/node_modules/typescript/lib/tsc.js'
+removed '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/extensions/node_modules/typescript/lib/tsserverlibrary.d.ts'
+
+added 18 packages in 40s
+[extensions/configuration-editing] Installing dependencies...
+[extensions/configuration-editing] $ npm ci
+
+added 19 packages in 4s
+[extensions/css-language-features] Installing dependencies...
+[extensions/css-language-features] $ npm ci
+
+added 11 packages in 4s
+[extensions/css-language-features/server] Installing dependencies...
+[extensions/css-language-features/server] $ npm ci
+
+added 12 packages in 3s
+[extensions/debug-auto-launch] Installing dependencies...
+[extensions/debug-auto-launch] $ npm ci
+
+added 2 packages in 232ms
+[extensions/debug-server-ready] Installing dependencies...
+[extensions/debug-server-ready] $ npm ci
+
+added 2 packages in 234ms
+[extensions/emmet] Installing dependencies...
+[extensions/emmet] $ npm ci
+
+added 19 packages in 14s
+[extensions/extension-editing] Installing dependencies...
+[extensions/extension-editing] $ npm ci
+
+added 12 packages in 3s
+[extensions/git] Installing dependencies...
+[extensions/git] $ npm ci
+
+added 35 packages in 5s
+[extensions/git-base] Installing dependencies...
+[extensions/git-base] $ npm ci
+
+added 2 packages in 280ms
+[extensions/github] Installing dependencies...
+[extensions/github] $ npm ci
+
+added 42 packages in 4s
+[extensions/github-authentication] Installing dependencies...
+[extensions/github-authentication] $ npm ci
+
+added 27 packages in 4s
+[extensions/grunt] Installing dependencies...
+[extensions/grunt] $ npm ci
+
+added 2 packages in 248ms
+[extensions/gulp] Installing dependencies...
+[extensions/gulp] $ npm ci
+
+added 2 packages in 248ms
+[extensions/html-language-features] Installing dependencies...
+[extensions/html-language-features] $ npm ci
+
+added 22 packages in 722ms
+[extensions/html-language-features/server] Installing dependencies...
+[extensions/html-language-features/server] $ npm ci
+
+added 13 packages in 3s
+[extensions/ipynb] Installing dependencies...
+[extensions/ipynb] $ npm ci
+
+added 7 packages in 4s
+[extensions/jake] Installing dependencies...
+[extensions/jake] $ npm ci
+
+added 2 packages in 228ms
+[extensions/json-language-features] Installing dependencies...
+[extensions/json-language-features] $ npm ci
+
+added 22 packages in 4s
+[extensions/json-language-features/server] Installing dependencies...
+[extensions/json-language-features/server] $ npm ci
+
+added 14 packages in 7s
+[extensions/markdown-language-features] Installing dependencies...
+[extensions/markdown-language-features] $ npm ci
+
+added 72 packages in 4s
+[extensions/markdown-math] Installing dependencies...
+[extensions/markdown-math] $ npm ci
+
+added 5 packages in 4s
+[extensions/media-preview] Installing dependencies...
+[extensions/media-preview] $ npm ci
+
+added 12 packages in 4s
+[extensions/merge-conflict] Installing dependencies...
+[extensions/merge-conflict] $ npm ci
+
+added 13 packages in 668ms
+[extensions/mermaid-chat-features] Installing dependencies...
+[extensions/mermaid-chat-features] $ npm ci
+
+added 143 packages in 6s
+[extensions/microsoft-authentication] Installing dependencies...
+[extensions/microsoft-authentication] $ npm ci
+
+added 61 packages in 4s
+[extensions/notebook-renderers] Installing dependencies...
+[extensions/notebook-renderers] $ npm ci
+npm warn deprecated domexception@4.0.0: Use your platform's native DOMException instead
+npm warn deprecated abab@2.0.6: Use your platform's native atob() and btoa() methods instead
+
+added 63 packages in 4s
+[extensions/npm] Installing dependencies...
+[extensions/npm] $ npm ci
+
+added 34 packages in 3s
+[extensions/php-language-features] Installing dependencies...
+[extensions/php-language-features] $ npm ci
+
+added 5 packages in 3s
+[extensions/references-view] Installing dependencies...
+[extensions/references-view] $ npm ci
+
+added 2 packages in 234ms
+[extensions/search-result] Installing dependencies...
+[extensions/search-result] $ npm ci
+
+up to date in 181ms
+[extensions/simple-browser] Installing dependencies...
+[extensions/simple-browser] $ npm ci
+
+added 13 packages in 4s
+[extensions/tunnel-forwarding] Installing dependencies...
+[extensions/tunnel-forwarding] $ npm ci
+
+added 2 packages in 219ms
+[extensions/typescript-language-features] Installing dependencies...
+[extensions/typescript-language-features] $ npm ci
+
+added 25 packages in 4s
+[extensions/vscode-api-tests] Installing dependencies...
+[extensions/vscode-api-tests] $ npm ci
+
+added 24 packages in 4s
+[extensions/vscode-colorize-tests] Installing dependencies...
+[extensions/vscode-colorize-tests] $ npm ci
+
+added 3 packages in 233ms
+[extensions/vscode-colorize-perf-tests] Installing dependencies...
+[extensions/vscode-colorize-perf-tests] $ npm ci
+
+added 3 packages in 262ms
+[extensions/vscode-test-resolver] Installing dependencies...
+[extensions/vscode-test-resolver] $ npm ci
+
+added 2 packages in 239ms
+[remote] Installing dependencies...
+[remote] $ npm ci
+npm warn skipping integrity check for git dependency ssh://git@github.com/parcel-bundler/watcher.git
+
+added 117 packages in 29s
+[remote/web] Installing dependencies...
+[remote/web] $ npm ci
+
+added 32 packages in 709ms
+[test/automation] Installing dependencies...
+[test/automation] $ npm ci
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.0: Glob versions prior to v9 are no longer supported
+
+added 114 packages in 5s
+[test/integration/browser] Installing dependencies...
+[test/integration/browser] $ npm ci
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+
+added 22 packages in 5s
+[test/monaco] Installing dependencies...
+[test/monaco] $ npm ci
+
+added 20 packages in 4s
+[test/smoke] Installing dependencies...
+[test/smoke] $ npm ci
+
+added 77 packages in 4s
+[test/mcp] Installing dependencies...
+[test/mcp] $ npm ci
+(node:4714) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 socket listeners added to [ClientRequest]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+npm error A complete log of this run can be found in: /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/npm/_logs/2026-10-09T14_19_09_666Z-debug-0.log
+ERR Process exited with code: 1
+npm error code 1
+npm error path /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss
+npm error command failed
+npm error command sh -c node build/npm/postinstall.js
+npm error A complete log of this run can be found in: /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/npm/_logs/2026-10-09T14_13_38_714Z-debug-0.log

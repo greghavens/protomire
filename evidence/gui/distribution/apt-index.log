@@ -1,0 +1,9 @@
+Get:1 https://snapshot.debian.org/archive/debian/20260925T181338Z trixie InRelease [140 kB]
+Get:2 https://snapshot.debian.org/archive/debian/20260925T181338Z trixie-updates InRelease [47.3 kB]
+Get:3 https://snapshot.debian.org/archive/debian-security/20260925T181338Z trixie-security InRelease [43.4 kB]
+Get:4 https://snapshot.debian.org/archive/debian/20260925T181338Z trixie/main amd64 Packages [9678 kB]
+Get:5 https://snapshot.debian.org/archive/debian/20260925T181338Z trixie-updates/main amd64 Packages [4412 B]
+Get:6 https://snapshot.debian.org/archive/debian-security/20260925T181338Z trixie-security/main amd64 Packages [263 kB]
+Fetched 10.2 MB in 6s (1652 kB/s)
+Reading package lists...
+W: Unable to read /etc/apt/apt.conf.d/80-applied-apt-retries - open (13: Permission denied)

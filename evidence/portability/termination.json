@@ -1,0 +1,102 @@
+{
+  "custom-origin": {
+    "cancelled": false,
+    "process_group_terminated": true,
+    "reconciled_at": "2026-10-09T14:50:21.198058+00:00",
+    "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532676]",
+    "started_at": "2026-10-09T14:50:10.313814+00:00",
+    "supervisor_identity": "690438",
+    "supervisor_pid": 178,
+    "supervisor_state": "finished",
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-09T14:50:18.937760+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532676]",
+      "worker_identity": "690441",
+      "worker_pid": 179
+    },
+    "worker_exit_code": 0,
+    "worker_identity": "690441",
+    "worker_pid": 179,
+    "worker_reaped": true,
+    "worker_terminated_at": "2026-10-09T14:50:18.937760+00:00"
+  },
+  "custom-replay": {
+    "cancelled": false,
+    "process_group_terminated": true,
+    "reconciled_at": "2026-10-09T14:50:46.101217+00:00",
+    "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532676]",
+    "started_at": "2026-10-09T14:50:32.513706+00:00",
+    "supervisor_identity": "692657",
+    "supervisor_pid": 203,
+    "supervisor_state": "finished",
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-09T14:50:42.649478+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532676]",
+      "worker_identity": "692661",
+      "worker_pid": 204
+    },
+    "worker_exit_code": 0,
+    "worker_identity": "692661",
+    "worker_pid": 204,
+    "worker_reaped": true,
+    "worker_terminated_at": "2026-10-09T14:50:42.649478+00:00"
+  },
+  "pretrained-origin": {
+    "cancelled": false,
+    "process_group_terminated": true,
+    "reconciled_at": "2026-10-09T14:52:10.997868+00:00",
+    "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532675]",
+    "started_at": "2026-10-09T14:51:46.827623+00:00",
+    "supervisor_identity": "700089",
+    "supervisor_pid": 9,
+    "supervisor_state": "finished",
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-09T14:52:08.798670+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532675]",
+      "worker_identity": "700092",
+      "worker_pid": 10
+    },
+    "worker_exit_code": 0,
+    "worker_identity": "700092",
+    "worker_pid": 10,
+    "worker_reaped": true,
+    "worker_terminated_at": "2026-10-09T14:52:08.798670+00:00"
+  },
+  "pretrained-replay": {
+    "cancelled": false,
+    "process_group_terminated": true,
+    "reconciled_at": "2026-10-09T14:52:47.020576+00:00",
+    "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532675]",
+    "started_at": "2026-10-09T14:52:22.796508+00:00",
+    "supervisor_identity": "703686",
+    "supervisor_pid": 37,
+    "supervisor_state": "finished",
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-09T14:52:44.671127+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532675]",
+      "worker_identity": "703689",
+      "worker_pid": 38
+    },
+    "worker_exit_code": 0,
+    "worker_identity": "703689",
+    "worker_pid": 38,
+    "worker_reaped": true,
+    "worker_terminated_at": "2026-10-09T14:52:44.671127+00:00"
+  }
+}

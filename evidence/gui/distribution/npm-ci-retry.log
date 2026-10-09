@@ -1,0 +1,122 @@
+npm warn skipping integrity check for git dependency ssh://git@github.com/parcel-bundler/watcher.git
+npm warn deprecated osenv@0.1.5: This package is no longer supported.
+npm warn deprecated is-data-descriptor@1.0.0: Please upgrade to v1.0.1
+npm warn deprecated is-accessor-descriptor@1.0.0: Please upgrade to v1.0.1
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-data-descriptor@0.1.4: Please upgrade to v0.1.5
+npm warn deprecated is-accessor-descriptor@0.1.6: Please upgrade to v0.1.7
+npm warn deprecated stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
+npm warn deprecated rimraf@2.6.3: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated urix@0.1.0: Please see https://github.com/lydell/urix#deprecated
+npm warn deprecated source-map-resolve@0.6.0: See https://github.com/lydell/source-map-resolve#deprecated
+npm warn deprecated resolve-url@0.2.1: https://github.com/lydell/resolve-url#deprecated
+npm warn deprecated glob@5.0.15: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@8.1.0: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+npm warn deprecated source-map-resolve@0.5.3: See https://github.com/lydell/source-map-resolve#deprecated
+npm warn deprecated glob@7.1.7: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.1.7: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.1.6: Glob versions prior to v9 are no longer supported
+npm warn deprecated source-map-url@0.4.0: See https://github.com/lydell/source-map-url#deprecated
+npm warn deprecated asar@3.0.3: Please use @electron/asar moving forward.  There is no API change, just a package name change
+npm warn deprecated chokidar@2.1.8: Chokidar 2 does not receive security updates since 2019. Upgrade to chokidar 3 with 15x fewer dependencies
+npm warn deprecated gulp-vinyl-zip@2.1.2: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+npm warn deprecated fstream@1.0.12: This package is no longer supported.
+npm warn deprecated tar@2.2.2: This version of tar is no longer supported, and will not receive security updates. Please upgrade asap.
+npm warn deprecated sinon@12.0.1: 16.1.1
+npm warn deprecated @azure/core-http@2.3.2: This package is no longer supported. Please migrate to use @azure/core-rest-pipeline
+npm warn cleanup Failed to remove some directories [
+npm warn cleanup   [
+npm warn cleanup     '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/native-watchdog',
+npm warn cleanup     [Error: ENOTEMPTY: directory not empty, rmdir '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/native-watchdog'] {
+npm warn cleanup       errno: -39,
+npm warn cleanup       code: 'ENOTEMPTY',
+npm warn cleanup       syscall: 'rmdir',
+npm warn cleanup       path: '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/native-watchdog'
+npm warn cleanup     }
+npm warn cleanup   ],
+npm warn cleanup   [
+npm warn cleanup     '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules',
+npm warn cleanup     [Error: ENOTEMPTY: directory not empty, rmdir '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/windows-foreground-love'] {
+npm warn cleanup       errno: -39,
+npm warn cleanup       code: 'ENOTEMPTY',
+npm warn cleanup       syscall: 'rmdir',
+npm warn cleanup       path: '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/windows-foreground-love'
+npm warn cleanup     }
+npm warn cleanup   ],
+npm warn cleanup   [
+npm warn cleanup     '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/node-pty',
+npm warn cleanup     [Error: ENOTEMPTY: directory not empty, rmdir '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/node-pty'] {
+npm warn cleanup       errno: -39,
+npm warn cleanup       code: 'ENOTEMPTY',
+npm warn cleanup       syscall: 'rmdir',
+npm warn cleanup       path: '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/node-pty'
+npm warn cleanup     }
+npm warn cleanup   ]
+npm warn cleanup ]
+npm error code 1
+npm error path /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/native-keymap
+npm error command failed
+npm error command sh -c node-gyp rebuild
+npm error gyp info it worked if it ends with ok
+npm error gyp info using node-gyp@11.2.0
+npm error gyp info using node@22.19.0 | linux | x64
+npm error gyp info find Python using Python version 3.12.14 found at "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3"
+npm error gyp info spawn /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3
+npm error gyp info spawn args [
+npm error gyp info spawn args '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/toolchains/node-v22.19.0-linux-x64/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py',
+npm error gyp info spawn args 'binding.gyp',
+npm error gyp info spawn args '-f',
+npm error gyp info spawn args 'make',
+npm error gyp info spawn args '-I',
+npm error gyp info spawn args '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/native-keymap/build/config.gypi',
+npm error gyp info spawn args '-I',
+npm error gyp info spawn args '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/toolchains/node-v22.19.0-linux-x64/lib/node_modules/npm/node_modules/node-gyp/addon.gypi',
+npm error gyp info spawn args '-I',
+npm error gyp info spawn args '/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/node-gyp/37.6.0/include/node/common.gypi',
+npm error gyp info spawn args '-Dlibrary=shared_library',
+npm error gyp info spawn args '-Dvisibility=default',
+npm error gyp info spawn args '-Dnode_root_dir=/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/node-gyp/37.6.0',
+npm error gyp info spawn args '-Dnode_gyp_dir=/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/toolchains/node-v22.19.0-linux-x64/lib/node_modules/npm/node_modules/node-gyp',
+npm error gyp info spawn args '-Dnode_lib_file=/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/node-gyp/37.6.0/<(target_arch)/node.lib',
+npm error gyp info spawn args '-Dmodule_root_dir=/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/native-keymap',
+npm error gyp info spawn args '-Dnode_engine=v8',
+npm error gyp info spawn args '--depth=.',
+npm error gyp info spawn args '--no-parallel',
+npm error gyp info spawn args '--generator-output',
+npm error gyp info spawn args 'build',
+npm error gyp info spawn args '-Goutput_dir=.'
+npm error gyp info spawn args ]
+npm error Package x11 was not found in the pkg-config search path.
+npm error Perhaps you should add the directory containing `x11.pc'
+npm error to the PKG_CONFIG_PATH environment variable
+npm error Package 'x11', required by 'virtual:world', not found
+npm error Package 'xkbfile', required by 'virtual:world', not found
+npm error Package x11 was not found in the pkg-config search path.
+npm error Perhaps you should add the directory containing `x11.pc'
+npm error to the PKG_CONFIG_PATH environment variable
+npm error Package 'x11', required by 'virtual:world', not found
+npm error Package 'xkbfile', required by 'virtual:world', not found
+npm error gyp: Call to '${PKG_CONFIG:-pkg-config} x11 xkbfile --libs' returned exit status 1 while in binding.gyp. while trying to load binding.gyp
+npm error gyp ERR! configure error 
+npm error gyp ERR! stack Error: `gyp` failed with exit code: 1
+npm error gyp ERR! stack at ChildProcess.<anonymous> (/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/toolchains/node-v22.19.0-linux-x64/lib/node_modules/npm/node_modules/node-gyp/lib/configure.js:317:18)
+npm error gyp ERR! stack at ChildProcess.emit (node:events:519:28)
+npm error gyp ERR! stack at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+npm error gyp ERR! System Linux 6.18.44
+npm error gyp ERR! command "/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/toolchains/node-v22.19.0-linux-x64/bin/node" "/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/toolchains/node-v22.19.0-linux-x64/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js" "rebuild"
+npm error gyp ERR! cwd /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/node_modules/native-keymap
+npm error gyp ERR! node -v v22.19.0
+npm error gyp ERR! node-gyp -v v11.2.0
+npm error gyp ERR! not ok
+npm error A complete log of this run can be found in: /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/npm/_logs/2026-10-09T14_11_05_925Z-debug-0.log

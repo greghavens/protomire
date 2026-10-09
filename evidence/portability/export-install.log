@@ -1,0 +1,68 @@
+{
+  "digest": "c75e076c52d177099730074be5709d2c8f710319c851b672df16bd5b4dd76615",
+  "bundle_digest": "2a6b0d5d0a82a82f4825b79d07eb710836f7e1303243e42901cd1342bb4bcfef",
+  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "source_files": 20,
+  "archive_sha256": "6caedf35cbe9227ae59886fdc323a75ce1b1224fe41b6746b5591f561399057a",
+  "execution_allowed": false
+}
+{
+  "digest": "bebb94afcb6a5ac7c1ee71bb0f5b81571b060be33c2cf901d29c0bcdcd997459",
+  "bundle_digest": "b38154bedc56ae8ef5a96440af3c71dc455c0e6927d458ebd31739177e5cd412",
+  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "source_files": 20,
+  "archive_sha256": "12232c5f6a92744d0b12b271ae63d3c2773fcbd641bc05f08e1785bab190fecd",
+  "execution_allowed": false
+}
+{
+  "wheel": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/wheels/modelbuilder-0.1.0-py3-none-any.whl",
+  "sha256": "dc7fa26437ad93783680f92500800b4c63f2586796715efe8c34df336220a4d4",
+  "kind": "service",
+  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "build_hooks_executed": false,
+  "files": 20
+}
+{
+  "wheel": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/wheels/modelbuilder_runtime-0.1.0-py3-none-any.whl",
+  "sha256": "00fd382ce401a17c18c21c18bbbe8836933e600485a7453b90d13f8cf100b3b5",
+  "kind": "backend",
+  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "build_hooks_executed": false,
+  "files": 11
+}
+Using Python 3.12.14 environment at: .venv-portability-origin
+Resolved 1 package in 1ms
+Prepared 1 package in 5ms
+Installed 1 package in 1ms
+ + modelbuilder==0.1.0 (from file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/wheels/modelbuilder-0.1.0-py3-none-any.whl)
+Using Python 3.12.14 environment at: .venv-portability-origin
+Checked 71 packages in 1ms
+All installed packages are compatible
+Using Python 3.12.14 environment at: .venv-replay
+Resolved 1 package in 1ms
+Prepared 1 package in 0.37ms
+Installed 1 package in 3ms
+ + modelbuilder==0.1.0 (from file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/wheels/modelbuilder-0.1.0-py3-none-any.whl)
+Using Python 3.12.14 environment at: .venv-replay
+Checked 71 packages in 1ms
+All installed packages are compatible
+Using Python 3.12.14 environment at: .venv-portability-origin-backend
+Resolved 1 package in 1ms
+Prepared 1 package in 5ms
+Uninstalled 1 package in 0.77ms
+Installed 1 package in 0.62ms
+ - modelbuilder-runtime==0.1.0 (from file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/wheels/modelbuilder_runtime-0.1.0-py3-none-any.whl)
+ + modelbuilder-runtime==0.1.0 (from file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/wheels/modelbuilder_runtime-0.1.0-py3-none-any.whl)
+Using Python 3.12.14 environment at: .venv-portability-origin-backend
+Checked 103 packages in 2ms
+All installed packages are compatible
+Using Python 3.12.14 environment at: .venv-replay-backend
+Resolved 1 package in 1ms
+Prepared 1 package in 0.34ms
+Uninstalled 1 package in 0.82ms
+Installed 1 package in 1ms
+ - modelbuilder-runtime==0.1.0 (from file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/wheels/modelbuilder_runtime-0.1.0-py3-none-any.whl)
+ + modelbuilder-runtime==0.1.0 (from file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/wheels/modelbuilder_runtime-0.1.0-py3-none-any.whl)
+Using Python 3.12.14 environment at: .venv-replay-backend
+Checked 103 packages in 1ms
+All installed packages are compatible

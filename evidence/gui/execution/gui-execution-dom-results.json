@@ -1,0 +1,244 @@
+{
+  "status": "PASS",
+  "tests": [
+    {
+      "name": "actual-button-and-confirmation-submit",
+      "status": "PASS",
+      "evidence": {
+        "operation_id": "a7601b48-7158-587c-a435-a5c188ded046",
+        "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+        "observed_states": [
+          {
+            "status": "submitted",
+            "backend_run_id": null,
+            "last_reconciled_at": "2026-10-09T14:59:00.396694+00:00"
+          },
+          {
+            "status": "succeeded",
+            "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+            "last_reconciled_at": "2026-10-09T14:59:10.067119+00:00"
+          }
+        ]
+      }
+    },
+    {
+      "name": "actual-gui-reconciled-status-metrics-model-version",
+      "status": "PASS",
+      "evidence": {
+        "status": "succeeded",
+        "backend_status": "completed",
+        "last_reconciled_at": "2026-10-09T14:59:10.067119+00:00",
+        "metrics": {
+          "accuracy": 0.8666666746139526,
+          "best_step": 30,
+          "best_validation_loss": 0.24631698429584503,
+          "brier": 0.13341984152793884,
+          "checkpoint_kind": "best",
+          "consumed_dataset_artifact": true,
+          "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8",
+          "device": "cpu",
+          "fixture": "custom",
+          "heldout_count": 30,
+          "heldout_logits": [
+            [
+              0.19725769758224487,
+              -1.6881252527236938
+            ],
+            [
+              -0.4627853333950043,
+              -0.2734029293060303
+            ],
+            [
+              -0.2577212154865265,
+              1.3509377241134644
+            ],
+            [
+              0.09489858150482178,
+              -1.4629186391830444
+            ],
+            [
+              -1.5885519981384277,
+              2.3009233474731445
+            ],
+            [
+              -0.9899387359619141,
+              0.7676081657409668
+            ],
+            [
+              -0.9280484914779663,
+              1.0443395376205444
+            ],
+            [
+              -0.3578602075576782,
+              0.11098481714725494
+            ],
+            [
+              -0.9976639151573181,
+              1.4744473695755005
+            ],
+            [
+              -0.9395735859870911,
+              0.9781821370124817
+            ],
+            [
+              -1.4396369457244873,
+              1.8679333925247192
+            ],
+            [
+              -0.03960080444812775,
+              -0.7083717584609985
+            ],
+            [
+              -1.259533166885376,
+              1.3589986562728882
+            ],
+            [
+              0.8941593766212463,
+              -2.3929336071014404
+            ],
+            [
+              -0.5459171533584595,
+              0.9728905558586121
+            ],
+            [
+              -0.5615208148956299,
+              0.5550416111946106
+            ],
+            [
+              0.456024706363678,
+              -0.32704752683639526
+            ],
+            [
+              0.5134568810462952,
+              -1.456297516822815
+            ],
+            [
+              -1.1908893585205078,
+              1.6578336954116821
+            ],
+            [
+              0.19099730253219604,
+              -2.1804866790771484
+            ],
+            [
+              0.20465269684791565,
+              -1.004350185394287
+            ],
+            [
+              -0.8645415306091309,
+              0.9553199410438538
+            ],
+            [
+              0.02870967984199524,
+              -1.3516299724578857
+            ],
+            [
+              0.07210618257522583,
+              -1.5250747203826904
+            ],
+            [
+              -1.4419093132019043,
+              2.1406657695770264
+            ],
+            [
+              -0.6240167617797852,
+              0.16692374646663666
+            ],
+            [
+              -0.26945751905441284,
+              1.1357375383377075
+            ],
+            [
+              0.420123815536499,
+              -1.0115691423416138
+            ],
+            [
+              -0.9718621373176575,
+              0.3947269916534424
+            ],
+            [
+              0.36583948135375977,
+              -0.22313296794891357
+            ]
+          ],
+          "kl": {
+            "batch_size": 60,
+            "coefficient": 0,
+            "direction": "reference_to_model",
+            "learning_rate": 0.025,
+            "scheduler_gamma": 0.99
+          },
+          "resume_mode": null,
+          "start_step": 0,
+          "step": 30,
+          "train_count": 180,
+          "validation_count": 30,
+          "validation_loss": 0.24631698429584503,
+          "width": 12
+        },
+        "model_version_ref": "d500bdd9-376d-45ae-9423-ec54589372de"
+      }
+    },
+    {
+      "name": "actual-gui-logs-artifacts",
+      "status": "PASS",
+      "evidence": {
+        "log_characters": 1371,
+        "artifacts": [
+          {
+            "artifact_id": "325aa37c-826e-4cbb-95fe-12f9e856b433",
+            "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+            "name": "data",
+            "node_id": "data",
+            "port": "data",
+            "step_id": "e8031199-4925-4975-8bf9-015dddd7082e",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/data/data/e8031199-4925-4975-8bf9-015dddd7082e/e001f19f"
+          },
+          {
+            "artifact_id": "9f54f624-6e2c-4d29-abbd-c41b28459feb",
+            "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+            "name": "initial",
+            "node_id": "initial",
+            "port": "initial",
+            "step_id": "1a6bd1bd-dc75-410f-bf3d-dda038143024",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/initial/initial/1a6bd1bd-dc75-410f-bf3d-dda038143024/e84e5923"
+          },
+          {
+            "artifact_id": "62852c15-4169-4a54-9d68-5e6ae301f939",
+            "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+            "name": "checkpoint",
+            "node_id": "train",
+            "port": "checkpoint",
+            "step_id": "17e83c5e-8835-4171-a3c7-b74799140ade",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/train/checkpoint/17e83c5e-8835-4171-a3c7-b74799140ade/48e30ae8"
+          },
+          {
+            "artifact_id": "73942e83-d56f-4a90-bf10-655af01882e5",
+            "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+            "name": "metrics",
+            "node_id": "evaluate",
+            "port": "metrics",
+            "step_id": "61102ccd-97c5-4a97-9405-5e8aad99474c",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/evaluate/metrics/61102ccd-97c5-4a97-9405-5e8aad99474c/eb919d30"
+          },
+          {
+            "artifact_id": "117fe426-988a-4230-87ca-25cae1cb4783",
+            "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+            "name": "export",
+            "node_id": "export",
+            "port": "export",
+            "step_id": "e34478db-af3a-4ff7-b616-7eb9202ca4ba",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/export/export/e34478db-af3a-4ff7-b616-7eb9202ca4ba/4a8fe0b9"
+          }
+        ]
+      }
+    }
+  ],
+  "fixture": {
+    "project_id": "e7767272-28a4-4178-bfef-df4d4d2427c1",
+    "recipe_id": "a2accf28-fb07-42aa-8027-624199c8d215",
+    "recipe_revision": 1,
+    "recipe_digest": "d356353847ad8346c0b83a5cf9c5f60ebe6fca8002f27401b3e98b25d6f714d3",
+    "source_commit": "4d545df2b111de7f2365e8121a65717b37713054"
+  }
+}

@@ -1,0 +1,19 @@
+Using Python 3.12.14 environment at: .venv-portability-origin
+Resolved 70 packages in 6.27s
+Prepared 1 package in 2.75s
+Uninstalled 1 package in 1ms
+Installed 1 package in 3ms
+ + editables==0.5
+ - modelbuilder==0.1.0 (from file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/wheels/modelbuilder-0.1.0-py3-none-any.whl)
+Using Python 3.12.14 environment at: .venv-portability-origin
+Checked 70 packages in 0.96ms
+All installed packages are compatible
+Using Python 3.12.14 environment at: .venv-replay
+Resolved 70 packages in 9ms
+Uninstalled 1 package in 1ms
+Installed 1 package in 2ms
+ + editables==0.5
+ - modelbuilder==0.1.0 (from file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/wheels/modelbuilder-0.1.0-py3-none-any.whl)
+Using Python 3.12.14 environment at: .venv-replay
+Checked 70 packages in 0.97ms
+All installed packages are compatible

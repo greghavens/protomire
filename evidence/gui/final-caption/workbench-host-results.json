@@ -1,0 +1,107 @@
+{
+  "app": "Modelbuilder IDE Dev",
+  "editor": "1.105.0",
+  "status": "PASS",
+  "tests": [
+    {
+      "name": "native-monaco-source-save",
+      "status": "PASS",
+      "evidence": {
+        "project_id": "963909dd-70df-4b13-bea2-9d025d5597c6",
+        "recipe_id": "d2bfb97d-d74c-4567-a724-3df9697a5b14",
+        "revision": 2,
+        "digest": "a9dfc5baffc2037d12b58f158a91ed970efed5faafb0158ef14cffa71a2c733e",
+        "scheme": "modelrecipe",
+        "language": "json"
+      }
+    },
+    {
+      "name": "real-webview-graph-mcp-parity",
+      "status": "PASS",
+      "evidence": {
+        "status": "PASS",
+        "tests": [
+          {
+            "name": "graph-authoring-typed-python",
+            "status": "PASS",
+            "evidence": {
+              "revision": 3,
+              "digest": "bee481448bfc0be0c06fef64b0f83e7bce8fd9dca3a8edf789dfbeb25f64e7c7",
+              "nodes": [
+                "custom",
+                "data"
+              ],
+              "edge": {
+                "source_node": "data",
+                "source_port": "tensor",
+                "target_node": "custom",
+                "target_port": "data"
+              }
+            }
+          },
+          {
+            "name": "gui-to-external-mcp-digest-equality",
+            "status": "PASS",
+            "evidence": {
+              "recipe_id": "d2bfb97d-d74c-4567-a724-3df9697a5b14",
+              "revision": 3,
+              "digest": "bee481448bfc0be0c06fef64b0f83e7bce8fd9dca3a8edf789dfbeb25f64e7c7"
+            }
+          },
+          {
+            "name": "external-mcp-to-visible-gui",
+            "status": "PASS",
+            "evidence": {
+              "revision": 4,
+              "digest": "2d3abe111ead316b2e21fbc65ccd108233e98760f65647a2b0dc0bc61ca00b4d"
+            }
+          },
+          {
+            "name": "recipe-dropdown-tracks-remote-revision",
+            "status": "PASS",
+            "evidence": {
+              "caption": "MCP edited this exact recipe · r4",
+              "recipe_id": "d2bfb97d-d74c-4567-a724-3df9697a5b14",
+              "revision": 4
+            }
+          },
+          {
+            "name": "concurrent-edit-conflict-preserves-draft",
+            "status": "PASS",
+            "evidence": {
+              "local_revision": 4,
+              "server_revision": 5,
+              "draft_preserved": true,
+              "diff_visible": "{\n  \"recipe_id\": \"d2bfb97d-d74c-4567-a724-3df9697a5b14\",\n  \"current_revision\": 5,\n  \"equal\": false,\n  \"diff\": \"--- client\\n+++ server\\n@@ -2,7 +2,7 @@\\n   \\\"capabilities\\\": [\\n     \\\"local_cpu\\\"\\n   ],\\n-  \\\"digest\\\": \\\"2d3abe111ead316b2e21fbc65ccd108233e98760f65647a2b0dc0bc61ca00b4d\\\",\\n+  \\\"digest\\\": \\\"e0a172d86dd78ffafd285af85a31ba49c13ba998cf867e8053fa89f86ef61e29\\\",\\n   \\\"edges\\\": [\\n     {\\n       \\\"source_node\\\": \\\"data\\\",\\n@@ -24,7 +24,7 @@\\n       \\\"scope\\\": \\\"source\\\"\\n     }\\n   ],\\n-  \\\"name\\\": \\\"Unsaved GUI draft\\\",\\n+  \\\"name\\\": \\\"Concurrent MCP revision\\\",\\n   \\\"nodes\\\": [\\n     {\\n       \\\"cache_policy\\\": \\\"disabled\\\",\\n@@ -93,7 +93,7 @@\\n   \\\"project_id\\\": \\\"963909dd-70df-4b13-bea2-9d025d5597c6\\\",\\n   \\\"recipe_id\\\": \\\"d2bfb97d-d74c-4567-a724-3df9697a5b14\\\",\\n   \\\"resources\\\": [],\\n-  \\\"revision\\\": 4,\\n+  \\\"revision\\\": 5,\\n   \\\"schema_version\\\": \\\"0\\\",\\n   \\\"source\\\": {\\n     \\\"commit\\\": \\\"0000000000000000000000000000000000000000\\\",\"\n}"
+            }
+          },
+          {
+            "name": "invalid-source-visual-edit-protection",
+            "status": "PASS",
+            "evidence": {
+              "source_preserved": true
+            }
+          },
+          {
+            "name": "reload-cancel-preserves-draft",
+            "status": "PASS",
+            "evidence": {
+              "draft_preserved": true,
+              "explicit_cancel": true
+            }
+          },
+          {
+            "name": "explicit-reload-loads-server",
+            "status": "PASS",
+            "evidence": {
+              "revision": 5,
+              "digest": "e0a172d86dd78ffafd285af85a31ba49c13ba998cf867e8053fa89f86ef61e29",
+              "explicit_discard": true,
+              "caption": "Concurrent MCP revision · r5"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

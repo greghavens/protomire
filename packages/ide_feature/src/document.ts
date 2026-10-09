@@ -38,3 +38,20 @@ export function readVisualSource(source: string): Recipe {
 export function assertNodePanelCurrent(current: RecipeNode, baseline: string): void {
   if (JSON.stringify(current)!==baseline) throw new Error('This node changed in the source after the panel opened. Copy your panel changes if needed, then use Discard panel edits / reload node before applying.');
 }
+/** The response digest is computed metadata, not a field in the editable body schema. */
+export function editableRecipeSource(recipe: Recipe): string {
+  const body:RecordValue={...recipe};delete body.digest;
+  return JSON.stringify(body,null,2)+'\n';
+}
+/** Render cached choices with the freshest service-read record, never a local draft. */
+export function recipeChoiceRecords(projectId: string | undefined, recipes: Recipe[], loaded?: Recipe): Recipe[] {
+  if (!loaded || loaded.project_id !== projectId) return recipes;
+  let found=false;
+  const choices=recipes.map(record=>{
+    if(record.recipe_id!==loaded.recipe_id)return record;
+    found=true;
+    return loaded.revision>=record.revision?loaded:record;
+  });
+  if(!found)choices.push(loaded);
+  return choices;
+}

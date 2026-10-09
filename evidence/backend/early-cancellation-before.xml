@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="21.615" timestamp="2026-10-09T09:41:58.593068-05:00" hostname="42abdaea1484"><testcase classname="tests.integration.test_early_cancellation" name="test_confirmed_cancel_before_native_run_creation" time="21.578"><failure message="AssertionError: {'artifacts': [], 'backend': 'zenml', 'backend_run_id': None, 'backend_status': None, ...}&#10;assert 'cancel_requested' == 'cancelled'&#10;  &#10;  - cancelled&#10;  + cancel_requested">tmp_path = PosixPath('/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/early-cancel-before/test_confirmed_cancel_before_n0')
+
+    def test_confirmed_cancel_before_native_run_creation(tmp_path):
+        backend, request = early_request(tmp_path)
+        before = backend.invoke("run.status", request)
+        assert before["backend_run_id"] is None and before["worker_alive"] is True
+        cancelled = backend.invoke("run.cancel", request)
+        (ROOT / "evidence/backend/early-cancellation.json").write_text(json.dumps({"before": before, "after": cancelled}, indent=2))
+&gt;       assert cancelled["status"] == "cancelled", cancelled
+E       AssertionError: {'artifacts': [], 'backend': 'zenml', 'backend_run_id': None, 'backend_status': None, ...}
+E       assert 'cancel_requested' == 'cancelled'
+E         
+E         - cancelled
+E         + cancel_requested
+
+tests/integration/test_early_cancellation.py:59: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,71 @@
+........................................................................ [ 38%]
+..........................F.....F....................................... [ 77%]
+..........................................                               [100%]
+=================================== FAILURES ===================================
+______________ test_plan_requires_no_execution_consent_or_process ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-15/test_plan_requires_no_executio0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fc5fba75430>
+
+    def test_plan_requires_no_execution_consent_or_process(tmp_path, monkeypatch):
+        backend = ZenMLBackend(tmp_path)
+        def forbidden(*args, **kwargs):
+            raise AssertionError("Planning must never launch a process")
+        monkeypatch.setattr("subprocess.Popen", forbidden)
+>       result = backend.invoke("run.plan", {"project_id": "audit-project", "recipe": small_recipe()})
+
+tests/security/test_adversarial_review.py:140: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/modelbuilder/backend/adapter.py:161: in invoke
+    recipe = self._validate_execution({**payload, "trusted": True})
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <modelbuilder.backend.adapter.ZenMLBackend object at 0x7fc5fba74b90>
+payload = {'project_id': 'audit-project', 'recipe': {'capabilities': ['local_cpu'], 'edges': [], 'environment': {'python': '3.12', 'requirements': []}, 'evaluation': {}, ...}, 'trusted': True}
+
+    def _validate_execution(self, payload: dict) -> dict:
+        if payload.get("target", "local-cpu") != "local-cpu":
+            raise BackendError("capability_unavailable", "Remote execution and spend are disabled")
+        if payload.get("trusted") is not True:
+            raise BackendError("untrusted_execution_blocked", "Explicit trust consent is required for repository-owned fixtures; untrusted code has no verified isolation boundary")
+        recipe = payload.get("recipe", {})
+        source = recipe.get("source", {})
+        commit = source.get("commit", "")
+        if not commit or set(commit) == {"0"}:
+>           raise BackendError("dependency_mismatch", "Execution requires a real immutable source commit")
+E           modelbuilder.backend.adapter.BackendError: Execution requires a real immutable source commit
+
+src/modelbuilder/backend/adapter.py:99: BackendError
+___________ test_untrusted_python_blocked_without_import_or_process ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-15/test_untrusted_python_blocked_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fc5fba775c0>
+
+    def test_untrusted_python_blocked_without_import_or_process(tmp_path, monkeypatch):
+        body = small_recipe()
+        body["nodes"][0].update(kind="code.python", implementation_ref={
+            "module": "audit_fixture", "entrypoint": "main", "commit": "a" * 40,
+            "path": "audit_fixture.py", "sha256": "b" * 64})
+        def forbidden(*args, **kwargs):
+            raise AssertionError("Untrusted Python must not execute")
+        monkeypatch.setattr("subprocess.Popen", forbidden)
+        with pytest.raises(BackendError) as error:
+            ZenMLBackend(tmp_path)._validate_execution({"trusted": True, "recipe": body})
+>       assert error.value.code == "untrusted_execution_blocked"
+E       AssertionError: assert 'dependency_mismatch' == 'untrusted_execution_blocked'
+E         
+E         - untrusted_execution_blocked
+E         + dependency_mismatch
+
+tests/security/test_adversarial_review.py:166: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/starlette/testclient.py:37
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/lib/python3.12/site-packages/starlette/testclient.py:37: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/contracts-source-checkpoint.xml -
+=========================== short test summary info ============================
+FAILED tests/security/test_adversarial_review.py::test_plan_requires_no_execution_consent_or_process
+FAILED tests/security/test_adversarial_review.py::test_untrusted_python_blocked_without_import_or_process
+2 failed, 184 passed, 1 warning in 2.91s

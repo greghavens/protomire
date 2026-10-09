@@ -1,0 +1,58 @@
+{
+  "verified_at": "2026-10-09T14:59:30Z",
+  "editor_version": "1.105.0",
+  "source_commit": "03c265b1adee71ac88f833e065f7bb956b60550a",
+  "core_patches": 0,
+  "source_compilation": "PASS_ZERO_ERRORS",
+  "sandbox_disabled": false,
+  "production_packaging": "NOT_RUN",
+  "pristine_unattended_bootstrap": "UNVERIFIED_REGISTRY_403_MANUAL_DEPENDENCY_RECOVERY",
+  "editor_smoke": {
+    "status": "PASS",
+    "passed": 8,
+    "report": "smoke-results.json"
+  },
+  "graph_json_mcp_dom": {
+    "status": "PASS",
+    "passed": 7,
+    "report": "../workbench/workbench-dom-results.json"
+  },
+  "vendor_extensions": {
+    "installation": "PASS",
+    "activation": "PASS",
+    "mcp_transport_connection_discovery": "PASS",
+    "authenticated_model_agent_parity": "BLOCKED_AUTHORIZATION_AUTHENTICATION",
+    "codex_direct_call": "BLOCKED_VENDOR_SANDBOX_TEMP_LOCK",
+    "bundled": false
+  },
+  "os_keyring": "UNAVAILABLE_NOT_PRODUCTION_VERIFIED",
+  "screenshots_pixel_reviewed": {
+    "jupyter-kernel.png": {
+      "sha256": "d348a939f7afcd4f56bef4369f202a72c683e5fee359ba799f32b990db43c08d",
+      "meaning": "Real Jupyter notebook output 42 with Python3.12.14 .venv kernel"
+    },
+    "python-debugger-breakpoint.png": {
+      "sha256": "76aa2baf6f6f14a0ddb599aef6ce6417ed72921842480db818d1335e8255caa4",
+      "meaning": "Real debugpy breakpoint paused at line3 and answer=42 variables"
+    },
+    "python-edit-and-lsp.png": {
+      "sha256": "480357571a4dc1841f5c76916fd103792a1f6f8055a37c40fc708c55635e2a3b",
+      "meaning": "Real Monaco Python edit with basedpyright diagnostic"
+    },
+    "integrated-terminal.png": {
+      "sha256": "b41c791cfc34e747cd02189fe659173c3514dc6d8807ddca97b5d8bcc36540dd",
+      "meaning": "Real integrated terminal in the editor"
+    },
+    "codex-claude-auth-required.jpg": {
+      "sha256": "01b07827b479100c02c34266e79bc4d857c4df6c16ef9586f857e62ea19d0e9c",
+      "meaning": "Native CUA capture of both exact-fork vendor account sign-in screens"
+    }
+  },
+  "gui_backend_execution": {
+    "status": "PASS",
+    "passed": 3,
+    "report": "../execution/gui-execution-dom-results.json",
+    "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+    "operation_id": "a7601b48-7158-587c-a435-a5c188ded046"
+  }
+}

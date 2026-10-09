@@ -42,7 +42,7 @@ policy unit test or earlier evaluation is counted as a GUI/backend acceptance pa
 
 ## Engineering references
 
-- [Architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md)
+- [Architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md), [backend decision](docs/BACKEND_DECISION.md)
 - [Native MCP tools](docs/MCP_TOOLS.md), [OpenAPI](docs/openapi.json)
 - [ZenML lifecycle and cancellation semantics](docs/ZENML_BACKEND.md)
 - [Clean replay](docs/PORTABILITY.md)

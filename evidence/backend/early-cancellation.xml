@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="30.232" timestamp="2026-10-09T09:44:30.145974-05:00" hostname="42abdaea1484"><testcase classname="tests.integration.test_early_cancellation" name="test_confirmed_cancel_before_native_run_creation" time="30.208" /></testsuite></testsuites>

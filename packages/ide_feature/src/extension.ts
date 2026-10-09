@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { OperationClient, OperationError } from './client';
-import { RecipeDocument } from './document';
+import { RecipeDocument, editableRecipeSource } from './document';
 import { checkMessage, escapeHtml, serviceUrl, UI_OPERATIONS } from './security';
 import { OperationSpec, Project, Recipe, RecordValue } from './types';
 
@@ -70,7 +70,7 @@ class RecipeFileSystem implements vscode.FileSystemProvider {
     }
     return doc;
   }
-  async readFile(uri:vscode.Uri) { return Buffer.from(JSON.stringify((await this.document(uri)).current,null,2)+'\n'); }
+  async readFile(uri:vscode.Uri) { return Buffer.from(editableRecipeSource((await this.document(uri)).current!)); }
   async writeFile(uri:vscode.Uri,content:Uint8Array) {
     const doc=await this.document(uri);
     try { await doc.save(JSON.parse(Buffer.from(content).toString('utf8')),randomUUID()); this.changed.fire([{type:vscode.FileChangeType.Changed,uri}]); this.didSave(); }

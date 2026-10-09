@@ -1,0 +1,61 @@
+{
+  "command": ".venv/bin/python scripts/demo.py --url http://127.0.0.1:<EPHEMERAL_PORT> --fixture custom-pytorch --run",
+  "status": "PASS",
+  "service_health": "ok",
+  "executed": true,
+  "backend": "zenml",
+  "backend_version": "0.97.0",
+  "project_id": "1d76ce2a-34ea-47fa-ae0c-9e11498477f9",
+  "recipe_id": "65169339-359f-4ed8-ade3-5eff9de2b2cd",
+  "recipe_digest": "cc6c7cc31721eb4185b6f36227a130f21a95f1c3915e0f681b12681ac5a8cf8d",
+  "operation_id": "a5677a0c-8195-5280-9768-4f1adadcf606",
+  "backend_run_id": "b5155888-8663-4f3b-a5f3-74c09650771b",
+  "model_version_ref": "9acf9396-f5e4-40b6-86d5-e047d536af7b",
+  "artifact_ids": [
+    "0a4bf601-f253-4a80-891d-7fd4adf3970b",
+    "10bc1196-d32e-4ae9-9589-a96f680c8167",
+    "21e848d8-5f3c-4702-ae3c-598579553176",
+    "e8885a4c-0d1d-4c9a-b39f-b14c8deb5723",
+    "a31d33da-a79f-4316-99f8-0a45f9fc727d"
+  ],
+  "metrics": {
+    "accuracy": 0.8666666746139526,
+    "best_step": 30,
+    "best_validation_loss": 0.24631698429584503,
+    "brier": 0.13341984152793884,
+    "checkpoint_kind": "best",
+    "consumed_dataset_artifact": true,
+    "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8",
+    "device": "cpu",
+    "fixture": "custom",
+    "heldout_count": 30,
+    "kl": {
+      "batch_size": 60,
+      "coefficient": 0.0,
+      "direction": "reference_to_model",
+      "learning_rate": 0.025,
+      "scheduler_gamma": 0.99
+    },
+    "resume_mode": null,
+    "start_step": 0,
+    "step": 30,
+    "train_count": 180,
+    "validation_count": 30,
+    "validation_loss": 0.24631698429584503,
+    "width": 12
+  },
+  "ephemeral_test_identity": true,
+  "persistent_credentials_created": false,
+  "workload_source_commit": "a983989c7fbea964bea041c39576ac485a29bfc9",
+  "workload_source_files": [
+    {
+      "path": "requirements/backend.lock",
+      "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+    },
+    {
+      "path": "src/modelbuilder/backend/fixtures.py",
+      "sha256": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9"
+    }
+  ],
+  "verification_scope": "Fresh HTTP service and metadata/artifact store; real custom CPU recipe. Not an independent-environment portability proof."
+}

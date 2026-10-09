@@ -1,0 +1,20 @@
+{
+  "app": "Modelbuilder IDE Dev",
+  "editor": "1.105.0",
+  "status": "FAIL",
+  "tests": [
+    {
+      "name": "native-monaco-source-save",
+      "status": "PASS",
+      "evidence": {
+        "project_id": "c4c52af6-8756-4fe2-aa89-155c407dd59a",
+        "recipe_id": "bfa74a3a-dad9-4204-b6aa-123384b0f96c",
+        "revision": 2,
+        "digest": "963a2dbdc6e5a42fa270d9edf9b6214b9cc7fbe8f8bc175c531fd6d8115b58d5",
+        "scheme": "modelrecipe",
+        "language": "json"
+      }
+    }
+  ],
+  "error": "Error: Command failed: /workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/toolchains/node-v22.19.0-linux-x64/bin/node /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs {\"project_id\":\"c4c52af6-8756-4fe2-aa89-155c407dd59a\",\"recipe_id\":\"bfa74a3a-dad9-4204-b6aa-123384b0f96c\",\"initial_revision\":2}\nlocator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Cancel', exact: true })\u001b[22m\n\n    at /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:25:206\n    at async check (/workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:11:43)\n    at async /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:25:3 {\n  name: 'TimeoutError'\n}\n\n\tat genericNodeError (node:internal/errors:983:15)\n\tat wrappedFn (node:internal/errors:537:14)\n\tat ChildProcess.exithandler (node:child_process:417:12)\n\tat ChildProcess.emit (node:events:519:28)\n\tat maybeClose (node:internal/child_process:1101:16)\n\tat Socket.<anonymous> (node:internal/child_process:456:11)\n\tat Socket.emit (node:events:519:28)\n\tat Pipe.<anonymous> (node:net:346:12)"
+}

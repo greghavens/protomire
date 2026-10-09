@@ -1,0 +1,36 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_confirmed_cancel_before_native_run_creation _______________
+
+tmp_path = PosixPath('/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/early-cancel-before/test_confirmed_cancel_before_n0')
+
+    def test_confirmed_cancel_before_native_run_creation(tmp_path):
+        backend, request = early_request(tmp_path)
+        before = backend.invoke("run.status", request)
+        assert before["backend_run_id"] is None and before["worker_alive"] is True
+        cancelled = backend.invoke("run.cancel", request)
+        (ROOT / "evidence/backend/early-cancellation.json").write_text(json.dumps({"before": before, "after": cancelled}, indent=2))
+>       assert cancelled["status"] == "cancelled", cancelled
+E       AssertionError: {'artifacts': [], 'backend': 'zenml', 'backend_run_id': None, 'backend_status': None, ...}
+E       assert 'cancel_requested' == 'cancelled'
+E         
+E         - cancelled
+E         + cancel_requested
+
+tests/integration/test_early_cancellation.py:59: AssertionError
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/backend/early-cancellation-before.xml -
+=========================== short test summary info ============================
+FAILED tests/integration/test_early_cancellation.py::test_confirmed_cancel_before_native_run_creation
+1 failed, 2 warnings in 21.61s

@@ -1,0 +1,74 @@
+{
+  "status": "PASS",
+  "tests": [
+    {
+      "name": "graph-authoring-typed-python",
+      "status": "PASS",
+      "evidence": {
+        "revision": 3,
+        "digest": "8ec7c7499bc48f98b4c4ccc755dff5095d6fb0885c8bc1ed28a8b43e2265dec4",
+        "nodes": [
+          "custom",
+          "data"
+        ],
+        "edge": {
+          "source_node": "data",
+          "source_port": "tensor",
+          "target_node": "custom",
+          "target_port": "data"
+        }
+      }
+    },
+    {
+      "name": "gui-to-external-mcp-digest-equality",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "d026fac5-e19c-4eb6-8b00-e86d52122d4a",
+        "revision": 3,
+        "digest": "8ec7c7499bc48f98b4c4ccc755dff5095d6fb0885c8bc1ed28a8b43e2265dec4"
+      }
+    },
+    {
+      "name": "external-mcp-to-visible-gui",
+      "status": "PASS",
+      "evidence": {
+        "revision": 4,
+        "digest": "36f3d1dd6a9afeb781e15a7943d911af4ba3dd0684acd23dfa2daf88b870b0a1"
+      }
+    },
+    {
+      "name": "concurrent-edit-conflict-preserves-draft",
+      "status": "PASS",
+      "evidence": {
+        "local_revision": 4,
+        "server_revision": 5,
+        "draft_preserved": true,
+        "diff_visible": "{\n  \"recipe_id\": \"d026fac5-e19c-4eb6-8b00-e86d52122d4a\",\n  \"current_revision\": 5,\n  \"equal\": false,\n  \"diff\": \"--- client\\n+++ server\\n@@ -2,7 +2,7 @@\\n   \\\"capabilities\\\": [\\n     \\\"local_cpu\\\"\\n   ],\\n-  \\\"digest\\\": \\\"36f3d1dd6a9afeb781e15a7943d911af4ba3dd0684acd23dfa2daf88b870b0a1\\\",\\n+  \\\"digest\\\": \\\"296ebcd5a07a4f67d277aa808c74ef2495e1df95c6e59d62f0e092b0525d4215\\\",\\n   \\\"edges\\\": [\\n     {\\n       \\\"source_node\\\": \\\"data\\\",\\n@@ -24,7 +24,7 @@\\n       \\\"scope\\\": \\\"source\\\"\\n     }\\n   ],\\n-  \\\"name\\\": \\\"Unsaved GUI draft\\\",\\n+  \\\"name\\\": \\\"Concurrent MCP revision\\\",\\n   \\\"nodes\\\": [\\n     {\\n       \\\"cache_policy\\\": \\\"disabled\\\",\\n@@ -93,7 +93,7 @@\\n   \\\"project_id\\\": \\\"e88db2f6-e0f3-4a69-981b-13745c60ac9b\\\",\\n   \\\"recipe_id\\\": \\\"d026fac5-e19c-4eb6-8b00-e86d52122d4a\\\",\\n   \\\"resources\\\": [],\\n-  \\\"revision\\\": 4,\\n+  \\\"revision\\\": 5,\\n   \\\"schema_version\\\": \\\"0\\\",\\n   \\\"source\\\": {\\n     \\\"commit\\\": \\\"0000000000000000000000000000000000000000\\\",\"\n}"
+      }
+    },
+    {
+      "name": "invalid-source-visual-edit-protection",
+      "status": "PASS",
+      "evidence": {
+        "source_preserved": true
+      }
+    },
+    {
+      "name": "reload-cancel-preserves-draft",
+      "status": "PASS",
+      "evidence": {
+        "draft_preserved": true,
+        "explicit_cancel": true
+      }
+    },
+    {
+      "name": "explicit-reload-loads-server",
+      "status": "PASS",
+      "evidence": {
+        "revision": 5,
+        "digest": "296ebcd5a07a4f67d277aa808c74ef2495e1df95c6e59d62f0e092b0525d4215",
+        "explicit_discard": true
+      }
+    }
+  ]
+}

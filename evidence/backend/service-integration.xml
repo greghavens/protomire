@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="52.060" timestamp="2026-10-09T09:46:33.170199-05:00" hostname="42abdaea1484"><testcase classname="tests.service.test_real_backend" name="test_shared_service_native_execution_resume_research_and_scope" time="51.934" /></testsuite></testsuites>

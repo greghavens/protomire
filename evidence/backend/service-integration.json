@@ -1,0 +1,135 @@
+{
+  "test": "shared_service_native_execution_resume_research_and_scope",
+  "status": "passed",
+  "project_id": "9290f746-e02b-45a5-bb8d-d4d8abe91466",
+  "recipe_id": "ef175a0c-718d-4415-9f4b-f6262b43c693",
+  "recipe_digest": "c2b7a74309a2c7bc07ac907cfa312b765bcf01eaf6be13c16d11af582ffda453",
+  "source_commit": "68878481db43b8d69a32f64d66e53c822c36dd03",
+  "continuation_recipe_id": "3f6e3935-4938-5f0f-8557-8410cedbfa44",
+  "continuation_recipe_digest": "7f6db0c0b129c612954a7847727fa74a9f1cfe52dfc3a3e62cb55057884dfdbb",
+  "operation_ids": [
+    "cefb6f72-a52f-5b78-9554-dfc19f781798",
+    "2c15d3f3-4efe-597d-8bfa-57db81ce57cb"
+  ],
+  "backend_run_ids": [
+    "53d09172-4bba-4be0-9972-56944c2accf4",
+    "92ad34eb-d5c7-451b-bb4c-ff4764ad6ed7"
+  ],
+  "artifact_ids": [
+    "d5d52971-9dc6-4e43-b10d-f5c54b05b3c1",
+    "62df29dd-3e5f-4d59-a91b-fb1da5febf23",
+    "eecc1cd2-153f-4de3-be8d-e5b0b67546d8",
+    "6a8ac8c4-1bb8-4e86-9faa-428ebf7e0104",
+    "768ba885-0327-419f-bed7-a5f5a432e87b"
+  ],
+  "checkpoint_artifact_id": "eecc1cd2-153f-4de3-be8d-e5b0b67546d8",
+  "decision_id": "e0615968-75c5-4120-ad29-9415cfdcd8dc",
+  "evidence_id": "8863afb8-0597-4757-b0b8-69cd30ffdf52",
+  "claim_id": "62993bc5-6ff7-4378-80c6-86b0e1a988f9",
+  "hypothesis_id": "96a71db5-0a1f-4d26-8c69-692cee3118c1",
+  "research_linkage": {
+    "evidence": {
+      "evidence_id": "8863afb8-0597-4757-b0b8-69cd30ffdf52",
+      "project_id": "9290f746-e02b-45a5-bb8d-d4d8abe91466",
+      "source_url": "https://arxiv.org/abs/1503.02531",
+      "source_identifier": "arXiv:1503.02531v1",
+      "title": "Distilling the Knowledge in a Neural Network",
+      "authors": [
+        "Geoffrey Hinton",
+        "Oriol Vinyals",
+        "Jeff Dean"
+      ],
+      "publication_date": "2015-03-09",
+      "retrieved_at": "2026-10-09T14:50:35.766671+00:00",
+      "content_hash": null,
+      "excerpt": null,
+      "citation_metadata": {
+        "metadata_verified_at": "2026-10-09",
+        "provider": "arXiv",
+        "metadata_verification_url": "https://arxiv.org/abs/1503.02531",
+        "paper_result_reproduced": false,
+        "claim_verified": false
+      },
+      "revision": 1
+    },
+    "claim": {
+      "claim_id": "62993bc5-6ff7-4378-80c6-86b0e1a988f9",
+      "project_id": "9290f746-e02b-45a5-bb8d-d4d8abe91466",
+      "evidence_ids": [
+        "8863afb8-0597-4757-b0b8-69cd30ffdf52"
+      ],
+      "proposition": "For this synthetic fixture, the lower-validation-loss checkpoint is a candidate reference for a later distillation experiment; suitability for distillation remains untested.",
+      "supports": [],
+      "contradicts": [],
+      "confidence": null,
+      "uncertainty": "The cited paper supplies distillation context. This continuation experiment measures only a fixed synthetic validation split and does not reproduce the paper or test distillation efficacy.",
+      "review_status": "unreviewed",
+      "revision": 1,
+      "created_at": "2026-10-09T14:50:35.767084+00:00",
+      "updated_at": "2026-10-09T14:50:35.767084+00:00"
+    },
+    "hypothesis": {
+      "hypothesis_id": "96a71db5-0a1f-4d26-8c69-692cee3118c1",
+      "project_id": "9290f746-e02b-45a5-bb8d-d4d8abe91466",
+      "claim_ids": [
+        "62993bc5-6ff7-4378-80c6-86b0e1a988f9"
+      ],
+      "evidence_ids": [
+        "8863afb8-0597-4757-b0b8-69cd30ffdf52"
+      ],
+      "proposed_change": "Continue the tiny baseline to select a checkpoint candidate for a later distillation experiment",
+      "expected_outcome": "Lower validation loss after continuation from four to six steps",
+      "acceptance_metric": {
+        "name": "validation_loss",
+        "direction": "minimize"
+      },
+      "scope": "Fixed synthetic validation split only; no distillation or generalization claim.",
+      "status": "proposed",
+      "revision": 1,
+      "created_at": "2026-10-09T14:50:35.767344+00:00",
+      "updated_at": "2026-10-09T14:50:35.767344+00:00"
+    },
+    "decision": {
+      "decision_id": "e0615968-75c5-4120-ad29-9415cfdcd8dc",
+      "project_id": "9290f746-e02b-45a5-bb8d-d4d8abe91466",
+      "hypothesis_id": "96a71db5-0a1f-4d26-8c69-692cee3118c1",
+      "recipe_id": "ef175a0c-718d-4415-9f4b-f6262b43c693",
+      "recipe_revision": 1,
+      "run_ids": [
+        "53d09172-4bba-4be0-9972-56944c2accf4",
+        "92ad34eb-d5c7-451b-bb4c-ff4764ad6ed7"
+      ],
+      "selection_rule": {
+        "metric": "validation_loss",
+        "direction": "minimize"
+      },
+      "outcome": "accepted",
+      "rationale": "Select the measured minimum on the declared validation split; citation is context, not proof.",
+      "actor": "integration-owner",
+      "timestamp": "2026-10-09T14:50:35.767809+00:00",
+      "revision": 1
+    },
+    "paper_result_reproduced": false
+  },
+  "selected_model_version_ref": "74a8523d-d764-43de-9cf4-18b1eb00dd66",
+  "comparison": {
+    "direction": "minimize",
+    "metric": "validation_loss",
+    "runs": [
+      {
+        "backend_run_id": "53d09172-4bba-4be0-9972-56944c2accf4",
+        "delta_from_selected": 0.09025260806083679,
+        "model_version_ref": "f74a597a-a34c-4c83-bc38-4947ae52399f",
+        "value": 0.5385295152664185
+      },
+      {
+        "backend_run_id": "92ad34eb-d5c7-451b-bb4c-ff4764ad6ed7",
+        "delta_from_selected": 0.0,
+        "model_version_ref": "74a8523d-d764-43de-9cf4-18b1eb00dd66",
+        "value": 0.44827690720558167
+      }
+    ],
+    "selected_model_version_ref": "74a8523d-d764-43de-9cf4-18b1eb00dd66",
+    "selected_run_id": "92ad34eb-d5c7-451b-bb4c-ff4764ad6ed7"
+  }
+}

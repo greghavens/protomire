@@ -19,12 +19,17 @@ exports.run = async function () {
     throw new Error('Timed out waiting for observed runtime result');
   };
   const check = async (name, fn) => {
+    if(process.env.MODELBUILDER_GUI_ONLY && !process.env.MODELBUILDER_GUI_ONLY.split(',').includes(name))return;
+    await fs.writeFile(path.join(out,'stage.txt'),'running-'+name);
     try {const evidence=await fn();report.tests.push({name,status:'PASS',evidence});}
     catch(e){report.tests.push({name,status:'FAIL',error:String(e.stack||e)});}
     await save();await fs.writeFile(path.join(out,'stage.txt'),name);await new Promise(r=>setTimeout(r,2500));
   };
   const fixture = (f) => path.join(workspace.uri.fsPath,f);
   const python = process.env.MODELBUILDER_GUI_PYTHON || 'python3';
+  await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  await vscode.commands.executeCommand('workbench.action.joinAllGroups');
+  for(const terminal of vscode.window.terminals)if(terminal.name==='Modelbuilder smoke')terminal.dispose();
   await save();
   await check('python-configuration',async()=>{
     await vscode.workspace.getConfiguration('python').update('defaultInterpreterPath',python,vscode.ConfigurationTarget.Workspace);

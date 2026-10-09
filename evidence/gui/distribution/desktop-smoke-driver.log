@@ -1,0 +1,183 @@
+{
+  "editor": "1.105.0",
+  "app": "Modelbuilder IDE Dev",
+  "status": "PASS",
+  "tests": [
+    {
+      "name": "python-configuration",
+      "status": "PASS",
+      "evidence": {
+        "python": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/bin/python"
+      }
+    },
+    {
+      "name": "branded-app",
+      "status": "PASS",
+      "evidence": "Modelbuilder IDE Dev"
+    },
+    {
+      "name": "builtin-workbench",
+      "status": "PASS",
+      "evidence": {
+        "id": "modelbuilder.modelbuilder-workbench",
+        "extensionPath": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/extensions/modelbuilder-workbench"
+      }
+    },
+    {
+      "name": "python-edit-and-lsp",
+      "status": "PASS",
+      "evidence": [
+        {
+          "message": "Type \"Literal['type_error']\" is not assignable to declared type \"int\"\n\u00a0\u00a0\"Literal['type_error']\" is not assignable to \"int\"",
+          "source": "basedpyright",
+          "line": 0
+        }
+      ]
+    },
+    {
+      "name": "integrated-terminal",
+      "status": "PASS",
+      "evidence": {
+        "terminalName": "Modelbuilder smoke",
+        "output": "modelbuilder-terminal-ok\n"
+      }
+    },
+    {
+      "name": "git-integration",
+      "status": "PASS",
+      "evidence": {
+        "root": "file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-workspace",
+        "changedFiles": [
+          "file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-workspace/.vscode/settings.json",
+          "file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-workspace/debug-result.txt",
+          "file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-workspace/debug_smoke.py",
+          "file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-workspace/diagnostics.py",
+          "file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-workspace/smoke.ipynb",
+          "file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-workspace/terminal-result.txt"
+        ]
+      }
+    },
+    {
+      "name": "python-debugger",
+      "status": "PASS",
+      "evidence": {
+        "started": true,
+        "finished": true,
+        "stoppedReason": "breakpoint",
+        "evaluatedAnswer": "42",
+        "result": "42"
+      }
+    },
+    {
+      "name": "jupyter-kernel",
+      "status": "PASS",
+      "evidence": {
+        "uri": "file:///workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-workspace/smoke.ipynb",
+        "outputs": [
+          "42\n"
+        ]
+      }
+    }
+  ],
+  "trusted": true,
+  "extensions": [
+    "vscode.bat",
+    "vscode.clojure",
+    "vscode.coffeescript",
+    "vscode.configuration-editing",
+    "vscode.cpp",
+    "vscode.csharp",
+    "vscode.css",
+    "vscode.css-language-features",
+    "vscode.dart",
+    "vscode.debug-auto-launch",
+    "vscode.debug-server-ready",
+    "vscode.diff",
+    "vscode.docker",
+    "vscode.emmet",
+    "vscode.extension-editing",
+    "vscode.fsharp",
+    "vscode.git",
+    "vscode.git-base",
+    "vscode.github",
+    "vscode.github-authentication",
+    "vscode.go",
+    "vscode.groovy",
+    "vscode.grunt",
+    "vscode.gulp",
+    "vscode.handlebars",
+    "vscode.hlsl",
+    "vscode.html",
+    "vscode.html-language-features",
+    "vscode.ini",
+    "vscode.ipynb",
+    "vscode.jake",
+    "vscode.java",
+    "vscode.javascript",
+    "vscode.json",
+    "vscode.json-language-features",
+    "vscode.julia",
+    "vscode.latex",
+    "vscode.less",
+    "vscode.log",
+    "vscode.lua",
+    "vscode.make",
+    "vscode.markdown",
+    "vscode.markdown-language-features",
+    "vscode.markdown-math",
+    "vscode.media-preview",
+    "vscode.merge-conflict",
+    "vscode.mermaid-chat-features",
+    "vscode.microsoft-authentication",
+    "modelbuilder.modelbuilder-workbench",
+    "vscode.builtin-notebook-renderers",
+    "vscode.npm",
+    "vscode.objective-c",
+    "vscode.perl",
+    "vscode.php",
+    "vscode.php-language-features",
+    "vscode.powershell",
+    "vscode.prompt",
+    "vscode.pug",
+    "vscode.python",
+    "vscode.r",
+    "vscode.razor",
+    "vscode.references-view",
+    "vscode.restructuredtext",
+    "vscode.ruby",
+    "vscode.rust",
+    "vscode.scss",
+    "vscode.search-result",
+    "vscode.shaderlab",
+    "vscode.shellscript",
+    "vscode.simple-browser",
+    "vscode.sql",
+    "vscode.swift",
+    "vscode.terminal-suggest",
+    "vscode.theme-abyss",
+    "vscode.theme-defaults",
+    "vscode.theme-kimbie-dark",
+    "vscode.theme-monokai",
+    "vscode.theme-monokai-dimmed",
+    "vscode.theme-quietlight",
+    "vscode.theme-red",
+    "vscode.vscode-theme-seti",
+    "vscode.theme-solarized-dark",
+    "vscode.theme-solarized-light",
+    "vscode.theme-tomorrow-night-blue",
+    "vscode.tunnel-forwarding",
+    "vscode.typescript",
+    "vscode.typescript-language-features",
+    "vscode.vb",
+    "vscode.vscode-colorize-perf-tests",
+    "vscode.vscode-colorize-tests",
+    "vscode.vscode-test-resolver",
+    "vscode.xml",
+    "vscode.yaml",
+    "detachhead.basedpyright",
+    "ms-python.debugpy",
+    "ms-python.python",
+    "ms-toolsai.jupyter",
+    "modelbuilder.modelbuilder-gui-smoke"
+  ]
+}

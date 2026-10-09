@@ -1,0 +1,25 @@
+/* Attach to Electron's real OOPIF execution contexts without changing web security. */
+class CDP {
+ constructor(socket){this.socket=socket;this.next=0;this.pending=new Map();this.contexts=[];socket.addEventListener('message',event=>{const message=JSON.parse(String(event.data));if(message.id){const request=this.pending.get(message.id);if(request){clearTimeout(request.timer);this.pending.delete(message.id);message.error?request.reject(new Error(JSON.stringify(message.error))):request.resolve(message.result);}}else if(message.method==='Runtime.executionContextCreated'){this.contexts.push({sessionId:message.sessionId,...message.params.context});}});}
+ static async connect(endpoint){const version=await fetch(endpoint+'/json/version').then(r=>r.json());const socket=new WebSocket(version.webSocketDebuggerUrl);await new Promise((resolve,reject)=>{socket.addEventListener('open',resolve,{once:true});socket.addEventListener('error',reject,{once:true});});return new CDP(socket);}
+ send(method,params={},sessionId){const id=++this.next;return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{this.pending.delete(id);reject(new Error('CDP timed out: '+method));},10000);this.pending.set(id,{resolve,reject,timer});this.socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));});}
+ async inspect(){const {targetInfos}=await this.send('Target.getTargets');const sessions=[];for(const target of targetInfos.filter(t=>['page','iframe','webview','other'].includes(t.type))){try{const {sessionId}=await this.send('Target.attachToTarget',{targetId:target.targetId,flatten:true});sessions.push({target,sessionId});await this.send('Runtime.enable',{},sessionId);}catch(error){sessions.push({target,error:String(error)});}}return sessions;}
+ async evaluate(context,expression){const result=await this.send('Runtime.evaluate',{expression,contextId:context.id,returnByValue:true,awaitPromise:true},context.sessionId);if(result.exceptionDetails)throw new Error(result.exceptionDetails.text+': '+(result.exceptionDetails.exception?.description||''));return result.result.value;}
+ close(){this.socket.close();}
+}
+const findDocument=`(()=>{const walk=(doc)=>{if(doc.querySelector('#source'))return doc;for(const frame of doc.querySelectorAll('iframe')){try{if(frame.contentDocument){const result=walk(frame.contentDocument);if(result)return result;}}catch{}}return null;};return walk(document);})()`;
+async function discoverWebview(endpoint,writeInventory){const cdp=await CDP.connect(endpoint);const targets=await cdp.inspect();await new Promise(r=>setTimeout(r,300));const probes=[];for(const context of cdp.contexts){try{const found=await cdp.evaluate(context,`Boolean(typeof document!=='undefined'&&${findDocument})`);probes.push({id:context.id,sessionId:context.sessionId,found});if(found){await writeInventory({targets,contexts:cdp.contexts,probes,selectedContext:context});return {cdp,context,frame:createFrame(cdp,context)};}}catch(error){probes.push({id:context.id,sessionId:context.sessionId,error:String(error)});}}await writeInventory({targets,contexts:cdp.contexts,probes});cdp.close();return null;}
+function createFrame(cdp,context){
+ const evaluate=(selector,body,args=[])=>cdp.evaluate(context,`(()=>{const doc=${findDocument};const el=doc?.querySelector(${JSON.stringify(selector)});if(!el)throw new Error('Missing real GUI element: '+${JSON.stringify(selector)});return (${body})(el,...${JSON.stringify(args)});})()`);
+ const wait=async(fn,timeout=30000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await fn())return;await new Promise(r=>setTimeout(r,100));}throw Error('Real webview element did not reach expected state');};
+ return {scrollTop:()=>cdp.evaluate(context,`(()=>{const doc=${findDocument};doc.defaultView.scrollTo(0,0);return true;})()`),locator(selector){return {
+  inputValue:()=>evaluate(selector,'el=>el.value'),
+  innerText:()=>evaluate(selector,'el=>el.innerText'),
+  textContent:()=>evaluate(selector,'el=>el.textContent'),
+  fill:async(value)=>{await wait(()=>evaluate(selector,'el=>!el.disabled'));return evaluate(selector,`(el,value)=>{el.focus();const setter=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set;setter.call(el,value);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}`, [value]);},
+  selectOption:async(value)=>{await wait(()=>evaluate(selector,'el=>!el.disabled'));return evaluate(selector,`(el,value)=>{el.value=value;if(el.value!==value)throw Error('Option missing');el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}`,[value]);},
+  click:async()=>{await wait(()=>evaluate(selector,'el=>!el.disabled'));return evaluate(selector,'el=>{el.scrollIntoView({block:"nearest"});el.click();}');},
+  waitFor:async({state,timeout}={})=>wait(()=>evaluate(selector,`el=>${state==='hidden'?'!':'!!'}(el.getClientRects().length&&!el.closest('[hidden]'))`),timeout),
+ };}};
+}
+module.exports={discoverWebview};

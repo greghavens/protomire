@@ -1,0 +1,18 @@
+{
+  "custom-origin": {
+    "max_abs_difference": 0.0,
+    "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8"
+  },
+  "custom-replay": {
+    "max_abs_difference": 0.0,
+    "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8"
+  },
+  "pretrained-origin": {
+    "max_abs_difference": 0.0,
+    "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e"
+  },
+  "pretrained-replay": {
+    "max_abs_difference": 0.0,
+    "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e"
+  }
+}

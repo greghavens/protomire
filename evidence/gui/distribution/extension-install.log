@@ -1,0 +1,20 @@
+Verified ms-python.python@2026.4.0 232aeafb01f069824fdd92d3e628c1c442bbcfa1d3cc945ff97076340bb2b4a6
+Debugger listening on ws://127.0.0.1:5874/8a9d1b16-7425-4feb-b336-41a253b3f845
+For help, see: https://nodejs.org/en/docs/inspector
+Installing extensions...
+Extension 'ms-python.python-2026.4.0.vsix' was successfully installed.
+Verified ms-toolsai.jupyter@2025.9.1 110660656944c4ab0ff687db488c2e8c59c67ec121dcf09bcaa54b6edd9ce71f
+Debugger listening on ws://127.0.0.1:5874/c2c631a1-4a4f-4b10-a57f-c98f2e3f5275
+For help, see: https://nodejs.org/en/docs/inspector
+Installing extensions...
+Extension 'ms-toolsai.jupyter-2025.9.1.vsix' was successfully installed.
+Verified detachhead.basedpyright@1.40.2 9c87b0b992714ca2f9298cb7e98bda621612f0ee96121a8e77ee7fcccce2f351
+Debugger listening on ws://127.0.0.1:5874/e4c9f236-c96b-4c9b-85b2-55adb6ae46d7
+For help, see: https://nodejs.org/en/docs/inspector
+Installing extensions...
+Extension 'detachhead.basedpyright-1.40.2.vsix' was successfully installed.
+Verified ms-python.debugpy@2026.6.0 c7744af4bf72978f5792624a71c80e2b622a1118574fada3a903d70ac03d5bca
+Debugger listening on ws://127.0.0.1:5874/40e3ac9a-2628-446b-bc94-26818ccb77f9
+For help, see: https://nodejs.org/en/docs/inspector
+Installing extensions...
+Extension 'ms-python.debugpy-2026.6.0.vsix' was successfully installed.

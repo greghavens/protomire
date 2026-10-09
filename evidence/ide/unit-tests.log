@@ -1,0 +1,58 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> modelbuilder-workbench@0.1.0 test
+> npm run compile && node --test test/*.test.cjs
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> modelbuilder-workbench@0.1.0 compile
+> node scripts/build.mjs
+
+✔ thin transport calls exact operation endpoint and bearer auth (6.072517ms)
+✔ catalog uses same authenticated service (0.925498ms)
+✔ missing secret fails before any network request (0.964015ms)
+✔ 409 structured conflict is preserved (0.824908ms)
+✔ 403 scope failure is preserved (0.983393ms)
+✔ transport failure never echoes token or raw fetch exception (4.672594ms)
+✔ invalid JSON response does not masquerade as success (0.942543ms)
+✔ reject unsafe service URL http://remote.example (0.313857ms)
+✔ reject unsafe service URL file:///etc/passwd (1.943533ms)
+✔ reject unsafe service URL https://user:password@remote.example (4.462361ms)
+✔ reject unsafe service URL https://remote.example?token=x (0.290793ms)
+✔ reject unsafe service URL https://remote.example#token (0.123253ms)
+✔ reject unsafe service URL http://127.0.0.1.evil.example (0.093939ms)
+✔ allow explicit safe service URL http://localhost:8765 (0.123283ms)
+✔ allow explicit safe service URL http://127.0.0.1:8765 (0.078857ms)
+✔ allow explicit safe service URL http://[::1]:8765 (0.053559ms)
+✔ allow explicit safe service URL https://service.example/base (0.041401ms)
+✔ operation path injection fails before request (1.312704ms)
+✔ CSP URI escaping rejects HTML interpolation (0.200599ms)
+✔ webview message structural and size limits (5.326197ms)
+✔ operation bridge excludes spend, publish and arbitrary endpoints (0.141791ms)
+✔ credential lookup is bound to the exact normalized destination snapshot (0.54434ms)
+✔ save uses loaded revision even if draft metadata changes (1.82775ms)
+✔ conflicting save leaves base revision intact, never silent rebase (0.839489ms)
+✔ recipe identity cannot be changed by a webview draft (0.512082ms)
+✔ validation and diff forward full draft to authority (1.443278ms)
+✔ node parameter edit preserves arbitrary Python and unknown recipe fields (1.663225ms)
+✔ remove node also removes dangling attached edges (0.229061ms)
+✔ Python node template carries typed IO and full code entrypoint ref (0.285525ms)
+✔ all mutations require a loaded base (0.451612ms)
+✔ invalid source blocks visual edits instead of overwriting draft (0.686341ms)
+✔ stale node panel cannot overwrite newer source node parameters (0.420115ms)
+✔ native JSON omits computed response digest while retaining canonical body fields (0.358203ms)
+✔ in-flight recipe A poll cannot replace newly opened recipe B (2.337769ms)
+✔ in-flight poll cannot roll back a newer save on same document (0.41621ms)
+✔ dirty source created during poll read remains preserved (0.346966ms)
+✔ run details returned after navigation are not shown in the new project (0.327177ms)
+✔ restored unsaved draft retains original base revision even after remote edits (0.540034ms)
+✔ draft backup cannot replace host base revision with webview metadata (1.025666ms)
+✔ save completion preserves edits that arrived after submission (6.88763ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 40
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 128.043605

@@ -25,6 +25,9 @@ def verify(source: pathlib.Path) -> dict:
     assert product["builtInExtensions"] == [], "Unaudited downloaded built-ins"
     feature = source / "extensions/modelbuilder-workbench/package.json"
     manifest = json.loads(feature.read_text())
+    defaults = manifest["contributes"]["configurationDefaults"]
+    assert defaults["chat.disableAIFeatures"] is True
+    assert defaults["workbench.secondarySideBar.defaultVisibility"] == "hidden"
     required = [
         source / "out/main.js",
         source / ".build/electron/modelbuilder-ide",

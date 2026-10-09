@@ -1,0 +1,33 @@
+INFO:     Started server process [8304]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:42941 (Press CTRL+C to quit)
+INFO:     127.0.0.1:55774 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "GET /v1/catalog HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/project.create HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/recipe.create HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/project.open HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "GET /v1/catalog HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/project.list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/project.open HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/run.submit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/run.status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40572 - "POST /v1/operations/run.logs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40582 - "POST /v1/operations/run.artifacts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/project.open HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/run.status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40596 - "POST /v1/operations/run.logs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40582 - "POST /v1/operations/run.artifacts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40596 - "POST /v1/operations/run.logs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40582 - "POST /v1/operations/run.artifacts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/run.status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43028 - "POST /v1/operations/run.status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55774 - "POST /v1/operations/run.status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41688 - "POST /v1/operations/run.logs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41696 - "POST /v1/operations/run.artifacts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41698 - "POST /v1/operations/run.list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49150 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK

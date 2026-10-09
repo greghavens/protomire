@@ -110,10 +110,11 @@ In the actual IDE:
 
 1. Open the intended repository and review the regular workspace-trust prompt. Do not trust an unfamiliar workspace merely to enable execution.
 2. Run **ModelBuilder: Configure Service Connection** from the Command Palette.
-3. Enter `http://127.0.0.1:8765` and the approved scoped token. The token is bound to that service URL in VS Code SecretStorage; it is not written into workspace settings or delivered to the webview. This configuration command intentionally stores the credential for future IDE use.
-4. Open the **ModelBuilder** activity bar and **ModelBuilder: Open Model Workbench**, or create a project using **ModelBuilder: Create Model Project**.
-5. Select a recipe to inspect its normalized JSON, visual nodes/edges, revision, and digest. **Open native JSON** opens the service-backed `modelrecipe:` document. Save with the revision you read; a conflicting GUI/MCP edit must produce an explicit conflict rather than overwrite it.
-6. Use Research for evidence/hypotheses and Runs for actual IDs, metrics, artifacts, and cancellation status. Starting a run requires trusted workspace and explicit fixture execution consent.
+3. Ensure the desktop has a working OS keyring/secret service before storing a real credential. The test host reported an unavailable GNOME keyring; tests used disposable credentials and removed them, without enabling unencrypted/basic storage.
+4. Enter `http://127.0.0.1:8765` and the approved scoped token. The token is bound to that service URL in VS Code SecretStorage; it is not written into workspace settings or delivered to the webview. This configuration command intentionally stores the credential for future IDE use.
+5. Open the **ModelBuilder** activity bar and **ModelBuilder: Open Model Workbench**, or create a project using **ModelBuilder: Create Model Project**.
+6. Select a recipe to inspect its normalized JSON, visual nodes/edges, revision, and digest. **Open native JSON** opens the service-backed `modelrecipe:` document. Save with the revision you read; a conflicting GUI/MCP edit must produce an explicit conflict rather than overwrite it.
+7. Use Research for evidence/hypotheses and Runs for actual IDs, metrics, artifacts, and cancellation status. Starting a run requires trusted workspace and explicit fixture execution consent.
 
 HTTP is accepted only for loopback service URLs; non-loopback clients require HTTPS. URL changes do not silently reuse a credential bound to a different service. The visual graph preserves explicit arbitrary-Python node references; it does not reverse engineer arbitrary Python source into a graph.
 

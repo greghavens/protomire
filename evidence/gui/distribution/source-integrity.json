@@ -1,0 +1,8 @@
+{
+  "commit": "03c265b1adee71ac88f833e065f7bb956b60550a",
+  "core_patches": 0,
+  "tracked_overlay_files": [
+    "product.json"
+  ],
+  "builtin_feature": true
+}

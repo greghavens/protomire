@@ -1,0 +1,2047 @@
+{
+  "status": "PARTIAL",
+  "authenticated_agent_parity": "BLOCKED_AUTH",
+  "probes": {
+    "claude_configuration": {
+      "exit_code": 0,
+      "stdout": "Added stdio MCP server modelbuilder to user config\n",
+      "stderr": ""
+    },
+    "claude_health": {
+      "exit_code": 0,
+      "stdout": "Checking MCP server health\u2026\n\nmodelbuilder: /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/bin/python -m modelbuilder.mcp_server - \u2714 Connected\n",
+      "stderr": ""
+    },
+    "codex_configuration": {
+      "exit_code": 0,
+      "stdout": "[\n  {\n    \"name\": \"modelbuilder\",\n    \"enabled\": true,\n    \"disabled_reason\": null,\n    \"transport\": {\n      \"type\": \"stdio\",\n      \"command\": \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/bin/python\",\n      \"args\": [\n        \"-m\",\n        \"modelbuilder.mcp_server\"\n      ],\n      \"env\": null,\n      \"env_vars\": [\n        \"PYTHONPATH\",\n        \"MODELBUILDER_API_URL\",\n        \"MODELBUILDER_TOKEN\"\n      ],\n      \"cwd\": null\n    },\n    \"startup_timeout_sec\": null,\n    \"tool_timeout_sec\": null,\n    \"auth_status\": \"unsupported\"\n  }\n]\n",
+      "stderr": ""
+    },
+    "codex_initialize": {
+      "id": 1,
+      "result": {
+        "userAgent": "modelbuilder-acceptance/0.154.0-alpha.6.1 (Debian 13.0.0; x86_64) dumb (modelbuilder-acceptance; 0.1.0)",
+        "codexHome": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/assistant-mcp-57_3_jae/codex",
+        "platformFamily": "unix",
+        "platformOs": "linux"
+      }
+    },
+    "codex_mcp_inventory": {
+      "id": 2,
+      "result": {
+        "data": [
+          {
+            "name": "modelbuilder",
+            "runtimeStatus": null,
+            "pluginId": null,
+            "serverInfo": {
+              "name": "modelbuilder",
+              "title": null,
+              "version": "0.1.0",
+              "description": null,
+              "icons": null,
+              "websiteUrl": null
+            },
+            "tools": {
+              "recipe_clone": {
+                "name": "recipe_clone",
+                "description": "Clone a recipe into the same project with a fresh identity.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expected_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "recipe_id",
+                    "expected_revision",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.clone",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "run_submit": {
+                "name": "run_submit",
+                "description": "Submit an explicitly permitted local fixture to the real backend.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expected_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "target": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "parameters": {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Edit canonical recipe node parameters instead of execution-time overrides."
+                    },
+                    "trusted": {
+                      "type": "boolean"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "recipe_id",
+                    "expected_revision",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "run.submit",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "evidence_search": {
+                "name": "evidence_search",
+                "description": "Search saved evidence or retrieve public OpenAlex metadata without persisting it.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "query": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "enum": [
+                        "local",
+                        "openalex"
+                      ]
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "evidence.search",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "run_cancel": {
+                "name": "run_cancel",
+                "description": "Request real cancellation; requested is not confirmed termination.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "operation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "backend_run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "run.cancel",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "recipe_list": {
+                "name": "recipe_list",
+                "description": "List project recipes.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.list",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "evidence_get": {
+                "name": "evidence_get",
+                "description": "Read a cited evidence record.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "evidence_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "evidence_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "evidence.get",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "project_update": {
+                "name": "project_update",
+                "description": "Update project with optimistic concurrency.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expected_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "changes": {
+                      "type": "object"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "expected_revision",
+                    "changes",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "project.update",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "policy_update": {
+                "name": "policy_update",
+                "description": "Update bounded local policy; remote spending remains disabled.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expected_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "changes": {
+                      "type": "object"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "expected_revision",
+                    "changes",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "policy.update",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "evidence_add": {
+                "name": "evidence_add",
+                "description": "Store a citation; a citation alone does not prove a claim.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_identifier": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "authors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "publication_date": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "content_hash": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "excerpt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "citation_metadata": {
+                      "type": "object"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "title",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "evidence.add",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "model_version_get": {
+                "name": "model_version_get",
+                "description": "Read an authoritative model version.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "model_version_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "model_version_ref": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "model.version.get",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "recipe_resolve_dependencies": {
+                "name": "recipe_resolve_dependencies",
+                "description": "Inspect immutable dependency references and readiness.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "recipe_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.resolve_dependencies",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "run_status": {
+                "name": "run_status",
+                "description": "Reconcile status with the authoritative backend.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "operation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "backend_run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "run.status",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "operation_get": {
+                "name": "operation_get",
+                "description": "Read a stored application-operation correlation.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "operation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "operation_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "operation.get",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "hypothesis_create": {
+                "name": "hypothesis_create",
+                "description": "Create an evidence-linked measurable hypothesis.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "claim_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "evidence_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "proposed_change": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expected_outcome": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "acceptance_metric": {
+                      "type": "object"
+                    },
+                    "scope": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "proposed_change",
+                    "expected_outcome",
+                    "acceptance_metric",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "hypothesis.create",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "recipe_validate": {
+                "name": "recipe_validate",
+                "description": "Validate a recipe without executing any code.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe": {
+                      "type": "object"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.validate",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "recipe_create": {
+                "name": "recipe_create",
+                "description": "Create a canonical recipe; defaults form an editable draft.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe": {
+                      "type": "object"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.create",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "hypothesis_get": {
+                "name": "hypothesis_get",
+                "description": "Read a hypothesis.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hypothesis_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "hypothesis_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "hypothesis.get",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "hypothesis_list": {
+                "name": "hypothesis_list",
+                "description": "List hypotheses including negative and abandoned outcomes.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "hypothesis.list",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "claim_get": {
+                "name": "claim_get",
+                "description": "Read a research claim.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "claim_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "claim_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "claim.get",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "cost_estimate": {
+                "name": "cost_estimate",
+                "description": "Inspect local cost limits; remote estimates unavailable without a provider.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "target": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "cost.estimate",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "decision_record": {
+                "name": "decision_record",
+                "description": "Record a decision tied to real runs and an immutable recipe revision.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "hypothesis_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 1
+                    },
+                    "selection_rule": {
+                      "type": "object"
+                    },
+                    "outcome": {
+                      "enum": [
+                        "accepted",
+                        "rejected",
+                        "inconclusive"
+                      ]
+                    },
+                    "rationale": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "recipe_id",
+                    "recipe_revision",
+                    "hypothesis_id",
+                    "run_ids",
+                    "selection_rule",
+                    "outcome",
+                    "rationale",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "decision.record",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "recipe_import": {
+                "name": "recipe_import",
+                "description": "Validate bundle integrity and import as a new untrusted recipe.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "bundle": {
+                      "type": "object"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "bundle",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.import",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "recipe_update": {
+                "name": "recipe_update",
+                "description": "Atomically replace the same recipe using its expected revision.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe": {
+                      "type": "object"
+                    },
+                    "expected_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "recipe_id",
+                    "recipe",
+                    "expected_revision",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.update",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "run_compare": {
+                "name": "run_compare",
+                "description": "Compare metrics from actual backend runs by a declared criterion.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 2
+                    },
+                    "metric": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "direction": {
+                      "enum": [
+                        "minimize",
+                        "maximize"
+                      ]
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "run_ids",
+                    "metric",
+                    "direction"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "run.compare",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "run_list": {
+                "name": "run_list",
+                "description": "List and reconcile project operation correlations with the backend.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "run.list",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "project_get": {
+                "name": "project_get",
+                "description": "Read a project.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "project.get",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "run_plan": {
+                "name": "run_plan",
+                "description": "Validate an execution plan; never launch from this operation.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "target": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "parameters": {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Edit canonical recipe node parameters instead of execution-time overrides."
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "recipe_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "run.plan",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "project_create": {
+                "name": "project_create",
+                "description": "Create a single-model lifecycle project.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "slug": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "model_name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "git_remote": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "head_commit": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "active_recipe_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "active_model_version_ref": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "research_watch_config": {
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "slug",
+                    "model_name",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "project.create",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "execution_targets": {
+                "name": "execution_targets",
+                "description": "List actual supported targets and capabilities.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "execution.targets",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "project_open": {
+                "name": "project_open",
+                "description": "Open a project and its lifecycle resources.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "project.open",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "recipe_get": {
+                "name": "recipe_get",
+                "description": "Read a recipe at its current or historical revision.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "recipe_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.get",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "model_version_lineage": {
+                "name": "model_version_lineage",
+                "description": "Read actual model-version parents and artifacts.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "model_version_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "model_version_ref": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "model.version.lineage",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "project_history": {
+                "name": "project_history",
+                "description": "Read append-only project audit history.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 1000
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "project.history",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "recipe_diff": {
+                "name": "recipe_diff",
+                "description": "Compare revisions or a draft against the current recipe.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe": {
+                      "type": "object"
+                    },
+                    "from_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "to_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "recipe_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.diff",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "claim_create": {
+                "name": "claim_create",
+                "description": "Create a proposition with evidence and contradiction links.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "evidence_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "proposition": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "supports": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "contradicts": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "confidence": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "uncertainty": {
+                      "type": "string"
+                    },
+                    "review_status": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "evidence_ids",
+                    "proposition",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "claim.create",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "hypothesis_update": {
+                "name": "hypothesis_update",
+                "description": "Revise a hypothesis without losing previous outcomes.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hypothesis_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expected_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "changes": {
+                      "type": "object"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "hypothesis_id",
+                    "expected_revision",
+                    "changes",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "hypothesis.update",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "claim_update": {
+                "name": "claim_update",
+                "description": "Revise a claim and preserve review history.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "claim_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expected_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "changes": {
+                      "type": "object"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "claim_id",
+                    "expected_revision",
+                    "changes",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "claim.update",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "decision_list": {
+                "name": "decision_list",
+                "description": "List positive, negative, and inconclusive research decisions.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "decision.list",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "policy_get": {
+                "name": "policy_get",
+                "description": "Read project permissions and fail-closed remote-execution policy.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "policy.get",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "model_version_promote": {
+                "name": "model_version_promote",
+                "description": "Promote a version using a recorded, measurable decision.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "model_version_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "model_version_ref": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "decision_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expected_revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "stage": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "decision_id",
+                    "expected_revision",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "model.version.promote",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "recipe_export": {
+                "name": "recipe_export",
+                "description": "Export a portable, secret-checked bundle without execution.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recipe_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "recipe_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "recipe.export",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "run_logs": {
+                "name": "run_logs",
+                "description": "Read actual backend logs.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "operation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "backend_run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "run.logs",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "run_resume": {
+                "name": "run_resume",
+                "description": "Resume an actual checkpoint; distinguish exact state and warm start.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "operation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "backend_run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "checkpoint_ref": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "checkpoint_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "mode": {
+                      "enum": [
+                        "exact_state",
+                        "warm_start"
+                      ]
+                    },
+                    "resume_mode": {
+                      "enum": [
+                        "exact_state",
+                        "warm_start"
+                      ]
+                    },
+                    "parameters": {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Edit canonical recipe node parameters instead of execution-time overrides."
+                    },
+                    "steps": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "checkpoint_kind": {
+                      "enum": [
+                        "last",
+                        "best"
+                      ]
+                    },
+                    "trusted": {
+                      "type": "boolean"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "idempotency_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "project_id",
+                    "idempotency_key"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "run.resume",
+                  "readOnlyHint": false,
+                  "destructiveHint": true,
+                  "openWorldHint": true
+                }
+              },
+              "claim_list": {
+                "name": "claim_list",
+                "description": "List project claims.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "claim.list",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "run_artifacts": {
+                "name": "run_artifacts",
+                "description": "Read authoritative artifact identifiers and hashes.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "operation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "backend_run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "run.artifacts",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "model_version_list": {
+                "name": "model_version_list",
+                "description": "List authoritative ZenML model versions.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "model.version.list",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "model_checkpoint_get": {
+                "name": "model_checkpoint_get",
+                "description": "Read a checkpoint and its verified resume capabilities.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "project_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "operation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "backend_run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "checkpoint_ref": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "checkpoint_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "checkpoint_kind": {
+                      "enum": [
+                        "last",
+                        "best"
+                      ]
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "project_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "model.checkpoint.get",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              },
+              "project_list": {
+                "name": "project_list",
+                "description": "List authorized model projects.",
+                "inputSchema": {
+                  "type": "object",
+                  "properties": {
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [],
+                  "additionalProperties": false
+                },
+                "annotations": {
+                  "title": "project.list",
+                  "readOnlyHint": true,
+                  "destructiveHint": false,
+                  "openWorldHint": true
+                }
+              }
+            },
+            "toolsError": null,
+            "resources": [
+              {
+                "description": "Shared service operation names, schemas, and required scopes.",
+                "mimeType": "application/json",
+                "name": "Operation catalog",
+                "uri": "modelbuilder://catalog"
+              }
+            ],
+            "resourceTemplates": [],
+            "authStatus": "unsupported"
+          }
+        ],
+        "nextCursor": null
+      }
+    },
+    "codex_local_thread": {
+      "error": {
+        "code": -32603,
+        "message": "error creating thread: Fatal error: Failed to initialize session: failed to load AGENTS.md instructions for environment `local`: fs sandbox helper failed with status exit status: 101: thread 'main' (124) panicked at linux-sandbox/src/linux_run_main.rs:1306:13:\nfailed to open synthetic bubblewrap mount registry lock /tmp/codex-bwrap-synthetic-mount-targets-1000/lock: Read-only file system (os error 30)\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace"
+      },
+      "id": 3
+    }
+  }
+}

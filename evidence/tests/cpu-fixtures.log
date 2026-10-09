@@ -1,0 +1,38 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 15 items
+
+tests/integration/test_cpu_fixtures.py::test_dataset_consumed_hash_and_tamper PASSED [  6%]
+tests/integration/test_cpu_fixtures.py::test_exact_model_optimizer_scheduler_rng_and_cursor PASSED [ 13%]
+tests/integration/test_cpu_fixtures.py::test_resume_rejects_changed_training_contract PASSED [ 20%]
+tests/integration/test_cpu_fixtures.py::test_architecture_kl_and_negative_outcome_are_real PASSED [ 26%]
+tests/integration/test_cpu_fixtures.py::test_cancellation_preserves_complete_atomic_checkpoint PASSED [ 33%]
+tests/integration/test_cpu_fixtures.py::test_real_pinned_pretrained_kl_and_export_parity PASSED [ 40%]
+tests/integration/test_cpu_fixtures.py::test_pretrained_exact_continuation PASSED [ 46%]
+tests/integration/test_native_lifecycle.py::test_native_custom_dag_variants_negative_and_models PASSED [ 53%]
+tests/integration/test_native_lifecycle.py::test_real_failed_run_remains_queryable PASSED [ 60%]
+tests/integration/test_native_lifecycle.py::test_actual_cancel_recovered_checkpoint_exact_resume PASSED [ 66%]
+tests/integration/test_native_lifecycle.py::test_worker_sigkill_failure_is_reconciled PASSED [ 73%]
+tests/integration/test_native_lifecycle.py::test_pretrained_validation_selection_parent_and_export PASSED [ 80%]
+tests/integration/test_native_lifecycle.py::test_explicitly_trusted_python_uses_public_native_step_boundary PASSED [ 86%]
+tests/integration/test_early_cancellation.py::test_confirmed_cancel_before_native_run_creation PASSED [ 93%]
+tests/integration/test_early_cancellation.py::test_resume_waits_for_pending_cancel_even_with_native_checkpoint PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-fixtures.xml -
+================== 15 passed, 2 warnings in 329.89s (0:05:29) ==================

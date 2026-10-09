@@ -1,0 +1,50 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "325aa37c-826e-4cbb-95fe-12f9e856b433",
+      "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+      "name": "data",
+      "node_id": "data",
+      "port": "data",
+      "step_id": "e8031199-4925-4975-8bf9-015dddd7082e",
+      "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/data/data/e8031199-4925-4975-8bf9-015dddd7082e/e001f19f"
+    },
+    {
+      "artifact_id": "9f54f624-6e2c-4d29-abbd-c41b28459feb",
+      "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+      "name": "initial",
+      "node_id": "initial",
+      "port": "initial",
+      "step_id": "1a6bd1bd-dc75-410f-bf3d-dda038143024",
+      "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/initial/initial/1a6bd1bd-dc75-410f-bf3d-dda038143024/e84e5923"
+    },
+    {
+      "artifact_id": "62852c15-4169-4a54-9d68-5e6ae301f939",
+      "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+      "name": "checkpoint",
+      "node_id": "train",
+      "port": "checkpoint",
+      "step_id": "17e83c5e-8835-4171-a3c7-b74799140ade",
+      "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/train/checkpoint/17e83c5e-8835-4171-a3c7-b74799140ade/48e30ae8"
+    },
+    {
+      "artifact_id": "73942e83-d56f-4a90-bf10-655af01882e5",
+      "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+      "name": "metrics",
+      "node_id": "evaluate",
+      "port": "metrics",
+      "step_id": "61102ccd-97c5-4a97-9405-5e8aad99474c",
+      "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/evaluate/metrics/61102ccd-97c5-4a97-9405-5e8aad99474c/eb919d30"
+    },
+    {
+      "artifact_id": "117fe426-988a-4230-87ca-25cae1cb4783",
+      "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
+      "name": "export",
+      "node_id": "export",
+      "port": "export",
+      "step_id": "e34478db-af3a-4ff7-b616-7eb9202ca4ba",
+      "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/gui-execution-718ebf73-3cb9-4a81-b62e-f530318d0a05/backend/zenml-stores/1db239c8-b886-4a13-8c4a-3c9ce9f18488/export/export/e34478db-af3a-4ff7-b616-7eb9202ca4ba/4a8fe0b9"
+    }
+  ],
+  "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4"
+}

@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="23.207" timestamp="2026-10-09T09:28:32.521221-05:00" hostname="42abdaea1484"><testcase classname="tests.integration.test_mcp_training" name="test_mcp_real_training_and_service_crash" time="23.192" /></testsuite></testsuites>

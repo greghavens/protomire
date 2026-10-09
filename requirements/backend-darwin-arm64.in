@@ -1,0 +1,7 @@
+# Independent ZenML + CPU fixtures environment. No service/MCP imports required.
+zenml[server]==0.97.0
+transformers==4.57.1
+torch==2.9.0
+numpy==2.2.6
+pytest==8.3.5
+socksio==1.0.0

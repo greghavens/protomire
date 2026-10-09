@@ -38,6 +38,7 @@ def write_json(path: Path, value: dict) -> None:
 def source_inventory(root: Path) -> list[str]:
     """Explicit application sources; no caches, credentials, datasets or weights."""
     return sorted([str(path.relative_to(root)) for path in (root / "src/modelbuilder").rglob("*.py")]
+                  + [str(path.relative_to(root)) for path in (root / "requirements/profiles").glob("*.lock")]
                   + ["pyproject.toml", "requirements/service.lock", "requirements/backend.lock",
                      "scripts/replay_bundle.py"])
 
@@ -77,7 +78,11 @@ def build_wheel(root: Path, destination: Path, kind: str) -> dict:
     for item in recipe["source"]["files"]:
         path = item["path"]
         if path.startswith("src/modelbuilder/") and path.endswith(".py"):
-            if kind == "service" or path == "src/modelbuilder/__init__.py" or path.startswith("src/modelbuilder/backend/"):
+            if (kind == "service" or path in {
+                    "src/modelbuilder/__init__.py", "src/modelbuilder/recipe.py",
+                    "src/modelbuilder/evaluation.py", "src/modelbuilder/tracking.py",
+                    "src/modelbuilder/dataset.py", "src/modelbuilder/models.py", "src/modelbuilder/store.py"}
+                    or path.startswith("src/modelbuilder/backend/")):
                 files[path.removeprefix("src/")] = (root / path).read_bytes()
     if not files or "modelbuilder/backend/adapter.py" not in files:
         raise ValueError("Bundle lacks application source needed by replay")

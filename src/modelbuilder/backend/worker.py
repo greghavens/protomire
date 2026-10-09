@@ -1,7 +1,6 @@
 """Translate the canonical recipe DAG into native typed ZenML pipeline steps."""
 from __future__ import annotations
 import hashlib
-import importlib.util
 import json
 import os
 import sys
@@ -13,6 +12,10 @@ from zenml.client import Client
 from zenml.config import StepRetryConfig
 
 from . import fixtures
+from .components.runtime import compile_component, compile_python
+from .components import live_evaluator
+from .execution_limits import deadline_start, deadline_end
+from ..evaluation import fixture_evaluation_records, compare_records
 from .common import recipe_provenance, read_json, write_json
 
 
@@ -51,6 +54,27 @@ def import_data_step(spec: dict) -> Annotated[dict, "data"]:
 
 
 @step(enable_cache=False)
+def import_dataset_version_step(spec: dict) -> Annotated[dict, "data"]:
+    from ..dataset import load_portable_split
+    parameters, _ = context(spec)
+    declared = {dependency["id"]: dependency for dependency in spec.get("dependencies", [])}
+    identifier = parameters["reference_id"]
+    reference = Path(spec["dependency_paths"][identifier])
+    if identifier not in declared:
+        raise ValueError("Dataset portable reference is undeclared")
+    with reference.open("rb") as stream:
+        content = stream.read(16 * 1024 * 1024 + 1)
+    if len(content) > 16 * 1024 * 1024:
+        raise ValueError("Dataset portable reference is oversized")
+    if hashlib.sha256(content).hexdigest() != declared[identifier]["sha256"]:
+        raise ValueError("Dataset portable reference changed after admission")
+    return load_portable_split(json.loads(content),
+        {identifier: path for identifier, path in spec["dependency_paths"].items() if identifier in declared},
+        parameters["split_id"], purpose=parameters.get("purpose", "training"),
+        expected_project_id=spec["recipe_provenance"]["application_project_id"])
+
+
+@step(enable_cache=False)
 def validate_data_step(data: dict, spec: dict) -> Annotated[dict, "data"]:
     context(spec)
     fixtures.verify_data(data)
@@ -68,7 +92,25 @@ def train_step(data: dict, initial: Path, spec: dict) -> Annotated[Path, Artifac
     parameters, out = context(spec)
     parameters = {**parameters, "_cancel_file": str(Path(spec["job_dir"]) / "cancel.json"),
                   "resume_mode": spec.get("resume_mode", "exact_state"), "checkpoint_kind": spec.get("checkpoint_kind", "last")}
-    result = fixtures.train(data, initial, parameters, out, resume=Path(spec["resume_path"]) if spec.get("resume_path") else None)
+    coordinator = None
+    if spec.get("live_evaluation"):
+        from .live_evaluation import LiveEvaluationCoordinator
+        live = spec["live_evaluation"]
+        settings = live["settings"]
+        coordinator = LiveEvaluationCoordinator(Path(spec["job_dir"]), spec["node_id"],
+            {"kind": "fixture", "data": data, "parameters": live["node"]["parameters"]},
+            max_concurrency=settings.get("max_concurrency", 1), timeout_seconds=settings.get("timeout_seconds", 300))
+        parameters["_checkpoint_ready"] = coordinator.checkpoint_ready
+    try:
+        result = fixtures.train(data, initial, parameters, out, resume=Path(spec["resume_path"]) if spec.get("resume_path") else None)
+    except BaseException:
+        if coordinator:
+            coordinator.close(cancel=True)
+        raise
+    else:
+        if coordinator:
+            coordinator.close()
+
     ck = fixtures.load_checkpoint(result)
     log_metadata({"dataset_sha256": ck["dataset_sha256"], "best_validation_loss": ck["best_validation_loss"],
                   "best_step": ck["best_step"], "kl": ck["training_contract"]}, infer_model=True)
@@ -79,7 +121,8 @@ def train_step(data: dict, initial: Path, spec: dict) -> Annotated[Path, Artifac
 def evaluate_step(data: dict, checkpoint: Path, spec: dict) -> Annotated[dict, "metrics"]:
     parameters, out = context(spec)
     metrics = fixtures.evaluate(data, checkpoint, parameters, out)
-    log_metadata({k: v for k, v in metrics.items() if k not in {"heldout_logits", "resume_mode"}}, infer_model=True)
+    metrics["evaluation_records"] = fixture_evaluation_records(data, checkpoint, parameters, metrics)
+    log_metadata({k: v for k, v in metrics.items() if k not in {"heldout_logits", "resume_mode", "evaluation_records"}}, infer_model=True)
     return metrics
 
 
@@ -100,13 +143,15 @@ def export_step(data: dict, checkpoint: Path, spec: dict) -> Annotated[Path, Art
 def compare_step(left: dict, right: dict, spec: dict) -> Annotated[dict, "comparison"]:
     parameters, _ = context(spec)
     metric = parameters.get("metric", "validation_loss")
-    maximize = parameters.get("direction", "minimize") == "maximize"
-    winner = "left" if ((left[metric] > right[metric]) if maximize else (left[metric] < right[metric])) else "right"
-    return {"metric": metric, "direction": "maximize" if maximize else "minimize", "winner": winner,
-            "left": left[metric], "right": right[metric], "delta": right[metric] - left[metric]}
+    comparison = compare_records([
+        {"backend_run_id": "left", "status": "succeeded", "metrics": left},
+        {"backend_run_id": "right", "status": "succeeded", "metrics": right}], metric,
+        parameters.get("direction", "minimize"), parameters.get("comparison_contract"))
+    return {**comparison, "winner": comparison["selected_run_id"], "left": left.get(metric), "right": right.get(metric)}
 
 
-STEPS = {"dataset.import": import_data_step, "dataset.synthetic": dataset_step, "dataset.validate": validate_data_step,
+
+STEPS = {"dataset.version.import": import_dataset_version_step, "dataset.import": import_data_step, "dataset.synthetic": dataset_step, "dataset.validate": validate_data_step,
          "model.initialize": initialize_step, "model.train": train_step, "model.evaluate": evaluate_step,
          "model.checkpoint": checkpoint_step, "model.export": export_step, "model.compare": compare_step}
 
@@ -122,18 +167,6 @@ def topological_nodes(recipe: dict) -> list[dict]:
             result.append(nodes[n])
             pending.remove(n)
     return result
-
-
-def python_step(node: dict, roots: list[str], source_root: str):
-    reference = node["implementation_ref"]
-    path = (Path(source_root) / reference["path"]).resolve()
-    if not any(path.is_relative_to(Path(root)) for root in roots) or hashlib.sha256(path.read_bytes()).hexdigest() != reference["sha256"]:
-        raise ValueError("Python source is not within a configured trusted root or changed after approval")
-    spec = importlib.util.spec_from_file_location(reference["module"], path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[reference["module"]] = module
-    spec.loader.exec_module(module)
-    return step(getattr(module, reference["entrypoint"]), enable_cache=False)
 
 
 def run(job: Path) -> None:
@@ -153,7 +186,7 @@ def run(job: Path) -> None:
         "parent_recipe_id": request.get("parent_recipe_id"), "parent_recipe_revision": request.get("parent_recipe_revision"),
         "parent_recipe_digest": request.get("parent_recipe_digest")}.items() if value is not None}
     ordered = topological_nodes(recipe)
-    functions = {n["id"]: (python_step(n, request.get("trusted_code_roots", []), request["source_root"]) if n["kind"] == "code.python" else STEPS[n["kind"]]) for n in ordered}
+    functions = {n["id"]: (compile_python(n, job) if n["kind"] == "code.python" else compile_component(n, job) if n["kind"] == "component.run" else STEPS[n["kind"]]) for n in ordered}
 
     @pipeline(name="modelbuilder_recipe", enable_cache=False)
     def execute_recipe():
@@ -161,17 +194,21 @@ def run(job: Path) -> None:
         for node in ordered:
             kwargs = {e["target_port"]: outputs[(e["source_node"], e["source_port"])]
                       for e in recipe["edges"] if e["target_node"] == node["id"]}
-            function = functions[node["id"]]
+            function = functions[node["id"]].with_options(
+                on_start=deadline_start, on_end=deadline_end,
+                environment={"MODELBUILDER_JOB_DIR": str(job)})
             retry = node.get("retry", {})
             retries = int(retry.get("max_attempts", 1)) - 1
             if retries > 0:
                 function = function.with_options(retry=StepRetryConfig(max_retries=retries, delay=int(retry.get("backoff_seconds", 0))))
             if node["kind"] == "code.python":
                 kwargs.update(node.get("parameters", {}))
-            else:
-                kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "parameters": node.get("parameters", {}),
+            kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "parameters": node.get("parameters", {}),
                                   "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
-                                  "dependencies": recipe.get("resources", []) + recipe.get("external_dependencies", []), **{k: request[k] for k in ("resume_path", "resume_mode", "checkpoint_kind", "parent_run_id", "parent_checkpoint_ref") if k in request}}
+                                  "dependencies": recipe.get("resources", []) + recipe.get("external_dependencies", []),
+                                  "component_node": node, "source": recipe.get("source", {}), "environment": recipe.get("environment", {}),
+                                  "source_root": request["source_root"], "trusted_code_roots": request.get("trusted_code_roots", []), **{k: request[k] for k in ("resume_path", "resume_mode", "checkpoint_kind", "parent_run_id", "parent_checkpoint_ref") if k in request}}
+            kwargs["spec"]["live_evaluation"] = live_evaluator(node, recipe)
             result = function(id=node["id"], **kwargs)
             declared = node["outputs"]
             values = result if isinstance(result, tuple) else (result,)

@@ -5,24 +5,23 @@ read is freshly reconciled against the native ZenML store.
 """
 from __future__ import annotations
 import copy
-import fcntl
-import hashlib
 import os
 import signal
 import subprocess
+import shutil
+import sys
+
+try:
+    import fcntl
+except ImportError:  # Native Windows can still import and run the service.
+    fcntl = None
 import time
 import uuid
 from pathlib import Path
 
-from .common import alive, now, process_group_alive, recipe_provenance, read_json, write_json
+from .common import alive, now, process_group_alive, recipe_provenance, read_json, write_json, runtime_identity
 
-BUILTINS = {"dataset.import", "dataset.synthetic", "dataset.validate", "model.initialize", "model.train", "model.evaluate", "model.checkpoint", "model.export", "model.compare"}
-
-
-class BackendError(RuntimeError):
-    def __init__(self, code: str, message: str, details: dict | None = None):
-        super().__init__(message)
-        self.code, self.message, self.details = code, message, details or {}
+from .admission import BackendError, capabilities, environment_profiles, validate_execution
 
 
 class ZenMLBackend:
@@ -34,7 +33,9 @@ class ZenMLBackend:
         package_root = Path(__file__).resolve().parents[2]
         default_source = package_root.parent if package_root.name == "src" else Path.cwd()
         repository = Path(source_root or os.environ.get("MODELBUILDER_SOURCE_ROOT", default_source)).resolve()
-        self.python = python_executable or os.environ.get("MODELBUILDER_BACKEND_PYTHON", str(repository / ".venv-backend/bin/python"))
+        default_python = repository / ".venv-backend" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        configured = python_executable or os.environ.get("MODELBUILDER_BACKEND_PYTHON") or str(default_python)
+        self.python = shutil.which(configured) or str(Path(configured).expanduser().resolve())
         self.repository = repository
         self.package_root = package_root
         self.pretrained_path = Path(pretrained_path or repository / ".cache/models/bert-tiny").resolve()
@@ -57,7 +58,24 @@ class ZenMLBackend:
             env.pop("PYTHONPATH", None)
         return env
 
+    def _capability_reason(self) -> str | None:
+        if sys.platform == "win32":
+            return "The pinned ZenML local backend does not support native Windows; use a separately configured supported backend host. The IDE and service remain available."
+        if fcntl is None or sys.platform not in {"linux", "darwin"}:
+            return "The pinned local backend requires supported POSIX process supervision"
+        if runtime_identity() is None:
+            return "Local backend cannot establish the operating system boot/process namespace identity; safe supervision is unavailable"
+        if not Path(self.python).is_file():
+            return "Backend interpreter is not installed; configure MODELBUILDER_BACKEND_PYTHON or run scripts/bootstrap.py --backend"
+        return None
+
+    def _require_capability(self) -> None:
+        reason = self._capability_reason()
+        if reason:
+            raise BackendError("capability_unavailable", reason)
+
     def _rpc(self, operation: str, payload: dict) -> dict:
+        self._require_capability()
         if not Path(self.python).is_file():
             raise BackendError("capability_unavailable", "Pinned ZenML backend environment is not installed; run scripts/bootstrap.sh --backend")
         request_id = str(uuid.uuid4())
@@ -96,118 +114,41 @@ class ZenMLBackend:
         return path, request
 
     def _validate_execution(self, payload: dict) -> dict:
-        if payload.get("target", "local-cpu") != "local-cpu":
-            raise BackendError("capability_unavailable", "Remote execution and spend are disabled")
-        if payload.get("trusted") is not True:
-            raise BackendError("untrusted_execution_blocked", "Explicit trust consent is required for repository-owned fixtures; untrusted code has no verified isolation boundary")
-        recipe = payload.get("recipe", {})
-        if payload.get("project_recipe_id") and recipe.get("recipe_id") != payload["project_recipe_id"]:
-            raise BackendError("conflict", "Execution must use the project's single canonical recipe identity")
-        if payload.get("project_id") and recipe.get("project_id") and recipe["project_id"] != payload["project_id"]:
-            raise BackendError("conflict", "Recipe and execution project identities differ")
-        if recipe.get("digest") and recipe["digest"] != recipe_provenance(recipe)["recipe_digest"]:
-            raise BackendError("dependency_mismatch", "Declared recipe digest differs from executed immutable revision")
-        if any(node.get("kind") == "code.python" for node in recipe.get("nodes", [])) and not self.trusted_code_roots:
-            raise BackendError("untrusted_execution_blocked", "Arbitrary Python requires an operator-configured trusted source root")
-        source = recipe.get("source", {})
-        commit = source.get("commit", "")
-        if not commit or set(commit) == {"0"}:
-            raise BackendError("dependency_mismatch", "Execution requires a real immutable source commit")
-        declared = source.get("files", [])
-        if not declared:
-            raise BackendError("dependency_mismatch", "Execution requires SHA256-pinned source files")
-        for reference in declared:
-            path = (self.repository / reference["path"]).resolve()
-            if not path.is_relative_to(self.repository) or not path.is_file():
-                raise BackendError("dependency_mismatch", "Declared source file is unavailable")
-            if hashlib.sha256(path.read_bytes()).hexdigest() != reference["sha256"]:
-                raise BackendError("dependency_mismatch", "Declared source file has changed", {"path": reference["path"]})
-        fixture_ref = next((r for r in declared if r["path"] == "src/modelbuilder/backend/fixtures.py"), None)
-        if any(n.get("kind") in BUILTINS for n in recipe.get("nodes", [])):
-            actual_fixture = Path(__file__).with_name("fixtures.py")
-            if not fixture_ref or hashlib.sha256(actual_fixture.read_bytes()).hexdigest() != fixture_ref["sha256"]:
-                raise BackendError("dependency_mismatch", "Installed builtin fixture differs from declared pinned workload source")
-        if (self.repository / ".git").exists():
-            probe = subprocess.run(["git", "cat-file", "-e", commit + "^{commit}"], cwd=self.repository, capture_output=True)
-            if probe.returncode:
-                raise BackendError("dependency_mismatch", "Declared source commit is unavailable locally")
-            for reference in declared:
-                blob = subprocess.run(["git", "show", f"{commit}:{reference['path']}"], cwd=self.repository, capture_output=True)
-                if blob.returncode or hashlib.sha256(blob.stdout).hexdigest() != reference["sha256"]:
-                    raise BackendError("dependency_mismatch", "Source bytes do not match the declared Git commit", {"path": reference["path"]})
-        for dependency in recipe.get("resources", []) + recipe.get("external_dependencies", []):
-            identifier = dependency["id"]
-            path = self.dependency_paths.get(identifier)
-            if path:
-                if not Path(path).is_file() or hashlib.sha256(Path(path).read_bytes()).hexdigest() != dependency.get("sha256"):
-                    raise BackendError("dependency_mismatch", "Configured dependency bytes do not match manifest", {"id": identifier})
-            elif dependency.get("revision") == "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837":
-                pinned = {"config.json": "cf3179684f7c360dd6185962d480e7d426ceb8fe49f5db7b64bdc15dba0b8798",
-                          "vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
-                          "pytorch_model.bin": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66"}
-                name = dependency.get("url", "").rsplit("/", 1)[-1]
-                expected_url = f"https://huggingface.co/prajjwal1/bert-tiny/resolve/{dependency['revision']}/{name}"
-                if name not in pinned or dependency["url"] != expected_url or dependency.get("sha256") != pinned[name]:
-                    raise BackendError("dependency_mismatch", "Unrecognized pretrained dependency identity")
-                path = self.pretrained_path / name
-                if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != dependency["sha256"]:
-                    raise BackendError("dependency_mismatch", "Pinned pretrained dependency is absent or changed")
-            else:
-                raise BackendError("dependency_unavailable", "External dependency must be explicitly resolved and verified before execution", {"id": identifier})
-        nodes = recipe.get("nodes", [])
-        if not nodes:
-            raise BackendError("validation_error", "Execution requires a nonempty recipe DAG")
-        for node in nodes:
-            kind, reference = node["kind"], node.get("implementation_ref")
-            if node.get("resource_request", {}).get("gpu", 0):
-                raise BackendError("capability_unavailable", "local-cpu cannot satisfy a GPU resource request")
-            parameters = node.get("parameters", {})
-            if "steps" in parameters and (type(parameters["steps"]) is not int or not 1 <= parameters["steps"] <= 100000):
-                raise BackendError("validation_error", "Fixture steps must be an integer between 1 and 100000")
-            kl = parameters.get("kl")
-            if kind == "model.train" and kl is not None:
-                initial_edges = [edge for edge in recipe.get("edges", []) if edge["target_node"] == node["id"] and edge["target_port"] == "initial"]
-                if (len(initial_edges) != 1 or kl.get("reference_model_ref") != initial_edges[0]["source_node"]
-                        or kl.get("applies_to") != "logits"):
-                    raise BackendError("capability_unavailable", "Fixture KL supports logits anchored to the actual connected initial model only")
-            if kind == "dataset.import" and parameters.get("resource_id") not in self.dependency_paths:
-                raise BackendError("dependency_unavailable", "Dataset import requires an explicitly resolved content-addressed JSON dependency")
-            if kind == "code.python":
-                if not isinstance(reference, dict) or not self.trusted_code_roots:
-                    raise BackendError("untrusted_execution_blocked", "Arbitrary Python requires an operator-configured trusted source root; untrusted isolation is unavailable")
-                path = (self.repository / reference.get("path", "")).resolve()
-                if not any(path.is_relative_to(Path(root)) for root in self.trusted_code_roots):
-                    raise BackendError("untrusted_execution_blocked", "Python source lies outside explicitly trusted roots")
-                if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != reference.get("sha256"):
-                    raise BackendError("dependency_mismatch", "Trusted Python source SHA256 does not match")
-            elif kind not in BUILTINS or reference != f"builtin:{kind}":
-                raise BackendError("capability_unavailable", f"Executable node implementation is unsupported: {kind}")
-        return recipe
+        return validate_execution(self, payload)
 
     def invoke(self, operation: str, payload: dict, actor=None) -> dict:
         if operation == "execution.targets":
-            return {"targets": [{"id": "local-cpu", "available": Path(self.python).is_file(), "backend": "zenml", "version": "0.97.0",
+            return {"targets": [{"id": "local-cpu", "available": self._capability_reason() is None, "unavailable_reason": self._capability_reason(), "backend": "zenml", "version": "0.97.0",
                                  "cancel": "supervised_process_termination", "exact_resume": True, "untrusted_isolation": False}],
-                    "remote_enabled": False}
+                    "remote_enabled": False, "capabilities": capabilities(self),
+                    "environment_profiles": environment_profiles(self)}
         if operation == "run.plan":
             recipe = payload.get("recipe", {})
-            warnings = []
-            if not recipe.get("source", {}).get("files") or set(recipe.get("source", {}).get("commit", "0")) == {"0"}:
-                warnings.append("Source dependencies are unresolved; execution will fail closed until pinned")
-            if any(n.get("kind") == "code.python" for n in recipe.get("nodes", [])) and not self.trusted_code_roots:
-                warnings.append("Untrusted Python isolation is unavailable")
-            if any(n.get("resource_request", {}).get("gpu", 0) for n in recipe.get("nodes", [])):
-                warnings.append("Requested GPU is unavailable on local-cpu")
-            return {"project_id": payload["project_id"], "target": "local-cpu", "backend": "zenml", "backend_version": "0.97.0",
-                    "node_ids": [node["id"] for node in recipe.get("nodes", [])], "executable": not warnings, "warnings": warnings,
-                    "dependency_verification": "required_at_submission",
+            blocked = []
+            try:
+                self._validate_execution(payload)
+            except BackendError as error:
+                blocked.append({"code": error.code, "message": error.message, "details": error.details})
+            from ..tracking import disclosure, tracking_readiness
+            return {"project_id": payload["project_id"], "target": payload.get("target", "local-cpu"), "backend": "zenml", "backend_version": "0.97.0",
+                    "node_ids": [node["id"] for node in recipe.get("nodes", [])], "executable": not blocked,
+                    "blocked_reasons": blocked, "warnings": [item["message"] for item in blocked],
+                    "dependency_verification": "verified_at_plan_and_rechecked_at_submission" if not blocked else "blocked",
+                    "capabilities": capabilities(self), "tracking": disclosure(payload.get("tracking") or {"mode": "disabled"}),
+                    "tracking_readiness": tracking_readiness(payload.get("tracking"), os.environ.get("MODELBUILDER_TRACKING_PYTHON", self.python)),
                     "isolation": "trusted_local_process", "estimated_cost": {"currency": "USD", "amount": 0, "scope": "local provider charge only"}}
         if operation == "run.submit":
             return self.submit(payload)
         if operation == "run.resume":
             return self.resume(payload)
-        if operation in {"run.status", "run.logs", "run.artifacts", "run.cancel"}:
+        if operation in {"run.status", "run.logs", "run.artifacts", "run.cancel", "run.evaluations.list", "run.events.list"}:
             job, request = self._job(payload)
+            if operation == "run.evaluations.list":
+                from .live_evaluation import list_evaluations
+                return list_evaluations(job)
+            if operation == "run.events.list":
+                from .live_evaluation import list_events
+                return list_events(job, after=payload.get("after", 0), limit=payload.get("limit", 200))
             if operation == "run.logs":
                 content = (job / "worker.log").read_text(errors="replace") if (job / "worker.log").exists() else ""
                 cursor = int(payload.get("cursor") or 0)
@@ -235,6 +176,12 @@ class ZenMLBackend:
         with (self.root / "initialize.lock").open("a") as initialization:
             fcntl.flock(initialization.fileno(), fcntl.LOCK_EX)
             self._rpc("backend.validate", {"environment": payload["recipe"].get("environment", {})})
+        supervisor_env = self._env()
+        if os.environ.get("MODELBUILDER_TRACKING_PYTHON"):
+            supervisor_env["MODELBUILDER_TRACKING_PYTHON"] = os.environ["MODELBUILDER_TRACKING_PYTHON"]
+        if payload.get("tracking", {}).get("mode") == "online" and payload.get("tracking_online_consent") is True:
+            if os.environ.get("MODELBUILDER_WANDB_API_KEY"):
+                supervisor_env["MODELBUILDER_WANDB_API_KEY"] = os.environ["MODELBUILDER_WANDB_API_KEY"]
         operation_id = str(uuid.UUID(payload.get("operation_id") or str(uuid.uuid4())))
         job = self.root / "jobs" / operation_id
         job.mkdir(parents=True, exist_ok=True)
@@ -264,7 +211,7 @@ class ZenMLBackend:
             try:
                 with (job / "supervisor.log").open("a") as log:
                     process = subprocess.Popen([self.python, "-m", "modelbuilder.backend.supervisor", str(job), str(lease.fileno())],
-                                               cwd=self.repository, env=self._env(), stdout=log, stderr=subprocess.STDOUT,
+                                               cwd=self.repository, env=supervisor_env, stdout=log, stderr=subprocess.STDOUT,
                                                start_new_session=True, stdin=subprocess.DEVNULL, pass_fds=(lease.fileno(),))
             except OSError as error:
                 write_json(job / "state.json", {"supervisor_state": "submission_failed", "submission_error": str(error),
@@ -280,6 +227,7 @@ class ZenMLBackend:
                 **recipe_provenance(request["recipe"])}
 
     def cancel(self, job: Path, request: dict) -> dict:
+        self._require_capability()
         status = self._rpc("run.status", {"project_id": request["project_id"], "job_dir": str(job)})
         if status["status"] in {"succeeded", "failed", "cancelled"}:
             return {**status, "cancellation_acknowledged": status["status"] == "cancelled"}

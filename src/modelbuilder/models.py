@@ -8,6 +8,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .tracking import TrackingConfig
+
 MAX_BUNDLE_JSON_BYTES = 8 * 1024 * 1024
 
 SCOPES = frozenset({"read", "modify", "execute", "spend", "delete", "publish"})
@@ -73,6 +75,7 @@ class ModelProject(DomainModel):
     recipe_migration: dict = Field(default_factory=dict)
     active_model_version_ref: str | None = None
     research_watch_config: dict | None = None
+    tracking: TrackingConfig = Field(default_factory=TrackingConfig)
     status: Literal["active", "archived"] = "active"
     revision: int = Field(ge=1)
 
@@ -130,6 +133,7 @@ class Decision(DomainModel):
     recipe_revision: int = Field(ge=1)
     run_ids: list[str] = Field(min_length=1)
     selection_rule: dict
+    run_provenance: list[dict] = Field(default_factory=list)
     outcome: Literal["accepted", "rejected", "inconclusive"]
     rationale: str = Field(min_length=1)
     actor: str
@@ -198,10 +202,12 @@ CLAIM_FIELDS = {"evidence_ids": A, "proposition": S, "supports": A, "contradicts
                 "uncertainty": {"type": "string"}, "review_status": S}
 HYPOTHESIS_FIELDS = {"claim_ids": A, "evidence_ids": A, "proposed_change": S, "expected_outcome": S,
                      "acceptance_metric": OBJECT, "scope": {"type": "string"}, "status": S}
+TRACKING_FIELDS = {"tracking": TrackingConfig.model_json_schema(), "tracking_online_consent": B}
 PROJECT_FIELDS = {"slug": S, "model_name": S, "description": {"type": "string"},
                   "git_remote": NULLABLE_STRING, "head_commit": NULLABLE_STRING,
                   "active_recipe_id": NULLABLE_STRING, "active_model_version_ref": NULLABLE_STRING,
-                  "research_watch_config": {"type": ["object", "null"]}, "status": S}
+                  "research_watch_config": {"type": ["object", "null"]}, "status": S,
+                  "tracking": TrackingConfig.model_json_schema()}
 
 OPERATIONS = {s.name: s for s in [
     _spec("project.create", "modify", "Create one model project with its one stable current recipe; optionally supply the initial recipe document.", {**PROJECT_FIELDS, "recipe": OBJECT},
@@ -236,6 +242,30 @@ OPERATIONS = {s.name: s for s in [
           ("project_id", "expected_revision"), True),
     _spec("recipe.resolve_dependencies", "read", "Inspect immutable dependency references and readiness.",
           R, ("project_id", "recipe_id")),
+    _spec("dataset.register", "modify", "Register an immutable local dataset manifest using operator-approved project root aliases.",
+          {**P, "manifest": OBJECT}, ("project_id", "manifest"), True),
+    _spec("dataset.version", "modify", "Create the next immutable dataset version with optimistic concurrency.",
+          {**P, "dataset_id": S, "expected_revision": POSITIVE_INT, "manifest": OBJECT},
+          ("project_id", "dataset_id", "expected_revision", "manifest"), True),
+    _spec("dataset.get", "read", "Read a project dataset at its current or historical immutable revision.",
+          {**P, "dataset_id": S, "revision": POSITIVE_INT}, ("project_id", "dataset_id")),
+    _spec("dataset.list", "read", "List datasets registered to this model project.", P, ("project_id",)),
+    _spec("dataset.preview", "read", "Preview a bounded page from a verified immutable dataset split.",
+          {**P, "dataset_id": S, "revision": POSITIVE_INT, "split_id": S,
+           "purpose": {"enum": ["training", "evaluation", "calibration"]},
+           "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+           "offset": {"type": "integer", "minimum": 0}},
+          ("project_id", "dataset_id", "revision", "split_id", "purpose")),
+    _spec("dataset.validate", "read", "Verify a dataset manifest or stored revision against its declared files and splits without training.",
+          {**P, "manifest": OBJECT, "dataset_id": S, "revision": POSITIVE_INT}, ("project_id",)),
+    _spec("component.list", "read", "Inspect inert component declarations in this project's recipe; never load user code.",
+          {**P, "revision": POSITIVE_INT}, ("project_id",)),
+    _spec("component.get", "read", "Read a declared component by identity and optional node identity.",
+          {**P, "component_id": S, "node_id": S, "revision": POSITIVE_INT}, ("project_id", "component_id")),
+    _spec("component.validate", "read", "Validate an inert component node declaration and parameters without execution.",
+          {**P, "node": OBJECT}, ("project_id", "node")),
+    _spec("evaluation.validate", "read", "Validate sealed evaluation evidence without executing a model.",
+          {**P, "record": OBJECT}, ("project_id", "record")),
     _spec("evidence.add", "modify", "Store a citation; a citation alone does not prove a claim.",
           {**P, **EVIDENCE_FIELDS}, ("project_id", "title"), True),
     _spec("evidence.get", "read", "Read a cited evidence record.", {**P, "evidence_id": S},
@@ -271,26 +301,29 @@ OPERATIONS = {s.name: s for s in [
     _spec("cost.estimate", "read", "Inspect local cost limits; remote estimates unavailable without a provider.",
           {**R, "target": S}, ("project_id",)),
     _spec("run.plan", "read", "Validate an execution plan; never launch from this operation.",
-          {**R, "target": S, "parameters": NO_OVERRIDES}, ("project_id", "recipe_id")),
-    _spec("run.submit", "execute", "Submit an explicitly permitted local fixture to the real backend.",
-          {**R, "expected_revision": POSITIVE_INT, "target": S, "parameters": NO_OVERRIDES, "trusted": B},
+          {**R, "target": S, "parameters": NO_OVERRIDES, "trusted": B, **TRACKING_FIELDS}, ("project_id", "recipe_id")),
+    _spec("run.submit", "execute", "Submit an explicitly permitted source-bound local pipeline to the real backend.",
+          {**R, "expected_revision": POSITIVE_INT, "target": S, "parameters": NO_OVERRIDES, "trusted": B, **TRACKING_FIELDS},
           ("project_id", "recipe_id", "expected_revision"), True),
     _spec("run.status", "read", "Reconcile status with the authoritative backend.", RUN, ("project_id",)),
     _spec("run.list", "read", "List and reconcile project operation correlations with the backend.", P, ("project_id",)),
     _spec("operation.get", "read", "Read a stored application-operation correlation.",
           {**P, "operation_id": S}, ("project_id", "operation_id")),
     _spec("run.logs", "read", "Read actual backend logs.", {**RUN, "cursor": NULLABLE_STRING}, ("project_id",)),
+    _spec("run.evaluations.list", "read", "Read checkpoint evaluation results while training is running, including pending and failed evaluations.", RUN, ("project_id",)),
+    _spec("run.events.list", "read", "Read durable run events after a replayable cursor for live progress and notifications.",
+          {**RUN, "after": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 200}}, ("project_id",)),
     _spec("run.cancel", "execute", "Request real cancellation; requested is not confirmed termination.",
           RUN, ("project_id",), True),
     _spec("run.resume", "execute", "Resume an actual checkpoint and advance this recipe revision; requires execute and modify. Exact state differs from warm start.",
           {**RUN, "checkpoint_ref": S, "checkpoint_id": S, "mode": {"enum": ["exact_state", "warm_start"]},
            "resume_mode": {"enum": ["exact_state", "warm_start"]}, "parameters": NO_OVERRIDES, "steps": POSITIVE_INT,
-           "checkpoint_kind": {"enum": ["last", "best"]}, "trusted": B, "expected_recipe_revision": POSITIVE_INT},
+           "checkpoint_kind": {"enum": ["last", "best"]}, "trusted": B, "expected_recipe_revision": POSITIVE_INT, **TRACKING_FIELDS},
           ("project_id", "expected_recipe_revision"), True, additional_scopes=("modify",)),
     _spec("run.artifacts", "read", "Read authoritative artifact identifiers and hashes.", RUN, ("project_id",)),
     _spec("run.compare", "read", "Compare metrics from actual backend runs by a declared criterion.",
           {**P, "run_ids": {"type": "array", "items": S, "minItems": 2}, "metric": S,
-           "direction": {"enum": ["minimize", "maximize"]}}, ("project_id", "run_ids", "metric", "direction")),
+           "direction": {"enum": ["minimize", "maximize"]}, "comparison_contract": OBJECT}, ("project_id", "run_ids", "metric", "direction")),
     _spec("model.version.list", "read", "List authoritative ZenML model versions.", P, ("project_id",)),
     _spec("model.version.get", "read", "Read an authoritative model version.", VERSION, ("project_id",)),
     _spec("model.version.promote", "modify", "Promote a version using a recorded, measurable decision.",

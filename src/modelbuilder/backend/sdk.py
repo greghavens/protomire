@@ -14,6 +14,8 @@ from zenml.enums import ExecutionStatus
 from zenml.models import ModelVersionArtifactRequest, PipelineRunUpdate
 
 from .adapter import BackendError
+from ..evaluation import compare_records
+from .tracking_bridge import tracking_status
 from .common import alive, now, process_group_state, recipe_provenance, termination_confirmed, read_json, write_json
 
 if zenml.__version__ != "0.97.0":
@@ -103,8 +105,25 @@ def _reconcile(job: Path):
             request = read_json(job / "request.json")
             for node in request["recipe"]["nodes"]:
                 source = job / "outputs" / node["id"]
-                if node["kind"] == "model.train" and (source / "checkpoint.pt").is_file() and run.status != ExecutionStatus.COMPLETED:
-                    artifact = save_artifact(source, name=f"recovery-{job.name}", include_visualizations=False,
+                recovered = None
+                if node["kind"] == "model.train" and (source / "checkpoint.pt").is_file():
+                    recovered = source
+                elif node["kind"] == "component.run" and node.get("component", {}).get("role") == "training" and source.is_dir():
+                    from .components import read_checkpoint
+                    valid = []
+                    for manifest in source.rglob("checkpoint.manifest.json"):
+                        try:
+                            if not manifest.resolve().is_relative_to(source.resolve()):
+                                continue
+                            descriptor = read_checkpoint(manifest.parent)
+                            if descriptor["purpose"] in {"last", "resumable"}:
+                                valid.append((descriptor["step"], manifest.parent))
+                        except (ValueError, KeyError, OSError, TypeError):
+                            continue  # Interrupted/unready artifacts are never promoted to recovery.
+                    if valid:
+                        recovered = max(valid, key=lambda item: item[0])[1]
+                if recovered is not None and run.status != ExecutionStatus.COMPLETED:
+                    artifact = save_artifact(recovered, name=f"recovery-{job.name}", include_visualizations=False,
                                              user_metadata={"parent_run_id": str(run.id), "recovery_after_termination": True})
                     if run.model_version:
                         client.zen_store.create_model_version_artifact_link(ModelVersionArtifactRequest(
@@ -136,11 +155,29 @@ def artifacts_for(job: Path, run) -> list[dict]:
 def metrics_for(run) -> dict:
     if not run:
         return {}
-    metrics = {}
-    for _, step_run in run.steps.items():
+    from ..evaluation import evaluation_for
+    metrics, records, conflicts = {}, {}, {}
+    for step_name, step_run in run.steps.items():
         for name, versions in step_run.outputs.items():
             if name == "metrics" and versions:
-                metrics = versions[-1].load()
+                measured = versions[-1].load()
+                if not isinstance(measured, dict):
+                    continue
+                names = set(measured.get("evaluation_records", {}))
+                single = measured.get("evaluation_record")
+                if isinstance(single, dict) and isinstance(single.get("metric"), dict):
+                    names.add(single["metric"].get("name"))
+                for metric in names:
+                    evidence = evaluation_for(measured, metric)
+                    if evidence:
+                        if metric in records and records[metric] != evidence:
+                            conflicts.setdefault(metric, []).append(step_name)
+                        records[metric] = evidence
+                metrics.update(measured)
+    if records:
+        metrics["evaluation_records"] = records
+    if conflicts:
+        metrics["evaluation_conflicts"] = conflicts
     return metrics
 
 
@@ -160,7 +197,9 @@ def status(job: Path) -> dict:
         current = "succeeded"
     elif termination.get("reason") == "cancelled" and termination.get("confirmed") is True and termination.get("process_group_terminated") is True and termination_confirmed(state) and not worker_alive:
         current = "cancelled"
-    elif (job / "cancel.json").exists() and not termination_confirmed(state):
+    elif (job / "cancel.json").exists():
+        # Native termination metadata can lag the freshly reread supervisor
+        # journal. Do not expose a transient terminal failure in that window.
         current = "cancel_requested"
     elif native_status in terminal:
         current = terminal[native_status]
@@ -184,6 +223,7 @@ def status(job: Path) -> dict:
             "process_group_alive": process_group_state(state.get("worker_pid")),
             "submitted_at": request["submitted_at"], "last_reconciled_at": now(),
             "metrics": metrics_for(run), "artifacts": artifacts_for(job, run),
+            "tracking": tracking_status(job, request, current),
             "parent_run_id": request.get("parent_run_id"), "parent_checkpoint_ref": request.get("parent_checkpoint_ref"),
             "parent_recipe_id": request.get("parent_recipe_id"), "parent_recipe_revision": request.get("parent_recipe_revision"),
             "parent_recipe_digest": request.get("parent_recipe_digest"),
@@ -200,21 +240,41 @@ def checkpoint(job: Path, kind: str) -> dict:
     if not run:
         raise BackendError("not_found", "Native run has no checkpoint")
     request = read_json(job / "request.json")
-    training_ids = {node["id"] for node in request["recipe"]["nodes"] if node["kind"] == "model.train"}
+    training_nodes = {node["id"]: node for node in request["recipe"]["nodes"]
+                      if node["kind"] == "model.train" or
+                      (node["kind"] == "component.run" and node.get("component", {}).get("role") == "training")}
+    training_ids = set(training_nodes)
     candidates = [a for a in artifacts_for(job, run) if a["port"] == "recovery_checkpoint" or
-                  (a.get("node_id") in training_ids and a["port"] == "checkpoint")]
+                  (a.get("node_id") in training_ids and (a["port"] == "checkpoint" or
+                   any(port["name"] == a["port"] and port["type"] == "Path"
+                       for port in training_nodes[a["node_id"]].get("outputs", []))))]
     if not candidates:
         raise BackendError("not_found", "No completed native checkpoint or recovered checkpoint exists")
-    selected = candidates[-1]
-    artifact = Client().get_artifact_version(UUID(selected["artifact_id"]))
-    path = artifact.load()
-    expected_file = Path(path) / ("best.pt" if kind == "best" else "checkpoint.pt")
-    if not expected_file.is_file():
-        raise BackendError("not_found", "Requested checkpoint kind is unavailable")
-    import hashlib
-    return {**selected, "path": str(path), "checkpoint_kind": kind,
-            "sha256": hashlib.sha256(expected_file.read_bytes()).hexdigest(),
-            "resume_modes": ["exact_state", "warm_start"]}
+    mismatches = []
+    for selected in reversed(candidates):
+        artifact = Client().get_artifact_version(UUID(selected["artifact_id"]))
+        path = artifact.load()
+        if not isinstance(path, (Path, str)):
+            continue
+        if (Path(path) / "checkpoint.manifest.json").is_file():
+            from .components import read_checkpoint, identity
+            descriptor = read_checkpoint(Path(path))
+            purposes = {"last": {"last", "resumable"}, "best": {"best", "selected"}}
+            if descriptor["purpose"] not in purposes.get(kind, {kind}):
+                mismatches.append(descriptor["purpose"])
+                continue
+            return {**selected, "path": str(path), "checkpoint_kind": kind, "sha256": identity(descriptor),
+                    "resume_modes": descriptor["resume_modes"], "descriptor": descriptor}
+        if training_nodes.get(selected.get("node_id"), {}).get("kind") == "component.run":
+            continue  # Other declared Path outputs are not checkpoints.
+        expected_file = Path(path) / ("best.pt" if kind == "best" else "checkpoint.pt")
+        if not expected_file.is_file():
+            continue
+        import hashlib
+        return {**selected, "path": str(path), "checkpoint_kind": kind,
+                "sha256": hashlib.sha256(expected_file.read_bytes()).hexdigest(),
+                "resume_modes": ["exact_state", "warm_start"]}
+    raise BackendError("capability_unavailable", "No verified checkpoint supports the requested purpose", {"requested": kind, "available_purposes": mismatches})
 
 
 def version_record(version) -> dict:
@@ -248,6 +308,8 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
         resolved = {}
         for text in environment.get("requirements", []):
             requirement = Requirement(text)
+            if requirement.marker and not requirement.marker.evaluate():
+                continue
             if requirement.url or len(list(requirement.specifier)) != 1 or next(iter(requirement.specifier)).operator != "==":
                 raise BackendError("dependency_mismatch", "Execution environment requirements must be exactly pinned")
             try:
@@ -269,13 +331,7 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
     if operation == "run.compare":
         records = [status(Path(job)) for job in payload["job_dirs"]]
         metric, direction = payload.get("metric", "validation_loss"), payload.get("direction", "minimize")
-        if not records or any(record["status"] != "succeeded" or metric not in record["metrics"] for record in records):
-            raise BackendError("validation_error", "Comparison requires successful runs with the declared metric")
-        winner = (max if direction == "maximize" else min)(records, key=lambda record: record["metrics"][metric])
-        return {"metric": metric, "direction": direction, "selected_run_id": winner["backend_run_id"],
-                "selected_model_version_ref": winner["model_version_ref"],
-                "runs": [{"backend_run_id": r["backend_run_id"], "model_version_ref": r["model_version_ref"],
-                          "value": r["metrics"][metric], "delta_from_selected": r["metrics"][metric] - winner["metrics"][metric]} for r in records]}
+        return compare_records(records, metric, direction, payload.get("comparison_contract"))
     if operation == "model.checkpoint.get":
         if payload.get("job_dir"):
             result = checkpoint(Path(payload["job_dir"]), payload.get("checkpoint_kind", "last"))
@@ -326,13 +382,23 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
             measured = metrics_for(candidate)
             if metric not in measured:
                 raise BackendError("validation_error", "Declared validation metric is absent")
-            records.append((measured[metric], candidate))
+            records.append({"backend_run_id": str(candidate.id),
+                            "model_version_ref": str(candidate.model_version.id) if candidate.model_version else None,
+                            "status": "succeeded", "metrics": measured})
         if not records:
             raise BackendError("validation_error", "Promotion requires the actual candidate run IDs and a measured selection rule")
-        selected_value, selected = (max if direction == "maximize" else min)(records, key=lambda r: r[0])
-        if not selected.model_version or selected.model_version.id != version.id:
+        comparison = compare_records(records, metric, direction,
+                                     payload.get("comparison_contract", rule.get("comparison_contract")))
+        if not comparison["compatible"]:
+            raise BackendError("incompatible_evaluation", "Promotion requires scientifically comparable evaluation evidence", comparison)
+        if comparison["selected_model_version_ref"] != str(version.id):
             raise BackendError("validation_error", "Requested model version does not win the declared measured validation criterion")
-        log_metadata({"selection_rule": {"metric": metric, "direction": direction}, "selection_value": selected_value,
+        selected = client.get_pipeline_run(comparison["selected_run_id"], project=project.id)
+        selected_value = next(row["value"] for row in comparison["runs"] if row["backend_run_id"] == comparison["selected_run_id"])
+        log_metadata({"selection_rule": {"metric": metric, "direction": direction,
+                                         "comparison_contract": comparison["comparison_contract"]},
+                      "selection_value": selected_value, "selection_comparison_digest": comparison["comparison_digest"],
+                      "selection_evaluation_digests": comparison["evaluation_digests"],
                       "selection_candidate_run_ids": run_ids, "selection_decision": decision}, model_version_id=version.id)
         updated = client.update_model_version(version.model.id, version.id, stage=payload.get("stage", "staging"), force=True, project=project.id)
         return {**version_record(updated), "selected_run_id": str(selected.id), "selection_value": selected_value}

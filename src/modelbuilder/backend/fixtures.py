@@ -265,6 +265,8 @@ def train(data: dict, initial: Path, parameters: dict, out: Path, resume: Path |
         atomic_save(state, out / "checkpoint.pt")
         if is_best:
             atomic_save(state, out / "best.pt")
+        if parameters.get("_checkpoint_ready") and (step_index + 1) % parameters.get("checkpoint_interval_steps", 1) == 0:
+            parameters["_checkpoint_ready"](path=out, step=step_index + 1, purpose="last")
         print(f"CHECKPOINT step={step_index + 1} validation_loss={validation_loss:.8f}", flush=True)
         cancel_file = parameters.get("_cancel_file")
         if cancel_file and Path(cancel_file).exists():

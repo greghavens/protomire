@@ -10,14 +10,18 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from .execution_limits import node_timeout
 from .common import now, process_identity, process_group_state, runtime_identity, read_json, write_json
 
 
 def main(job: Path, lease_fd: int | None = None) -> None:
     request = read_json(job / "request.json")
+    from .tracking_bridge import training_environment, LiveTracking
+    live_tracking = LiveTracking(job)
     with (job / "worker.log").open("a") as log:
         process = subprocess.Popen([sys.executable, "-m", "modelbuilder.backend.worker", str(job)],
                                    stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True,
+                                   env=training_environment(),
                                    pass_fds=(lease_fd,) if lease_fd is not None else ())
         state = {"supervisor_pid": os.getpid(), "supervisor_identity": process_identity(os.getpid()),
                  "worker_pid": process.pid, "worker_identity": process_identity(process.pid),
@@ -27,10 +31,12 @@ def main(job: Path, lease_fd: int | None = None) -> None:
         cancelled_at = None
         term_sent = False
         while process.poll() is None or process_group_state(process.pid) is not False:
-            timed_out = time.monotonic() - started > float(request.get("max_runtime_seconds", 600))
+            expired_node = node_timeout(job)
+            timed_out = bool(expired_node) or time.monotonic() - started > float(request.get("max_runtime_seconds", 600))
             cancellation = (job / "cancel.json").exists()
             if timed_out and not cancellation:
-                write_json(job / "cancel.json", {"requested_at": now(), "reason": "max_runtime_exceeded"})
+                write_json(job / "cancel.json", {"requested_at": now(), "reason": "node_timeout_exceeded" if expired_node else "max_runtime_exceeded",
+                                                 **({"node_id": expired_node["node_id"]} if expired_node else {})})
                 cancellation = True
             if cancellation:
                 if cancelled_at is None:
@@ -49,6 +55,7 @@ def main(job: Path, lease_fd: int | None = None) -> None:
                         os.killpg(process.pid, signal.SIGKILL)
                     except ProcessLookupError:
                         pass
+            live_tracking.poll()
             time.sleep(0.1)
         code = process.wait()
         state.update(worker_reaped=True, process_group_terminated=process_group_state(process.pid) is False, worker_exit_code=code, worker_terminated_at=now(),
@@ -61,11 +68,19 @@ def main(job: Path, lease_fd: int | None = None) -> None:
                                     "confirmed_at": state["worker_terminated_at"],
                                     "proof_source": "local_supervisor_wait_and_group_observation"}
         write_json(job / "state.json", state)
+        if state["process_group_terminated"] is True:
+            from .live_evaluation import reconcile_evaluations
+            reconcile_evaluations(job, reason="Training canceled" if state["cancelled"] else
+                                  "Training ended before pending evaluation completed")
         # Public SDK store reconciliation follows confirmed termination, never precedes it.
-        from .sdk import reconcile
+        from .sdk import reconcile, status
         try:
-            reconcile(job)
+            native_run = reconcile(job)
             state.update(supervisor_state="finished", reconciled_at=now())
+            write_json(job / "state.json", state)
+            from .live_evaluation import record_run_terminal
+            record_run_terminal(job, status(job))
+            live_tracking.finish(native_run)
         except Exception as error:
             state.update(supervisor_state="reconciliation_required", reconciliation_error=str(error))
         write_json(job / "state.json", state)

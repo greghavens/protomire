@@ -17,13 +17,18 @@ from .models import (Actor, Claim, Decision, Evidence, Hypothesis, ModelProject,
                      PROJECT_FIELDS, CLAIM_FIELDS, HYPOTHESIS_FIELDS, MAX_BUNDLE_JSON_BYTES, ServiceError, new_id,
                      operation_catalog, utcnow)
 from .store import SQLiteStore
+from .tracking import resolve_tracking, disclosure
 
 
 class OperationService:
     def __init__(self, store: SQLiteStore | str | Path | None = None, backend=None, *,
-                 db_path: str | Path | None = None, source_root: str | Path | None = None):
+                 db_path: str | Path | None = None, source_root: str | Path | None = None,
+                 dataset_roots: dict | None = None):
         self.store = store if isinstance(store, SQLiteStore) else SQLiteStore(db_path or store or "modelbuilder.sqlite3")
         self.backend = backend
+        self.dataset_roots = copy.deepcopy(dataset_roots or {})
+        from .dataset import DatasetRegistry
+        self._dataset_registry = DatasetRegistry(self.store, project_roots=self.dataset_roots)
         self.source_root = Path(source_root).resolve() if source_root else None
         self._migrate_single_recipe()
 
@@ -116,7 +121,7 @@ class OperationService:
             errors = sorted(Draft202012Validator(spec.input_schema).iter_errors(payload), key=lambda e: list(map(str, e.path)))
             if errors:
                 raise ServiceError("validation_error", "Operation payload does not match its schema", {
-                    "errors": [{"path": ".".join(map(str, error.path)), "message": error.message} for error in errors]})
+                    "errors": [{"path": ".".join(map(str, error.path)), "message": "Invalid tracking configuration" if "tracking" in error.path else error.message} for error in errors]})
             self._reject_secrets(payload)
             hashed_payload = {key: value for key, value in payload.items() if key != "request_id"}
             payload_hash = hashlib.sha256(json.dumps(hashed_payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
@@ -132,7 +137,7 @@ class OperationService:
                 if spec.mutating:
                     self.store.save_idempotent(actor.id, payload["idempotency_key"], operation, payload_hash, result)
                     result_project = project_id or result.get("project_id")
-                    target_id = next((result[k] for k in ("operation_id", "recipe_id", "evidence_id", "claim_id", "hypothesis_id", "decision_id", "project_id") if k in result), None)
+                    target_id = next((result[k] for k in ("operation_id", "recipe_id", "evidence_id", "claim_id", "hypothesis_id", "decision_id", "dataset_id", "project_id") if k in result), None)
                     self.store.audit(actor_id=actor.id, operation=operation, request_id=request_id,
                                      outcome="succeeded", project_id=result_project, target_id=target_id,
                                      before_revision=payload.get("expected_revision"), after_revision=result.get("revision"))
@@ -211,6 +216,14 @@ class OperationService:
             json.dumps(after, indent=2, sort_keys=True).splitlines(), fromfile="client", tofile="server", lineterm=""))
 
     def _dispatch(self, op, p, actor):
+        if op.startswith("dataset."):
+            return self._dataset(op, p)
+        if op.startswith("component."):
+            return self._component(op, p)
+        if op == "evaluation.validate":
+            from .evaluation import validate_evaluation_record
+            diagnostics = validate_evaluation_record(p["record"])
+            return {"valid": not diagnostics, "diagnostics": diagnostics}
         if op.startswith("project."):
             return self._project(op[8:], p, actor)
         if op.startswith("recipe."):
@@ -222,6 +235,49 @@ class OperationService:
         if op == "operation.get":
             return self._get("operation", p["operation_id"], p["project_id"])
         return self._execution(op, p, actor)
+
+    def _dataset(self, op, p):
+        registry = self._dataset_registry
+        project_id = p["project_id"]
+        if op == "dataset.register":
+            return registry.register(project_id, p["manifest"])
+        if op == "dataset.version":
+            return registry.version(project_id, p["dataset_id"], p["expected_revision"], p["manifest"])
+        if op == "dataset.get":
+            return registry.get(project_id, p["dataset_id"], p.get("revision"))
+        if op == "dataset.list":
+            return registry.list(project_id)
+        if op == "dataset.preview":
+            return registry.preview(project_id, p["dataset_id"], p["revision"], p["split_id"],
+                                    purpose=p["purpose"], limit=p.get("limit", 20), offset=p.get("offset", 0))
+        if ("manifest" in p) == ("dataset_id" in p) or ("revision" in p and "dataset_id" not in p):
+            raise ServiceError("validation_error", "Provide a manifest or dataset_id with optional revision, not both")
+        return registry.validate(project_id, p.get("manifest"), dataset_id=p.get("dataset_id"), revision=p.get("revision"))
+
+    def _component(self, op, p):
+        from .backend.components import component_catalog, validate_component
+        from jsonschema.exceptions import SchemaError, ValidationError as SchemaValidationError
+        if op == "component.validate":
+            try:
+                descriptor = validate_component(p["node"])
+            except (ValueError, KeyError, TypeError, SchemaError, SchemaValidationError):
+                return {"valid": False, "diagnostics": [{"code": "invalid_component", "message": "Component declaration or parameters are invalid"}]}
+            return {"valid": True, "component": descriptor, "diagnostics": []}
+        project_id = p["project_id"]
+        current = self._current_recipe(project_id)
+        recipe = self._get("recipe", current["recipe_id"], project_id, p["revision"]) if "revision" in p else current
+        try:
+            components = component_catalog(recipe)
+        except (ValueError, KeyError, TypeError, SchemaError, SchemaValidationError) as exc:
+            raise ServiceError("invalid_component", "Recipe contains an invalid component declaration") from exc
+        if op == "component.list":
+            return {"components": components, "recipe_id": recipe["recipe_id"], "recipe_revision": recipe["revision"]}
+        matches = [item for item in components if item["id"] == p["component_id"] and ("node_id" not in p or item.get("node_id") == p["node_id"])]
+        if not matches:
+            raise ServiceError("not_found", "Component is not declared in this recipe", status_code=404)
+        if len(matches) != 1:
+            raise ServiceError("ambiguous_component", "Specify node_id to select this component declaration")
+        return matches[0]
 
     def _project(self, action, p, actor):
         if action == "create":
@@ -410,11 +466,19 @@ class OperationService:
             self._get("recipe", body["recipe_id"], project_id, body["recipe_revision"])
             if not body["selection_rule"].get("metric") or body["selection_rule"].get("direction") not in {"minimize", "maximize"}:
                 raise ServiceError("validation_error", "Selection rule requires metric and direction minimize/maximize")
+            if len(set(body["run_ids"])) != len(body["run_ids"]):
+                raise ServiceError("validation_error", "Decision run identifiers must be distinct")
+            provenance = []
             for backend_run_id in body["run_ids"]:
                 correlation = self._find_operation(project_id, backend_run_id=backend_run_id)
                 if not correlation.get("backend_run_id"):
                     raise ServiceError("validation_error", "Decision must link actual backend run identifiers")
-            body.update(actor=actor.id, timestamp=now)
+                provenance.append({"backend_run_id": backend_run_id, "operation_id": correlation["operation_id"],
+                    "recipe_id": correlation["recipe_id"], "recipe_revision": correlation["recipe_revision"],
+                    "recipe_digest": correlation["recipe_digest"]})
+            if not any(item["recipe_id"] == body["recipe_id"] and item["recipe_revision"] == body["recipe_revision"] for item in provenance):
+                raise ServiceError("validation_error", "Decision recipe revision was not executed by any linked run")
+            body.update(actor=actor.id, timestamp=now, run_provenance=provenance)
             body = Decision(**body).model_dump()
         else:
             self._check_links(body, project_id)
@@ -493,6 +557,10 @@ class OperationService:
         project_id = p["project_id"]
         project = self._get("project", project_id, project_id)
         enriched = {**p, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"]}
+        if op in {"run.plan", "run.submit", "run.resume"}:
+            enriched["tracking"] = resolve_tracking(project.get("tracking"), p.get("tracking"),
+                online_consent=op == "run.plan" or p.get("tracking_online_consent", False))
+            enriched["tracking_online_consent"] = p.get("tracking_online_consent") is True
         if op == "run.list":
             runs = []
             for operation in self.store.list("operation", project_id):
@@ -510,15 +578,15 @@ class OperationService:
             if op == "run.submit":
                 self._revision(recipe, p["expected_revision"])
                 if p.get("trusted") is not True:
-                    raise ServiceError("untrusted_execution_blocked", "Explicit trust consent is required for repository-owned fixtures", status_code=403)
+                    raise ServiceError("untrusted_execution_blocked", "Explicit trust consent is required for source-bound execution", status_code=403)
                 enriched["operation_id"] = str(uuid5(NAMESPACE_URL, f"modelbuilder:{actor.id}:{op}:{p['idempotency_key']}"))
         correlation = None
-        if op in {"run.status", "run.logs", "run.cancel", "run.artifacts", "run.resume", "model.checkpoint.get"}:
+        if op in {"run.status", "run.logs", "run.cancel", "run.artifacts", "run.resume", "model.checkpoint.get", "run.evaluations.list", "run.events.list"}:
             correlation = self._find_operation(project_id, p.get("operation_id"), p.get("backend_run_id"))
             enriched.update(operation_id=correlation["operation_id"], backend_run_id=correlation.get("backend_run_id"))
             if op == "run.resume":
                 if p.get("trusted") is not True:
-                    raise ServiceError("untrusted_execution_blocked", "Explicit fixture trust is required to resume", status_code=403)
+                    raise ServiceError("untrusted_execution_blocked", "Explicit source trust is required to resume", status_code=403)
                 policy = self._policy("policy.get", p)
                 if "local-cpu" not in policy["allowed_targets"]:
                     raise ServiceError("target_disabled", "Local execution is disabled by project policy", status_code=403)
@@ -528,14 +596,30 @@ class OperationService:
                 current_recipe = self._current_recipe(project_id)
                 self._revision(current_recipe, p["expected_recipe_revision"])
                 parent_recipe = self._get("recipe", correlation["recipe_id"], project_id, correlation["recipe_revision"])
-                resumed_recipe = copy.deepcopy(parent_recipe)
+                mode = p.get("mode", p.get("resume_mode"))
+                if mode not in {"exact_state", "warm_start"}:
+                    raise ServiceError("validation_error", "Resume must explicitly select exact_state or warm_start")
+                component_training = [node for node in parent_recipe["nodes"]
+                    if node["kind"] == "component.run" and node.get("component", {}).get("role") == "training"]
+                if component_training:
+                    if "steps" in p:
+                        raise ServiceError("validation_error", "Component resume does not infer training parameter names; exact resume retains the parent budget, while warm start uses the edited current recipe")
+                    if len(component_training) != 1 or any(node["kind"] == "model.train" for node in parent_recipe["nodes"]):
+                        raise ServiceError("capability_unavailable", "Resume requires one unambiguous training component")
+                    resumed_recipe = copy.deepcopy(current_recipe if mode == "warm_start" else parent_recipe)
+                    selected_trainers = [node for node in resumed_recipe["nodes"]
+                        if node["kind"] == "component.run" and node.get("component", {}).get("role") == "training"]
+                    if len(selected_trainers) != 1 or any(node["kind"] == "model.train" for node in resumed_recipe["nodes"]):
+                        raise ServiceError("capability_unavailable", "Selected recipe must have exactly one checkpoint-consuming training component")
+                else:
+                    resumed_recipe = copy.deepcopy(parent_recipe)
+                    if "steps" not in p:
+                        raise ServiceError("validation_error", "Resume requires a declared final total step count")
+                    for node in resumed_recipe["nodes"]:
+                        if node["kind"] == "model.train":
+                            node["parameters"]["steps"] = p["steps"]
                 if parent_recipe["recipe_id"] != current_recipe["recipe_id"]:
                     enriched["legacy_parent_recipe_id"] = parent_recipe["recipe_id"]
-                if "steps" not in p:
-                    raise ServiceError("validation_error", "Resume requires a declared final total step count")
-                for node in resumed_recipe["nodes"]:
-                    if node["kind"] == "model.train":
-                        node["parameters"]["steps"] = p["steps"]
                 resumed_recipe["name"] = current_recipe["name"]
                 enriched["recipe"] = self._save_recipe(resumed_recipe, project_id, current_recipe["recipe_id"],
                                                        current_recipe["revision"] + 1, current_recipe["revision"])
@@ -557,6 +641,8 @@ class OperationService:
             enriched["direction"] = decision["selection_rule"]["direction"]
             enriched["candidate_run_ids"] = decision["run_ids"]
         result = self._call_backend(op, enriched, actor)
+        if op == "run.plan":
+            result = {**result, "tracking": disclosure(enriched["tracking"])}
         if op in {"run.submit", "run.resume", "run.status", "run.cancel"}:
             self._check_run_result(result, enriched, correlation if op in {"run.status", "run.cancel"} else None)
         if op in {"run.submit", "run.resume"}:
@@ -568,7 +654,8 @@ class OperationService:
                       "backend_run_id": result.get("backend_run_id"), "recipe_id": recipe["recipe_id"],
                       "recipe_revision": recipe["revision"], "recipe_digest": recipe["digest"],
                       "created_at": utcnow(), "last_reconciled_at": utcnow(),
-                      "revision": 1, "status": result.get("status", "unknown"), "errors": result.get("errors") or ([result["error"]] if result.get("error") else [])}
+                      "revision": 1, "tracking_config": enriched["tracking"],
+                      "status": result.get("status", "unknown"), "errors": result.get("errors") or ([result["error"]] if result.get("error") else [])}
             self.store.put("operation", operation_id, project_id, record)
             return {**result, **record}
         if op in {"run.status", "run.cancel"}:

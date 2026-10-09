@@ -67,6 +67,9 @@ class BoundedRequestBody:
 def create_app(service: OperationService | None = None, tokens: dict | TokenAuth | None = None) -> FastAPI:
     if service is None:
         db_path = os.environ.get("MODELBUILDER_DB_PATH", ".modelbuilder/modelbuilder.sqlite3")
+        from .backend.operator_config import load_operator_config
+        operator_config = load_operator_config()
+        dataset_roots = operator_config.pop("dataset_roots", {})
         backend = None
         if os.environ.get("MODELBUILDER_BACKEND", "zenml") == "zenml":
             try:
@@ -74,9 +77,9 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
             except ImportError:
                 pass
             else:
-                backend = ZenMLBackend(data_dir=Path(db_path).parent)
-        service = OperationService(db_path=db_path, backend=backend,
-                                   source_root=os.environ.get("MODELBUILDER_SOURCE_ROOT"))
+                backend = ZenMLBackend(data_dir=Path(db_path).parent, **operator_config)
+        service = OperationService(db_path=db_path, backend=backend, dataset_roots=dataset_roots,
+                                   source_root=str(backend.repository) if backend else os.environ.get("MODELBUILDER_SOURCE_ROOT"))
     auth = tokens if isinstance(tokens, TokenAuth) else (TokenAuth(tokens) if tokens is not None else TokenAuth.from_environment())
     app = FastAPI(title="ModelBuilder shared operation service", version="0.1.0",
                   description="GUI and native MCP use the same revisioned operation catalog.")

@@ -2,6 +2,10 @@
 from __future__ import annotations
 import json
 import os
+import sys
+import ctypes
+
+import psutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -28,64 +32,119 @@ def read_json(path: Path, default=None):
 
 
 def process_identity(pid: int) -> str | None:
+    """OS-backed process birth identity; never use a numeric PID alone."""
     try:
-        # /proc comm can contain spaces; fields after its final ')' start at stat field 3.
-        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
-        return None if fields[0] == "Z" else fields[19]
-    except (FileNotFoundError, ProcessLookupError, PermissionError, IndexError):
+        process = psutil.Process(pid)
+        if process.status() == psutil.STATUS_ZOMBIE:
+            return None
+        return "psutil:" + process.create_time().hex()
+    except (psutil.NoSuchProcess, psutil.AccessDenied, OSError, ValueError):
         return None
+
+
+def _legacy_linux_identity(pid: int) -> str | None:
+    """Read v1 Linux journal identities only; keep upgrades recoverable."""
+    if sys.platform != "linux":
+        raise OSError("Legacy Linux identity is not observable on this OS")
+    fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
+    return None if fields[0] == "Z" else fields[19]
 
 
 def alive(pid: int | None, identity: str | None) -> bool:
-    return bool(pid and identity and process_identity(pid) == identity)
+    if not pid or not identity:
+        return False
+    if identity.startswith("psutil:"):
+        return process_identity(pid) == identity
+    try:
+        return identity.isdecimal() and _legacy_linux_identity(pid) == identity
+    except (OSError, IndexError, ValueError):
+        return False
 
 
 def process_group_alive(group_id: int | None) -> bool:
-    """Check runnable members, including children after the group leader exits."""
-    if not group_id:
-        return False
-    for path in Path("/proc").glob("[0-9]*/stat"):
-        try:
-            fields = path.read_text().rsplit(")", 1)[1].split()
-            if fields[0] != "Z" and int(fields[2]) == group_id and int(fields[3]) == group_id:
-                return True
-        except (FileNotFoundError, PermissionError, ProcessLookupError, IndexError, ValueError):
-            continue
-    return False
+    """Conservatively keep waiting when group observation is unavailable."""
+    return process_group_state(group_id) is not False
+
+
+def _darwin_boot_session() -> str:
+    # Native boot-session UUID, unlike wall-clock boot_time which may shift.
+    libc = ctypes.CDLL(None, use_errno=True)
+    size = ctypes.c_size_t()
+    query = libc.sysctlbyname
+    query.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_size_t),
+                      ctypes.c_void_p, ctypes.c_size_t]
+    query.restype = ctypes.c_int
+    key = b"kern.bootsessionuuid"
+    if query(key, None, ctypes.byref(size), None, 0) != 0 or not 1 < size.value <= 128:
+        raise OSError(ctypes.get_errno(), "Cannot read kernel boot session")
+    value = ctypes.create_string_buffer(size.value)
+    if query(key, value, ctypes.byref(size), None, 0) != 0:
+        raise OSError(ctypes.get_errno(), "Cannot read kernel boot session")
+    return value.value.decode("ascii")
 
 
 def runtime_identity() -> str | None:
+    """A real boot/namespace boundary, never a guessed portable timestamp."""
     try:
-        return Path("/proc/sys/kernel/random/boot_id").read_text().strip() + ":" + os.readlink("/proc/self/ns/pid")
-    except (OSError, PermissionError):
-        return None
+        if sys.platform == "linux":
+            # These are Linux kernel interfaces, not a user's filesystem paths.
+            boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
+            return "linux:" + boot + ":" + os.readlink("/proc/self/ns/pid") if boot else None
+        if sys.platform == "darwin":
+            boot = _darwin_boot_session()
+            return "darwin:" + boot if boot else None
+    except (OSError, AttributeError, UnicodeError):
+        pass
+    return None
 
 
 def process_group_state(group_id: int | None) -> bool | None:
-    """True=live, False=positively absent/zombies only, None=not observable."""
-    if not group_id:
+    """True=live, False=positively absent/zombies only, None=not observable.
+
+    Query native POSIX group/session IDs and psutil's platform-specific process
+    API. In particular, an absent /proc on macOS must not mean every job died.
+    """
+    if not group_id or group_id <= 0 or not hasattr(os, "killpg"):
         return None
     try:
         os.killpg(group_id, 0)
     except ProcessLookupError:
         return False
-    except (PermissionError, OSError):
-        return None
-    uncertain = False
-    try:
-        members = list(Path("/proc").glob("[0-9]*/stat"))
     except OSError:
         return None
-    for path in members:
+    uncertain = False
+    zombies = False
+    try:
+        members = psutil.pids()
+    except (psutil.Error, OSError):
+        return None
+    for pid in members:
         try:
-            fields = path.read_text().rsplit(")", 1)[1].split()
-            if fields[0] != "Z" and int(fields[2]) == group_id and int(fields[3]) == group_id:
+            if os.getpgid(pid) != group_id:
+                continue
+            if os.getsid(pid) != group_id:
+                # A matching group outside the owned session is not ours.
+                uncertain = True
+                continue
+            if psutil.Process(pid).status() != psutil.STATUS_ZOMBIE:
                 return True
-        except (FileNotFoundError, ProcessLookupError):
+            zombies = True
+        except (psutil.NoSuchProcess, ProcessLookupError):
             continue
-        except (PermissionError, OSError, IndexError, ValueError):
+        except (psutil.AccessDenied, OSError, ValueError):
             uncertain = True
-    return None if uncertain else False
+    if uncertain:
+        return None
+    if zombies:
+        return False
+    # Empty/partial enumeration is not proof. Recheck the kernel group API.
+    try:
+        os.killpg(group_id, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        pass
+    return None
 
 
 def termination_confirmed(state: dict) -> bool:
@@ -94,14 +153,25 @@ def termination_confirmed(state: dict) -> bool:
         return False
     if state.get("worker_reaped") is True and state.get("process_group_terminated") is True:
         return True
-    if not state.get("runtime_identity") or state["runtime_identity"] != runtime_identity():
+    recorded_runtime = state.get("runtime_identity")
+    current_runtime = runtime_identity()
+    if not recorded_runtime or not current_runtime:
+        return False
+    legacy_runtime = sys.platform == "linux" and current_runtime == "linux:" + recorded_runtime
+    if recorded_runtime != current_runtime and not legacy_runtime:
         return False
     try:
-        fields = Path(f"/proc/{state['worker_pid']}/stat").read_text().rsplit(")", 1)[1].split()
-        original_gone = fields[0] == "Z" or fields[19] != state["worker_identity"]
-    except (FileNotFoundError, ProcessLookupError):
+        if state["worker_identity"].startswith("psutil:"):
+            process = psutil.Process(state["worker_pid"])
+            original_gone = (process.status() == psutil.STATUS_ZOMBIE or
+                             "psutil:" + process.create_time().hex() != state["worker_identity"])
+        elif sys.platform == "linux" and state["worker_identity"].isdecimal():
+            original_gone = _legacy_linux_identity(state["worker_pid"]) != state["worker_identity"]
+        else:
+            return False
+    except (psutil.NoSuchProcess, FileNotFoundError, ProcessLookupError):
         original_gone = True
-    except (PermissionError, OSError, IndexError):
+    except (psutil.AccessDenied, OSError, ValueError, IndexError):
         return False
     return original_gone and process_group_state(state["worker_pid"]) is False
 

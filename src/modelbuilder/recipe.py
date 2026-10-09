@@ -27,7 +27,8 @@ from typing import Any, NotRequired, TypedDict
 from urllib.parse import parse_qsl, unquote, urlsplit
 
 from jsonschema import Draft202012Validator
-from jsonschema.exceptions import SchemaError
+from jsonschema.exceptions import SchemaError, ValidationError
+from .backend.components import COMPONENT_SCHEMA, validate_component
 
 MAX_BUNDLE_BYTES = 32 * 1024 * 1024
 MAX_FILE_BYTES = 4 * 1024 * 1024
@@ -35,9 +36,9 @@ MAX_BUNDLE_FILES = 1024
 MAX_JSON_DEPTH = 64
 MAX_JSON_ITEMS = 100_000
 NODE_KINDS = [
-    "dataset.import", "dataset.synthetic", "dataset.validate", "model.initialize",
+    "dataset.import", "dataset.version.import", "dataset.synthetic", "dataset.validate", "model.initialize",
     "model.train", "model.evaluate", "model.compare", "model.checkpoint", "model.export",
-    "code.python", "training.kl_anchor",
+    "code.python", "component.run", "training.kl_anchor",
 ]
 HEX_SHA = r"^[0-9a-f]{64}$"
 GIT_SHA = r"^[0-9a-f]{40}([0-9a-f]{24})?$"
@@ -142,6 +143,7 @@ NODE_SCHEMA = _object({
     "outputs": {"type": "array", "items": PORT_SCHEMA, "maxItems": 256},
     "parameters": {"type": "object"},
     "parameter_schema": {"type": "object"},
+    "component": COMPONENT_SCHEMA,
     "environment_ref": {"type": "string", "minLength": 1},
     "resource_request": _object({"cpu": {"type": "number", "exclusiveMinimum": 0},
                                   "memory_mb": {"type": "integer", "minimum": 1},
@@ -401,8 +403,16 @@ def normalize_recipe(recipe: dict) -> dict:
             # Preserve declared port order; sorting it silently remaps outputs.
         if node["environment_ref"] != "default" and node["environment_ref"] not in environment_ids:
             _fail("unresolved_environment", "Node environment reference is not declared", node_id=node["id"])
+        if node["kind"] == "component.run":
+            _local_schema(node.get("component", {}).get("parameter_schema", {}), f"node.{node['id']}.component.parameter_schema")
+            try:
+                validate_component(node)
+            except (ValueError, ValidationError, SchemaError) as error:
+                _fail("invalid_component", "Component descriptor or parameters are invalid", node_id=node["id"], reason=str(error))
+        elif "component" in node:
+            _fail("invalid_component", "Component descriptor requires component.run kind", node_id=node["id"])
         implementation = node["implementation_ref"]
-        if node["kind"] == "code.python" and not isinstance(implementation, dict):
+        if node["kind"] in {"code.python", "component.run"} and not isinstance(implementation, dict):
             _fail("invalid_python_reference", "Python nodes need an immutable module and entrypoint reference", node_id=node["id"])
         if isinstance(implementation, str) and implementation != f"builtin:{node['kind']}":
             _fail("implementation_mismatch", "Built-in implementation must match node kind", node_id=node["id"])

@@ -220,7 +220,9 @@ def compile_component(node: dict, job: Path):
     call = f"dispatch({{{mapping}}}, spec)"
     # ZenML 0.97 recognizes multiple outputs only from a literal tuple return.
     body = (f"return {call}" if len(returns) == 1 else
-            f"values = {call}\n    return " + ", ".join(f"values[{index}]" for index in range(len(returns))))
+            f"values = {call}\n    if not isinstance(values, (tuple, list)) or len(values) != {len(returns)}:\n"
+            "        raise ValueError('Source result does not match declared output ports')\n    return "
+            + ", ".join(f"values[{index}]" for index in range(len(returns))))
     source = ("from pathlib import Path\nfrom typing import Annotated\nfrom modelbuilder.backend.components.runtime import dispatch\n"
               f"def invoke({', '.join(arguments)}) -> {annotation}:\n    {body}\n")
     directory = job / "adapters"
@@ -263,7 +265,9 @@ def compile_python(node: dict, job: Path):
     call = f"dispatch_python({{{mapping}}}, spec)"
     # ZenML 0.97 recognizes multiple outputs only from a literal tuple return.
     body = (f"return {call}" if len(returns) == 1 else
-            f"values = {call}\n    return " + ", ".join(f"values[{index}]" for index in range(len(returns))))
+            f"values = {call}\n    if not isinstance(values, (tuple, list)) or len(values) != {len(returns)}:\n"
+            "        raise ValueError('Source result does not match declared output ports')\n    return "
+            + ", ".join(f"values[{index}]" for index in range(len(returns))))
     source = ("from pathlib import Path\nfrom typing import Annotated\nfrom modelbuilder.backend.components.runtime import dispatch_python\n"
               f"def invoke({', '.join(arguments)}) -> {annotation}:\n    {body}\n")
     directory = job / "adapters"

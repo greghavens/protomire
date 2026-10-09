@@ -30,6 +30,49 @@ def expected_composition(original: str) -> str:
     return original + IMPORT_LINE
 
 
+
+def current_module_bytes() -> bytes:
+    """The current reviewed product module must also be a real local file."""
+    cursor = MODULE_SOURCE
+    while True:
+        if cursor.is_symlink():
+            raise ValueError("Symlink is not permitted in reviewed product module source")
+        if cursor == ROOT or cursor.parent == cursor:
+            break
+        cursor = cursor.parent
+    return MODULE_SOURCE.read_bytes()
+
+
+def matches_reviewed_module_history(content: bytes) -> bool:
+    """Trust only regular-file blobs for this path in product HEAD ancestry.
+
+    This is preparation-only authority, never verification authority. Unmerged
+    branches, dangling objects, cache history, replacement refs and index-only
+    changes cannot authorize an old module. A non-Git/source archive fails closed.
+    """
+    try:
+        relative = MODULE_SOURCE.relative_to(ROOT).as_posix()
+        if not (ROOT / ".git").exists():
+            return False
+        git = ["git", "--no-replace-objects", "-C", str(ROOT)]
+        top = subprocess.check_output([*git, "rev-parse", "--show-toplevel"], text=True).strip()
+        if pathlib.Path(top).resolve() != ROOT.resolve():
+            return False
+        head = subprocess.check_output([*git, "rev-parse", "--verify", "HEAD^{commit}"], text=True).strip()
+        candidate = subprocess.check_output([*git, "hash-object", "--stdin"], input=content).decode().strip()
+        commits = subprocess.check_output([*git, "log", "--format=%H", head, "--", relative], text=True).splitlines()
+        for commit in commits:
+            entry = subprocess.check_output([*git, "ls-tree", "-z", commit, "--", relative], text=True)
+            if not entry:
+                continue
+            metadata, path = entry.rstrip("\0").split("\t", 1)
+            mode, kind, blob = metadata.split()
+            if path == relative and mode in {"100644", "100755"} and kind == "blob" and blob == candidate:
+                return True
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return False
+    return False
+
 def inspect_boundary(source: pathlib.Path, *, allow_unpatched: bool = False) -> list[str]:
     changed = subprocess.check_output(
         ["git", "-C", str(source), "diff", "HEAD", "--name-only"], text=True
@@ -51,16 +94,21 @@ def inspect_boundary(source: pathlib.Path, *, allow_unpatched: bool = False) -> 
     if set(additions) - {MODULE}:
         raise ValueError(f"Unexpected untracked upstream source files: {additions}")
     target = contained_file(source, MODULE)
-    if target.exists() and target.read_bytes() != MODULE_SOURCE.read_bytes():
-        raise ValueError("Installed menu contribution differs from reviewed product module")
+    if target.exists():
+        installed = target.read_bytes()
+        if installed != current_module_bytes() and not (
+            allow_unpatched and matches_reviewed_module_history(installed)
+        ):
+            raise ValueError("Installed menu contribution differs from reviewed product module")
     if not allow_unpatched and not target.is_file():
         raise ValueError("Permanent menu contribution is missing")
     return changed
 
 
 def install_menu_composition(source: pathlib.Path) -> None:
+    reviewed = current_module_bytes()
     original = subprocess.check_output(["git", "-C", str(source), "show", f"HEAD:{COMPOSITION}"], text=True)
     target = contained_file(source, MODULE)
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_bytes(MODULE_SOURCE.read_bytes())
+    target.write_bytes(reviewed)
     contained_file(source, COMPOSITION).write_text(expected_composition(original))

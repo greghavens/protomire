@@ -214,7 +214,7 @@ def run(job: Path) -> None:
             kwargs["spec"]["live_evaluation"] = live_evaluator(node, recipe)
             result = function(id=node["id"], **kwargs)
             declared = node["outputs"]
-            values = result if isinstance(result, tuple) else (result,)
+            values = result if isinstance(result, (tuple, list)) else (result,)
             if len(values) != len(declared):
                 raise ValueError("Native node outputs disagree with declared typed ports")
             for port, value in zip(declared, values):

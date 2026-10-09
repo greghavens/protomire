@@ -217,8 +217,12 @@ def compile_component(node: dict, job: Path):
     returns = [f"Annotated[{PORT_TYPES[p['type']].__name__}, {p['name']!r}]" for p in node["outputs"]]
     annotation = returns[0] if len(returns) == 1 else "tuple[" + ", ".join(returns) + "]"
     mapping = ", ".join(f"{p['name']!r}: {p['name']}" for p in node["inputs"])
+    call = f"dispatch({{{mapping}}}, spec)"
+    # ZenML 0.97 recognizes multiple outputs only from a literal tuple return.
+    body = (f"return {call}" if len(returns) == 1 else
+            f"values = {call}\n    return " + ", ".join(f"values[{index}]" for index in range(len(returns))))
     source = ("from pathlib import Path\nfrom typing import Annotated\nfrom modelbuilder.backend.components.runtime import dispatch\n"
-              f"def invoke({', '.join(arguments)}) -> {annotation}:\n    return dispatch({{{mapping}}}, spec)\n")
+              f"def invoke({', '.join(arguments)}) -> {annotation}:\n    {body}\n")
     directory = job / "adapters"
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / (name + ".py")
@@ -256,8 +260,12 @@ def compile_python(node: dict, job: Path):
     returns = [f"Annotated[{PORT_TYPES[p['type']].__name__}, {p['name']!r}]" for p in node["outputs"]]
     annotation = returns[0] if len(returns) == 1 else "tuple[" + ", ".join(returns) + "]"
     mapping = ", ".join(f"{key!r}: {key}" for key in input_types)
+    call = f"dispatch_python({{{mapping}}}, spec)"
+    # ZenML 0.97 recognizes multiple outputs only from a literal tuple return.
+    body = (f"return {call}" if len(returns) == 1 else
+            f"values = {call}\n    return " + ", ".join(f"values[{index}]" for index in range(len(returns))))
     source = ("from pathlib import Path\nfrom typing import Annotated\nfrom modelbuilder.backend.components.runtime import dispatch_python\n"
-              f"def invoke({', '.join(arguments)}) -> {annotation}:\n    return dispatch_python({{{mapping}}}, spec)\n")
+              f"def invoke({', '.join(arguments)}) -> {annotation}:\n    {body}\n")
     directory = job / "adapters"
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / (name + ".py")

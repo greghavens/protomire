@@ -43,9 +43,12 @@ The menu adds no privileged bridge or alternate business logic.
 
 `distribution/apply_overlay.py` checks the exact upstream SHA, rejects arbitrary
 tracked and untracked source changes, and permits only the pristine composition
-file or its exact baseline-plus-one-import form. Unknown existing module bytes
-are rejected rather than overwritten. Applying the same overlay twice is
-idempotent. `distribution/verify_build.py` repeats these checks and hashes the
+file or its exact baseline-plus-one-import form. During preparation only, an installed older module may be replaced when its
+bytes exactly match a regular-file blob at the product module's source path in
+the ancestry of the product repository's current HEAD. The index, unmerged
+branches, dangling objects, Git replacement refs, and the upstream/cache
+repository cannot authorize old bytes. Unknown existing module bytes are
+rejected rather than overwritten. Applying the same overlay twice is idempotent. `distribution/verify_build.py` repeats these checks and hashes the
 composition file, added module and compiled JavaScript as well as existing
 artifacts. Updating this small module requires an explicit reviewed source
 change and fresh validation; the verifier never silently accepts a stale or

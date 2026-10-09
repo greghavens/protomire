@@ -26,6 +26,28 @@ const {chromium}=require('playwright-core');const {discoverWebview}=require('./c
   await check('single-recipe-identity-tracks-remote-revision',async()=>{const server=await api('recipe.get',resource);const identity=await frame.locator('#identity').textContent();assert(identity.includes(server.name));assert(identity.includes(`revision ${server.revision}`));assert.equal(server.recipe_id,fixture.recipe_id);assert.equal(await frame.locator('#model-name').textContent(),fixture.model_name);assert.equal(await frame.locator('#recipe-select').count(),0);return {identity,recipe_id:server.recipe_id,revision:server.revision};});
   await check('concurrent-edit-conflict-preserves-draft',async()=>{const local=JSON.parse(await frame.locator('#source').inputValue());local.name='Unsaved GUI draft';preservedLocal=JSON.stringify(local,null,2);await frame.locator('#source').fill(JSON.stringify(local,null,2));const remote=await mcp('Concurrent MCP revision');await frame.locator('#remote').waitFor({state:'visible',timeout:15000});await frame.locator('#save').click();await frame.locator('#conflict').waitFor({state:'visible'});assert.equal(JSON.parse(await frame.locator('#source').inputValue()).name,local.name);assert.equal((await api('recipe.get',resource)).digest,remote.digest);return {local_revision:local.revision,server_revision:remote.revision,draft_preserved:true,diff_visible:await frame.locator('#conflict-diff').innerText()};});
   await check('invalid-source-visual-edit-protection',async()=>{const invalid='{"nodes": [';await frame.locator('#source').fill(invalid);await frame.locator('#node-id').fill('would-erase-source');await frame.locator('#add-node').click();assert.equal(await frame.locator('#source').inputValue(),invalid);return {source_preserved:true};});
+  await check('json-pane-repeated-toggle-preserves-invalid-draft',async()=>{
+   const source=await frame.locator('#source').inputValue();
+   const parameters=await frame.locator('#node-parameters').inputValue();
+   const selected=await frame.locator('.graph-node.selected').count();
+   for(let i=0;i<3;i++){
+    await frame.locator('#toggle-source').click();
+    await frame.locator('#recipe-source-pane').waitFor({state:'hidden'});
+    assert.equal(await frame.locator('#recipe-editor.source-collapsed').count(),1);
+    assert.equal(await frame.locator('#toggle-source[aria-expanded="false"]').count(),1);
+    assert.equal(await frame.locator('#toggle-source').textContent(),'Show JSON');
+    await frame.locator('#graph').waitFor({state:'visible'});
+    await frame.locator('#dirty').waitFor({state:'visible'});
+    await frame.locator('#toggle-source').click();
+    await frame.locator('#source').waitFor({state:'visible'});
+    assert.equal(await frame.locator('#recipe-editor.source-collapsed').count(),0);
+    assert.equal(await frame.locator('#toggle-source[aria-expanded="true"]').count(),1);
+    assert.equal(await frame.locator('#source').inputValue(),source);
+    assert.equal(await frame.locator('#node-parameters').inputValue(),parameters);
+    assert.equal(await frame.locator('.graph-node.selected').count(),selected);
+   }
+   return {toggles:6,invalid_source_preserved:true,node_panel_preserved:true,dirty_indicator_visible_when_collapsed:true};
+  });
   await check('reload-cancel-preserves-draft',async()=>{await frame.locator('#source').fill(preservedLocal);await frame.locator('#reload').click();await page.getByRole('button',{name:'Cancel',exact:true}).click();assert.equal(await frame.locator('#source').inputValue(),preservedLocal);return {draft_preserved:true,explicit_cancel:true};});
   await check('explicit-reload-loads-server',async()=>{await frame.locator('#reload').click();await page.getByRole('button',{name:'Discard',exact:true}).click();const server=await api('recipe.get',resource);await wait(async()=>JSON.parse(await frame.locator('#source').inputValue()).digest===server.digest);assert.equal(JSON.parse(await frame.locator('#source').inputValue()).name,'Concurrent MCP revision');const identity=await frame.locator('#identity').textContent();assert(identity.includes(server.name));assert(identity.includes(`revision ${server.revision}`));return {revision:server.revision,digest:server.digest,explicit_discard:true,identity};});
   const fileMenu=async(label)=>{await page.getByRole('menuitem',{name:'File',exact:true}).click();const item=page.getByRole('menuitem',{name:label,exact:true});await item.waitFor({state:'visible'});/* Upstream menu.ts delays mouseup activation by100ms. */await page.waitForTimeout(200);await item.click();};

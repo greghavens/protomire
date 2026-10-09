@@ -6,5 +6,5 @@ execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p','tsconfi
 await mkdir('schemas',{recursive:true});
 await access('../../schemas/recipe.v0.schema.json');
 await copyFile('../../schemas/recipe.v0.schema.json','schemas/recipe.v0.schema.json');
-await build({entryPoints:['src/extension.ts','src/client.ts','src/document.ts','src/security.ts'],bundle:true,platform:'node',format:'cjs',target:'node20',external:['vscode'],outdir:'out',sourcemap:true});
+await build({entryPoints:['src/extension.ts','src/client.ts','src/document.ts','src/security.ts','src/sourcePane.ts'],bundle:true,platform:'node',format:'cjs',target:'node20',external:['vscode'],outdir:'out',sourcemap:true});
 await build({entryPoints:['src/webview.ts'],bundle:true,platform:'browser',format:'iife',target:'es2022',outfile:'media/workbench.js',sourcemap:true});

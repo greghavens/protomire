@@ -1,3 +1,4 @@
+import { bindRecipeSourcePane } from './sourcePane';
 import { newNode, removeNode, replaceNode, readVisualSource, assertNodePanelCurrent } from './document';
 import { OperationSpec, Recipe, RecipeEdge, RecipeNode, RecordValue } from './types';
 declare function acquireVsCodeApi(): {postMessage(message:unknown):void;setState(value:unknown):void;getState():any};
@@ -17,18 +18,18 @@ app.innerHTML=`
 <aside class="workspace-nav"><span class="eyebrow">MODEL PROJECT</span><h2 id="model-name"></h2><div id="project-id" class="mono muted"></div><nav aria-label="Model lifecycle" id="tabs"></nav><button id="close-project">Close project</button></aside>
 <main class="workspace-content">
 <section id="Recipe" class="page">
-  <div class="toolbar"><h2>Training &amp; evaluation recipe</h2><button id="native-source">Open native JSON</button><button id="validate">Validate</button><button id="diff">Diff</button><button id="save" class="primary">Save revision</button><button id="reload">Reload</button></div>
+  <div class="toolbar"><h2>Training &amp; evaluation recipe</h2><button id="native-source">Open native JSON</button><button id="validate">Validate</button><button id="diff">Diff</button><button id="save" class="primary">Save revision</button><button id="reload">Reload</button><span id="dirty" class="pill">Saved</span></div>
   <p class="muted">Build the dataset, initialization, training, evaluation and model-export pipeline below. Saved revisions and runs stay with this model.</p><div id="recipe-extra-actions" class="toolbar"></div><div id="identity" class="identity">Loading the model recipe…</div>
   <div id="migration" class="warning" hidden></div><div id="remote" class="warning" hidden></div>
   <div id="conflict" class="conflict" hidden><h2>Concurrent edit conflict</h2><p>Your draft is preserved. Compare it to the current server revision before resolving.</p><pre id="conflict-diff"></pre><div class="columns"><div><h3>Current server</h3><pre id="server-json"></pre></div><div><h3>Your draft</h3><pre id="local-json"></pre></div></div><button id="discard-conflict">Load server revision and discard draft</button></div>
-  <div class="editor-grid">
-    <div class="graph-pane"><div class="toolbar"><h2>Pipeline graph</h2><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit">Reset view</button><span class="muted">Drag to pan · Wheel to zoom</span></div><svg id="graph" role="img" aria-label="Editable typed pipeline graph" viewBox="0 0 900 440"><g id="graph-layer"></g></svg>
+  <div id="recipe-editor" class="editor-grid">
+    <div class="graph-pane"><div class="toolbar"><h2>Pipeline graph</h2><button id="toggle-source" type="button" aria-expanded="true" aria-controls="recipe-source-pane">Hide JSON</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit">Reset view</button><span class="muted">Drag to pan · Wheel to zoom</span></div><svg id="graph" role="img" aria-label="Editable typed pipeline graph" viewBox="0 0 900 440"><g id="graph-layer"></g></svg>
       <div class="toolbar"><label for="node-kind">Component</label><select id="node-kind"></select><input id="node-id" placeholder="Unique node ID" aria-label="New node ID"><button id="add-node">Add node</button></div>
       <details id="edge-form"><summary>Add a typed edge</summary><div class="edge-controls"><select id="source-node" aria-label="Source node"></select><select id="source-port" aria-label="Source output port"></select><span>→</span><select id="target-node" aria-label="Target node"></select><select id="target-port" aria-label="Target input port"></select><button id="add-edge">Connect</button></div><p class="muted">The service checks type compatibility and cycles when validating or saving.</p></details>
       <div id="edges"></div>
       <section id="node-panel" hidden><div class="toolbar"><h3 id="node-title"></h3><button id="delete-node" class="danger">Remove node</button></div><label>Implementation reference<textarea id="node-implementation" rows="3" spellcheck="false"></textarea></label><div class="columns"><label>Typed inputs (JSON)<textarea id="node-inputs" rows="4" spellcheck="false"></textarea></label><label>Typed outputs (JSON)<textarea id="node-outputs" rows="4" spellcheck="false"></textarea></label></div><label>Parameters (JSON)<textarea id="node-parameters" rows="6" spellcheck="false"></textarea></label><button id="apply-node">Apply node changes to draft</button><button id="reset-node-panel">Discard panel edits / reload node</button></section>
     </div>
-    <div class="source-pane"><div class="toolbar"><h2>Canonical recipe JSON</h2><span id="dirty" class="pill">Saved</span></div><label class="sr-only" for="source">Canonical recipe JSON source</label><textarea id="source" spellcheck="false" aria-describedby="source-help"></textarea><p id="source-help" class="muted">Graph and JSON share this draft. Saving calls the same revision-checked operation as MCP. Ctrl/Cmd+S saves the recipe.</p><span id="parse-error" role="alert"></span></div>
+    <div id="recipe-source-pane" class="source-pane"><div class="toolbar"><h2>Canonical recipe JSON</h2></div><label class="sr-only" for="source">Canonical recipe JSON source</label><textarea id="source" spellcheck="false" aria-describedby="source-help"></textarea><p id="source-help" class="muted">Graph and JSON share this draft. Saving calls the same revision-checked operation as MCP. Ctrl/Cmd+S saves the recipe.</p><span id="parse-error" role="alert"></span></div>
   </div>
 </section>
 <section id="Research" class="page" hidden><h2>Research, evidence and decisions</h2><p>Keep sources, propositions and measurable hypotheses separate. Preserve negative and inconclusive results.</p><div id="research-actions" class="toolbar"></div><div id="research-records" class="cards"></div></section>
@@ -41,6 +42,7 @@ app.innerHTML=`
 <section id="result-panel" hidden><div class="toolbar"><h2 id="result-title">Service result</h2><button id="close-result">Close result</button></div><pre id="result"></pre></section>
 </main></div>
 <footer>Shared operation service · Native MCP parity · No assistant required</footer>`;
+bindRecipeSourcePane($('recipe-editor'), $('recipe-source-pane'), $<HTMLButtonElement>('toggle-source'));
 let catalog:OperationSpec[]=[];
 let snapshot:RecordValue={};
 let recipe:Recipe|undefined;

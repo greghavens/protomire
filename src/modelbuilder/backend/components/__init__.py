@@ -174,6 +174,13 @@ def read_export(root: Path) -> dict:
     if manifest_path.stat().st_size > 4 * 1024 * 1024 or manifest_path.is_symlink():
         raise ValueError("Export manifest is oversized or symlinked")
     manifest = _read_descriptor(manifest_path)
+    validate_export_manifest(manifest)
+    verify_assets(root, manifest.get("assets", []))
+    return manifest
+
+
+def validate_export_manifest(manifest: dict) -> dict:
+    """Check the manifest contract without resolving or executing any asset."""
     if manifest.get("schema_version") != "modelbuilder.export/v1":
         raise ValueError("Unsupported model export descriptor")
     for field in ("selected_checkpoint", "loader", "signature", "dependencies", "source", "verification"):
@@ -188,7 +195,6 @@ def read_export(root: Path) -> dict:
         valid_tolerance = False
     if not valid_tolerance:
         raise ValueError("Export parity tolerance must be finite and nonnegative")
-    verify_assets(root, manifest.get("assets", []))
     loader = manifest["loader"]
     if not isinstance(loader, dict) or loader.get("path") not in {asset["path"] for asset in manifest["assets"]}:
         raise ValueError("Export loader must be a declared, hash-verified asset")

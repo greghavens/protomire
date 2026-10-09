@@ -7,7 +7,7 @@ export function serviceUrl(raw: string): string {
 }
 export function escapeHtml(value: string): string { return value.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!)); }
 export const UI_OPERATIONS = new Set([
-  'dataset.register', 'dataset.version', 'dataset.get', 'dataset.list', 'dataset.validate', 'dataset.preview',
+  'dataset.register', 'dataset.version', 'dataset.bind', 'dataset.get', 'dataset.list', 'dataset.validate', 'dataset.preview',
   'research.watch.create', 'research.watch.get', 'research.watch.list', 'research.watch.update', 'research.watch.refresh', 'research.watch.refresh_due',
   'research.finding.list', 'research.finding.review', 'research.text.import', 'research.text.get',
   'research.proposal.create', 'research.proposal.list', 'research.proposal.get', 'research.proposal.review', 'research.proposal.apply',
@@ -22,5 +22,9 @@ export function checkMessage(raw: unknown): Record<string, any> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Invalid workbench message.');
   const message = raw as Record<string, any>;
   if (typeof message.type !== 'string' || JSON.stringify(message).length > 2_000_000) throw new Error('Invalid or oversized workbench message.');
+  if(message.type==='pinRecipeSource'){
+    const allowed=new Set(['type','projectId','recipeId','expectedRevision','expectedProjectRevision','sourceRepositoryId']);
+    if(Object.keys(message).some(key=>!allowed.has(key))||typeof message.projectId!=='string'||!message.projectId||typeof message.recipeId!=='string'||!message.recipeId||!Number.isSafeInteger(message.expectedRevision)||message.expectedRevision<1||!Number.isSafeInteger(message.expectedProjectRevision)||message.expectedProjectRevision<1||typeof message.sourceRepositoryId!=='string'||!/^sha256:[0-9a-f]{64}$/.test(message.sourceRepositoryId))throw new Error('Invalid source pin request. Reopen the current model project.');
+  }
   return message;
 }

@@ -1,5 +1,42 @@
 {
   "$defs": {
+    "SourceBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "alias": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$",
+          "title": "Alias",
+          "type": "string"
+        },
+        "bound_at": {
+          "title": "Bound At",
+          "type": "string"
+        },
+        "bound_by": {
+          "title": "Bound By",
+          "type": "string"
+        },
+        "repository_id": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Repository Id",
+          "type": "string"
+        },
+        "trust_acknowledged": {
+          "const": true,
+          "title": "Trust Acknowledged",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "alias",
+        "repository_id",
+        "bound_at",
+        "bound_by",
+        "trust_acknowledged"
+      ],
+      "title": "SourceBinding",
+      "type": "object"
+    },
     "TrackingConfig": {
       "additionalProperties": false,
       "properties": {
@@ -172,6 +209,17 @@
       "pattern": "^[a-z0-9][a-z0-9-]{0,79}$",
       "title": "Slug",
       "type": "string"
+    },
+    "source_binding": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SourceBinding"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "status": {
       "default": "active",

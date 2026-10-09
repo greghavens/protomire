@@ -6,6 +6,9 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 import zipfile
 
 import pytest
@@ -180,3 +183,48 @@ def test_replay_evidence_rejects_contamination_or_drift(defect):
     elif defect == "store":
         identity["store"]["metadata_url"] = origin["backend_identity"]["store"]["metadata_url"]
     assert replay.compare_results(origin, repeated)["status"] == "FAIL"
+
+
+def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_source_checkout(tmp_path):
+    source = tmp_path / "snapshot"
+    source.mkdir()
+    shutil.copytree(ROOT / "src/modelbuilder", source / "src/modelbuilder", ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copy2(ROOT / "pyproject.toml", source / "pyproject.toml")
+    recipe = default_recipe("fixture-project", "fixture-recipe", "Runtime wheel closure")
+    # This is an inert verified transport snapshot, not evidence of Git ancestry.
+    recipe["source"]["commit"] = "a" * 40
+    recipe["source"]["files"] = [{"path": str(path.relative_to(source)),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        for path in sorted(source.rglob("*.py"))] + [{"path": "pyproject.toml",
+        "sha256": hashlib.sha256((source / "pyproject.toml").read_bytes()).hexdigest()}]
+    recipe["environment"]["requirements"] = ["zenml[server]==0.97.0"]
+    (source / "recipe.json").write_text(json.dumps(recipe))
+    wheel = replay.build_wheel(source, tmp_path / "wheels", "backend")
+    installed = tmp_path / "installed"
+    with zipfile.ZipFile(wheel["wheel"]) as archive:
+        for path in ["platform_file_access.py", "source_workspace.py", "recipe_registry_contract.py",
+                     "remote/__init__.py", "remote/contracts.py", "remote/operation_contract.py",
+                     "source_pinning_contract.py", "export_packages.py", "backend/native_exports.py"]:
+            assert "modelbuilder/" + path in archive.namelist()
+        assert "modelbuilder/service.py" not in archive.namelist()
+        archive.extractall(installed)
+    probe = """
+import importlib, importlib.util, pathlib, sys
+root = pathlib.Path(sys.argv[1]).resolve()
+sys.path.insert(0, str(root))
+for name in ('modelbuilder.dataset', 'modelbuilder.models', 'modelbuilder.source_workspace',
+             'modelbuilder.backend.admission', 'modelbuilder.backend.operator_config',
+             'modelbuilder.export_packages', 'modelbuilder.backend.native_exports',
+             'modelbuilder.remote.operation_contract', 'modelbuilder.remote.provider'):
+    module = importlib.import_module(name)
+    assert pathlib.Path(module.__file__).resolve().is_relative_to(root), name
+assert importlib.util.find_spec('modelbuilder.service') is None
+from modelbuilder.remote.provider import diagnostics
+assert diagnostics()['remote_execution_enabled'] is False
+print('Isolated runtime wheel import closure passed')
+"""
+    # Import closure is service-safe and must not require the optional native runtime.
+    result = subprocess.run([sys.executable, "-I", "-c", probe, str(installed)], cwd=tmp_path,
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Isolated runtime wheel import closure passed" in result.stdout

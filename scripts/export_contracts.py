@@ -37,7 +37,7 @@ def generated_files():
     ]
     for operation in catalog:
         documentation.append(f"| `{operation['name'].replace('.', '_')}` | `{operation['name']}` | `{', '.join(operation['required_scopes'])}` | {operation['description']} |")
-    documentation += ["", "Remote execution/spending, publication, discovery, and public recipe forking remain unavailable.",
+    documentation += ["", "Private recipe publication/discovery and reviewed imports use the local SQLite registry. Public/external registry publication and remote execution/spending remain unavailable.",
                       "A configured ZenML backend is required for execution and model records. The service never returns fabricated native runs.",
                       "Resume advances the same canonical recipe identity to a new immutable revision and digest; parent runs retain their historical revision.", ""]
     request_schema = {

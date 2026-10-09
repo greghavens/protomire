@@ -12,18 +12,21 @@ def load_operator_config(path: str | Path | None = None) -> dict:
         return {}
     source = Path(path).expanduser().resolve()
     value = json.loads(source.read_text())
-    allowed = {"source_root", "python_executable", "pretrained_path", "trusted_code_roots", "dependency_paths", "dataset_roots"}
+    allowed = {"source_root", "python_executable", "pretrained_path", "trusted_code_roots", "dependency_paths", "dataset_roots", "source_roots"}
     if not isinstance(value, dict) or set(value) - allowed:
         raise ValueError("Operator configuration must be an object with supported backend settings only")
-    def local_path(item):
+    def local_path(item, *, preserve_symlink=False):
         if not isinstance(item, str) or not item.strip():
             raise ValueError("Operator paths must be nonempty strings")
         candidate = Path(item).expanduser()
-        return str((source.parent / candidate).resolve() if not candidate.is_absolute() else candidate.resolve())
+        candidate = source.parent / candidate if not candidate.is_absolute() else candidate
+        # A venv interpreter is normally a symlink. Resolving it selects the base
+        # interpreter and silently discards the explicitly chosen environment.
+        return os.path.abspath(candidate) if preserve_symlink else str(candidate.resolve())
     result = {}
     for key in ("source_root", "python_executable", "pretrained_path"):
         if key in value:
-            result[key] = local_path(value[key])
+            result[key] = local_path(value[key], preserve_symlink=key == "python_executable")
     roots = value.get("trusted_code_roots", [])
     if not isinstance(roots, list):
         raise ValueError("trusted_code_roots must be an array")
@@ -44,4 +47,19 @@ def load_operator_config(path: str | Path | None = None) -> dict:
         resolved_roots[project] = {alias: local_path(item) for alias, item in aliases.items()}
     if resolved_roots:
         result["dataset_roots"] = resolved_roots
+    if "source_roots" in value:
+        aliases = value["source_roots"]
+        if not isinstance(aliases, dict):
+            raise ValueError("source_roots must map approved aliases to operator settings")
+        result["source_roots"] = {}
+        for alias, settings in aliases.items():
+            if not isinstance(settings, dict) or "path" not in settings:
+                raise ValueError("Source aliases must have an operator-owned path")
+            dependencies = settings.get("dependency_paths", {})
+            if not isinstance(dependencies, dict):
+                raise ValueError("Source dependency_paths must be an object")
+            result["source_roots"][alias] = {**settings, "path": local_path(settings["path"]),
+                "dependency_paths": {key: local_path(item) for key, item in dependencies.items()}}
+        from ..source_workspace import SourceWorkspaces
+        SourceWorkspaces(result["source_roots"])
     return result

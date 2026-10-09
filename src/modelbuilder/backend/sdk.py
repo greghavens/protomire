@@ -325,6 +325,9 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
         client = Client()
         active_stack = client.active_stack
         return {"python": platform.python_version(), "packages": resolved, "verified": True, "stack_id": str(active_stack.id)}
+    if operation.startswith("model.export."):
+        from .native_exports import invoke as export_operation
+        return export_operation(operation, payload, root)
     if operation == "run.status":
         return status(Path(payload["job_dir"]))
     if operation == "run.artifacts":
@@ -394,6 +397,8 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
                                      payload.get("comparison_contract", rule.get("comparison_contract")))
         if not comparison["compatible"]:
             raise BackendError("incompatible_evaluation", "Promotion requires scientifically comparable evaluation evidence", comparison)
+        if rule.get("comparison_digest") and rule["comparison_digest"] != comparison["comparison_digest"]:
+            raise BackendError("comparison_changed", "Decision evaluation evidence changed; record a fresh decision")
         if comparison["selected_model_version_ref"] != str(version.id):
             raise BackendError("validation_error", "Requested model version does not win the declared measured validation criterion")
         selected = client.get_pipeline_run(comparison["selected_run_id"], project=project.id)

@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import secrets
 import socket
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -335,6 +336,7 @@ async def acceptance(service: ServiceProcess, evidence: dict):
                 await reader.initialize()
                 assert await call(reader, "recipe_get", identity) == imported
                 denied_operations = []
+                project_denied_operations = []
                 for entry in catalog["operations"]:
                     if entry["scope"] == "read":
                         continue
@@ -345,8 +347,10 @@ async def acceptance(service: ServiceProcess, evidence: dict):
                         payload["project_id"] = project_id
                     await call(reader, entry["name"].replace(".", "_"), payload, error_status=403)
                     denied_operations.append(entry["name"])
-                guessed = await reader.call_tool("recipe_publish", {**identity})
-                record("mcp-stdio", {"method": "tools/call", "params": {"name": "recipe_publish", "arguments": identity}},
+                    if payload.get("project_id") == project_id:
+                        project_denied_operations.append(entry["name"])
+                guessed = await reader.call_tool("recipe_publish_public", {**identity})
+                record("mcp-stdio", {"method": "tools/call", "params": {"name": "recipe_publish_public", "arguments": identity}},
                        guessed.model_dump(mode="json", by_alias=True))
                 assert guessed.isError and guessed.structuredContent["error"]["code"] == "unknown_tool"
                 assert await call(reader, "recipe_get", identity) == imported
@@ -369,8 +373,14 @@ async def acceptance(service: ServiceProcess, evidence: dict):
             history = await call(session, "project_history", {"project_id": project_id})
             denied_audits = {event["operation"] for event in history["events"]
                             if event["outcome"] == "denied" and event["actor_id"] == "mcp-acceptance-reader"}
-            # project.create has no project identity yet and is audited globally.
-            assert set(denied_operations) - {"project.create"} <= denied_audits
+            # Only requests with a top-level project identity appear in its
+            # HTTP history; create and registry fork denials are global audits.
+            assert set(project_denied_operations) <= denied_audits
+            with sqlite3.connect(f"file:{service.root / 'service.sqlite3'}?mode=ro", uri=True) as audit_db:
+                persisted_denials = {row[0] for row in audit_db.execute(
+                    "SELECT operation FROM audit WHERE actor_id=? AND outcome='denied'",
+                    ("mcp-acceptance-reader",))}
+            assert set(denied_operations) <= persisted_denials
             evidence["summary"] = {
                 "status": "PASS", "tool_count": len(discovered),
                 "project_id": project_id, "recipe_id": recipe_id, "clone_recipe_id": clone["recipe_id"],

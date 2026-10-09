@@ -70,6 +70,7 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
         from .backend.operator_config import load_operator_config
         operator_config = load_operator_config()
         dataset_roots = operator_config.pop("dataset_roots", {})
+        source_roots = operator_config.pop("source_roots", None)
         backend = None
         if os.environ.get("MODELBUILDER_BACKEND", "zenml") == "zenml":
             try:
@@ -78,7 +79,7 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
                 pass
             else:
                 backend = ZenMLBackend(data_dir=Path(db_path).parent, **operator_config)
-        service = OperationService(db_path=db_path, backend=backend, dataset_roots=dataset_roots,
+        service = OperationService(db_path=db_path, backend=backend, dataset_roots=dataset_roots, source_roots=source_roots,
                                    source_root=str(backend.repository) if backend else os.environ.get("MODELBUILDER_SOURCE_ROOT"))
     auth = tokens if isinstance(tokens, TokenAuth) else (TokenAuth(tokens) if tokens is not None else TokenAuth.from_environment())
     app = FastAPI(title="ModelBuilder shared operation service", version="0.1.0",
@@ -107,7 +108,7 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
 
     @app.get("/v1/catalog")
     def catalog(actor: Actor = Depends(identity)):
-        return {"schema_version": "0", "operations": service.catalog(actor)}
+        return {"schema_version": "0", "operations": service.catalog(actor), "granted_scopes": sorted(actor.scopes)}
 
     @app.post("/v1/operations/{operation}")
     def invoke(operation: str, payload: dict = Body(...), actor: Actor = Depends(identity)):

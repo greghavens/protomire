@@ -17,7 +17,17 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `component_get` | `component.get` | `read` | Read a declared component by identity and optional node identity. |
 | `component_list` | `component.list` | `read` | Inspect inert component declarations in this project's recipe; never load user code. |
 | `component_validate` | `component.validate` | `read` | Validate an inert component node declaration and parameters without execution. |
+| `cost_cancel` | `cost.cancel` | `execute` | Request cancellation; a stop request never means resources or billing have stopped. |
 | `cost_estimate` | `cost.estimate` | `read` | Inspect local cost limits; remote estimates unavailable without a provider. |
+| `cost_history` | `cost.history` | `read` | Read append-only project cost events with stable pagination. |
+| `cost_ledger_get` | `cost.ledger.get` | `read` | Read durable reservation, execution, cleanup and billing states for a project. |
+| `cost_policy_get` | `cost.policy.get` | `read` | Read exact-money cost policies and ledger balances visible to this actor. |
+| `cost_policy_put` | `cost.policy.put` | `modify, spend` | Set a versioned total budget; requires spend scope and does not enable remote execution. |
+| `cost_providers` | `cost.providers` | `read` | Inspect configured cost providers and honest fail-closed capability diagnostics. |
+| `cost_quote_create` | `cost.quote.create` | `read` | Request a provider quote; unavailable until a real provider is configured and verified. |
+| `cost_quote_get` | `cost.quote.get` | `read` | Read an immutable quote with rate provenance, timestamp and explicit evidence type. |
+| `cost_reserve` | `cost.reserve` | `execute, spend, read` | Explicit spend admission contract; production reservations and dispatch remain disabled. |
+| `dataset_bind` | `dataset.bind` | `modify` | Bind a verified dataset revision and split to this project's one recipe; optionally replace an explicit target input connection. Creates a recipe revision without execution. |
 | `dataset_get` | `dataset.get` | `read` | Read a project dataset at its current or historical immutable revision. |
 | `dataset_list` | `dataset.list` | `read` | List datasets registered to this model project. |
 | `dataset_preview` | `dataset.preview` | `read` | Preview a bounded page from a verified immutable dataset split. |
@@ -36,6 +46,10 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `hypothesis_list` | `hypothesis.list` | `read` | List hypotheses including negative and abandoned outcomes. |
 | `hypothesis_update` | `hypothesis.update` | `modify` | Revise a hypothesis without losing previous outcomes. |
 | `model_checkpoint_get` | `model.checkpoint.get` | `read` | Read a checkpoint and its verified resume capabilities. |
+| `model_export_inspect` | `model.export.inspect` | `read` | Inspect a declared native export, checkpoint identity and provenance without running it. |
+| `model_export_list` | `model.export.list` | `read` | List verified existing native exports for one run or model version; never execute code. |
+| `model_export_package` | `model.export.package` | `read` | Snapshot only hash-verified declared export assets as a local ZIP; no training or publication. |
+| `model_export_read` | `model.export.read` | `read` | Retrieve one authenticated, hash-verified package chunk, at most 4 MiB before base64 encoding. |
 | `model_version_get` | `model.version.get` | `read` | Read an authoritative model version. |
 | `model_version_lineage` | `model.version.lineage` | `read` | Read actual model-version parents and artifacts. |
 | `model_version_list` | `model.version.list` | `read` | List authoritative ZenML model versions. |
@@ -48,16 +62,29 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `project_history` | `project.history` | `read` | Read append-only project audit history. |
 | `project_list` | `project.list` | `read` | List authorized model projects. |
 | `project_open` | `project.open` | `read` | Open a project and its lifecycle resources. |
+| `project_source_bind` | `project.source.bind` | `modify` | Bind an approved source alias with explicit trust and optimistic concurrency. |
+| `project_source_list` | `project.source.list` | `read` | List operator-approved source workspace aliases without importing code. |
+| `project_source_status` | `project.source.status` | `read` | Inspect this project's bound checkout, trust and pinned source identity. |
 | `project_update` | `project.update` | `modify` | Update project with optimistic concurrency. |
 | `recipe_clone` | `recipe.clone` | `modify` | Compatibility historical restore: copy a prior revision into the same stable recipe identity. |
 | `recipe_create` | `recipe.create` | `modify` | Author the project recipe at the expected revision; never create a second recipe identity. |
 | `recipe_diff` | `recipe.diff` | `read` | Compare revisions or a draft against the current recipe. |
+| `recipe_discover` | `recipe.discover` | `read` | Browse authorized immutable private recipe metadata, outside the current workspace. |
 | `recipe_export` | `recipe.export` | `read` | Export a portable bundle without execution; format=json returns lossless bundle_json for browser round trips. |
+| `recipe_fork` | `recipe.fork` | `modify, read` | Import the exact reviewed private publication into one recipe/new project; trust and execution are separate. |
+| `recipe_fork_preview` | `recipe.fork.preview` | `read` | Review an inert import into one existing stable recipe revision or a new project before opening its workspace. |
 | `recipe_get` | `recipe.get` | `read` | Read a recipe at its current or historical revision. |
 | `recipe_history` | `recipe.history` | `read` | Read immutable recipe revisions and retained legacy provenance, not selectable current recipes. |
 | `recipe_import` | `recipe.import` | `modify` | Open a verified bundle as the next untrusted revision of this model's single recipe. |
 | `recipe_list` | `recipe.list` | `read` | Compatibility list containing exactly the project current recipe. |
+| `recipe_publish` | `recipe.publish` | `publish, read` | Explicitly publish the reviewed recipe-only version to this service's private SQLite registry; no public upload. |
+| `recipe_publish_preview` | `recipe.publish.preview` | `read` | Review exact private destination, audience, immutable version, rights, bytes and unresolved dependencies. |
+| `recipe_registry_get` | `recipe.registry.get` | `read` | Inspect a verified publication, dependencies and exact inert bundle JSON; never install or execute. |
+| `recipe_registry_imported_bundle` | `recipe.registry.imported_bundle` | `read` | Read the original verified source bundle retained by a specific imported recipe revision; no source files are written. |
+| `recipe_registry_list` | `recipe.registry.list` | `read` | List actual configured recipe-only registry capabilities; public publication is unavailable. |
 | `recipe_resolve_dependencies` | `recipe.resolve_dependencies` | `read` | Inspect immutable dependency references and readiness. |
+| `recipe_source_pin` | `recipe.source.pin` | `modify, read` | Apply a reviewed source closure as the next immutable revision of this model's one recipe; never commit, install or execute source. |
+| `recipe_source_pin_preview` | `recipe.source.pin.preview` | `read` | Review explicit committed source files from the model's approved checkout without changing its recipe or executing code. |
 | `recipe_update` | `recipe.update` | `modify` | Atomically replace the same recipe using its expected revision. |
 | `recipe_validate` | `recipe.validate` | `read` | Validate a recipe without executing any code. |
 | `research_finding_list` | `research.finding.list` | `read` | Read watch findings with immutable citation and change provenance. |
@@ -87,6 +114,6 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `run_status` | `run.status` | `read` | Reconcile status with the authoritative backend. |
 | `run_submit` | `run.submit` | `execute` | Submit an explicitly permitted source-bound local pipeline to the real backend. |
 
-Remote execution/spending, publication, discovery, and public recipe forking remain unavailable.
+Private recipe publication/discovery and reviewed imports use the local SQLite registry. Public/external registry publication and remote execution/spending remain unavailable.
 A configured ZenML backend is required for execution and model records. The service never returns fabricated native runs.
 Resume advances the same canonical recipe identity to a new immutable revision and digest; parent runs retain their historical revision.

@@ -10,7 +10,7 @@ export class OperationClient implements ServiceTransport {
     const token = await this.getToken(base);
     if (!token) throw new OperationError(401, 'not_configured', 'Configure the ModelBuilder service token first.');
     let response: Response;
-    try { response = await this.request(`${base}${path}`, {method:payload ? 'POST' : 'GET', redirect:'error', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}, body:payload ? JSON.stringify(payload) : undefined, signal:AbortSignal.timeout(30_000)}); }
+    try { response = await this.request(`${base}${path}`, {method:payload ? 'POST' : 'GET', redirect:'error', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}, body:payload ? JSON.stringify(payload) : undefined, signal:AbortSignal.timeout(path.endsWith('/model.export.package')?120_000:30_000)}); }
     catch { throw new OperationError(0, 'connection_failed', 'Cannot reach the operation service. Check its URL and that the service is running.'); }
     let body: any;
     try { body = await response.json(); } catch { throw new OperationError(response.status, 'invalid_response', 'Operation service returned a non-JSON response.'); }
@@ -21,5 +21,5 @@ export class OperationClient implements ServiceTransport {
     if (!/^[a-z][a-z0-9_.]+$/.test(operation)) throw new Error('Invalid operation name.');
     return this.send(`/v1/operations/${operation}`, payload);
   }
-  async catalog(): Promise<OperationSpec[]> { return (await this.send('/v1/catalog')).operations; }
+  async catalog(): Promise<OperationSpec[]> { const result=await this.send('/v1/catalog');return Array.isArray(result.granted_scopes)?result.operations.map((item:RecordValue)=>({...item,authorized:(item.required_scopes??[item.scope]).every((scope:string)=>result.granted_scopes.includes(scope))})):result.operations; }
 }

@@ -22,6 +22,7 @@ from jsonschema import Draft202012Validator
 
 from .evaluation import digest
 from .models import ServiceError, new_id, utcnow
+from .platform_file_access import WindowsRoot, read_windows_source, snapshot_windows_root
 
 SCHEMA = "modelbuilder.dataset/v1"
 CONSUMPTION_SCHEMA = "modelbuilder.dataset-consumption/v1"
@@ -152,12 +153,23 @@ class DatasetRegistry:
                 info = path.stat()
                 if not stat.S_ISDIR(info.st_mode):
                     raise ValueError("Configured dataset root is not a directory")
-                self._roots[project_id][alias] = (path, info.st_dev, info.st_ino)
+                self._roots[project_id][alias] = (snapshot_windows_root(path) if os.name == "nt"
+                                                  else (path, info.st_dev, info.st_ino))
 
     def _read_source(self, project_id, source):
         root = self._roots.get(project_id, {}).get(source["root_id"])
         if root is None:
             _fail("dataset_root_unavailable", "Dataset root alias is not configured for this project")
+        if isinstance(root, WindowsRoot):
+            try:
+                data = read_windows_source(root, source["path"], self.max_file_bytes)
+            except OSError as exc:
+                raise ServiceError("dataset_source_unavailable", "Dataset source is missing, unsafe, or unreadable",
+                                   {"source_id": source["id"]}) from exc
+            if hashlib.sha256(data).hexdigest() != source["sha256"]:
+                _fail("dataset_checksum_mismatch", "Dataset source checksum differs from the immutable manifest",
+                      source_id=source["id"])
+            return data
         if os.open not in os.supports_dir_fd or not hasattr(os, "O_NOFOLLOW"):
             _fail("capability_unavailable", "Secure descriptor-relative dataset reads are unavailable on this platform")
         handles = []
@@ -391,6 +403,21 @@ class DatasetRegistry:
                                   "source_id": source["id"], "required": True}
                                  for source in record["manifest"]["sources"]]}
 
+    def execution_sources(self, project_id, dataset_id, revision):
+        """Server-only approved locations and startup root identities, never public metadata."""
+        record = self.get(project_id, dataset_id, revision)
+        paths, guards = {}, {}
+        for source in record["manifest"]["sources"]:
+            # Independently reread via the captured approved root, not a resolved client path.
+            self._read_source(project_id, source)
+            root = self._roots[project_id][source["root_id"]]
+            if isinstance(root, WindowsRoot):
+                _fail("capability_unavailable", "Native Windows dataset execution requires a supported backend host")
+            key = "dataset-" + source["sha256"]
+            paths[key] = str(root[0] / source["path"])
+            guards[key] = {"root": str(root[0]), "device": root[1], "inode": root[2], "path": source["path"]}
+        return paths, guards
+
     def preview(self, project_id, dataset_id, revision, split_id, *, purpose, offset=0, limit=20):
         """Bound displayed rows/IDs; a preview is never evidence of model consumption."""
         if (isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100
@@ -439,7 +466,7 @@ def _split_data(record, materialized, split_id, purpose):
             "consumption": lineage}
 
 
-def load_portable_split(reference, dependency_paths, split_id, *, purpose, expected_project_id=None):
+def load_portable_split(reference, dependency_paths, split_id, *, purpose, expected_project_id=None, source_guards=None):
     """Read a portable registered version inside a worker without a service DB.
 
     The caller obtains dependency_paths from operator admission, never from
@@ -465,7 +492,7 @@ def load_portable_split(reference, dependency_paths, split_id, *, purpose, expec
                 for source in manifest["sources"]]
     if reference["dependencies"] != expected or not isinstance(dependency_paths, dict):
         _fail("dataset_reference_invalid", "Portable dataset dependency closure differs from its manifest")
-    roots, sources = {}, {}
+    roots, sources, captured = {}, {}, {}
     for source in manifest["sources"]:
         key = "dataset-" + source["sha256"]
         value = dependency_paths.get(key)
@@ -474,13 +501,22 @@ def load_portable_split(reference, dependency_paths, split_id, *, purpose, expec
         path = Path(value).absolute()
         roots[key] = path.parent
         sources[source["id"]] = {**source, "root_id": key, "path": path.name}
+        if source_guards is not None:
+            guard = source_guards.get(key)
+            if (not isinstance(guard, dict) or set(guard) != {"root", "device", "inode", "path"}
+                    or str(Path(guard["root"]) / guard["path"]) != str(path)):
+                _fail("dataset_reference_invalid", "Dataset runtime root identity is missing or inconsistent")
+            captured[key] = (Path(guard["root"]), guard["device"], guard["inode"])
+            sources[source["id"]] = {**source, "root_id": key, "path": guard["path"]}
 
     class PortableReader(DatasetRegistry):
         def _read_source(self, project_id, source):
             return super()._read_source(project_id, sources[source["id"]])
 
     try:
-        reader = PortableReader(None, project_roots={project_id: roots})
+        reader = PortableReader(None, project_roots={} if source_guards is not None else {project_id: roots})
+        if source_guards is not None:
+            reader._roots = {project_id: captured}
     except (OSError, ValueError) as exc:
         raise ServiceError("dataset_dependency_unavailable", "A dataset dependency directory is unavailable") from exc
     materialized = reader._materialize(project_id, manifest)

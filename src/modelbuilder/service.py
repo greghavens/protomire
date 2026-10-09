@@ -24,13 +24,21 @@ from .tracking import resolve_tracking, disclosure
 class OperationService:
     def __init__(self, store: SQLiteStore | str | Path | None = None, backend=None, *,
                  db_path: str | Path | None = None, source_root: str | Path | None = None,
-                 dataset_roots: dict | None = None):
+                 dataset_roots: dict | None = None, source_roots: dict | None = None):
         self.store = store if isinstance(store, SQLiteStore) else SQLiteStore(db_path or store or "modelbuilder.sqlite3")
         self.backend = backend
+        self._remote_cost_operations = None
         self.dataset_roots = copy.deepcopy(dataset_roots or {})
         from .dataset import DatasetRegistry
         self._dataset_registry = DatasetRegistry(self.store, project_roots=self.dataset_roots)
         self.source_root = Path(source_root).resolve() if source_root else None
+        from .source_workspace import SourceWorkspaces
+        self.require_source_binding = source_roots is not None
+        if source_roots is None and getattr(backend, "repository", None):
+            root = backend.repository
+            source_roots = {"default": {"path": str(root), "trusted": any(root.is_relative_to(Path(p)) for p in backend.trusted_code_roots),
+                                        "dependency_paths": backend.dependency_paths}}
+        self.source_workspaces = SourceWorkspaces(source_roots)
         self._migrate_single_recipe()
 
     def _migrate_single_recipe(self):
@@ -126,12 +134,27 @@ class OperationService:
             self._reject_secrets(payload)
             hashed_payload = {key: value for key, value in payload.items() if key != "request_id"}
             payload_hash = hashlib.sha256(json.dumps(hashed_payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+            if operation.startswith("cost.") and operation != "cost.estimate":
+                from .remote.operations import authorize_cost_operation
+                authorize_cost_operation(operation, payload, actor)
+            if operation == "policy.update":
+                from .recipe_registry import authorize_publication_policy_change
+                authorize_publication_policy_change(payload, actor)
             with self.store.transaction():
                 if project_id:
                     self._get("project", project_id, project_id)
                 if spec.mutating:
                     previous = self.store.idempotent_result(actor.id, payload["idempotency_key"], operation, payload_hash)
                     if previous is not None:
+                        if operation in {"project.create", "project.source.bind"} and "source_alias" in payload:
+                            # Revoked source grants cannot be restored by an old receipt.
+                            # Do not inspect, rebind, or rewrite its historical checkout identity.
+                            self.source_workspaces.settings(payload["source_alias"], previous["project_id"])
+                        if operation == "recipe.source.pin":
+                            self.source_workspaces.settings(previous["source_binding"]["alias"], previous["project_id"])
+                        if operation == "recipe.fork":
+                            from .recipe_registry import RecipeRegistry
+                            RecipeRegistry(self).authorize_cached_result(operation, payload, actor, previous)
                         self._check_idempotent_recipe_identity(operation, previous)
                         return previous
                 result = self._dispatch(operation, payload, actor)
@@ -139,9 +162,14 @@ class OperationService:
                     self.store.save_idempotent(actor.id, payload["idempotency_key"], operation, payload_hash, result)
                     result_project = project_id or result.get("project_id")
                     target_id = next((result[k] for k in ("operation_id", "recipe_id", "evidence_id", "claim_id", "hypothesis_id", "decision_id", "dataset_id", "watch_id", "finding_id", "proposal_id", "text_id", "project_id") if k in result), None)
+                    before_revision = payload.get("expected_revision")
+                    if operation == "recipe.publish":
+                        target_id, before_revision = result["publication_id"], None
+                    elif operation == "recipe.fork":
+                        before_revision = payload["target"].get("expected_revision")
                     self.store.audit(actor_id=actor.id, operation=operation, request_id=request_id,
                                      outcome="succeeded", project_id=result_project, target_id=target_id,
-                                     before_revision=payload.get("expected_revision"), after_revision=result.get("revision"))
+                                     before_revision=before_revision, after_revision=result.get("revision"))
                 return result
         except (ServiceError, ValidationError, ValueError) as exc:
             if isinstance(exc, ServiceError):
@@ -159,7 +187,7 @@ class OperationService:
 
     def _check_idempotent_recipe_identity(self, operation, previous):
         """A pre-migration cache cannot revive a retired editable identity."""
-        if operation not in {"project.create", "recipe.create", "recipe.update", "recipe.clone", "recipe.import"}:
+        if operation not in {"project.create", "recipe.create", "recipe.update", "recipe.clone", "recipe.import", "recipe.source.pin", "dataset.bind"}:
             return
         project_id = previous.get("project_id")
         binding = self.store.recipe_binding(project_id) if project_id else None
@@ -217,6 +245,20 @@ class OperationService:
             json.dumps(after, indent=2, sort_keys=True).splitlines(), fromfile="client", tofile="server", lineterm=""))
 
     def _dispatch(self, op, p, actor):
+        if op in {"recipe.source.pin.preview", "recipe.source.pin"}:
+            from .source_pinning import dispatch
+            return dispatch(self, op, p)
+        if op.startswith("cost.") and op != "cost.estimate":
+            from .remote.ledger import CostLedger
+            from .remote.operations import CostOperations
+            if self._remote_cost_operations is None:
+                ledger_path = ":memory:" if self.store.path == ":memory:" else self.store.path + ".cost.sqlite3"
+                self._remote_cost_operations = CostOperations(CostLedger(ledger_path))
+            return self._remote_cost_operations.invoke(op, p, actor)
+        from .recipe_registry_contract import REGISTRY_OPERATIONS
+        if op in REGISTRY_OPERATIONS:
+            from .recipe_registry import RecipeRegistry
+            return RecipeRegistry(self).dispatch(op, p, actor)
         if op.startswith("research."):
             from .research import ResearchWorkflow
             return ResearchWorkflow(self).dispatch(op, p, actor)
@@ -243,6 +285,9 @@ class OperationService:
     def _dataset(self, op, p):
         registry = self._dataset_registry
         project_id = p["project_id"]
+        if op == "dataset.bind":
+            from .dataset_binding import bind
+            return bind(self, p)
         if op == "dataset.register":
             return registry.register(project_id, p["manifest"])
         if op == "dataset.version":
@@ -284,6 +329,11 @@ class OperationService:
         return matches[0]
 
     def _project(self, action, p, actor):
+        if action == "source.list":
+            if not p.get("project_id") and actor.project_ids is not None:
+                raise ServiceError("forbidden", "Project-scoped actors must specify their project", status_code=403)
+            return {"sources": self.source_workspaces.list(p.get("project_id")),
+                    "binding_required": self.require_source_binding, "arbitrary_paths_allowed": False}
         if action == "create":
             project_id, now = new_id(), utcnow()
             body = {key: value for key, value in p.items() if key in PROJECT_FIELDS}
@@ -295,6 +345,10 @@ class OperationService:
             body.pop("active_recipe_id", None)
             project = ModelProject(project_id=project_id, id=project_id, created_at=now, updated_at=now,
                                    recipe_id=recipe_id, active_recipe_id=recipe_id, revision=1, **body).model_dump()
+            if "source_alias" in p:
+                project["source_binding"] = self.source_workspaces.bind(p["source_alias"], project_id, actor.id, p.get("trusted"), p.get("source_repository_id"))
+            elif p.get("trusted") is not None or "source_repository_id" in p:
+                raise ServiceError("validation_error", "Source trust must accompany an approved source alias")
             self.store.reserve_slug(project["slug"], project_id)
             initial = p.get("recipe") or recipe_module.default_recipe(project_id, recipe_id, project["model_name"] + " recipe")
             self._save_recipe(initial, project_id, recipe_id, 1)
@@ -305,6 +359,13 @@ class OperationService:
             return {"projects": [p for p in projects if actor.project_ids is None or p["project_id"] in actor.project_ids]}
         project_id = p["project_id"]
         project = self._get("project", project_id, project_id)
+        if action == "source.status":
+            return self.source_workspaces.status(project, self._current_recipe(project_id))
+        if action == "source.bind":
+            self._revision(project, p["expected_revision"])
+            binding = self.source_workspaces.bind(p["source_alias"], project_id, actor.id, p["trusted"], p["source_repository_id"])
+            updated = {**project, "source_binding": binding, "revision": project["revision"] + 1, "updated_at": utcnow()}
+            return self.store.put("project", project_id, project_id, updated, project["revision"])
         if action == "get":
             return project
         if action == "history":
@@ -317,7 +378,8 @@ class OperationService:
                     "runs": self.store.list("operation", project_id),
                     "research_watches": self.store.list("research_watch", project_id),
                     "research_findings": self.store.list("research_finding", project_id),
-                    "research_proposals": self.store.list("research_proposal", project_id)}
+                    "research_proposals": self.store.list("research_proposal", project_id),
+                    "source": self.source_workspaces.status(project, current_recipe)}
         self._revision(project, p["expected_revision"])
         changes = p["changes"]
         self._allowed_changes(changes, PROJECT_FIELDS)
@@ -394,8 +456,7 @@ class OperationService:
             return {"recipe_id": recipe["recipe_id"], "current_revision": recipe["revision"],
                     "equal": before == after, "diff": self._diff(before, after)}
         if action == "export":
-            bundle = recipe_module.export_bundle({k: v for k, v in recipe.items() if k != "digest"}, source_root=self.source_root)
-            verify_export_git_provenance(bundle, self.source_root)
+            bundle = self._export_project_recipe(recipe)
             if p.get("format", "object") == "json":
                 text = recipe_module.canonical_json(bundle)
                 if len(text.encode("utf-8")) > MAX_BUNDLE_JSON_BYTES:
@@ -404,7 +465,7 @@ class OperationService:
                         "media_type": "application/json"}
             return bundle
         if action == "resolve_dependencies":
-            return recipe_module.resolve_dependencies(recipe, base_path=self.source_root)
+            return recipe_module.resolve_dependencies(recipe, base_path=self._project_source_root(project_id))
         self._revision(recipe, p["expected_revision"], p.get("recipe"))
         if action == "clone":
             incoming = self._get("recipe", recipe["recipe_id"], project_id, p.get("source_revision", recipe["revision"]))
@@ -486,6 +547,14 @@ class OperationService:
                     "recipe_digest": correlation["recipe_digest"]})
             if not any(item["recipe_id"] == body["recipe_id"] and item["recipe_revision"] == body["recipe_revision"] for item in provenance):
                 raise ServiceError("validation_error", "Decision recipe revision was not executed by any linked run")
+            if body["selection_rule"].get("comparison_digest"):
+                comparison = self._execution("run.compare", {"project_id": project_id, "run_ids": body["run_ids"],
+                    "metric": body["selection_rule"]["metric"], "direction": body["selection_rule"]["direction"],
+                    "comparison_contract": body["selection_rule"].get("comparison_contract", {})}, actor)
+                if body["outcome"] == "accepted" and not comparison.get("compatible"):
+                    raise ServiceError("incompatible_evaluation", "An accepted decision requires compatible evaluation evidence", comparison)
+                if comparison.get("comparison_digest") != body["selection_rule"]["comparison_digest"]:
+                    raise ServiceError("comparison_changed", "Comparison evidence changed; compare again before recording the decision", status_code=409)
             body.update(actor=actor.id, timestamp=now, run_provenance=provenance)
             body = Decision(**body).model_dump()
         else:
@@ -519,8 +588,8 @@ class OperationService:
         self._allowed_changes(p["changes"], {"allowed_targets", "max_local_runtime_seconds", "remote_execution_enabled",
                                             "publication_enabled", "untrusted_execution_enabled", "remote_spend_cap"})
         updated = {**policy, **p["changes"], "revision": policy["revision"] + 1}
-        if any(updated[key] is not False for key in ("remote_execution_enabled", "publication_enabled", "untrusted_execution_enabled")):
-            raise ServiceError("capability_unavailable", "Remote, publication, and untrusted execution are disabled in this slice", status_code=403)
+        if any(updated[key] is not False for key in ("remote_execution_enabled", "untrusted_execution_enabled")):
+            raise ServiceError("capability_unavailable", "Remote and untrusted execution are disabled; publication is limited to the local private registry", status_code=403)
         if updated["allowed_targets"] not in ([], ["local-cpu"]) or updated["remote_spend_cap"] != 0:
             raise ServiceError("remote_disabled", "Only the verified local CPU target is permitted", status_code=403)
         maximum = updated["max_local_runtime_seconds"]
@@ -545,11 +614,63 @@ class OperationService:
                     return record
         raise ServiceError("not_found", "No matching run in this project", status_code=404)
 
+    def _project_source_root(self, project_id):
+        project = self._get("project", project_id, project_id)
+        if not project.get("source_binding") and not self.require_source_binding:
+            return self.source_root
+        source, _ = self.source_workspaces.resolve(project.get("source_binding"), project_id)
+        return Path(source["workspace_path"])
+
+    def _export_project_recipe(self, recipe):
+        root = self._project_source_root(recipe["project_id"])
+        body = {key: value for key, value in recipe.items() if key != "digest"}
+        bundle = recipe_module.export_bundle(body, source_root=root)
+        verify_export_git_provenance(bundle, root)
+        return bundle
+
+    def _source_backend(self, operation, payload):
+        if operation not in {"execution.targets", "run.plan", "run.submit", "run.resume"}:
+            return self.backend
+        project = self._get("project", payload["project_id"], payload["project_id"])
+        binding = project.get("source_binding")
+        if operation == "run.resume" and payload.get("mode", payload.get("resume_mode")) == "exact_state":
+            parent = self._find_operation(payload["project_id"], payload.get("parent_operation_id"))
+            binding = parent.get("source_binding")
+            if binding is None and project.get("source_binding"):
+                raise ServiceError("source_binding_required", "Historical run has no approved source binding; exact resume cannot substitute the current checkout", status_code=409)
+        if binding is None and not self.require_source_binding:
+            return self.backend
+        source, settings = self.source_workspaces.resolve(binding, payload["project_id"], execute=True)
+        if not hasattr(self.backend, "with_source_workspace"):
+            raise ServiceError("capability_unavailable", "Execution backend does not support project source bindings", status_code=503)
+        payload["source_binding"] = copy.deepcopy(binding)
+        payload["source_workspace"] = copy.deepcopy(source)
+        return self.backend.with_source_workspace(source["workspace_path"], trusted=settings["trusted"],
+                                                  dependency_paths=settings["dependency_paths"])
+
     def _call_backend(self, operation, payload, actor):
         if self.backend is None:
             raise ServiceError("capability_unavailable", "No execution backend has been configured", status_code=503)
         try:
-            result = self.backend.invoke(operation, payload, actor)
+            try:
+                backend = self._source_backend(operation, payload)
+                if operation in {"run.plan", "run.submit", "run.resume"}:
+                    from .dataset_binding import resolve_backend
+                    backend = resolve_backend(self, backend, payload)
+            except ServiceError as error:
+                if operation == "execution.targets":
+                    result = self.backend.invoke(operation, payload, actor)
+                    for target in result.get("targets", []):
+                        target.update(available=False, unavailable_reason=error.message)
+                    result["source_diagnostics"] = [{"code": error.code, "message": error.message}]
+                    return result
+                if operation != "run.plan":
+                    raise
+                return {"project_id": payload["project_id"], "executable": False, "blocked_reasons": [
+                    {"code": error.code, "message": error.message, "details": error.details}], "warnings": [error.message]}
+            result = backend.invoke(operation, payload, actor)
+            if operation in {"execution.targets", "run.plan"} and payload.get("source_workspace"):
+                result["source_workspace"] = copy.deepcopy(payload["source_workspace"])
         except ServiceError:
             raise
         except Exception as exc:
@@ -640,6 +761,11 @@ class OperationService:
                 if not p.get("mode", p.get("resume_mode")):
                     raise ServiceError("validation_error", "Resume must explicitly select exact_state or warm_start")
                 enriched["mode"] = p.get("mode", p.get("resume_mode"))
+        if op.startswith("model.export."):
+            if not p.get("backend_run_id") and not p.get("model_version_id"):
+                raise ServiceError("validation_error", "Select a native run or model version")
+            if p.get("backend_run_id"):
+                self._find_operation(project_id, backend_run_id=p["backend_run_id"])
         if op == "run.compare":
             for run_id in p["run_ids"]:
                 self._find_operation(project_id, backend_run_id=run_id)
@@ -653,6 +779,18 @@ class OperationService:
             enriched["direction"] = decision["selection_rule"]["direction"]
             enriched["candidate_run_ids"] = decision["run_ids"]
         result = self._call_backend(op, enriched, actor)
+        if op == "run.compare":
+            configurations = []
+            for run_id in p["run_ids"]:
+                executed = self._find_operation(project_id, backend_run_id=run_id)
+                manifest = self._get("recipe", executed["recipe_id"], project_id, executed["recipe_revision"])
+                configurations.append({"backend_run_id": run_id, "recipe_id": executed["recipe_id"],
+                    "recipe_revision": executed["recipe_revision"], "recipe_digest": executed["recipe_digest"],
+                    "configuration": {key: manifest.get(key) for key in ("nodes", "edges", "source", "environment", "external_dependencies", "evaluation")}})
+            result["configuration_diffs"] = [{"baseline_run_id": configurations[0]["backend_run_id"],
+                "backend_run_id": item["backend_run_id"], "recipe_revision": item["recipe_revision"],
+                "diff": self._diff(configurations[0]["configuration"], item["configuration"])} for item in configurations[1:]]
+            result["run_provenance"] = [{key: value for key, value in item.items() if key != "configuration"} for item in configurations]
         if op == "run.plan":
             result = {**result, "tracking": disclosure(enriched["tracking"])}
         if op in {"run.submit", "run.resume", "run.status", "run.cancel"}:
@@ -667,6 +805,8 @@ class OperationService:
                       "recipe_revision": recipe["revision"], "recipe_digest": recipe["digest"],
                       "created_at": utcnow(), "last_reconciled_at": utcnow(),
                       "revision": 1, "tracking_config": enriched["tracking"],
+                      "source_binding": copy.deepcopy(enriched.get("source_binding")),
+                      "source_workspace": copy.deepcopy(enriched.get("source_workspace")),
                       "status": result.get("status", "unknown"), "errors": result.get("errors") or ([result["error"]] if result.get("error") else [])}
             self.store.put("operation", operation_id, project_id, record)
             return {**result, **record}

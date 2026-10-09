@@ -1,0 +1,1330 @@
+{
+  "scope": "LOCAL accounting contract; production remote acceptance BLOCKED",
+  "operations": [
+    {
+      "name": "cost.providers",
+      "operation": "cost.providers",
+      "scope": "read",
+      "description": "Inspect configured cost providers and honest fail-closed capability diagnostics.",
+      "mutating": false,
+      "required_scopes": [
+        "read"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cost.policy.get",
+      "operation": "cost.policy.get",
+      "scope": "read",
+      "description": "Read exact-money cost policies and ledger balances visible to this actor.",
+      "mutating": false,
+      "required_scopes": [
+        "read"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "provider_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$"
+          },
+          "account_ref": {
+            "type": "string",
+            "pattern": "^acct_[a-f0-9]{32}$"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "project_id",
+          "provider_id",
+          "account_ref"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cost.policy.put",
+      "operation": "cost.policy.put",
+      "scope": "modify",
+      "description": "Set a versioned total budget; requires spend scope and does not enable remote execution.",
+      "mutating": true,
+      "required_scopes": [
+        "modify",
+        "spend"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "policy": {
+            "additionalProperties": false,
+            "properties": {
+              "policy_id": {
+                "maxLength": 200,
+                "minLength": 1,
+                "title": "Policy Id",
+                "type": "string"
+              },
+              "scope": {
+                "enum": [
+                  "account",
+                  "project"
+                ],
+                "title": "Scope",
+                "type": "string"
+              },
+              "project_id": {
+                "anyOf": [
+                  {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Project Id"
+              },
+              "provider_id": {
+                "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+                "title": "Provider Id",
+                "type": "string"
+              },
+              "account_ref": {
+                "pattern": "^acct_[a-f0-9]{32}$",
+                "title": "Account Ref",
+                "type": "string"
+              },
+              "maximum_total": {
+                "additionalProperties": false,
+                "properties": {
+                  "currency": {
+                    "pattern": "^[A-Z]{3}$",
+                    "title": "Currency",
+                    "type": "string"
+                  },
+                  "exponent": {
+                    "default": 2,
+                    "maximum": 6,
+                    "minimum": 0,
+                    "title": "Exponent",
+                    "type": "integer"
+                  },
+                  "minor_units": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "title": "Minor Units",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "currency",
+                  "minor_units"
+                ],
+                "title": "Money",
+                "type": "object"
+              },
+              "max_runtime_seconds": {
+                "maximum": 604800,
+                "minimum": 1,
+                "title": "Max Runtime Seconds",
+                "type": "integer"
+              },
+              "enabled": {
+                "default": true,
+                "title": "Enabled",
+                "type": "boolean"
+              },
+              "revision": {
+                "default": 1,
+                "minimum": 1,
+                "title": "Revision",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "policy_id",
+              "scope",
+              "provider_id",
+              "account_ref",
+              "maximum_total",
+              "max_runtime_seconds"
+            ],
+            "title": "BudgetPolicy",
+            "type": "object"
+          },
+          "expected_revision": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "project_id",
+          "policy",
+          "expected_revision",
+          "idempotency_key"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cost.quote.create",
+      "operation": "cost.quote.create",
+      "scope": "read",
+      "description": "Request a provider quote; unavailable until a real provider is configured and verified.",
+      "mutating": false,
+      "required_scopes": [
+        "read"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "binding": {
+            "additionalProperties": false,
+            "properties": {
+              "provider_id": {
+                "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+                "title": "Provider Id",
+                "type": "string"
+              },
+              "account_ref": {
+                "pattern": "^acct_[a-f0-9]{32}$",
+                "title": "Account Ref",
+                "type": "string"
+              },
+              "zenml_stack_id": {
+                "maxLength": 200,
+                "minLength": 1,
+                "title": "Zenml Stack Id",
+                "type": "string"
+              },
+              "zenml_orchestrator_id": {
+                "maxLength": 200,
+                "minLength": 1,
+                "title": "Zenml Orchestrator Id",
+                "type": "string"
+              },
+              "target_id": {
+                "maxLength": 200,
+                "minLength": 1,
+                "title": "Target Id",
+                "type": "string"
+              }
+            },
+            "required": [
+              "provider_id",
+              "account_ref",
+              "zenml_stack_id",
+              "zenml_orchestrator_id",
+              "target_id"
+            ],
+            "title": "AccountBinding",
+            "type": "object"
+          },
+          "recipe_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "max_runtime_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 604800
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "project_id",
+          "binding",
+          "recipe_digest",
+          "max_runtime_seconds"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cost.quote.get",
+      "operation": "cost.quote.get",
+      "scope": "read",
+      "description": "Read an immutable quote with rate provenance, timestamp and explicit evidence type.",
+      "mutating": false,
+      "required_scopes": [
+        "read"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "quote_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "project_id",
+          "quote_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cost.reserve",
+      "operation": "cost.reserve",
+      "scope": "execute",
+      "description": "Explicit spend admission contract; production reservations and dispatch remain disabled.",
+      "mutating": true,
+      "required_scopes": [
+        "execute",
+        "spend",
+        "read"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "consent": {
+            "additionalProperties": false,
+            "description": "An affirmative request by the already authenticated actor, never a credential.",
+            "properties": {
+              "execute_and_spend": {
+                "const": true,
+                "title": "Execute And Spend",
+                "type": "boolean"
+              },
+              "quote_id": {
+                "maxLength": 200,
+                "minLength": 1,
+                "title": "Quote Id",
+                "type": "string"
+              },
+              "quote_digest": {
+                "pattern": "^[a-f0-9]{64}$",
+                "title": "Quote Digest",
+                "type": "string"
+              },
+              "maximum_total": {
+                "additionalProperties": false,
+                "properties": {
+                  "currency": {
+                    "pattern": "^[A-Z]{3}$",
+                    "title": "Currency",
+                    "type": "string"
+                  },
+                  "exponent": {
+                    "default": 2,
+                    "maximum": 6,
+                    "minimum": 0,
+                    "title": "Exponent",
+                    "type": "integer"
+                  },
+                  "minor_units": {
+                    "maximum": 9007199254740991,
+                    "minimum": 0,
+                    "title": "Minor Units",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "currency",
+                  "minor_units"
+                ],
+                "title": "Money",
+                "type": "object"
+              },
+              "max_runtime_seconds": {
+                "maximum": 604800,
+                "minimum": 1,
+                "title": "Max Runtime Seconds",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "execute_and_spend",
+              "quote_id",
+              "quote_digest",
+              "maximum_total",
+              "max_runtime_seconds"
+            ],
+            "title": "SpendConsent",
+            "type": "object"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "project_id",
+          "consent",
+          "idempotency_key"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cost.ledger.get",
+      "operation": "cost.ledger.get",
+      "scope": "read",
+      "description": "Read durable reservation, execution, cleanup and billing states for a project.",
+      "mutating": false,
+      "required_scopes": [
+        "read"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "reservation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cost.cancel",
+      "operation": "cost.cancel",
+      "scope": "execute",
+      "description": "Request cancellation; a stop request never means resources or billing have stopped.",
+      "mutating": true,
+      "required_scopes": [
+        "execute"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "reservation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "project_id",
+          "reservation_id",
+          "idempotency_key"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cost.history",
+      "operation": "cost.history",
+      "scope": "read",
+      "description": "Read append-only project cost events with stable pagination.",
+      "mutating": false,
+      "required_scopes": [
+        "read"
+      ],
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "after_sequence": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "types": {
+    "Money": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        },
+        "exponent": {
+          "default": 2,
+          "maximum": 6,
+          "minimum": 0,
+          "title": "Exponent",
+          "type": "integer"
+        },
+        "minor_units": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Minor Units",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "currency",
+        "minor_units"
+      ],
+      "title": "Money",
+      "type": "object"
+    },
+    "AccountBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "provider_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "account_ref": {
+          "pattern": "^acct_[a-f0-9]{32}$",
+          "title": "Account Ref",
+          "type": "string"
+        },
+        "zenml_stack_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Zenml Stack Id",
+          "type": "string"
+        },
+        "zenml_orchestrator_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Zenml Orchestrator Id",
+          "type": "string"
+        },
+        "target_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider_id",
+        "account_ref",
+        "zenml_stack_id",
+        "zenml_orchestrator_id",
+        "target_id"
+      ],
+      "title": "AccountBinding",
+      "type": "object"
+    },
+    "BudgetPolicy": {
+      "$defs": {
+        "Money": {
+          "additionalProperties": false,
+          "properties": {
+            "currency": {
+              "pattern": "^[A-Z]{3}$",
+              "title": "Currency",
+              "type": "string"
+            },
+            "exponent": {
+              "default": 2,
+              "maximum": 6,
+              "minimum": 0,
+              "title": "Exponent",
+              "type": "integer"
+            },
+            "minor_units": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "title": "Minor Units",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "currency",
+            "minor_units"
+          ],
+          "title": "Money",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "account",
+            "project"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
+        },
+        "provider_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "account_ref": {
+          "pattern": "^acct_[a-f0-9]{32}$",
+          "title": "Account Ref",
+          "type": "string"
+        },
+        "maximum_total": {
+          "$ref": "#/$defs/Money"
+        },
+        "max_runtime_seconds": {
+          "maximum": 604800,
+          "minimum": 1,
+          "title": "Max Runtime Seconds",
+          "type": "integer"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "revision": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "policy_id",
+        "scope",
+        "provider_id",
+        "account_ref",
+        "maximum_total",
+        "max_runtime_seconds"
+      ],
+      "title": "BudgetPolicy",
+      "type": "object"
+    },
+    "BudgetBalance": {
+      "$defs": {
+        "BudgetPolicy": {
+          "additionalProperties": false,
+          "properties": {
+            "policy_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Policy Id",
+              "type": "string"
+            },
+            "scope": {
+              "enum": [
+                "account",
+                "project"
+              ],
+              "title": "Scope",
+              "type": "string"
+            },
+            "project_id": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Project Id"
+            },
+            "provider_id": {
+              "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+              "title": "Provider Id",
+              "type": "string"
+            },
+            "account_ref": {
+              "pattern": "^acct_[a-f0-9]{32}$",
+              "title": "Account Ref",
+              "type": "string"
+            },
+            "maximum_total": {
+              "$ref": "#/$defs/Money"
+            },
+            "max_runtime_seconds": {
+              "maximum": 604800,
+              "minimum": 1,
+              "title": "Max Runtime Seconds",
+              "type": "integer"
+            },
+            "enabled": {
+              "default": true,
+              "title": "Enabled",
+              "type": "boolean"
+            },
+            "revision": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Revision",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "policy_id",
+            "scope",
+            "provider_id",
+            "account_ref",
+            "maximum_total",
+            "max_runtime_seconds"
+          ],
+          "title": "BudgetPolicy",
+          "type": "object"
+        },
+        "Money": {
+          "additionalProperties": false,
+          "properties": {
+            "currency": {
+              "pattern": "^[A-Z]{3}$",
+              "title": "Currency",
+              "type": "string"
+            },
+            "exponent": {
+              "default": 2,
+              "maximum": 6,
+              "minimum": 0,
+              "title": "Exponent",
+              "type": "integer"
+            },
+            "minor_units": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "title": "Minor Units",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "currency",
+            "minor_units"
+          ],
+          "title": "Money",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Aggregate amounts are decimal strings: late charges can exceed JS safe integers.",
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/BudgetPolicy"
+        },
+        "exposure_minor_units": {
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "title": "Exposure Minor Units",
+          "type": "string"
+        },
+        "actual_minor_units": {
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "title": "Actual Minor Units",
+          "type": "string"
+        },
+        "held_minor_units": {
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "title": "Held Minor Units",
+          "type": "string"
+        },
+        "available_minor_units": {
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "title": "Available Minor Units",
+          "type": "string"
+        },
+        "debt_minor_units": {
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "title": "Debt Minor Units",
+          "type": "string"
+        },
+        "authorization_overrun_minor_units": {
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "title": "Authorization Overrun Minor Units",
+          "type": "string"
+        },
+        "enforcement_alert_count": {
+          "minimum": 0,
+          "title": "Enforcement Alert Count",
+          "type": "integer"
+        },
+        "spending_enforced": {
+          "const": false,
+          "default": false,
+          "title": "Spending Enforced",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "policy",
+        "exposure_minor_units",
+        "actual_minor_units",
+        "held_minor_units",
+        "available_minor_units",
+        "debt_minor_units",
+        "authorization_overrun_minor_units",
+        "enforcement_alert_count"
+      ],
+      "title": "BudgetBalance",
+      "type": "object"
+    },
+    "Quote": {
+      "$defs": {
+        "AccountBinding": {
+          "additionalProperties": false,
+          "properties": {
+            "provider_id": {
+              "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+              "title": "Provider Id",
+              "type": "string"
+            },
+            "account_ref": {
+              "pattern": "^acct_[a-f0-9]{32}$",
+              "title": "Account Ref",
+              "type": "string"
+            },
+            "zenml_stack_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Zenml Stack Id",
+              "type": "string"
+            },
+            "zenml_orchestrator_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Zenml Orchestrator Id",
+              "type": "string"
+            },
+            "target_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Target Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "provider_id",
+            "account_ref",
+            "zenml_stack_id",
+            "zenml_orchestrator_id",
+            "target_id"
+          ],
+          "title": "AccountBinding",
+          "type": "object"
+        },
+        "Money": {
+          "additionalProperties": false,
+          "properties": {
+            "currency": {
+              "pattern": "^[A-Z]{3}$",
+              "title": "Currency",
+              "type": "string"
+            },
+            "exponent": {
+              "default": 2,
+              "maximum": 6,
+              "minimum": 0,
+              "title": "Exponent",
+              "type": "integer"
+            },
+            "minor_units": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "title": "Minor Units",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "currency",
+            "minor_units"
+          ],
+          "title": "Money",
+          "type": "object"
+        },
+        "RateComponent": {
+          "additionalProperties": false,
+          "properties": {
+            "category": {
+              "enum": [
+                "compute",
+                "storage",
+                "egress",
+                "tax",
+                "fees",
+                "cleanup"
+              ],
+              "title": "Category",
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 300,
+              "minLength": 1,
+              "title": "Description",
+              "type": "string"
+            },
+            "unit": {
+              "maxLength": 80,
+              "minLength": 1,
+              "title": "Unit",
+              "type": "string"
+            },
+            "unit_price": {
+              "$ref": "#/$defs/Money"
+            },
+            "maximum_units": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "title": "Maximum Units",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "category",
+            "description",
+            "unit",
+            "unit_price",
+            "maximum_units"
+          ],
+          "title": "RateComponent",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "quote_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Quote Id",
+          "type": "string"
+        },
+        "project_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Project Id",
+          "type": "string"
+        },
+        "recipe_digest": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Recipe Digest",
+          "type": "string"
+        },
+        "binding": {
+          "$ref": "#/$defs/AccountBinding"
+        },
+        "evidence_kind": {
+          "enum": [
+            "simulation",
+            "provider_quote",
+            "operator_estimate"
+          ],
+          "title": "Evidence Kind",
+          "type": "string"
+        },
+        "rate_source": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Rate Source",
+          "type": "string"
+        },
+        "rate_observed_at": {
+          "format": "date-time",
+          "title": "Rate Observed At",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "max_runtime_seconds": {
+          "maximum": 604800,
+          "minimum": 1,
+          "title": "Max Runtime Seconds",
+          "type": "integer"
+        },
+        "estimated_total": {
+          "$ref": "#/$defs/Money"
+        },
+        "maximum_total": {
+          "$ref": "#/$defs/Money"
+        },
+        "components": {
+          "items": {
+            "$ref": "#/$defs/RateComponent"
+          },
+          "title": "Components",
+          "type": "array"
+        },
+        "all_costs_bounded": {
+          "title": "All Costs Bounded",
+          "type": "boolean"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quote_id",
+        "project_id",
+        "recipe_digest",
+        "binding",
+        "evidence_kind",
+        "rate_source",
+        "rate_observed_at",
+        "created_at",
+        "expires_at",
+        "max_runtime_seconds",
+        "estimated_total",
+        "maximum_total",
+        "components",
+        "all_costs_bounded"
+      ],
+      "title": "Quote",
+      "type": "object"
+    },
+    "SpendConsent": {
+      "$defs": {
+        "Money": {
+          "additionalProperties": false,
+          "properties": {
+            "currency": {
+              "pattern": "^[A-Z]{3}$",
+              "title": "Currency",
+              "type": "string"
+            },
+            "exponent": {
+              "default": 2,
+              "maximum": 6,
+              "minimum": 0,
+              "title": "Exponent",
+              "type": "integer"
+            },
+            "minor_units": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "title": "Minor Units",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "currency",
+            "minor_units"
+          ],
+          "title": "Money",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "An affirmative request by the already authenticated actor, never a credential.",
+      "properties": {
+        "execute_and_spend": {
+          "const": true,
+          "title": "Execute And Spend",
+          "type": "boolean"
+        },
+        "quote_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Quote Id",
+          "type": "string"
+        },
+        "quote_digest": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Quote Digest",
+          "type": "string"
+        },
+        "maximum_total": {
+          "$ref": "#/$defs/Money"
+        },
+        "max_runtime_seconds": {
+          "maximum": 604800,
+          "minimum": 1,
+          "title": "Max Runtime Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "execute_and_spend",
+        "quote_id",
+        "quote_digest",
+        "maximum_total",
+        "max_runtime_seconds"
+      ],
+      "title": "SpendConsent",
+      "type": "object"
+    },
+    "ProviderObservation": {
+      "$defs": {
+        "Money": {
+          "additionalProperties": false,
+          "properties": {
+            "currency": {
+              "pattern": "^[A-Z]{3}$",
+              "title": "Currency",
+              "type": "string"
+            },
+            "exponent": {
+              "default": 2,
+              "maximum": 6,
+              "minimum": 0,
+              "title": "Exponent",
+              "type": "integer"
+            },
+            "minor_units": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "title": "Minor Units",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "currency",
+            "minor_units"
+          ],
+          "title": "Money",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Adapter-owned evidence. Never deserialize this from a public mutation body.",
+      "properties": {
+        "reservation_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Reservation Id",
+          "type": "string"
+        },
+        "provider_id": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "account_ref": {
+          "pattern": "^acct_[a-f0-9]{32}$",
+          "title": "Account Ref",
+          "type": "string"
+        },
+        "provider_job_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Provider Job Id",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "execution_state": {
+          "enum": [
+            "running",
+            "stopped",
+            "succeeded",
+            "failed",
+            "unknown"
+          ],
+          "title": "Execution State",
+          "type": "string"
+        },
+        "cleanup_state": {
+          "enum": [
+            "required",
+            "in_progress",
+            "confirmed",
+            "unknown"
+          ],
+          "title": "Cleanup State",
+          "type": "string"
+        },
+        "billing_state": {
+          "enum": [
+            "pending",
+            "provisional",
+            "final"
+          ],
+          "title": "Billing State",
+          "type": "string"
+        },
+        "cumulative_charge": {
+          "$ref": "#/$defs/Money"
+        },
+        "evidence_kind": {
+          "enum": [
+            "simulation",
+            "provider_usage",
+            "provider_invoice"
+          ],
+          "title": "Evidence Kind",
+          "type": "string"
+        },
+        "evidence_ref": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Evidence Ref",
+          "type": "string"
+        },
+        "idle_resources_stopped": {
+          "default": false,
+          "title": "Idle Resources Stopped",
+          "type": "boolean"
+        },
+        "storage_resources_deleted": {
+          "default": false,
+          "title": "Storage Resources Deleted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "reservation_id",
+        "provider_id",
+        "account_ref",
+        "provider_job_id",
+        "sequence",
+        "observed_at",
+        "execution_state",
+        "cleanup_state",
+        "billing_state",
+        "cumulative_charge",
+        "evidence_kind",
+        "evidence_ref"
+      ],
+      "title": "ProviderObservation",
+      "type": "object"
+    }
+  },
+  "internal_only_types": [
+    "Quote",
+    "ProviderObservation"
+  ],
+  "aggregate_money_encoding": "Nonnegative decimal strings, preserve exactly; do not parse as JavaScript Number."
+}

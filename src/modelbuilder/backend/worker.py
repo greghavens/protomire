@@ -71,7 +71,9 @@ def import_dataset_version_step(spec: dict) -> Annotated[dict, "data"]:
     return load_portable_split(json.loads(content),
         {identifier: path for identifier, path in spec["dependency_paths"].items() if identifier in declared},
         parameters["split_id"], purpose=parameters.get("purpose", "training"),
-        expected_project_id=spec["recipe_provenance"]["application_project_id"])
+        expected_project_id=spec["recipe_provenance"]["application_project_id"],
+        source_guards=(spec.get("dataset_source_guards") or None)
+        if declared[identifier].get("metadata", {}).get("dataset_reference") else None)
 
 
 @step(enable_cache=False)
@@ -205,6 +207,7 @@ def run(job: Path) -> None:
                 kwargs.update(node.get("parameters", {}))
             kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "parameters": node.get("parameters", {}),
                                   "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
+                                  "dataset_source_guards": request.get("dataset_source_guards", {}),
                                   "dependencies": recipe.get("resources", []) + recipe.get("external_dependencies", []),
                                   "component_node": node, "source": recipe.get("source", {}), "environment": recipe.get("environment", {}),
                                   "source_root": request["source_root"], "trusted_code_roots": request.get("trusted_code_roots", []), **{k: request[k] for k in ("resume_path", "resume_mode", "checkpoint_kind", "parent_run_id", "parent_checkpoint_ref") if k in request}}

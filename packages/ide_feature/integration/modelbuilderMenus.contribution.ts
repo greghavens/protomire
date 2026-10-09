@@ -15,3 +15,12 @@ MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
 	group: '3_model_recipe', order: 2,
 	command: { id: 'modelbuilder.exportRecipeBundle', title: localize('modelbuilder.exportRecipe', 'Export Recipe…'), precondition: projectOpen }
 });
+
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+	group: '3_model_recipe', order: 3,
+	command: { id: 'modelbuilder.discoverPrivateRecipe', title: localize('modelbuilder.discoverPrivateRecipe', 'Discover Private Recipes…'), precondition: projectOpen }
+});
+MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
+	group: '3_model_recipe', order: 4,
+	command: { id: 'modelbuilder.publishPrivateRecipe', title: localize('modelbuilder.publishPrivateRecipe', 'Publish Recipe Privately…'), precondition: projectOpen }
+});

@@ -1,6 +1,6 @@
 # Current verification and remaining gates
 
-Runtime source checkpoint: `a18a0587fce6c04ef5f79e50e0446f089eff8e02` (47-file closure). This is an implementation checkpoint, not full-product completion. Work is directly on `main`; no pull request is required.
+Published baseline runtime source checkpoint: `a18a0587fce6c04ef5f79e50e0446f089eff8e02` (47-file closure). This is an implementation checkpoint, not full-product completion. Work is directly on `main`; no pull request is required.
 
 ## Demonstrated locally
 
@@ -15,12 +15,24 @@ Runtime source checkpoint: `a18a0587fce6c04ef5f79e50e0446f089eff8e02` (47-file c
 
 The safety follow-up fixes inherited behavior: warm starts now use edited current recipe settings while exact continuation retains parent settings; authored exports prove packaged bytes match their declared Git commit. Git-free inert bundle transport remains supported.
 
+## Staged next-batch verification
+
+The next batch is based on published main `732dd5014d84d737a97cb2e4664cc24c8d3b771d` and keeps the inherited warm-start and export-provenance fixes. It adds approved per-project source bindings, explicit reviewed source pinning, private recipe registry actions, durable cost diagnostics with production remote execution disabled, portable dataset reads and immutable dataset binding, typed component authoring, and native model comparison, decision, promotion and Save workflows.
+
+- Combined service, contract, security and portability selection: **1,097 passed, 15 skipped, 17 deselected**. Source-closure tests used an actual isolated Git source snapshot; its temporary commit IDs are excluded from the deliverable. Shipping examples must be repinned to the real source commit before final publication verification.
+- Combined frontend TypeScript checks and **239 unit/host tests** pass. Real loopback HTTP plus external MCP parity, typed workspace/private registry actions, and source-pin native-dialog helpers pass; these use dialog doubles and do not establish GUI acceptance.
+- Configured native dataset execution through external MCP and HTTP passes, including preserving the configured virtual-environment interpreter path. Source pinning to a real committed checkout and independent native model execution pass.
+- Final combined native release and bound-source workflows passed: real independent runs, comparison, decision, promotion, saved-package fresh reload with zero prediction difference, immutable source pinning and exact resume after rebinding. The newly created component also passed real HTTP and native execution.
+- The backend runtime wheel is tested in a fresh process without access to the source checkout, including the new dataset, cost, source and export module closure.
+
+This remains a staged implementation checkpoint. Later explicit checkpoint-subgraph execution and recurring research scheduling are outside this batch. Raw machine reports and environment metadata are omitted.
+
 ## Current limits
 
 - Fresh native GUI and notification acceptance is blocked: the execution environment has no usable display and rejects local Unix-domain sockets. Compilation and frontend tests do not substitute for actual window interaction.
 - macOS, Windows and ARM native runtime acceptance has not been performed here. Integration-specific platform restrictions are documented separately.
 - Online W&B, authenticated Claude/Codex inference, remote-provider execution/billing enforcement, and cloud spending have not been authorized or claimed as passed.
 - New raw diagnostic evidence is retained locally but omitted from this publication pending approval to share its environment metadata. Paths cited in other documents may therefore refer to locally retained evidence rather than committed files. Historical committed evidence is explicitly historical.
-- The first remote contracts job exposed unit tests that accidentally required the optional backend environment. Those pure admission tests now use their own service interpreter and pass with the backend path explicitly unavailable. Replacement CI remains a separate gate; local tests do not establish remote CI success.
+- The first remote contracts job exposed unit tests that accidentally required the optional backend environment. Those pure admission tests now use their own service interpreter and pass with the backend path explicitly unavailable. Replacement GitHub Actions run `38003492895` for published main `732dd5014d84d737a97cb2e4664cc24c8d3b771d` succeeded in both contracts and CPU-lifecycle jobs. The staged next batch below requires its own CI after publication.
 
 The checkpoint evaluation design and API are documented in `design/LIVE_CHECKPOINT_EVALUATION.md`; all current tests are provided as reproducible source.

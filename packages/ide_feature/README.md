@@ -40,4 +40,83 @@ Code → **Set up optional coding tool…** (also a native ModelBuilder command)
 
 Research now exposes bounded saved watches with explicit refresh, immutable new/changed citation findings, licensed source-text import, and staged recipe proposals. Forms use the service catalog, with saved-hypothesis and citation pickers; exact quote/text-ID/offset JSON remains available. Proposal cards retain source snapshots, diff, review and rejected history. Approval and application are distinct actions. Application requires a separate native confirmation, the loaded recipe revision and a clean draft; it never starts training. New draft edits arriving during application remain preserved for conflict resolution. Watch configuration does not start an undisclosed scheduler.
 
-Data lists immutable dataset versions, row counts, source/content identities, rights, splits and transformation reports. Manifest fields use the shared bundled dataset schema and retain canonical JSON. Registration and new versions reference operator-approved roots; the UI never chooses arbitrary absolute data paths. Role-correct previews pin the selected dataset revision and paginate bounded rows. Preview is explicitly separate from actual model consumption. Imported recipe bindings still require an operator-resolved portable reference and source dependency closure; no fictitious portable reference is generated. Native Windows source reads and unverified Parquet support remain service-reported capabilities.
+Data lists immutable dataset versions, row counts, source/content identities, rights, splits and transformation reports. Manifest fields use the shared bundled dataset schema and retain canonical JSON. Registration and new versions reference operator-approved roots; the UI never chooses arbitrary absolute data paths. Role-correct previews pin the selected dataset revision and paginate bounded rows. Preview is explicitly separate from actual model consumption. Use split in recipe calls the shared revision-checked `dataset.bind` operation, adds or replaces the chosen dataset import node, and can connect an existing dict input after native review. Dirty drafts are preserved and must be saved or reloaded before binding. The service pins the portable manifest, rights and source hashes, resolves only approved project roots into a request-local execution context, and stores reference metadata only. Dataset files are never uploaded or bundled; foreign imported references require explicit local registration and rebinding. Native Windows source reads and unverified Parquet support remain service-reported capabilities.
+
+## Typed source-bound workspace controls
+
+The node panel reads its fields from canonical `parameter_schema` or
+`component.parameter_schema`. Enum, boolean, numeric, string and grouped fields
+edit only touched values; unknown parameters and existing harness declarations
+remain intact. Arrays and unsupported schema forms retain JSON authoring.
+Incomplete typed input and the exact JSON escape-hatch text are saved with the
+local draft. Applying the node checks its original identity and rejects a
+concurrent JSON/schema change rather than rebasing or overwriting either draft.
+The service remains the authoritative schema validator.
+
+Opening/creating a model project uses the existing native source folder, or a
+native folder picker when none is open. The host matches that local folder to
+operator-approved `project.source.list` entries and sends only the alias and
+returned repository identity token. Binding requires a distinct trusted-local-
+code acknowledgement and never grants native workspace trust or operator trust.
+The Code tab shows source pin diagnostics and opens only a verified local match.
+Run confirmation and source/dependency admission remain separate.
+
+Private registry discovery/publication is available only through the native File
+menu. Discovery reviews a publication and its exact proposed diff before
+importing a new revision of the current model's one recipe. Publication checks
+token permission, separately confirms a required policy change, opens the exact
+source/license/dependency review in the native editor, and asks for dependency
+and final publication consent. Cancellation, stale reviews and concurrent drafts
+never silently approve new content. The local-private registry does not provide
+public hosting, install dependencies or execute imported code.
+
+Compute has read-only remote provider, reservation and billing-history
+diagnostics. Separate execution, cleanup, billing and evidence states remain
+visible; exact integer-string money is never rounded through JavaScript Number.
+Remote execution and spending enforcement remain disabled.
+
+`npm test` covers frontend modules and mocked native-host interactions.
+`npm run test:workspace-http` additionally starts a real isolated loopback service
+and tests the compiled host helpers against typed source binding, canonical
+recipe edits/conflicts, registry permissions/import identity and cost diagnostics.
+It uses only a temporary test source checkout and does not launch a run.
+`MODELBUILDER_SERVICE_ROOT` and `MODELBUILDER_HTTP_PYTHONPATH` can point this runner
+to an isolated integrated service checkout. Native dialogs and the DOM are
+mocked in this test, so it is not native GUI acceptance.
+`npm run test:workspace-browser` exercises actual Chromium DOM with simulated host
+messages. Browser and native Code - OSS acceptance are separate required gates;
+launch failures must be reported as blocked, never converted to a GUI pass.
+
+### Author a source-bound component
+
+In Recipe, choose `component.run` from the existing Component menu and use
+**Add node** with a unique node ID. This creates an explicitly incomplete,
+inert `modelbuilder.component/v1` draft. In its existing node panel, enter the
+component ID, version and role, select a Python file already pinned in
+`recipe.source.files`, and enter the module and entrypoint. The panel copies
+that file's declared SHA256 and the recipe commit; it never guesses either.
+Declare the parameter schema, actual capabilities, and typed input/output
+ports. At least one supported output is required. Empty capability arrays
+claim no capabilities. Apply refreshes the existing typed parameter controls;
+then Validate and Save use the authoritative service. Completeness is not
+execution admission: source trust and each run remain separate checks.
+
+Unapplied component fields, including incomplete JSON, recover with the node
+panel. A changed canonical node or source closure blocks stale Apply rather
+than silently rebinding the draft. Unknown fields are retained, and a matching
+legacy node-level parameter schema stays synchronized when explicitly edited.
+
+`npm run test:component-http` creates a NEW node through the same exported
+Add-node and panel-control paths, then validates/saves it against an isolated
+real HTTP service. It makes no registry or provider calls. Set
+`MODELBUILDER_COMPONENT_NATIVE=1` and `MODELBUILDER_BACKEND_PYTHON` to opt into a
+native CPU run of the newly authored, source-pinned independent test harness.
+`MODELBUILDER_COMPONENT_REPORT` saves the scoped report;
+`MODELBUILDER_COMPONENT_KEEP=1` retains the isolated run evidence. These tests
+use a DOM test double and do not establish browser or native GUI acceptance.
+
+### Review and pin committed source
+
+In **Code → Review and pin source files…**, choose an explicit full Git commit (the displayed native input defaults to the bound checkout's HEAD), then choose files under the already-open, verified source workspace. Required recipe implementation and environment lock paths are added to the review inventory. The native review lists repository identity, full commit, relative paths and SHA-256 hashes, and the exact current/next recipe revisions. Only **Pin reviewed source** applies the preview digest as the next revision of the same recipe.
+
+Pinning is inert: it never commits Git changes, executes source, installs dependencies, or starts a run. Unsaved recipe/native-source edits, files outside the bound workspace, symlinks, dirty committed files, changed source identity, and stale project/recipe revisions fail closed. A conflict requires a fresh review; there is no automatic rebase or retry. Native dialogs are covered by test doubles and the compiled host path has isolated real-HTTP coverage (`npm run test:source-pin-http`); this is not native GUI acceptance.

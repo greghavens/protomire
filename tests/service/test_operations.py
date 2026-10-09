@@ -203,10 +203,13 @@ def test_policy_revisions_and_truthful_cost(service):
         service.invoke("cost.estimate", {"project_id": p["project_id"], "target": "aws"}, OWNER)
 
 
-def test_unavailable_publication_is_not_mock_success(service):
+def test_public_registry_is_unavailable_and_private_publication_requires_scope(service):
+    with pytest.raises(ServiceError) as error:
+        service.invoke("recipe.discover", {"registry_id": "public-marketplace"}, OWNER)
+    assert error.value.code == "capability_unavailable"
     with pytest.raises(ServiceError) as error:
         service.invoke("recipe.publish", {}, OWNER)
-    assert error.value.code == "capability_unavailable"
+    assert error.value.code == "forbidden"
 
 
 class ContractBackend:

@@ -59,6 +59,14 @@ class DomainModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
 
+class SourceBinding(DomainModel):
+    alias: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$")
+    repository_id: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    bound_at: str
+    bound_by: str
+    trust_acknowledged: Literal[True]
+
+
 class ModelProject(DomainModel):
     schema_version: Literal["0"] = "0"
     project_id: str
@@ -68,6 +76,7 @@ class ModelProject(DomainModel):
     description: str = ""
     created_at: str
     updated_at: str
+    source_binding: SourceBinding | None = None
     git_remote: str | None = None
     head_commit: str | None = None
     recipe_id: str
@@ -174,6 +183,9 @@ class OperationSpec:
         schema = {"type": "object", "properties": properties,
                   "required": list(self.required) + (["idempotency_key"] if self.mutating else []),
                   "additionalProperties": False}
+        if self.name == "project.create":
+            schema["dependentRequired"] = {"source_alias": ["source_repository_id", "trusted"],
+                "source_repository_id": ["source_alias", "trusted"], "trusted": ["source_alias", "source_repository_id"]}
         if self.name == "recipe.import":
             schema["oneOf"] = [{"required": ["bundle"], "not": {"required": ["bundle_json"]}},
                                {"required": ["bundle_json"], "not": {"required": ["bundle"]}}]
@@ -189,6 +201,8 @@ def _spec(name, scope, description, properties=None, required=(), mutating=False
     return OperationSpec(name, scope, description, properties or {}, tuple(required), mutating, tuple(additional_scopes))
 
 
+SOURCE_ALIAS = {"type": "string", "pattern": r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"}
+SOURCE_REPOSITORY_ID = {"type": "string", "pattern": r"^sha256:[0-9a-f]{64}$"}
 P = {"project_id": S}
 R = {**P, "recipe_id": S}
 RUN = {**P, "operation_id": S, "backend_run_id": S}
@@ -210,8 +224,13 @@ PROJECT_FIELDS = {"slug": S, "model_name": S, "description": {"type": "string"},
                   "tracking": TrackingConfig.model_json_schema()}
 
 OPERATIONS = {s.name: s for s in [
-    _spec("project.create", "modify", "Create one model project with its one stable current recipe; optionally supply the initial recipe document.", {**PROJECT_FIELDS, "recipe": OBJECT},
+    _spec("project.create", "modify", "Create one model project with its one stable current recipe; optionally supply the initial recipe document.", {**PROJECT_FIELDS, "recipe": OBJECT, "source_alias": SOURCE_ALIAS, "source_repository_id": SOURCE_REPOSITORY_ID, "trusted": B},
           ("slug", "model_name"), True),
+    _spec("project.source.list", "read", "List operator-approved source workspace aliases without importing code.", P),
+    _spec("project.source.status", "read", "Inspect this project's bound checkout, trust and pinned source identity.", P, ("project_id",)),
+    _spec("project.source.bind", "modify", "Bind an approved source alias with explicit trust and optimistic concurrency.",
+          {**P, "source_alias": SOURCE_ALIAS, "source_repository_id": SOURCE_REPOSITORY_ID, "trusted": B, "expected_revision": POSITIVE_INT},
+          ("project_id", "source_alias", "source_repository_id", "trusted", "expected_revision"), True),
     _spec("project.list", "read", "List authorized model projects."),
     _spec("project.get", "read", "Read a project.", P, ("project_id",)),
     _spec("project.open", "read", "Open a project and its lifecycle resources.", P, ("project_id",)),
@@ -247,6 +266,12 @@ OPERATIONS = {s.name: s for s in [
     _spec("dataset.version", "modify", "Create the next immutable dataset version with optimistic concurrency.",
           {**P, "dataset_id": S, "expected_revision": POSITIVE_INT, "manifest": OBJECT},
           ("project_id", "dataset_id", "expected_revision", "manifest"), True),
+    _spec("dataset.bind", "modify", "Bind a verified dataset revision and split to this project's one recipe; optionally replace an explicit target input connection. Creates a recipe revision without execution.",
+          {**R, "expected_revision": POSITIVE_INT, "dataset_id": S, "dataset_revision": POSITIVE_INT,
+           "split_id": S, "purpose": {"enum": ["training", "evaluation", "calibration"]},
+           "node_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$", "maxLength": 128},
+           "target_node": S, "target_port": S},
+          ("project_id", "recipe_id", "expected_revision", "dataset_id", "dataset_revision", "split_id", "purpose", "node_id"), True),
     _spec("dataset.get", "read", "Read a project dataset at its current or historical immutable revision.",
           {**P, "dataset_id": S, "revision": POSITIVE_INT}, ("project_id", "dataset_id")),
     _spec("dataset.list", "read", "List datasets registered to this model project.", P, ("project_id",)),
@@ -324,6 +349,18 @@ OPERATIONS = {s.name: s for s in [
     _spec("run.compare", "read", "Compare metrics from actual backend runs by a declared criterion.",
           {**P, "run_ids": {"type": "array", "items": S, "minItems": 2}, "metric": S,
            "direction": {"enum": ["minimize", "maximize"]}, "comparison_contract": OBJECT}, ("project_id", "run_ids", "metric", "direction")),
+    _spec("model.export.list", "read", "List verified existing native exports for one run or model version; never execute code.",
+          {**P, "backend_run_id": S, "model_version_id": S}, ("project_id",)),
+    _spec("model.export.inspect", "read", "Inspect a declared native export, checkpoint identity and provenance without running it.",
+          {**P, "backend_run_id": S, "model_version_id": S, "artifact_id": S}, ("project_id", "artifact_id")),
+    _spec("model.export.package", "read", "Snapshot only hash-verified declared export assets as a local ZIP; no training or publication.",
+          {**P, "backend_run_id": S, "model_version_id": S, "artifact_id": S, "expected_export_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+          ("project_id", "artifact_id", "expected_export_digest")),
+    _spec("model.export.read", "read", "Retrieve one authenticated, hash-verified package chunk, at most 4 MiB before base64 encoding.",
+          {**P, "backend_run_id": S, "model_version_id": S, "artifact_id": S,
+           "package_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+           "chunk_index": {"type": "integer", "minimum": 0, "maximum": 4096}},
+          ("project_id", "backend_run_id", "model_version_id", "artifact_id", "package_id", "chunk_index")),
     _spec("model.version.list", "read", "List authoritative ZenML model versions.", P, ("project_id",)),
     _spec("model.version.get", "read", "Read an authoritative model version.", VERSION, ("project_id",)),
     _spec("model.version.promote", "modify", "Promote a version using a recorded, measurable decision.",
@@ -337,6 +374,18 @@ OPERATIONS = {s.name: s for s in [
 
 from .research_contract import operation_specs as research_operation_specs  # noqa: E402
 OPERATIONS.update({spec.name: spec for spec in research_operation_specs(_spec)})
+
+
+from .recipe_registry_contract import operation_specs as registry_operation_specs  # noqa: E402
+OPERATIONS.update({spec.name: spec for spec in registry_operation_specs(_spec)})
+
+
+from .remote.operation_contract import operation_specs as remote_cost_operation_specs  # noqa: E402
+OPERATIONS.update({spec.name: spec for spec in remote_cost_operation_specs(_spec)})
+
+
+from .source_pinning_contract import operation_specs as source_pin_specs  # noqa: E402
+OPERATIONS.update({spec.name: spec for spec in source_pin_specs(_spec)})
 
 
 def operation_catalog() -> list[dict]:

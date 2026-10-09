@@ -81,9 +81,12 @@ def build_wheel(root: Path, destination: Path, kind: str) -> dict:
             if (kind == "service" or path in {
                     "src/modelbuilder/__init__.py", "src/modelbuilder/recipe.py",
                     "src/modelbuilder/evaluation.py", "src/modelbuilder/tracking.py",
-                    "src/modelbuilder/dataset.py", "src/modelbuilder/models.py", "src/modelbuilder/store.py",
-                    "src/modelbuilder/research_contract.py"}
-                    or path.startswith("src/modelbuilder/backend/")):
+                    "src/modelbuilder/dataset.py", "src/modelbuilder/platform_file_access.py",
+                    "src/modelbuilder/export_packages.py",
+                    "src/modelbuilder/models.py", "src/modelbuilder/store.py",
+                    "src/modelbuilder/research_contract.py", "src/modelbuilder/recipe_registry_contract.py",
+                    "src/modelbuilder/source_workspace.py", "src/modelbuilder/source_pinning_contract.py"}
+                    or path.startswith(("src/modelbuilder/backend/", "src/modelbuilder/remote/"))):
                 files[path.removeprefix("src/")] = (root / path).read_bytes()
     if not files or "modelbuilder/backend/adapter.py" not in files:
         raise ValueError("Bundle lacks application source needed by replay")

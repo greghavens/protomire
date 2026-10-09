@@ -1,4 +1,5 @@
 import { Recipe, RecipeNode, RecordValue, ServiceTransport } from './types';
+import { blankComponent } from './componentAuthoring';
 /** Keeps the revision read by this editor. Saving never silently re-reads/rebases. */
 export class RecipeDocument {
   current?: Recipe;
@@ -26,7 +27,12 @@ export class RecipeDocument {
 export function replaceNode(recipe: Recipe, node: RecipeNode): Recipe { return {...recipe,nodes:recipe.nodes.map(existing => existing.id === node.id ? structuredClone(node) : existing)}; }
 export function removeNode(recipe: Recipe, nodeId: string): Recipe { return {...recipe,nodes:recipe.nodes.filter(node => node.id !== nodeId),edges:recipe.edges.filter(edge => edge.source_node !== nodeId && edge.target_node !== nodeId)}; }
 export function newNode(id: string, kind: string, commit: string): RecipeNode {
-  return {id,kind,implementation_ref:kind === 'code.python' ? {module:'my_model',entrypoint:'run',commit} : `builtin:${kind}`,inputs:[],outputs:[],parameters:{},environment_ref:'default',resource_request:{},retry:{max_attempts:1,backoff_seconds:0},timeout:300,cache_policy:'disabled',provenance:{}};
+  return {id,kind,...(kind==='component.run'?{component:blankComponent()}:{}),implementation_ref:kind==='component.run'?{module:'',entrypoint:'',commit}:kind === 'code.python' ? {module:'my_model',entrypoint:'run',commit} : `builtin:${kind}`,inputs:[],outputs:[],parameters:{},environment_ref:'default',resource_request:{},retry:{max_attempts:1,backoff_seconds:0},timeout:300,cache_policy:'disabled',provenance:{}};
+}
+export function addNode(recipe:Recipe,id:string,kind:string):Recipe {
+  if(!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(id))throw new Error('Choose a valid unique node ID.');
+  if(recipe.nodes.some(node=>node.id===id))throw new Error('That node ID is already in this recipe. Choose a fresh node ID.');
+  return {...recipe,nodes:[...recipe.nodes,newNode(id,kind,recipe.source?.commit??'')]};
 }
 /** Visual edits cannot erase an invalid source draft, nor commit a stale node panel. */
 export function readVisualSource(source: string): Recipe {

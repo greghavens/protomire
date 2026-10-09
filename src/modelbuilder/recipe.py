@@ -606,7 +606,9 @@ def pin_source_files(recipe: dict, source_root: str | Path, paths: list[str], co
         data = _read_source_file(root, path)
         try:
             blob = subprocess.run(
-                ["git", "--no-pager", "-C", str(root), "cat-file", "blob", f"{commit}:{path}"],
+                ["git", "--no-pager", "-c", "protocol.allow=never", "-C", str(root), "cat-file", "blob", f"{commit}:{path}"],
+                env={**{key: value for key, value in os.environ.items() if not key.startswith("GIT_")},
+                     "GIT_NO_REPLACE_OBJECTS": "1", "GIT_NO_LAZY_FETCH": "1", "GIT_TERMINAL_PROMPT": "0"},
                 stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 check=True, timeout=30,
             ).stdout

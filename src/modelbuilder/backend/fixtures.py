@@ -329,4 +329,33 @@ def export_model(data: dict, checkpoint: Path, parameters: dict, out: Path) -> P
     if difference != 0.0:
         raise ValueError("Exported model changed heldout logits")
     (out / "parity.json").write_text(json.dumps({"max_abs_difference": difference, "dataset_sha256": data["sha256"]}))
+    # A portable loader is data in the package, never executed by save/inspect.
+    if ck["fixture"] == "custom":
+        import inspect
+        loader = ("from pathlib import Path\nimport torch\nfrom torch import nn\n\n"
+                  + inspect.getsource(GatedResidual) + "\n" + inspect.getsource(CustomModel)
+                  + "\ndef load(root):\n    state = torch.load(Path(root) / 'model.pt', map_location='cpu', weights_only=True)\n"
+                    "    model = CustomModel(state['width']).eval()\n    model.load_state_dict(state['model'])\n    return model\n")
+    else:
+        loader = ("from transformers import BertForSequenceClassification\n\ndef load(root):\n"
+                  "    return BertForSequenceClassification.from_pretrained(str(root), local_files_only=True).eval()\n")
+    (out / "loader.py").write_text(loader)
+    selected = checkpoint / ("best.pt" if parameters.get("checkpoint_kind", "best") == "best" else "checkpoint.pt")
+    with selected.open("rb") as stream:
+        selected_digest = hashlib.file_digest(stream, "sha256").hexdigest()
+    assets = []
+    for path in sorted(out.iterdir()):
+        if path.name == "export.manifest.json":
+            continue
+        with path.open("rb") as stream:
+            assets.append({"path": path.name, "sha256": hashlib.file_digest(stream, "sha256").hexdigest()})
+    manifest = {"schema_version": "modelbuilder.export/v1", "selected_checkpoint": selected_digest,
+                "checkpoint_kind": parameters.get("checkpoint_kind", "best"),
+                "loader": {"path": "loader.py", "entrypoint": "load", "format": "pytorch-state-dict" if ck["fixture"] == "custom" else "huggingface"},
+                "signature": {"inputs": "float tensor [batch, 6]" if ck["fixture"] == "custom" else "tokenizer tensors", "outputs": "logits [batch, 2]"},
+                "dependencies": {"torch": torch.__version__, **({"transformers": __import__("transformers").__version__} if ck["fixture"] == "pretrained" else {})},
+                "source": {"fixture": ck["fixture"], "implementation_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()},
+                "verification": {"passed": True, "atol": 0.0, "max_abs_difference": difference,
+                                 "dataset_sha256": data["sha256"]}, "assets": assets}
+    (out / "export.manifest.json").write_text(json.dumps(manifest, sort_keys=True))
     return out

@@ -42,6 +42,26 @@ class ZenMLBackend:
         self.trusted_code_roots = [str(Path(x).resolve()) for x in (trusted_code_roots or [])]
         self.dependency_paths = {key: str(Path(value).resolve()) for key, value in (dependency_paths or {}).items()}
 
+    def with_source_workspace(self, source_root, *, trusted, dependency_paths):
+        """Request-local view, sharing native store/job ownership but never mutable routing."""
+        backend = copy.copy(self)
+        backend.repository = Path(source_root).resolve()
+        backend.trusted_code_roots = [str(backend.repository)] if trusted else []
+        backend.dependency_paths = dict(dependency_paths)
+        return backend
+
+    def with_dataset_dependencies(self, paths, guards):
+        """Isolated per-request approved dataset locations; never change operator state."""
+        backend = copy.copy(self)
+        backend.dependency_paths = dict(self.dependency_paths)
+        for identifier, path in paths.items():
+            if identifier in backend.dependency_paths and backend.dependency_paths[identifier] != path:
+                raise BackendError("dataset_binding_conflict", "Operator dependency conflicts with a registered dataset binding",
+                                   {"dependency_id": identifier})
+            backend.dependency_paths[identifier] = path
+        backend.dataset_source_guards = copy.deepcopy(guards)
+        return backend
+
     def _env(self) -> dict:
         allowed = {"PATH", "LANG", "LC_ALL", "TZ", "HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY", "NO_PROXY",
                    "https_proxy", "http_proxy", "all_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR"}
@@ -165,9 +185,25 @@ class ZenMLBackend:
         if operation == "model.checkpoint.get" and (payload.get("operation_id") or payload.get("backend_run_id")):
             job, _ = self._job(payload)
             return self._rpc(operation, {**payload, "job_dir": str(job)})
+        if operation == "model.export.read":
+            from ..export_packages import read_package
+            self._job(payload)  # Independent project/run ownership check on every chunk.
+            return read_package(self.root / "export-packages", payload)
         if operation.startswith("model."):
             return self._rpc(operation, payload)
         raise BackendError("capability_unavailable", f"Backend operation is unavailable: {operation}")
+
+    def _check_submission_identity(self, request: dict, payload: dict) -> None:
+        """A lost service transaction cannot relabel an already submitted native job."""
+        if (not request or request.get("project_id") != payload.get("project_id")
+                or request.get("idempotency_key") != payload.get("idempotency_key")
+                or request.get("recipe") != payload.get("recipe")
+                or request.get("source_root") != str(self.repository)
+                or request.get("dependency_paths", {}) != self.dependency_paths
+                or request.get("dataset_source_guards", {}) != getattr(self, "dataset_source_guards", {})
+                or request.get("source_binding") != payload.get("source_binding")
+                or request.get("source_workspace") != payload.get("source_workspace")):
+            raise BackendError("conflict", "Operation identity reused with a conflicting request or source workspace; inspect the original run")
 
     def submit(self, payload: dict) -> dict:
         self._validate_execution(payload)
@@ -189,12 +225,11 @@ class ZenMLBackend:
             try:
                 fcntl.flock(lease.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError:
+                self._check_submission_identity(read_json(job / "request.json"), payload)
                 return self._rpc("run.status", {**payload, "job_dir": str(job)})
             if (job / "request.json").exists():
                 request = read_json(job / "request.json")
-                if (request["project_id"] != payload["project_id"] or request.get("idempotency_key") != payload.get("idempotency_key")
-                        or request["recipe"] != payload["recipe"]):
-                    raise BackendError("conflict", "Operation identity reused with conflicting request")
+                self._check_submission_identity(request, payload)
                 state = read_json(job / "state.json")
                 if (read_json(job / "native.json") or state.get("worker_pid") or
                         alive(state.get("supervisor_pid"), state.get("supervisor_identity"))):
@@ -203,7 +238,8 @@ class ZenMLBackend:
                 # identity exists: the previous service died before a real launch.
             else:
                 request = {**payload, "operation_id": operation_id, "root": str(self.root), "job_dir": str(job),
-                           "run_name": f"modelbuilder-{operation_id}", "dependency_paths": self.dependency_paths, "source_root": str(self.repository),
+                           "run_name": f"modelbuilder-{operation_id}", "dependency_paths": self.dependency_paths,
+                           "dataset_source_guards": getattr(self, "dataset_source_guards", {}), "source_root": str(self.repository),
                            "submitted_at": now(), "trusted_code_roots": self.trusted_code_roots,
                            "executed_recipe_digest": recipe_provenance(payload["recipe"])["recipe_digest"]}
                 write_json(job / "request.json", request)

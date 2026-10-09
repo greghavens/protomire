@@ -309,6 +309,49 @@
       "additionalProperties": false,
       "properties": {
         "operation": {
+          "const": "cost.cancel"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "reservation_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "reservation_id",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
           "const": "cost.estimate"
         },
         "payload": {
@@ -333,6 +376,608 @@
           },
           "required": [
             "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "cost.history"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "after_sequence": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "limit": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "cost.ledger.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "reservation_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "cost.policy.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "account_ref": {
+              "pattern": "^acct_[a-f0-9]{32}$",
+              "type": "string"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "provider_id": {
+              "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "provider_id",
+            "account_ref"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "cost.policy.put"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "expected_revision": {
+              "minimum": 1,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "policy": {
+              "additionalProperties": false,
+              "properties": {
+                "account_ref": {
+                  "pattern": "^acct_[a-f0-9]{32}$",
+                  "title": "Account Ref",
+                  "type": "string"
+                },
+                "enabled": {
+                  "default": true,
+                  "title": "Enabled",
+                  "type": "boolean"
+                },
+                "max_runtime_seconds": {
+                  "maximum": 604800,
+                  "minimum": 1,
+                  "title": "Max Runtime Seconds",
+                  "type": "integer"
+                },
+                "maximum_total": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "currency": {
+                      "pattern": "^[A-Z]{3}$",
+                      "title": "Currency",
+                      "type": "string"
+                    },
+                    "exponent": {
+                      "default": 2,
+                      "maximum": 6,
+                      "minimum": 0,
+                      "title": "Exponent",
+                      "type": "integer"
+                    },
+                    "minor_units": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "title": "Minor Units",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "currency",
+                    "minor_units"
+                  ],
+                  "title": "Money",
+                  "type": "object"
+                },
+                "policy_id": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "title": "Policy Id",
+                  "type": "string"
+                },
+                "project_id": {
+                  "anyOf": [
+                    {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Project Id"
+                },
+                "provider_id": {
+                  "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+                  "title": "Provider Id",
+                  "type": "string"
+                },
+                "revision": {
+                  "default": 1,
+                  "minimum": 1,
+                  "title": "Revision",
+                  "type": "integer"
+                },
+                "scope": {
+                  "enum": [
+                    "account",
+                    "project"
+                  ],
+                  "title": "Scope",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "policy_id",
+                "scope",
+                "provider_id",
+                "account_ref",
+                "maximum_total",
+                "max_runtime_seconds"
+              ],
+              "title": "BudgetPolicy",
+              "type": "object"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "policy",
+            "expected_revision",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "cost.providers"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "cost.quote.create"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "binding": {
+              "additionalProperties": false,
+              "properties": {
+                "account_ref": {
+                  "pattern": "^acct_[a-f0-9]{32}$",
+                  "title": "Account Ref",
+                  "type": "string"
+                },
+                "provider_id": {
+                  "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+                  "title": "Provider Id",
+                  "type": "string"
+                },
+                "target_id": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "title": "Target Id",
+                  "type": "string"
+                },
+                "zenml_orchestrator_id": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "title": "Zenml Orchestrator Id",
+                  "type": "string"
+                },
+                "zenml_stack_id": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "title": "Zenml Stack Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "provider_id",
+                "account_ref",
+                "zenml_stack_id",
+                "zenml_orchestrator_id",
+                "target_id"
+              ],
+              "title": "AccountBinding",
+              "type": "object"
+            },
+            "max_runtime_seconds": {
+              "maximum": 604800,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_digest": {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "binding",
+            "recipe_digest",
+            "max_runtime_seconds"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "cost.quote.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "quote_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "quote_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "cost.reserve"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "consent": {
+              "additionalProperties": false,
+              "description": "An affirmative request by the already authenticated actor, never a credential.",
+              "properties": {
+                "execute_and_spend": {
+                  "const": true,
+                  "title": "Execute And Spend",
+                  "type": "boolean"
+                },
+                "max_runtime_seconds": {
+                  "maximum": 604800,
+                  "minimum": 1,
+                  "title": "Max Runtime Seconds",
+                  "type": "integer"
+                },
+                "maximum_total": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "currency": {
+                      "pattern": "^[A-Z]{3}$",
+                      "title": "Currency",
+                      "type": "string"
+                    },
+                    "exponent": {
+                      "default": 2,
+                      "maximum": 6,
+                      "minimum": 0,
+                      "title": "Exponent",
+                      "type": "integer"
+                    },
+                    "minor_units": {
+                      "maximum": 9007199254740991,
+                      "minimum": 0,
+                      "title": "Minor Units",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "currency",
+                    "minor_units"
+                  ],
+                  "title": "Money",
+                  "type": "object"
+                },
+                "quote_digest": {
+                  "pattern": "^[a-f0-9]{64}$",
+                  "title": "Quote Digest",
+                  "type": "string"
+                },
+                "quote_id": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "title": "Quote Id",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "execute_and_spend",
+                "quote_id",
+                "quote_digest",
+                "maximum_total",
+                "max_runtime_seconds"
+              ],
+              "title": "SpendConsent",
+              "type": "object"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "consent",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "dataset.bind"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "dataset_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "dataset_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "node_id": {
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "purpose": {
+              "enum": [
+                "training",
+                "evaluation",
+                "calibration"
+              ]
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "split_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target_node": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target_port": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id",
+            "expected_revision",
+            "dataset_id",
+            "dataset_revision",
+            "split_id",
+            "purpose",
+            "node_id",
+            "idempotency_key"
           ],
           "type": "object"
         }
@@ -1178,6 +1823,191 @@
       "additionalProperties": false,
       "properties": {
         "operation": {
+          "const": "model.export.inspect"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "model_version_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "artifact_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "model.export.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "model_version_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "model.export.package"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "expected_export_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "model_version_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "artifact_id",
+            "expected_export_digest"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "model.export.read"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "artifact_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "chunk_index": {
+              "maximum": 4096,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "model_version_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "package_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "backend_run_id",
+            "model_version_id",
+            "artifact_id",
+            "package_id",
+            "chunk_index"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
           "const": "model.version.get"
         },
         "payload": {
@@ -1456,6 +2286,20 @@
         },
         "payload": {
           "additionalProperties": false,
+          "dependentRequired": {
+            "source_alias": [
+              "source_repository_id",
+              "trusted"
+            ],
+            "source_repository_id": [
+              "source_alias",
+              "trusted"
+            ],
+            "trusted": [
+              "source_alias",
+              "source_repository_id"
+            ]
+          },
           "properties": {
             "active_model_version_ref": {
               "type": [
@@ -1508,6 +2352,14 @@
             },
             "slug": {
               "minLength": 1,
+              "type": "string"
+            },
+            "source_alias": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$",
+              "type": "string"
+            },
+            "source_repository_id": {
+              "pattern": "^sha256:[0-9a-f]{64}$",
               "type": "string"
             },
             "status": {
@@ -1581,6 +2433,9 @@
               },
               "title": "TrackingConfig",
               "type": "object"
+            },
+            "trusted": {
+              "type": "boolean"
             }
           },
           "required": [
@@ -1691,6 +2546,119 @@
       "properties": {
         "operation": {
           "const": "project.open"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "project.source.bind"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "source_alias": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$",
+              "type": "string"
+            },
+            "source_repository_id": {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "trusted": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "project_id",
+            "source_alias",
+            "source_repository_id",
+            "trusted",
+            "expected_revision",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "project.source.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "project.source.status"
         },
         "payload": {
           "additionalProperties": false,
@@ -1913,6 +2881,61 @@
       "additionalProperties": false,
       "properties": {
         "operation": {
+          "const": "recipe.discover"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "limit": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "offset": {
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "query": {
+              "maxLength": 300,
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "tags": {
+              "items": {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "registry_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
           "const": "recipe.export"
         },
         "payload": {
@@ -1940,6 +2963,206 @@
           "required": [
             "project_id",
             "recipe_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.fork"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "acknowledge_unresolved_dependencies": {
+              "type": "boolean"
+            },
+            "confirm_import": {
+              "const": true
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "publication_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "review_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "target": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "expected_revision": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "mode": {
+                      "const": "existing_project"
+                    },
+                    "project_id": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "project_id",
+                    "expected_revision"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "maxLength": 16000,
+                      "type": "string"
+                    },
+                    "mode": {
+                      "const": "new_project"
+                    },
+                    "model_name": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "slug": {
+                      "pattern": "^[a-z0-9][a-z0-9-]{0,79}$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "slug",
+                    "model_name"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "registry_id",
+            "publication_id",
+            "target",
+            "review_digest",
+            "confirm_import",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.fork.preview"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "publication_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "expected_revision": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "mode": {
+                      "const": "existing_project"
+                    },
+                    "project_id": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "project_id",
+                    "expected_revision"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "maxLength": 16000,
+                      "type": "string"
+                    },
+                    "mode": {
+                      "const": "new_project"
+                    },
+                    "model_name": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "slug": {
+                      "pattern": "^[a-z0-9][a-z0-9-]{0,79}$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "slug",
+                    "model_name"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "registry_id",
+            "publication_id",
+            "target"
           ],
           "type": "object"
         }
@@ -2129,6 +3352,312 @@
       "additionalProperties": false,
       "properties": {
         "operation": {
+          "const": "recipe.publish"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "acknowledge_unresolved_dependencies": {
+              "type": "boolean"
+            },
+            "confirm_publish": {
+              "const": true
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "metadata": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "maxLength": 16000,
+                  "type": "string"
+                },
+                "tags": {
+                  "items": {
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,39}$",
+                    "type": "string"
+                  },
+                  "maxItems": 20,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "title": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "description",
+                "tags"
+              ],
+              "type": "object"
+            },
+            "package_name": {
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$",
+              "type": "string"
+            },
+            "package_version": {
+              "maxLength": 100,
+              "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[a-zA-Z0-9]+(?:[.-][a-zA-Z0-9]+)*)?$",
+              "type": "string"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "review_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "visibility": {
+              "const": "private"
+            }
+          },
+          "required": [
+            "registry_id",
+            "project_id",
+            "recipe_id",
+            "expected_revision",
+            "package_name",
+            "package_version",
+            "visibility",
+            "metadata",
+            "review_digest",
+            "confirm_publish",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.publish.preview"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "metadata": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "maxLength": 16000,
+                  "type": "string"
+                },
+                "tags": {
+                  "items": {
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,39}$",
+                    "type": "string"
+                  },
+                  "maxItems": 20,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "title": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "description",
+                "tags"
+              ],
+              "type": "object"
+            },
+            "package_name": {
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$",
+              "type": "string"
+            },
+            "package_version": {
+              "maxLength": 100,
+              "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[a-zA-Z0-9]+(?:[.-][a-zA-Z0-9]+)*)?$",
+              "type": "string"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "visibility": {
+              "const": "private"
+            }
+          },
+          "required": [
+            "registry_id",
+            "project_id",
+            "recipe_id",
+            "expected_revision",
+            "package_name",
+            "package_version",
+            "visibility",
+            "metadata"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.registry.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "publication_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "registry_id",
+            "publication_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.registry.imported_bundle"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "revision": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id",
+            "revision"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.registry.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
           "const": "recipe.resolve_dependencies"
         },
         "payload": {
@@ -2150,6 +3679,155 @@
           "required": [
             "project_id",
             "recipe_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.source.pin"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "commit": {
+              "pattern": "^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$",
+              "type": "string"
+            },
+            "confirm_pin": {
+              "const": true
+            },
+            "expected_project_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "paths": {
+              "items": {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 1024,
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "review_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "source_repository_id": {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id",
+            "expected_revision",
+            "expected_project_revision",
+            "source_repository_id",
+            "commit",
+            "paths",
+            "review_digest",
+            "confirm_pin",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.source.pin.preview"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "commit": {
+              "pattern": "^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$",
+              "type": "string"
+            },
+            "expected_project_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "paths": {
+              "items": {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 1024,
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "source_repository_id": {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id",
+            "expected_revision",
+            "expected_project_revision",
+            "source_repository_id",
+            "commit",
+            "paths"
           ],
           "type": "object"
         }

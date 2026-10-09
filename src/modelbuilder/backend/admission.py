@@ -59,7 +59,7 @@ def validate_execution(backend, payload: dict) -> dict:
         raise BackendError("dependency_mismatch", "Execution requires SHA256-pinned source files")
     for reference in declared:
         path = (backend.repository / reference["path"]).resolve()
-        if not path.is_relative_to(backend.repository) or not path.is_file():
+        if (backend.repository / reference["path"]).is_symlink() or not path.is_relative_to(backend.repository) or not path.is_file():
             raise BackendError("dependency_mismatch", "Declared source file is unavailable")
         if hashlib.sha256(path.read_bytes()).hexdigest() != reference["sha256"]:
             raise BackendError("dependency_mismatch", "Declared source file has changed", {"path": reference["path"]})
@@ -76,9 +76,14 @@ def validate_execution(backend, payload: dict) -> dict:
             blob = subprocess.run(["git", "show", f"{commit}:{reference['path']}"], cwd=backend.repository, capture_output=True)
             if blob.returncode or hashlib.sha256(blob.stdout).hexdigest() != reference["sha256"]:
                 raise BackendError("dependency_mismatch", "Source bytes do not match the declared Git commit", {"path": reference["path"]})
+    for node in recipe.get("nodes", []):
+        if node.get("kind") == "dataset.version.import":
+            validate_dataset_import(backend, payload, node)
     for dependency in recipe.get("resources", []) + recipe.get("external_dependencies", []):
         identifier = dependency["id"]
         path = backend.dependency_paths.get(identifier)
+        if path and identifier in getattr(backend, "dataset_source_guards", {}):
+            continue  # Reopened through captured no-symlink roots by dataset validation above.
         if path:
             if not Path(path).is_file() or hashlib.sha256(Path(path).read_bytes()).hexdigest() != dependency.get("sha256"):
                 raise BackendError("dependency_mismatch", "Configured dependency bytes do not match manifest", {"id": identifier})
@@ -171,7 +176,9 @@ def validate_dataset_import(backend, payload: dict, node: dict) -> None:
         reference = json.loads(raw)
         load_portable_split(reference, {key: value for key, value in backend.dependency_paths.items() if key in declared},
                             parameters["split_id"], purpose=parameters.get("purpose", "training"),
-                            expected_project_id=payload["project_id"])
+                            expected_project_id=payload["project_id"],
+                            source_guards=(getattr(backend, "dataset_source_guards", {}).copy() or None)
+                            if declared[identifier].get("metadata", {}).get("dataset_reference") else None)
     except ServiceError as exc:
         raise BackendError(exc.code, exc.message, {"node_id": node["id"], **exc.details}) from exc
     except (OSError, ValueError, TypeError, RecursionError) as exc:

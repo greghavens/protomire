@@ -196,12 +196,17 @@ def test_path_traversal_and_absolute_paths_refused(setup, path):
 def test_symlink_sources_and_directories_fail_closed(setup, tmp_path, intermediate):
     _, registry, pid, root = setup
     manifest = make_manifest(root)
-    if intermediate:
-        (root / "linkdir").symlink_to(root, target_is_directory=True)
-        manifest["sources"][0]["path"] = "linkdir/weather.jsonl"
-    else:
-        (root / "link.jsonl").symlink_to(root / "weather.jsonl")
-        manifest["sources"][0]["path"] = "link.jsonl"
+    try:
+        if intermediate:
+            (root / "linkdir").symlink_to(root, target_is_directory=True)
+            manifest["sources"][0]["path"] = "linkdir/weather.jsonl"
+        else:
+            (root / "link.jsonl").symlink_to(root / "weather.jsonl")
+            manifest["sources"][0]["path"] = "link.jsonl"
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Host lacks existing symlink privilege; junction coverage runs separately")
+        raise
     result = registry.validate(pid, manifest)
     assert result["diagnostics"][0]["code"] == "dataset_source_unavailable"
     assert str(tmp_path) not in json.dumps(result)
@@ -217,6 +222,7 @@ def test_root_replacement_is_detected(setup):
     assert result["diagnostics"][0]["code"] == "dataset_root_changed"
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX descriptor/FIFO test; native Windows handle tests are separate")
 def test_read_mutation_and_fifo_fail_without_hanging(setup, monkeypatch):
     _, registry, pid, root = setup
     manifest = make_manifest(root)

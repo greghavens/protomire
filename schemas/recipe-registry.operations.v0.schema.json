@@ -1,0 +1,568 @@
+{
+  "$id": "https://modelbuilder.local/schemas/recipe-registry.operations.v0.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.discover"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "limit": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "offset": {
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "query": {
+              "maxLength": 300,
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "tags": {
+              "items": {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "registry_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.fork"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "acknowledge_unresolved_dependencies": {
+              "type": "boolean"
+            },
+            "confirm_import": {
+              "const": true
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "publication_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "review_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "target": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "expected_revision": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "mode": {
+                      "const": "existing_project"
+                    },
+                    "project_id": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "project_id",
+                    "expected_revision"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "maxLength": 16000,
+                      "type": "string"
+                    },
+                    "mode": {
+                      "const": "new_project"
+                    },
+                    "model_name": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "slug": {
+                      "pattern": "^[a-z0-9][a-z0-9-]{0,79}$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "slug",
+                    "model_name"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "registry_id",
+            "publication_id",
+            "target",
+            "review_digest",
+            "confirm_import",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.fork.preview"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "publication_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "expected_revision": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "mode": {
+                      "const": "existing_project"
+                    },
+                    "project_id": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "project_id",
+                    "expected_revision"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "maxLength": 16000,
+                      "type": "string"
+                    },
+                    "mode": {
+                      "const": "new_project"
+                    },
+                    "model_name": {
+                      "maxLength": 200,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "slug": {
+                      "pattern": "^[a-z0-9][a-z0-9-]{0,79}$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "slug",
+                    "model_name"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "registry_id",
+            "publication_id",
+            "target"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.publish"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "acknowledge_unresolved_dependencies": {
+              "type": "boolean"
+            },
+            "confirm_publish": {
+              "const": true
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "metadata": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "maxLength": 16000,
+                  "type": "string"
+                },
+                "tags": {
+                  "items": {
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,39}$",
+                    "type": "string"
+                  },
+                  "maxItems": 20,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "title": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "description",
+                "tags"
+              ],
+              "type": "object"
+            },
+            "package_name": {
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$",
+              "type": "string"
+            },
+            "package_version": {
+              "maxLength": 100,
+              "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[a-zA-Z0-9]+(?:[.-][a-zA-Z0-9]+)*)?$",
+              "type": "string"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "review_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "visibility": {
+              "const": "private"
+            }
+          },
+          "required": [
+            "registry_id",
+            "project_id",
+            "recipe_id",
+            "expected_revision",
+            "package_name",
+            "package_version",
+            "visibility",
+            "metadata",
+            "review_digest",
+            "confirm_publish",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.publish.preview"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "metadata": {
+              "additionalProperties": false,
+              "properties": {
+                "description": {
+                  "maxLength": 16000,
+                  "type": "string"
+                },
+                "tags": {
+                  "items": {
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,39}$",
+                    "type": "string"
+                  },
+                  "maxItems": 20,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "title": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "description",
+                "tags"
+              ],
+              "type": "object"
+            },
+            "package_name": {
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$",
+              "type": "string"
+            },
+            "package_version": {
+              "maxLength": 100,
+              "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[a-zA-Z0-9]+(?:[.-][a-zA-Z0-9]+)*)?$",
+              "type": "string"
+            },
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "visibility": {
+              "const": "private"
+            }
+          },
+          "required": [
+            "registry_id",
+            "project_id",
+            "recipe_id",
+            "expected_revision",
+            "package_name",
+            "package_version",
+            "visibility",
+            "metadata"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.registry.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "publication_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "registry_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "registry_id",
+            "publication_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.registry.imported_bundle"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "revision": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id",
+            "revision"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.registry.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    }
+  ],
+  "title": "Private recipe registry operations v0"
+}

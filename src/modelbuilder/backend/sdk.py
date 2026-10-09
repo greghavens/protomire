@@ -195,16 +195,19 @@ def status(job: Path) -> dict:
     termination = metadata_values(run).get("local_supervisor_termination", {}) if run else state.get("termination", {})
     if native_status in {"completed", "cached"}:
         current = "succeeded"
-    elif termination.get("reason") == "cancelled" and termination.get("confirmed") is True and termination.get("process_group_terminated") is True and termination_confirmed(state) and not worker_alive:
+    elif termination.get("reason") == "cancelled" and termination.get("confirmed") is True and termination.get("process_group_terminated") is True and termination_confirmed(state) and worker_alive is False:
         current = "cancelled"
+    elif (native_status == "failed" and termination.get("reason") == "worker_failure"
+          and termination.get("confirmed") is True and termination.get("process_group_terminated") is True
+          and termination_confirmed(state) and worker_alive is False):
+        # A later cancel request cannot rewrite an already established failure.
+        current = "failed"
     elif (job / "cancel.json").exists():
         # Native termination metadata can lag the freshly reread supervisor
         # journal. Do not expose a transient terminal failure in that window.
         current = "cancel_requested"
     elif native_status in terminal:
         current = terminal[native_status]
-    elif (job / "cancel.json").exists():
-        current = "cancel_requested"
     elif worker_alive:
         current = "running" if run else "submitted"
     elif state.get("worker_pid"):

@@ -1,6 +1,8 @@
 """Real independent MCP client starts ZenML work and survives service termination."""
 from importlib.util import module_from_spec, spec_from_file_location
 import json
+import hashlib
+import subprocess
 from pathlib import Path
 import time
 
@@ -34,6 +36,14 @@ async def test_mcp_real_training_and_service_crash(tmp_path):
             project = await call("project_create", {"slug": "mcp-trained", "model_name": "MCP CPU model", "idempotency_key": "p"})
             project_id = project["project_id"]
             manifest = json.loads((ROOT / "examples/custom-pytorch/recipe.json").read_text())
+            # This probes transport/restart, not clean portability. Pin the checked-out workload.
+            commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+            source_path = "src/modelbuilder/backend/fixtures.py"
+            source = subprocess.check_output(["git", "show", f"{commit}:{source_path}"], cwd=ROOT)
+            assert source == (ROOT / source_path).read_bytes()
+            manifest["source"]["commit"] = commit
+            manifest["source"]["files"] = [{"path": source_path, "sha256": hashlib.sha256(source).hexdigest()}]
+            manifest.pop("digest", None)
             for node in manifest["nodes"]:
                 if node["kind"] == "model.train":
                     node["parameters"]["steps"] = 30

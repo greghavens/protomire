@@ -79,11 +79,29 @@ def test_shared_service_native_execution_resume_research_and_scope(tmp_path):
     # This test verifies the resume control path; independent tensor parity is a backend acceptance test.
     comparison = invoke("run.compare", {"project_id": project_id, "run_ids": [first["backend_run_id"], second["backend_run_id"]],
                                          "metric": "validation_loss", "direction": "minimize"})
+    # Primary arXiv abstract/title/authors checked on 2026-10-09. The paper concerns
+    # distillation; it does not prove this fixture's continuation or teacher suitability.
     evidence = invoke("evidence.add", {"project_id": project_id, "title": "Distilling the Knowledge in a Neural Network",
-                                      "source_url": "https://arxiv.org/abs/1503.02531", "idempotency_key": "evidence"})
+                         "source_url": "https://arxiv.org/abs/1503.02531", "source_identifier": "arXiv:1503.02531v1",
+                         "authors": ["Geoffrey Hinton", "Oriol Vinyals", "Jeff Dean"], "publication_date": "2015-03-09",
+                         "citation_metadata": {"metadata_verified_at": "2026-10-09", "provider": "arXiv",
+                             "metadata_verification_url": "https://arxiv.org/abs/1503.02531",
+                             "paper_result_reproduced": False, "claim_verified": False}, "idempotency_key": "evidence"})
+    claim = invoke("claim.create", {"project_id": project_id, "evidence_ids": [evidence["evidence_id"]],
+                         "proposition": "For this synthetic fixture, the lower-validation-loss checkpoint is a candidate reference for a later distillation experiment; suitability for distillation remains untested.",
+                         "review_status": "unreviewed", "confidence": None,
+                         "uncertainty": "The cited paper supplies distillation context. This continuation experiment measures only a fixed synthetic validation split and does not reproduce the paper or test distillation efficacy.",
+                         "idempotency_key": "claim"})
     hypothesis = invoke("hypothesis.create", {"project_id": project_id, "evidence_ids": [evidence["evidence_id"]],
-                         "proposed_change": "Continue the tiny controlled baseline", "expected_outcome": "Lower validation loss",
-                         "acceptance_metric": {"name": "validation_loss", "direction": "minimize"}, "idempotency_key": "hypothesis"})
+                         "claim_ids": [claim["claim_id"]],
+                         "proposed_change": "Continue the tiny baseline to select a checkpoint candidate for a later distillation experiment",
+                         "expected_outcome": "Lower validation loss after continuation from four to six steps",
+                         "acceptance_metric": {"name": "validation_loss", "direction": "minimize"},
+                         "scope": "Fixed synthetic validation split only; no distillation or generalization claim.",
+                         "idempotency_key": "hypothesis"})
+    assert invoke("claim.get", {"project_id": project_id, "claim_id": claim["claim_id"]}) == claim
+    assert invoke("hypothesis.get", {"project_id": project_id, "hypothesis_id": hypothesis["hypothesis_id"]})["claim_ids"] == [claim["claim_id"]]
+    assert second["metrics"]["validation_loss"] < first["metrics"]["validation_loss"]
     decision = invoke("decision.record", {"project_id": project_id, "hypothesis_id": hypothesis["hypothesis_id"],
                         "recipe_id": recipe["recipe_id"], "recipe_revision": 1,
                         "run_ids": [first["backend_run_id"], second["backend_run_id"]],
@@ -106,6 +124,9 @@ def test_shared_service_native_execution_resume_research_and_scope(tmp_path):
               "backend_run_ids": [first["backend_run_id"], second["backend_run_id"]],
               "artifact_ids": [a["artifact_id"] for a in artifacts["artifacts"]],
               "checkpoint_artifact_id": checkpoint["artifact_id"], "decision_id": decision["decision_id"],
+              "evidence_id": evidence["evidence_id"], "claim_id": claim["claim_id"], "hypothesis_id": hypothesis["hypothesis_id"],
+              "research_linkage": {"evidence": evidence, "claim": claim, "hypothesis": hypothesis,
+                                   "decision": decision, "paper_result_reproduced": False},
               "selected_model_version_ref": promoted["model_version_ref"], "comparison": comparison}
     output = ROOT / "evidence/backend/service-integration.json"
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -16,6 +16,8 @@ _SNAPSHOT_ROOTS: set[Path] = set()
 
 
 def load_callable(reference: dict, source_root: str, trusted_roots: list[str], source_files: list[dict]):
+    if reference.get("module") in {"__main__", "__mp_main__"}:
+        raise ValueError("Source implementations cannot replace reserved process module identities")
     root = Path(source_root).resolve()
     if not any(root.is_relative_to(Path(allowed).resolve()) for allowed in trusted_roots):
         raise ValueError("Component source root is not explicitly trusted")

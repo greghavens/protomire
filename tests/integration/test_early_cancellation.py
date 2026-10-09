@@ -13,6 +13,7 @@ import pytest
 import psutil
 from modelbuilder.backend import BackendError, ZenMLBackend
 from modelbuilder.backend.common import alive, read_json
+from modelbuilder.recipe import validate_recipe
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
@@ -48,13 +49,18 @@ def early_request(tmp_path):
     sha = hashlib.sha256(code.read_bytes()).hexdigest()
     project_id = str(uuid.uuid4())
     recipe = {"schema_version": "0", "recipe_id": str(uuid.uuid4()), "revision": 1,
+              "name": "Owned pre-native cancellation fixture",
               "project_id": project_id, "source": {"repository": "https://example.invalid/disposable-test.git",
                                                 "commit": commit, "files": [{"path": code.name, "sha256": sha}]},
               "nodes": [{"id": "owned_workload", "kind": "code.python", "implementation_ref": {
                   "module": "owned_workload", "entrypoint": "result", "path": code.name, "sha256": sha, "commit": commit},
-                  "inputs": [], "outputs": [{"name": "result", "type": "str"}], "parameters": {}, "timeout": 120}],
+                  "inputs": [], "outputs": [{"name": "result", "type": "str"}], "parameters": {}, "timeout": 120,
+                  "environment_ref": "default", "resource_request": {"gpu": 0},
+                  "retry": {"max_attempts": 1, "backoff_seconds": 0}, "cache_policy": "disabled", "provenance": {}}],
               "edges": [], "resources": [], "external_dependencies": [],
+              "evaluation": {}, "outputs": [{"name": "result", "type": "str"}],
               "environment": {"python": "3.12", "requirements": ["zenml==0.97.0"]}}
+    recipe = validate_recipe(recipe)
     backend = ZenMLBackend(tmp_path / "data", python_executable=str(PYTHON), source_root=source,
                            trusted_code_roots=[str(source)])
     request = {"project_id": project_id, "operation_id": str(uuid.uuid4()), "trusted": True,
@@ -90,7 +96,9 @@ def test_confirmed_cancel_before_native_run_creation(tmp_path):
         before = backend.invoke("run.status", request)
         assert before["backend_run_id"] is None and before["worker_alive"] is True
         cancelled = backend.invoke("run.cancel", request)
-        (ROOT / "evidence/backend/early-cancellation.json").write_text(json.dumps({"before": before, "after": cancelled}, indent=2))
+        (ROOT / "evidence/backend/early-cancellation.json").write_text(json.dumps({
+            "fixture": "actual worker stopped with SIGSTOP before native registration",
+            "before": before, "after": cancelled}, indent=2))
         assert cancelled["status"] == "cancelled", cancelled
         assert cancelled["backend_run_id"] is None and cancelled["backend_status"] is None
         assert cancelled["cancellation_acknowledged"] is True
@@ -123,11 +131,11 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
     copied_fixture.parent.mkdir(parents=True)
     copied_fixture.write_bytes((ROOT / fixture_path).read_bytes())
     pause = source / "pause.py"
-    marker = tmp_path / "pause-started.json"
-    pause.write_text('import json\nimport signal\nimport time\nfrom pathlib import Path\n'
-                     'def pause(checkpoint: Path, marker_path: str) -> str:\n'
+    pause.write_text('import json\nimport os\nimport signal\nimport time\nfrom pathlib import Path\n'
+                     'def pause(checkpoint: Path) -> str:\n'
                      '    signal.signal(signal.SIGTERM, signal.SIG_IGN)\n'
-                     '    Path(marker_path).write_text(json.dumps({"source_file": __file__, "checkpoint": str(checkpoint)}))\n'
+                     '    marker = Path(os.environ["MODELBUILDER_JOB_DIR"]) / "pause-started.json"\n'
+                     '    marker.write_text(json.dumps({"source_file": __file__, "checkpoint": str(checkpoint)}))\n'
                      '    time.sleep(60)\n'
                      '    return str(checkpoint)\n')
     subprocess.run(["git", "init", "-q", str(source)], check=True)
@@ -140,17 +148,27 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
                                   {"path": str(lock_path), "sha256": hashlib.sha256(copied_lock.read_bytes()).hexdigest()},
                                   {"path": "pause.py", "sha256": hashlib.sha256(pause.read_bytes()).hexdigest()}]}
     next(n for n in recipe["nodes"] if n["kind"] == "model.train")["parameters"]["steps"] = 3
+    # Native Python checkpoint values are pathlib.Path. Keep both ends of
+    # every connected port consistent so the complete recipe validates too.
+    for node in recipe["nodes"]:
+        for port in node["inputs"] + node["outputs"]:
+            if port["type"] == "checkpoint":
+                port["type"] = "Path"
     recipe["nodes"].append({"id": "pause", "kind": "code.python", "implementation_ref": {
         "module": "owned_checkpoint_pause", "entrypoint": "pause", "path": "pause.py", "commit": commit,
         "sha256": hashlib.sha256(pause.read_bytes()).hexdigest()}, "inputs": [{"name": "checkpoint", "type": "Path"}],
-        "outputs": [{"name": "result", "type": "str"}], "parameters": {"marker_path": str(marker)}, "timeout": 120})
+        "outputs": [{"name": "result", "type": "str"}], "parameters": {}, "timeout": 120,
+        "environment_ref": "default", "resource_request": {"gpu": 0},
+        "retry": {"max_attempts": 1, "backoff_seconds": 0}, "cache_policy": "disabled", "provenance": {}})
     recipe["edges"].append({"source_node": "train", "source_port": "checkpoint", "target_node": "pause", "target_port": "checkpoint"})
     backend = ZenMLBackend(tmp_path / "data", python_executable=str(PYTHON), source_root=source, trusted_code_roots=[str(source)])
     project_id = str(uuid.uuid4())
     recipe["project_id"] = project_id
+    recipe = validate_recipe(recipe)
     request = {"project_id": project_id, "operation_id": str(uuid.uuid4()), "trusted": True, "recipe": recipe,
                "idempotency_key": str(uuid.uuid4()), "max_runtime_seconds": 90}
     backend.invoke("run.submit", request)
+    marker = backend.root / "jobs" / request["operation_id"] / "pause-started.json"
     deadline = time.monotonic() + 45
     while not marker.exists() and time.monotonic() < deadline:
         state = read_json(backend.root / "jobs" / request["operation_id"] / "state.json")
@@ -196,5 +214,7 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
     assert child["status"] == "succeeded", child
     assert child["parent_run_id"] == cancelled["backend_run_id"]
     (ROOT / "evidence/backend/pending-cancel-resume.json").write_text(json.dumps({
+        "source_snapshot": {**paused, "outside_owned_checkout": True,
+                            "sha256": hashlib.sha256(pause.read_bytes()).hexdigest()},
         "before": before, "rejection": {"code": rejection.value.code, "message": str(rejection.value)},
         "cancelled": cancelled, "resumed": child}, indent=2))

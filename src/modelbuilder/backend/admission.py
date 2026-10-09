@@ -126,6 +126,8 @@ def validate_execution(backend, payload: dict) -> dict:
         if kind == "dataset.version.import":
             validate_dataset_import(backend, payload, node)
         if kind in {"code.python", "component.run"}:
+            if isinstance(reference, dict) and reference.get("module") in {"__main__", "__mp_main__"}:
+                raise BackendError("validation_error", "Source implementations cannot replace reserved process module identities", {"node_id": node.get("id")})
             if isinstance(reference, dict) and (reference.get("commit") != commit or
                     not any(item.get("path") == reference.get("path") and item.get("sha256") == reference.get("sha256") for item in declared)):
                 raise BackendError("dependency_mismatch", "Python implementation must belong to the pinned source closure", {"node_id": node["id"]})

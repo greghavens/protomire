@@ -4,10 +4,14 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+import time
 from contextlib import contextmanager
 from pathlib import Path
 
 from .models import ServiceError, utcnow
+
+
+_STARTUP_TIMEOUT_SECONDS = 30.0
 
 
 class SQLiteStore:
@@ -15,11 +19,42 @@ class SQLiteStore:
         self.path = str(path)
         if self.path != ":memory:":
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
-        self.connection = sqlite3.connect(self.path, isolation_level=None, check_same_thread=False, timeout=30)
+        self.connection = sqlite3.connect(self.path, isolation_level=None, check_same_thread=False, timeout=0)
         self.connection.row_factory = sqlite3.Row
         self._lock = threading.RLock()
-        self.connection.execute("PRAGMA foreign_keys=ON")
-        self.connection.execute("PRAGMA journal_mode=WAL")
+        try:
+            self.connection.execute("PRAGMA foreign_keys=ON")
+            self._initialize()
+            self.connection.execute("PRAGMA busy_timeout=30000")
+        except BaseException:
+            self.connection.close()
+            raise
+
+    def _initialize(self):
+        # Changing journal mode may return BUSY immediately despite SQLite's
+        # busy_timeout (e.g. simultaneous DELETE -> WAL opens). Retry the
+        # idempotent startup only, across processes, with one monotonic deadline.
+        # SQLite's busy handler stays disabled here so a final attempt cannot
+        # exceed that deadline by another full connection timeout.
+        deadline = time.monotonic() + _STARTUP_TIMEOUT_SECONDS
+        delay = 0.005
+        while True:
+            try:
+                self.connection.execute("PRAGMA journal_mode=WAL").fetchone()
+                self._initialize_schema()
+                return
+            except sqlite3.OperationalError as exc:
+                code = getattr(exc, "sqlite_errorcode", None)
+                if code is None or code & 0xFF not in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
+                    raise
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise
+                time.sleep(min(delay, remaining))
+                delay = min(delay * 2, 0.1)
+
+    def _initialize_schema(self):
+        # Every statement is idempotent, including after a partial startup.
         self.connection.executescript("""
         CREATE TABLE IF NOT EXISTS resources (
             kind TEXT NOT NULL, id TEXT NOT NULL, project_id TEXT NOT NULL,

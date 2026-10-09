@@ -173,13 +173,21 @@ def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: 
                                       "idempotency_key": "portable:project"})
     pid = project["project_id"]
     current = call("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"]})
-    imported = call("recipe.import", {"project_id": pid, "bundle": export_bundle(report["recipe"], source_root=source_root),
+    raw_bundle = json.dumps(export_bundle(report["recipe"], source_root=source_root), allow_nan=False)
+    imported = call("recipe.import", {"project_id": pid, "bundle_json": raw_bundle,
                                       "expected_revision": current["revision"],
                                       "idempotency_key": "portable:import"})
     if imported["recipe_id"] != project["recipe_id"]:
         raise AssertionError("Import created an independent recipe instead of updating the model project recipe")
+    if imported["revision"] != current["revision"] + 1:
+        raise AssertionError("Import did not create the next immutable revision of the owned recipe")
     if imported["import_report"]["execution_allowed"] is not False:
         raise AssertionError("Import unexpectedly authorized execution")
+    original_revision = call("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"],
+                                             "revision": current["revision"]})
+    recipes = call("recipe.list", {"project_id": pid})
+    if original_revision != current or [item["recipe_id"] for item in recipes["recipes"]] != [project["recipe_id"]]:
+        raise AssertionError("Import changed historical recipe content or created another recipe identity")
     submitted = call("run.submit", {"project_id": pid, "recipe_id": imported["recipe_id"],
                                     "expected_revision": imported["revision"], "trusted": True,
                                     "idempotency_key": "portable:run"})
@@ -204,6 +212,15 @@ def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: 
         write_json(output, {"status": "FAIL", "run": status, "transcript": transcript,
                             "logs": call("run.logs", payload)})
         raise RuntimeError("Replay failed; see result and native worker logs")
+    recipe_identity = {"project_id": pid, "project_recipe_id": project["recipe_id"],
+                       "imported_recipe_id": imported["recipe_id"], "listed_recipe_ids": [r["recipe_id"] for r in recipes["recipes"]],
+                       "initial_revision": current["revision"], "imported_revision": imported["revision"],
+                       "original_revision_unchanged": original_revision == current,
+                       "run_recipe_id": status.get("recipe_id"), "run_recipe_revision": status.get("recipe_revision"),
+                       "run_recipe_digest": status.get("recipe_digest"), "native_executed_recipe_digest": status.get("executed_recipe_digest"),
+                       "imported_recipe_digest": imported["digest"]}
+    if not valid_recipe_identity(recipe_identity):
+        raise AssertionError("Run provenance does not identify the single owned recipe and its exact imported revision")
     # Probe the same interpreter/environment used by SDK and native workers.
     completed = subprocess.run([str(backend_python.absolute()), "-I", str(source_root / "scripts/replay_bundle.py"),
                                 "identity", "--backend"], cwd=source_root, env=backend._env(),
@@ -229,12 +246,27 @@ def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: 
     result = {"status": "PASS", "source_commit": report["recipe"]["source"]["commit"],
               "transport_recipe_digest": report["digest"], "executed_recipe_digest": imported["digest"],
               "source_root": str(source_root.resolve()), "data_dir": str(data_dir.resolve()),
-              "import_execution_allowed": False, "service_identity": service_identity,
+              "import_execution_allowed": False, "import_transport": "bundle_json", "service_identity": service_identity,
               "backend_identity": backend_identity, "run": status, "output_sha256": hashes,
               "installed_source_verified": True, "external_resource_sha256": external_hashes,
+              "recipe_identity": recipe_identity,
               "transcript": transcript, "unresolved_dependencies_at_import": report["unresolved_dependencies"]}
     write_json(output, result)
     return result
+
+
+def valid_recipe_identity(identity: dict) -> bool:
+    recipe_id = identity.get("project_recipe_id")
+    return bool(recipe_id and identity.get("imported_recipe_id") == recipe_id
+                and identity.get("listed_recipe_ids") == [recipe_id]
+                and identity.get("run_recipe_id") == recipe_id
+                and identity.get("original_revision_unchanged") is True
+                and type(identity.get("initial_revision")) is int
+                and identity.get("imported_revision") == identity["initial_revision"] + 1
+                and identity.get("run_recipe_revision") == identity["imported_revision"]
+                and identity.get("imported_recipe_digest")
+                and identity.get("run_recipe_digest") == identity["imported_recipe_digest"]
+                and identity.get("native_executed_recipe_digest") == identity["imported_recipe_digest"])
 
 
 def compare_results(origin: dict, replay: dict) -> dict:
@@ -249,6 +281,8 @@ def compare_results(origin: dict, replay: dict) -> dict:
               "independent_data_dirs": origin["data_dir"] != replay["data_dir"],
               "independent_run_ids": origin["run"]["backend_run_id"] != replay["run"]["backend_run_id"],
               "independent_source_roots": origin["source_root"] != replay["source_root"]}
+    for role, record in (("origin", origin), ("replay", replay)):
+        checks[role + "_single_owned_recipe_identity"] = valid_recipe_identity(record.get("recipe_identity", {}))
     for role in ("service_identity", "backend_identity"):
         left, right = origin[role], replay[role]
         checks[role + "_independent_prefix"] = left["prefix"] != right["prefix"]

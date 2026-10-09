@@ -8,6 +8,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+MAX_BUNDLE_JSON_BYTES = 8 * 1024 * 1024
+
 SCOPES = frozenset({"read", "modify", "execute", "spend", "delete", "publish"})
 
 
@@ -153,6 +155,11 @@ class OperationSpec:
     properties: dict
     required: tuple[str, ...] = ()
     mutating: bool = False
+    additional_scopes: tuple[str, ...] = ()
+
+    @property
+    def required_scopes(self) -> tuple[str, ...]:
+        return (self.scope, *self.additional_scopes)
 
     @property
     def input_schema(self) -> dict:
@@ -160,18 +167,22 @@ class OperationSpec:
         properties["request_id"] = S
         if self.mutating:
             properties["idempotency_key"] = {"type": "string", "minLength": 1, "maxLength": 200}
-        return {"type": "object", "properties": properties,
-                "required": list(self.required) + (["idempotency_key"] if self.mutating else []),
-                "additionalProperties": False}
+        schema = {"type": "object", "properties": properties,
+                  "required": list(self.required) + (["idempotency_key"] if self.mutating else []),
+                  "additionalProperties": False}
+        if self.name == "recipe.import":
+            schema["oneOf"] = [{"required": ["bundle"], "not": {"required": ["bundle_json"]}},
+                               {"required": ["bundle_json"], "not": {"required": ["bundle"]}}]
+        return schema
 
     def as_dict(self) -> dict:
         return {"name": self.name, "operation": self.name, "scope": self.scope,
-                "description": self.description, "mutating": self.mutating,
+                "description": self.description, "mutating": self.mutating, "required_scopes": list(self.required_scopes),
                 "input_schema": self.input_schema}
 
 
-def _spec(name, scope, description, properties=None, required=(), mutating=False):
-    return OperationSpec(name, scope, description, properties or {}, tuple(required), mutating)
+def _spec(name, scope, description, properties=None, required=(), mutating=False, additional_scopes=()):
+    return OperationSpec(name, scope, description, properties or {}, tuple(required), mutating, tuple(additional_scopes))
 
 
 P = {"project_id": S}
@@ -216,11 +227,13 @@ OPERATIONS = {s.name: s for s in [
           {**R, "recipe": OBJECT, "from_revision": POSITIVE_INT, "to_revision": POSITIVE_INT}, ("project_id", "recipe_id")),
     _spec("recipe.clone", "modify", "Compatibility historical restore: copy a prior revision into the same stable recipe identity.",
           {**R, "name": S, "expected_revision": POSITIVE_INT, "source_revision": POSITIVE_INT}, ("project_id", "recipe_id", "expected_revision"), True),
-    _spec("recipe.export", "read", "Export a portable, secret-checked bundle without execution.", R,
-          ("project_id", "recipe_id")),
+    _spec("recipe.export", "read", "Export a portable bundle without execution; format=json returns lossless bundle_json for browser round trips.",
+          {**R, "format": {"enum": ["object", "json"]}}, ("project_id", "recipe_id")),
     _spec("recipe.import", "modify", "Open a verified bundle as the next untrusted revision of this model's single recipe.",
-          {**P, "bundle": OBJECT, "name": S, "expected_revision": POSITIVE_INT},
-          ("project_id", "bundle", "expected_revision"), True),
+          {**P, "bundle": OBJECT, "bundle_json": {"type": "string", "minLength": 1, "maxLength": MAX_BUNDLE_JSON_BYTES,
+              "description": "Exact exported JSON text; do not parse and reserialize in JavaScript. Maximum 8 MiB UTF-8."},
+           "name": S, "expected_revision": POSITIVE_INT},
+          ("project_id", "expected_revision"), True),
     _spec("recipe.resolve_dependencies", "read", "Inspect immutable dependency references and readiness.",
           R, ("project_id", "recipe_id")),
     _spec("evidence.add", "modify", "Store a citation; a citation alone does not prove a claim.",
@@ -269,11 +282,11 @@ OPERATIONS = {s.name: s for s in [
     _spec("run.logs", "read", "Read actual backend logs.", {**RUN, "cursor": NULLABLE_STRING}, ("project_id",)),
     _spec("run.cancel", "execute", "Request real cancellation; requested is not confirmed termination.",
           RUN, ("project_id",), True),
-    _spec("run.resume", "execute", "Resume an actual checkpoint; distinguish exact state and warm start.",
+    _spec("run.resume", "execute", "Resume an actual checkpoint and advance this recipe revision; requires execute and modify. Exact state differs from warm start.",
           {**RUN, "checkpoint_ref": S, "checkpoint_id": S, "mode": {"enum": ["exact_state", "warm_start"]},
            "resume_mode": {"enum": ["exact_state", "warm_start"]}, "parameters": NO_OVERRIDES, "steps": POSITIVE_INT,
            "checkpoint_kind": {"enum": ["last", "best"]}, "trusted": B, "expected_recipe_revision": POSITIVE_INT},
-          ("project_id", "expected_recipe_revision"), True),
+          ("project_id", "expected_recipe_revision"), True, additional_scopes=("modify",)),
     _spec("run.artifacts", "read", "Read authoritative artifact identifiers and hashes.", RUN, ("project_id",)),
     _spec("run.compare", "read", "Compare metrics from actual backend runs by a declared criterion.",
           {**P, "run_ids": {"type": "array", "items": S, "minItems": 2}, "metric": S,

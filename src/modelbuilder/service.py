@@ -14,7 +14,7 @@ from pydantic import ValidationError
 
 from . import recipe as recipe_module
 from .models import (Actor, Claim, Decision, Evidence, Hypothesis, ModelProject, OPERATIONS,
-                     PROJECT_FIELDS, CLAIM_FIELDS, HYPOTHESIS_FIELDS, ServiceError, new_id,
+                     PROJECT_FIELDS, CLAIM_FIELDS, HYPOTHESIS_FIELDS, MAX_BUNDLE_JSON_BYTES, ServiceError, new_id,
                      operation_catalog, utcnow)
 from .store import SQLiteStore
 
@@ -104,8 +104,11 @@ class OperationService:
             if spec is None:
                 code = "capability_unavailable" if operation in {"recipe.publish", "recipe.discover", "recipe.fork"} else "unknown_operation"
                 raise ServiceError(code, "Operation is not available", {"operation": operation}, 404)
-            if spec.scope not in actor.scopes:
-                raise ServiceError("forbidden", f"Operation requires {spec.scope} scope", {"required_scope": spec.scope}, 403)
+            missing_scopes = set(spec.required_scopes) - actor.scopes
+            if missing_scopes:
+                raise ServiceError("forbidden", "Operation requires scopes: " + ", ".join(spec.required_scopes),
+                                   {"required_scope": spec.scope, "required_scopes": list(spec.required_scopes),
+                                    "missing_scopes": sorted(missing_scopes)}, 403)
             if project_id and actor.project_ids is not None and project_id not in actor.project_ids:
                 raise ServiceError("forbidden", "Actor cannot access this project", status_code=403)
             if operation == "project.create" and actor.project_ids is not None:
@@ -289,7 +292,9 @@ class OperationService:
             self._revision(current, p["expected_revision"], p.get("recipe"))
             report = None
             if action == "import":
-                report = recipe_module.import_bundle(p["bundle"])
+                bundle = recipe_module.parse_bundle_json(p["bundle_json"], max_bytes=MAX_BUNDLE_JSON_BYTES) if "bundle_json" in p else p["bundle"]
+                self._reject_secrets(bundle)
+                report = recipe_module.import_bundle(bundle)
                 body = report["recipe"]
             else:
                 body = p.get("recipe") or recipe_module.default_recipe(project_id, current["recipe_id"], p.get("name", current["name"]))
@@ -326,7 +331,14 @@ class OperationService:
             return {"recipe_id": recipe["recipe_id"], "current_revision": recipe["revision"],
                     "equal": before == after, "diff": self._diff(before, after)}
         if action == "export":
-            return recipe_module.export_bundle({k: v for k, v in recipe.items() if k != "digest"}, source_root=self.source_root)
+            bundle = recipe_module.export_bundle({k: v for k, v in recipe.items() if k != "digest"}, source_root=self.source_root)
+            if p.get("format", "object") == "json":
+                text = recipe_module.canonical_json(bundle)
+                if len(text.encode("utf-8")) > MAX_BUNDLE_JSON_BYTES:
+                    raise ServiceError("bundle_limit", "Raw bundle JSON exceeds the 8 MiB transport limit", status_code=413)
+                return {"bundle_json": text, "digest": bundle["digest"], "bundle_digest": bundle["bundle_digest"],
+                        "media_type": "application/json"}
+            return bundle
         if action == "resolve_dependencies":
             return recipe_module.resolve_dependencies(recipe, base_path=self.source_root)
         self._revision(recipe, p["expected_revision"], p.get("recipe"))

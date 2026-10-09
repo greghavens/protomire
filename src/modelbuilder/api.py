@@ -188,7 +188,7 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
                     "schema": {"$ref": "#/components/schemas/OperationError"}}}}
             schema["paths"][f"/v1/operations/{name}"] = {"post": {
                 "operationId": name.replace(".", "_"), "summary": operation.description,
-                "x-required-scope": operation.scope, "security": [{"BearerAuth": []}],
+                "x-required-scope": operation.scope, "x-required-scopes": list(operation.required_scopes), "security": [{"BearerAuth": []}],
                 "requestBody": {"required": True, "content": {"application/json": {"schema": operation.input_schema}}},
                 "responses": responses}}
         for path, methods in schema["paths"].items():

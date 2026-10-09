@@ -642,6 +642,28 @@ def _strict_json(data: bytes) -> dict:
     return result
 
 
+def parse_bundle_json(text: str, *, max_bytes: int = 8 * 1024 * 1024) -> dict:
+    """Decode lossless transport text without changing existing numeric canonicalization.
+
+    This is an inert, bounded JSON parser, never a path or archive opener. It uses
+    the same duplicate-key, non-finite-number, depth and item checks as archives.
+    """
+    if not isinstance(text, str):
+        _fail("invalid_json", "Raw bundle JSON must be a string")
+    if len(text) > max_bytes:
+        _fail("bundle_limit", "Raw bundle JSON exceeds the UTF-8 size limit", max_bytes=max_bytes)
+    try:
+        data = text.encode("utf-8")
+    except UnicodeEncodeError:
+        _fail("invalid_json", "Raw bundle JSON must be valid UTF-8")
+    if len(data) > max_bytes:
+        _fail("bundle_limit", "Raw bundle JSON exceeds the UTF-8 size limit", max_bytes=max_bytes)
+    result = _strict_json(data)
+    if not isinstance(result, dict):
+        _fail("invalid_bundle", "Raw bundle JSON must contain an object envelope")
+    return result
+
+
 def _validated_bundle(bundle: dict) -> tuple[dict, dict[str, bytes]]:
     _json_value(bundle)
     expected_keys = {"bundle_version", "recipe", "digest", "files", "bundle_digest"}

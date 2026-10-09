@@ -437,7 +437,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "adfa0688a0f7216a4fc6087aaee6cdbcfa949dfa",
+    "commit": "dee51909ee7f0e98c798492e0a865e967d60e400",
     "files": [
       {
         "path": "pyproject.toml",
@@ -541,7 +541,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/runtime.py",
-        "sha256": "f0aa5c7e966c4c9bf6f69ae4b3cc87271ced612bbde2ae77189af4c6a4ab1d23"
+        "sha256": "cae994d2e4f519836d03f1cb142790f970697c39bf31a671b3701cb83ff9ed41"
       },
       {
         "path": "src/modelbuilder/backend/execution_limits.py",
@@ -581,7 +581,7 @@
       },
       {
         "path": "src/modelbuilder/backend/worker.py",
-        "sha256": "91cd62a67937f7897a9ca9509fcccff19e6a458ccdd262f8785ca41a16c00978"
+        "sha256": "faa9833528083a89669c3022317fad4246659bcadabee6ba43af49c412b1acc6"
       },
       {
         "path": "src/modelbuilder/dataset.py",

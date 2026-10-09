@@ -1,6 +1,6 @@
 # Current verification and remaining gates
 
-Runtime source checkpoint: `adfa0688a0f7216a4fc6087aaee6cdbcfa949dfa` (63-file closure). This is an implementation checkpoint, not full-product completion. Work is directly on `main`; no pull request is required.
+Runtime source checkpoint: `dee51909ee7f0e98c798492e0a865e967d60e400` (63-file closure). This is an implementation checkpoint, not full-product completion. Work is directly on `main`; no pull request is required.
 
 ## Previously demonstrated baseline
 
@@ -19,8 +19,9 @@ The safety follow-up fixes inherited behavior: warm starts now use edited curren
 
 This batch is based on previously published main `732dd5014d84d737a97cb2e4664cc24c8d3b771d` and keeps the inherited warm-start and export-provenance fixes. It adds approved per-project source bindings, explicit reviewed source pinning, private recipe registry actions, durable cost diagnostics with production remote execution disabled, portable dataset reads and immutable dataset binding, typed component authoring, and native model comparison, decision, promotion and Save workflows.
 
-- Combined service, contract, security and portability selection: **1,097 passed, 15 skipped, 17 deselected**. Shipping examples are repinned to the actual source commit above.
-- The actual 63-file source checkpoint additionally passed the official MCP→HTTP→ZenML→live checkpoint evaluation→offline W&B integration; evaluations were observed before later checkpoints.
+- Combined service, contract, security and portability selection: **1,107 passed, 16 skipped, 18 deselected**. Shipping examples are repinned to the actual source commit above.
+- The final source checkpoint passed both the official MCP→HTTP→ZenML→live checkpoint evaluation→offline W&B integration and the multi-output native pipeline regression. Evaluation results and real offline tracking acknowledgements arrived before later checkpoints. The final source also passed four clean installed-wheel runs, 62/62 replay comparisons and 124/124 portability checks. All eight custom and twelve pretrained output hashes matched exactly, with zero export reload difference; all 63 source files and installed wheel bytes were reverified. Ten multi-output ABI checks also passed against a fresh installed backend wheel outside the checkout.
+- Multi-output source components and Python nodes now use the pinned ZenML ABI correctly, reject wrong output shapes, and retain all authoritative artifacts. Ten pinned-SDK regression tests and a real two-node native pipeline pass.
 - Combined frontend TypeScript checks and **239 unit/host tests** pass. Real loopback HTTP plus external MCP parity, typed workspace/private registry actions, and source-pin native-dialog helpers pass; these use dialog doubles and do not establish GUI acceptance.
 - Configured native dataset execution through external MCP and HTTP passes, including preserving the configured virtual-environment interpreter path. Source pinning to a real committed checkout and independent native model execution pass.
 - Final combined native release and bound-source workflows passed: real independent runs, comparison, decision, promotion, saved-package fresh reload with zero prediction difference, immutable source pinning and exact resume after rebinding. The newly created component also passed real HTTP and native execution.
@@ -30,7 +31,7 @@ This remains an implementation checkpoint. Later explicit checkpoint-subgraph ex
 
 ## Current limits
 
-- The refreshed native build passed Monaco typechecking but its full source compiler was terminated with SIGKILL in this executor. The earlier Linux build pass is historical; current full native compilation is being retried. The cached File-menu upgrade guard was fixed and passed 22 tests without permitting arbitrary upstream edits.
+- Fresh Linux native compilation passed all pinned upstream tasks, Electron assembly and launcher version verification after a prior SIGKILL retry. The cached File-menu upgrade guard passed 22 tests without permitting arbitrary upstream edits. This is a compile/launcher pass, not GUI acceptance.
 
 - Fresh native GUI and notification acceptance is blocked: the execution environment has no usable display and rejects local Unix-domain sockets. Compilation and frontend tests do not substitute for actual window interaction.
 - macOS, Windows and ARM native runtime acceptance has not been performed here. Current model-package reading requires POSIX handle-relative file access; a Windows implementation is still outstanding. Dataset Windows support has a separate implementation but remains unverified on a Windows host.

@@ -1,0 +1,113 @@
+{
+  "status": "FAIL",
+  "tests": [
+    {
+      "name": "project-landing-before-workspace",
+      "status": "PASS",
+      "evidence": {
+        "workspace_visible": false,
+        "project_picker": "landing only",
+        "workspace_selectors": 0
+      }
+    },
+    {
+      "name": "fixed-single-model-workspace",
+      "status": "PASS",
+      "evidence": {
+        "model": "GUI parity model",
+        "project_id": "40a0c386-2c73-421d-9b2e-908976ab3aba",
+        "recipe_id": "11761570-c2af-5526-9fa1-b46db9402ed9",
+        "workspace_selectors": 0
+      }
+    },
+    {
+      "name": "graph-authoring-typed-python",
+      "status": "PASS",
+      "evidence": {
+        "revision": 3,
+        "digest": "ef744e5f889de8ac714eb40de34c0002f49eedd5020c17c1479885ea6d45e311",
+        "nodes": [
+          "custom",
+          "data"
+        ],
+        "edge": {
+          "source_node": "data",
+          "source_port": "tensor",
+          "target_node": "custom",
+          "target_port": "data"
+        }
+      }
+    },
+    {
+      "name": "gui-to-external-mcp-digest-equality",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "11761570-c2af-5526-9fa1-b46db9402ed9",
+        "revision": 3,
+        "digest": "ef744e5f889de8ac714eb40de34c0002f49eedd5020c17c1479885ea6d45e311"
+      }
+    },
+    {
+      "name": "external-mcp-to-visible-gui",
+      "status": "PASS",
+      "evidence": {
+        "revision": 4,
+        "digest": "16574c5e701d69ee8b6eca9f51c07b732f9e71e7b12f28c995a22d5b58626f68"
+      }
+    },
+    {
+      "name": "single-recipe-identity-tracks-remote-revision",
+      "status": "PASS",
+      "evidence": {
+        "identity": "MCP edited this exact recipe  ·  11761570-c2af-5526-9fa1-b46db9402ed9  ·  revision 4\nSHA256 16574c5e701d69ee8b6eca9f51c07b732f9e71e7b12f28c995a22d5b58626f68",
+        "recipe_id": "11761570-c2af-5526-9fa1-b46db9402ed9",
+        "revision": 4
+      }
+    },
+    {
+      "name": "concurrent-edit-conflict-preserves-draft",
+      "status": "PASS",
+      "evidence": {
+        "local_revision": 4,
+        "server_revision": 5,
+        "draft_preserved": true,
+        "diff_visible": "{\n  \"recipe_id\": \"11761570-c2af-5526-9fa1-b46db9402ed9\",\n  \"current_revision\": 5,\n  \"equal\": false,\n  \"diff\": \"--- client\\n+++ server\\n@@ -2,7 +2,7 @@\\n   \\\"capabilities\\\": [\\n     \\\"local_cpu\\\"\\n   ],\\n-  \\\"digest\\\": \\\"16574c5e701d69ee8b6eca9f51c07b732f9e71e7b12f28c995a22d5b58626f68\\\",\\n+  \\\"digest\\\": \\\"0e91a08f2441394ab6f03be3f684ff5df88ba306dfef34d5287a138e3371d2ce\\\",\\n   \\\"edges\\\": [\\n     {\\n       \\\"source_node\\\": \\\"data\\\",\\n@@ -24,7 +24,7 @@\\n       \\\"scope\\\": \\\"source\\\"\\n     }\\n   ],\\n-  \\\"name\\\": \\\"Unsaved GUI draft\\\",\\n+  \\\"name\\\": \\\"Concurrent MCP revision\\\",\\n   \\\"nodes\\\": [\\n     {\\n       \\\"cache_policy\\\": \\\"disabled\\\",\\n@@ -93,7 +93,7 @@\\n   \\\"project_id\\\": \\\"40a0c386-2c73-421d-9b2e-908976ab3aba\\\",\\n   \\\"recipe_id\\\": \\\"11761570-c2af-5526-9fa1-b46db9402ed9\\\",\\n   \\\"resources\\\": [],\\n-  \\\"revision\\\": 4,\\n+  \\\"revision\\\": 5,\\n   \\\"schema_version\\\": \\\"0\\\",\\n   \\\"source\\\": {\\n     \\\"commit\\\": \\\"0000000000000000000000000000000000000000\\\",\"\n}"
+      }
+    },
+    {
+      "name": "invalid-source-visual-edit-protection",
+      "status": "PASS",
+      "evidence": {
+        "source_preserved": true
+      }
+    },
+    {
+      "name": "reload-cancel-preserves-draft",
+      "status": "PASS",
+      "evidence": {
+        "draft_preserved": true,
+        "explicit_cancel": true
+      }
+    },
+    {
+      "name": "explicit-reload-loads-server",
+      "status": "PASS",
+      "evidence": {
+        "revision": 5,
+        "digest": "0e91a08f2441394ab6f03be3f684ff5df88ba306dfef34d5287a138e3371d2ce",
+        "explicit_discard": true,
+        "identity": "Concurrent MCP revision  ·  11761570-c2af-5526-9fa1-b46db9402ed9  ·  revision 5\nSHA256 0e91a08f2441394ab6f03be3f684ff5df88ba306dfef34d5287a138e3371d2ce"
+      }
+    },
+    {
+      "name": "native-file-menu-only-recipe-transfer",
+      "status": "PASS",
+      "evidence": {
+        "placement": "native Code - OSS File menu",
+        "workspace_transfer_controls": 0
+      }
+    }
+  ],
+  "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.quick-input-widget input').first() to be visible\u001b[22m\n\n    at /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:35:225\n    at async check (/workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:11:43)\n    at async /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:35:3",
+  "visible_error": ""
+}

@@ -1,0 +1,66 @@
+{
+  "custom-origin": {
+    "imported_recipe_digest": "fe067f2b5d2d0aca85f56faff2caff55486e812fcfa93e190d7a34a873517509",
+    "imported_recipe_id": "c9c7e0fa-597e-5b0e-b83b-a2b3cb33e4bd",
+    "imported_revision": 2,
+    "initial_revision": 1,
+    "listed_recipe_ids": [
+      "c9c7e0fa-597e-5b0e-b83b-a2b3cb33e4bd"
+    ],
+    "native_executed_recipe_digest": "fe067f2b5d2d0aca85f56faff2caff55486e812fcfa93e190d7a34a873517509",
+    "original_revision_unchanged": true,
+    "project_id": "c99004cb-af8c-43df-a642-68b6527a6ed9",
+    "project_recipe_id": "c9c7e0fa-597e-5b0e-b83b-a2b3cb33e4bd",
+    "run_recipe_digest": "fe067f2b5d2d0aca85f56faff2caff55486e812fcfa93e190d7a34a873517509",
+    "run_recipe_id": "c9c7e0fa-597e-5b0e-b83b-a2b3cb33e4bd",
+    "run_recipe_revision": 2
+  },
+  "custom-replay": {
+    "imported_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+    "imported_recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+    "imported_revision": 2,
+    "initial_revision": 1,
+    "listed_recipe_ids": [
+      "b1a1e93c-c223-5178-a5d4-cac33061ef9e"
+    ],
+    "native_executed_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+    "original_revision_unchanged": true,
+    "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+    "project_recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+    "run_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+    "run_recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+    "run_recipe_revision": 2
+  },
+  "pretrained-origin": {
+    "imported_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+    "imported_recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+    "imported_revision": 2,
+    "initial_revision": 1,
+    "listed_recipe_ids": [
+      "ee990a0e-767c-5df6-af32-9c5ecc2e4394"
+    ],
+    "native_executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+    "original_revision_unchanged": true,
+    "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+    "project_recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+    "run_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+    "run_recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+    "run_recipe_revision": 2
+  },
+  "pretrained-replay": {
+    "imported_recipe_digest": "1d66b0ccacb84efca6069d5b8b6566ce0efe1b3c3bfd3c7a5aca7be363b7f334",
+    "imported_recipe_id": "f04ef12e-96dc-5ecf-a8a5-0cdd92220d8c",
+    "imported_revision": 2,
+    "initial_revision": 1,
+    "listed_recipe_ids": [
+      "f04ef12e-96dc-5ecf-a8a5-0cdd92220d8c"
+    ],
+    "native_executed_recipe_digest": "1d66b0ccacb84efca6069d5b8b6566ce0efe1b3c3bfd3c7a5aca7be363b7f334",
+    "original_revision_unchanged": true,
+    "project_id": "72e626c6-3942-4937-bad5-d7343aef6ab2",
+    "project_recipe_id": "f04ef12e-96dc-5ecf-a8a5-0cdd92220d8c",
+    "run_recipe_digest": "1d66b0ccacb84efca6069d5b8b6566ce0efe1b3c3bfd3c7a5aca7be363b7f334",
+    "run_recipe_id": "f04ef12e-96dc-5ecf-a8a5-0cdd92220d8c",
+    "run_recipe_revision": 2
+  }
+}

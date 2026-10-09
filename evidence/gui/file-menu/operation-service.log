@@ -1,0 +1,44 @@
+INFO:     Started server process [11018]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:45087 (Press CTRL+C to quit)
+INFO:     127.0.0.1:36456 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "GET /v1/catalog HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/project.create HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/project.open HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.update HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "GET /v1/catalog HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/project.list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/project.open HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36466 - "POST /v1/operations/project.open HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.update HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36466 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/project.open HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36472 - "GET /v1/catalog HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36472 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36484 - "GET /v1/catalog HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36484 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36484 - "POST /v1/operations/recipe.update HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36466 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44414 - "GET /v1/catalog HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44414 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44414 - "POST /v1/operations/recipe.update HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.update HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.diff HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36466 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36466 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36466 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36456 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48692 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48692 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48692 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48692 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48692 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK

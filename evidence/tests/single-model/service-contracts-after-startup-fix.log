@@ -1,0 +1,69 @@
+............................................................FF.......... [ 23%]
+........................................................................ [ 47%]
+........................................................................ [ 71%]
+........................................................................ [ 95%]
+.............                                                            [100%]
+=================================== FAILURES ===================================
+__ test_shipping_recipe_has_complete_verified_source_closure[custom-pytorch] ___
+
+fixture = 'custom-pytorch'
+
+    @pytest.mark.parametrize("fixture", ["custom-pytorch", "pretrained-small"])
+    def test_shipping_recipe_has_complete_verified_source_closure(fixture):
+        recipe = json.loads((ROOT / "examples" / fixture / "recipe.json").read_text())
+        inventory = replay.source_inventory(ROOT)
+        assert {item["path"] for item in recipe["source"]["files"]} == set(inventory)
+>       pinned = pin_source_files(recipe, ROOT, inventory, recipe["source"]["commit"])
+
+tests/portability/test_replay_bundle.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/modelbuilder/recipe.py:606: in pin_source_files
+    _fail("dirty_source", "Source differs from the declared Git revision; commit it before export", path=path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+code = 'dirty_source'
+message = 'Source differs from the declared Git revision; commit it before export'
+details = {'path': 'src/modelbuilder/store.py'}
+
+    def _fail(code: str, message: str, **details: Any) -> None:
+>       raise RecipeValidationError(code, message, details)
+E       modelbuilder.recipe.RecipeValidationError: Source differs from the declared Git revision; commit it before export
+
+src/modelbuilder/recipe.py:198: RecipeValidationError
+_ test_shipping_recipe_has_complete_verified_source_closure[pretrained-small] __
+
+fixture = 'pretrained-small'
+
+    @pytest.mark.parametrize("fixture", ["custom-pytorch", "pretrained-small"])
+    def test_shipping_recipe_has_complete_verified_source_closure(fixture):
+        recipe = json.loads((ROOT / "examples" / fixture / "recipe.json").read_text())
+        inventory = replay.source_inventory(ROOT)
+        assert {item["path"] for item in recipe["source"]["files"]} == set(inventory)
+>       pinned = pin_source_files(recipe, ROOT, inventory, recipe["source"]["commit"])
+
+tests/portability/test_replay_bundle.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/modelbuilder/recipe.py:606: in pin_source_files
+    _fail("dirty_source", "Source differs from the declared Git revision; commit it before export", path=path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+code = 'dirty_source'
+message = 'Source differs from the declared Git revision; commit it before export'
+details = {'path': 'src/modelbuilder/store.py'}
+
+    def _fail(code: str, message: str, **details: Any) -> None:
+>       raise RecipeValidationError(code, message, details)
+E       modelbuilder.recipe.RecipeValidationError: Source differs from the declared Git revision; commit it before export
+
+src/modelbuilder/recipe.py:198: RecipeValidationError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/starlette/testclient.py:37
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/lib/python3.12/site-packages/starlette/testclient.py:37: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/single-model/service-contracts-after-startup-fix.xml -
+=========================== short test summary info ============================
+FAILED tests/portability/test_replay_bundle.py::test_shipping_recipe_has_complete_verified_source_closure[custom-pytorch]
+FAILED tests/portability/test_replay_bundle.py::test_shipping_recipe_has_complete_verified_source_closure[pretrained-small]
+2 failed, 299 passed, 2 skipped, 5 deselected, 1 warning in 12.71s

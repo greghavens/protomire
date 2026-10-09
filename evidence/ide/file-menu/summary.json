@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "scope": "One fixed model project/current recipe with transfer actions only in the application File menu",
+  "unit_tests": 62,
+  "compile": "PASS",
+  "vsix_package": "PASS",
+  "vsix_sha256": "5459b2dd383cec3c7fed867b6dcb9012a47145a743ec1ace19c3873fcd7dcf48",
+  "real_service_external_mcp_checks": 7,
+  "real_gui_dom_checks": 23,
+  "native_monaco_save": "PASS",
+  "gui_report": "evidence/gui/file-menu-verified/workbench-dom-results.json",
+  "fixture": {
+    "project_id": "e5bdefae-1ab3-4003-a4b3-bd543e622a6e",
+    "model_name": "GUI parity model",
+    "recipe_id": "61d71f0e-3699-5726-85ca-d34cc96e378a",
+    "initial_revision": 2
+  },
+  "project_context": "Fixed active project; no in-workspace project/model/recipe selector",
+  "recipe_transfer": "File > Import Recipe / Export Recipe, editor Open/Save dialogs, exact UTF-8 JSON bytes",
+  "dialog_test_presentation": "Supported Code - OSS simple file dialogs enabled only in dedicated acceptance profile and restored; normal product uses OS dialogs",
+  "concurrency": "Captured import revision rejected after MCP edit; captured export bytes retained during later MCP edit",
+  "source_composition": "One explicitly documented workbench composition import plus isolated permanent menu contribution; menu code contains no business operations",
+  "historical_attempts": [
+    "evidence/gui/file-menu/",
+    "evidence/gui/file-menu-final/"
+  ],
+  "historical_attempt_cause": "Test pointer activation occurred before upstream 100ms menu mouse-up handler became ready; corrected driver waits200ms after visible menu item",
+  "gui_execution": {
+    "status": "PASS",
+    "checks": 3,
+    "report": "evidence/gui/file-menu-execution/gui-execution-dom-results.json",
+    "operation_id": "b429f7ff-4245-5f9d-84cf-40db0950add4",
+    "backend_run_id": "0b98377e-8d79-48f1-88f0-3b00aafae57d",
+    "backend_status": "completed",
+    "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512"
+  }
+}

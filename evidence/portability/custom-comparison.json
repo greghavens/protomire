@@ -19,7 +19,9 @@
     "independent_stack_id": true,
     "independent_zenml_config_path": true,
     "metrics_equal": true,
+    "origin_single_owned_recipe_identity": true,
     "output_hashes_equal": true,
+    "replay_single_owned_recipe_identity": true,
     "service_identity_independent_prefix": true,
     "service_identity_no_origin_imports": true,
     "service_identity_no_pythonpath": true,
@@ -35,9 +37,9 @@
     "Same CPU host and operating system; no cross-platform or GPU claim",
     "Trusted local source only; no untrusted-code sandbox or redistribution clearance"
   ],
-  "origin_backend_run_id": "ad896910-a611-4bdf-a74b-99271fb37f29",
-  "recipe_digest": "c75e076c52d177099730074be5709d2c8f710319c851b672df16bd5b4dd76615",
-  "replay_backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
-  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "origin_backend_run_id": "0ca7813f-fbd3-4d8b-97a4-fc71e7ea1709",
+  "recipe_digest": "787536d2a146a931413d8bd9e6a20a814fc92bb45dc24ac9b4316c4eb2070d78",
+  "replay_backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
+  "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
   "status": "PASS"
 }

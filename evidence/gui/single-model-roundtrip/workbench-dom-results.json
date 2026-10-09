@@ -1,0 +1,176 @@
+{
+  "status": "PASS",
+  "tests": [
+    {
+      "name": "project-landing-before-workspace",
+      "status": "PASS",
+      "evidence": {
+        "workspace_visible": false,
+        "project_picker": "landing only",
+        "workspace_selectors": 0
+      }
+    },
+    {
+      "name": "fixed-single-model-workspace",
+      "status": "PASS",
+      "evidence": {
+        "model": "GUI parity model",
+        "project_id": "3aaa7e88-bc32-4687-a4aa-ed23f970f7da",
+        "recipe_id": "c78a55ba-090a-5626-b9b2-8c5ec651130d",
+        "workspace_selectors": 0
+      }
+    },
+    {
+      "name": "graph-authoring-typed-python",
+      "status": "PASS",
+      "evidence": {
+        "revision": 3,
+        "digest": "0e9e82cd96870233eb0a07214c77b4756ceee4587a51c975a26ff6fe5d5be1b5",
+        "nodes": [
+          "custom",
+          "data"
+        ],
+        "edge": {
+          "source_node": "data",
+          "source_port": "tensor",
+          "target_node": "custom",
+          "target_port": "data"
+        }
+      }
+    },
+    {
+      "name": "gui-to-external-mcp-digest-equality",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "c78a55ba-090a-5626-b9b2-8c5ec651130d",
+        "revision": 3,
+        "digest": "0e9e82cd96870233eb0a07214c77b4756ceee4587a51c975a26ff6fe5d5be1b5"
+      }
+    },
+    {
+      "name": "external-mcp-to-visible-gui",
+      "status": "PASS",
+      "evidence": {
+        "revision": 4,
+        "digest": "13449175ef3230d8e1dc22844553590b09a6fd3118b149c886263952a952b232"
+      }
+    },
+    {
+      "name": "single-recipe-identity-tracks-remote-revision",
+      "status": "PASS",
+      "evidence": {
+        "identity": "MCP edited this exact recipe  ·  c78a55ba-090a-5626-b9b2-8c5ec651130d  ·  revision 4\nSHA256 13449175ef3230d8e1dc22844553590b09a6fd3118b149c886263952a952b232",
+        "recipe_id": "c78a55ba-090a-5626-b9b2-8c5ec651130d",
+        "revision": 4
+      }
+    },
+    {
+      "name": "concurrent-edit-conflict-preserves-draft",
+      "status": "PASS",
+      "evidence": {
+        "local_revision": 4,
+        "server_revision": 5,
+        "draft_preserved": true,
+        "diff_visible": "{\n  \"recipe_id\": \"c78a55ba-090a-5626-b9b2-8c5ec651130d\",\n  \"current_revision\": 5,\n  \"equal\": false,\n  \"diff\": \"--- client\\n+++ server\\n@@ -2,7 +2,7 @@\\n   \\\"capabilities\\\": [\\n     \\\"local_cpu\\\"\\n   ],\\n-  \\\"digest\\\": \\\"13449175ef3230d8e1dc22844553590b09a6fd3118b149c886263952a952b232\\\",\\n+  \\\"digest\\\": \\\"12211342d618096a4f41d2bb46de5a31d660705c0aa1f0176b4f50692d89e56a\\\",\\n   \\\"edges\\\": [\\n     {\\n       \\\"source_node\\\": \\\"data\\\",\\n@@ -24,7 +24,7 @@\\n       \\\"scope\\\": \\\"source\\\"\\n     }\\n   ],\\n-  \\\"name\\\": \\\"Unsaved GUI draft\\\",\\n+  \\\"name\\\": \\\"Concurrent MCP revision\\\",\\n   \\\"nodes\\\": [\\n     {\\n       \\\"cache_policy\\\": \\\"disabled\\\",\\n@@ -93,7 +93,7 @@\\n   \\\"project_id\\\": \\\"3aaa7e88-bc32-4687-a4aa-ed23f970f7da\\\",\\n   \\\"recipe_id\\\": \\\"c78a55ba-090a-5626-b9b2-8c5ec651130d\\\",\\n   \\\"resources\\\": [],\\n-  \\\"revision\\\": 4,\\n+  \\\"revision\\\": 5,\\n   \\\"schema_version\\\": \\\"0\\\",\\n   \\\"source\\\": {\\n     \\\"commit\\\": \\\"0000000000000000000000000000000000000000\\\",\"\n}"
+      }
+    },
+    {
+      "name": "invalid-source-visual-edit-protection",
+      "status": "PASS",
+      "evidence": {
+        "source_preserved": true
+      }
+    },
+    {
+      "name": "reload-cancel-preserves-draft",
+      "status": "PASS",
+      "evidence": {
+        "draft_preserved": true,
+        "explicit_cancel": true
+      }
+    },
+    {
+      "name": "explicit-reload-loads-server",
+      "status": "PASS",
+      "evidence": {
+        "revision": 5,
+        "digest": "12211342d618096a4f41d2bb46de5a31d660705c0aa1f0176b4f50692d89e56a",
+        "explicit_discard": true,
+        "identity": "Concurrent MCP revision  ·  c78a55ba-090a-5626-b9b2-8c5ec651130d  ·  revision 5\nSHA256 12211342d618096a4f41d2bb46de5a31d660705c0aa1f0176b4f50692d89e56a"
+      }
+    },
+    {
+      "name": "import-cancel-preserves-current-recipe",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "c78a55ba-090a-5626-b9b2-8c5ec651130d",
+        "revision": 5,
+        "cancel_preserved": true
+      }
+    },
+    {
+      "name": "import-existing-recipe-keeps-model-and-recipe-identity",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "c78a55ba-090a-5626-b9b2-8c5ec651130d",
+        "project_id": "3aaa7e88-bc32-4687-a4aa-ed23f970f7da",
+        "revision": 6,
+        "digest": "e796f453ea42736804cab8d40c5c1723760cd2a297af3cd2b26dc76fd70d4bb7",
+        "imported_through_gui": true
+      }
+    },
+    {
+      "name": "gui-export-preserves-raw-bundle-bytes",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "c78a55ba-090a-5626-b9b2-8c5ec651130d",
+        "recipe_digest": "e796f453ea42736804cab8d40c5c1723760cd2a297af3cd2b26dc76fd70d4bb7",
+        "raw_bytes": 8674,
+        "raw_sha256": "132ed03ac9bbeec905aa6d252064a998a881a31a209a0b54f64d249e6a5256b2"
+      }
+    },
+    {
+      "name": "gui-import-rejects-tampered-bundle",
+      "status": "PASS",
+      "evidence": {
+        "digest_check": "unchanged and enforced",
+        "revision_preserved": 6
+      }
+    },
+    {
+      "name": "gui-export-import-full-pipeline-roundtrip",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "c78a55ba-090a-5626-b9b2-8c5ec651130d",
+        "revision": 7,
+        "digest": "7284a19926930893de8c6c9327a0b71c1cfb69f125eca4bab85a75f05b86c390",
+        "nodes": [
+          "dataset.synthetic",
+          "model.evaluate",
+          "model.export",
+          "model.initialize",
+          "model.train"
+        ],
+        "raw_bytes_preserved": true
+      }
+    },
+    {
+      "name": "close-project-returns-landing",
+      "status": "PASS",
+      "evidence": {
+        "old_recipe_cleared": true,
+        "workspace_hidden": true
+      }
+    },
+    {
+      "name": "create-project-opens-its-single-recipe",
+      "status": "PASS",
+      "evidence": {
+        "project_id": "88ed04fe-db1c-4d7e-899a-ab676f732633",
+        "recipe_id": "2bc48164-946c-5c35-8d01-d727db1078b6",
+        "revision": 1,
+        "created_through_gui": true
+      }
+    }
+  ]
+}

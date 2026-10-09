@@ -2,78 +2,85 @@
   "run": {
     "artifacts": [
       {
-        "artifact_id": "3b3e9e61-6209-4f98-9353-72cc14493625",
-        "backend_run_id": "229708b4-ec94-468e-98aa-ba148553beb8",
+        "artifact_id": "aa573eda-7b68-49a2-a232-c818228b0e75",
+        "backend_run_id": "f81a4de4-ac23-434e-aad4-89120ca88b3d",
         "name": "data",
         "node_id": "data",
         "port": "data",
-        "step_id": "0cc94a1e-5949-4107-a4f0-77c2b847116c",
-        "uri": "/tmp/pytest-of-agent/pytest-67/test_worker_sigkill_failure_is0/backend/zenml-stores/5561b357-4a11-4394-9b42-fb99dde87646/data/data/0cc94a1e-5949-4107-a4f0-77c2b847116c/3a659567"
+        "step_id": "05ba14f8-578a-4272-8a1e-260c207d1ff6",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/current-domain-native/test_worker_sigkill_failure_is0/backend/zenml-stores/aae92d56-4527-4f53-978a-dbc631304f46/data/data/05ba14f8-578a-4272-8a1e-260c207d1ff6/7addf245"
       },
       {
-        "artifact_id": "c9dad813-6458-4f0d-b305-7180c2569490",
-        "backend_run_id": "229708b4-ec94-468e-98aa-ba148553beb8",
+        "artifact_id": "19baeb4b-ac49-4ee4-95cf-e2015394996b",
+        "backend_run_id": "f81a4de4-ac23-434e-aad4-89120ca88b3d",
         "name": "initial",
         "node_id": "initial",
         "port": "initial",
-        "step_id": "62c86fcb-be61-4cb6-98f0-5e4b61b171fb",
-        "uri": "/tmp/pytest-of-agent/pytest-67/test_worker_sigkill_failure_is0/backend/zenml-stores/5561b357-4a11-4394-9b42-fb99dde87646/initial/initial/62c86fcb-be61-4cb6-98f0-5e4b61b171fb/1da15f51"
+        "step_id": "7b9adf1a-7571-4266-b404-a4bf18201a1f",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/current-domain-native/test_worker_sigkill_failure_is0/backend/zenml-stores/aae92d56-4527-4f53-978a-dbc631304f46/initial/initial/7b9adf1a-7571-4266-b404-a4bf18201a1f/aaa6ad59"
       },
       {
-        "artifact_id": "f8acc26b-6ee9-47d5-a5be-6a66e7ff5cce",
-        "backend_run_id": "229708b4-ec94-468e-98aa-ba148553beb8",
-        "name": "recovery-9622e229-ba4e-4d23-b4b6-f89e6ab1234a",
+        "artifact_id": "874371cd-e919-41c7-b32a-cd953d1dcce1",
+        "backend_run_id": "f81a4de4-ac23-434e-aad4-89120ca88b3d",
+        "name": "recovery-80beb1ec-3fc7-4ba8-b6d5-ee023e1309df",
         "port": "recovery_checkpoint",
-        "uri": "/tmp/pytest-of-agent/pytest-67/test_worker_sigkill_failure_is0/backend/zenml-stores/5561b357-4a11-4394-9b42-fb99dde87646/custom_artifacts/recovery-9622e229-ba4e-4d23-b4b6-f89e6ab1234a/6bc7540a-9daa-4047-8079-0cce997898c3"
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/current-domain-native/test_worker_sigkill_failure_is0/backend/zenml-stores/aae92d56-4527-4f53-978a-dbc631304f46/custom_artifacts/recovery-80beb1ec-3fc7-4ba8-b6d5-ee023e1309df/399fceb2-da51-444e-822c-5262bf5ff6ec"
       }
     ],
     "backend": "zenml",
-    "backend_run_id": "229708b4-ec94-468e-98aa-ba148553beb8",
+    "backend_run_id": "f81a4de4-ac23-434e-aad4-89120ca88b3d",
+    "backend_snapshot_id": "55ca9b9e-d512-429e-bd93-e1e3383eb0c7",
     "backend_status": "failed",
     "backend_version": "0.97.0",
     "error": null,
-    "executed_recipe_digest": null,
-    "last_reconciled_at": "2026-10-09T14:53:41.951982+00:00",
+    "executed_recipe_digest": "6258bb2ce74f092f112128016d15561b02ca6d982ea8bcd2b11636aea40d8603",
+    "last_reconciled_at": "2026-10-09T15:27:24.101798+00:00",
     "log_available": true,
     "metrics": {},
-    "model_version_ref": "cc12bc1f-f150-4199-8021-be7fad17f002",
-    "operation_id": "9622e229-ba4e-4d23-b4b6-f89e6ab1234a",
+    "model_version_ref": "e13b4bc8-1446-4809-a2fb-ee614815a244",
+    "operation_id": "80beb1ec-3fc7-4ba8-b6d5-ee023e1309df",
     "parent_checkpoint_ref": null,
+    "parent_recipe_digest": null,
+    "parent_recipe_id": null,
+    "parent_recipe_revision": null,
     "parent_run_id": null,
     "process_group_alive": false,
-    "project_id": "808d1bb3-df8c-4370-a08c-aa2c7e75d535",
+    "project_id": "ac4a07e6-9b13-4020-a5d9-a0a47df0fdde",
+    "recipe_digest": "6258bb2ce74f092f112128016d15561b02ca6d982ea8bcd2b11636aea40d8603",
+    "recipe_id": "fa24c369-e3ca-5bb7-ac6e-de907f3ac50c",
+    "recipe_revision": 1,
     "resume_mode": null,
     "runtime_status_source": "verified_local_supervisor",
     "status": "failed",
-    "submitted_at": "2026-10-09T14:53:32.847232+00:00",
+    "submitted_at": "2026-10-09T15:27:13.423479+00:00",
     "supervisor_alive": true,
     "termination": {
       "confirmed": true,
-      "confirmed_at": "2026-10-09T14:53:39.711734+00:00",
+      "confirmed_at": "2026-10-09T15:27:21.187698+00:00",
       "process_group_terminated": true,
       "proof_source": "local_supervisor_wait_and_group_observation",
       "reason": "worker_failure",
-      "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532605]",
-      "worker_identity": "710699",
-      "worker_pid": 659
+      "runtime_identity": "3dd355e0-6dba-4521-800c-d6aee0e0b81a:pid:[4026532676]",
+      "worker_identity": "912755",
+      "worker_pid": 200
     },
     "termination_record_source": "native_run_metadata",
     "worker_alive": false,
     "worker_exit_code": -9,
-    "worker_pid": 659
+    "worker_pid": 200
   },
   "checkpoint": {
-    "artifact_id": "f8acc26b-6ee9-47d5-a5be-6a66e7ff5cce",
-    "backend_run_id": "229708b4-ec94-468e-98aa-ba148553beb8",
+    "artifact_id": "874371cd-e919-41c7-b32a-cd953d1dcce1",
+    "backend_run_id": "f81a4de4-ac23-434e-aad4-89120ca88b3d",
     "checkpoint_kind": "last",
-    "name": "recovery-9622e229-ba4e-4d23-b4b6-f89e6ab1234a",
-    "path": "/tmp/zenml-jd_29sc8",
+    "name": "recovery-80beb1ec-3fc7-4ba8-b6d5-ee023e1309df",
+    "path": "/tmp/zenml-8luz_99y",
     "port": "recovery_checkpoint",
     "resume_modes": [
       "exact_state",
       "warm_start"
     ],
-    "sha256": "23d2863dc5aad108b18f2722c3cf38d390c70c6f8a99b072640fde4f47fd02c6",
-    "uri": "/tmp/pytest-of-agent/pytest-67/test_worker_sigkill_failure_is0/backend/zenml-stores/5561b357-4a11-4394-9b42-fb99dde87646/custom_artifacts/recovery-9622e229-ba4e-4d23-b4b6-f89e6ab1234a/6bc7540a-9daa-4047-8079-0cce997898c3"
+    "sha256": "1daf0a94bb62532911e419fe45c522599d470c4a75476eff3dbd550c77afc5a9",
+    "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/current-domain-native/test_worker_sigkill_failure_is0/backend/zenml-stores/aae92d56-4527-4f53-978a-dbc631304f46/custom_artifacts/recovery-80beb1ec-3fc7-4ba8-b6d5-ee023e1309df/399fceb2-da51-444e-822c-5262bf5ff6ec"
   }
 }

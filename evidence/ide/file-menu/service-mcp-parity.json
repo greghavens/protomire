@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "tests": 7,
+  "project_id": "bdfbdf15-0435-4833-88f9-c8e78c1562b5",
+  "recipe_id": "3cdf8cd3-138d-5fde-a10e-a971dbee6039",
+  "revision": 3,
+  "digest": "d023542a382542c72dc436d884674cce40de7cdf91645f87952eb73c22426594",
+  "checks": [
+    "catalog",
+    "typed-graph-python-save",
+    "typescript-to-mcp-equality",
+    "mcp-to-typescript-equality",
+    "stale-409-preserves-base",
+    "server-diff",
+    "read-only-denied"
+  ]
+}

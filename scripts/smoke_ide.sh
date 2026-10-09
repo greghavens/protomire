@@ -7,8 +7,8 @@ SUITE=${MODELBUILDER_GUI_SUITE:-smoke}
 [[ ${1:-} == --workbench ]] && SUITE=workbench
 [[ ${1:-} == --execution ]] && SUITE=execution
 case "$SUITE" in
-  workbench) DEFAULT_EVIDENCE="$ROOT/evidence/gui/single-model"; REPORT=workbench-host-results.json ;;
-  execution) DEFAULT_EVIDENCE="$ROOT/evidence/gui/single-model-execution"; REPORT=gui-execution-host-results.json ;;
+  workbench) DEFAULT_EVIDENCE="$ROOT/evidence/gui/file-menu-verified"; REPORT=workbench-host-results.json ;;
+  execution) DEFAULT_EVIDENCE="$ROOT/evidence/gui/file-menu-execution"; REPORT=gui-execution-host-results.json ;;
   smoke) DEFAULT_EVIDENCE="$ROOT/evidence/gui/distribution"; REPORT=smoke-results.json ;;
   *) echo 'Usage: smoke_ide.sh [--launch|--workbench|--execution]'; exit 2 ;;
 esac

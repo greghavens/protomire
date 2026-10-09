@@ -1,0 +1,2504 @@
+{
+  "status": "PASS",
+  "transport": "independent SDK stdio client",
+  "service_generations": 2,
+  "pre_restart_status": {
+    "artifacts": [
+      {
+        "artifact_id": "97655623-b2db-4396-b2cc-d682f021601d",
+        "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+        "name": "data",
+        "node_id": "data",
+        "port": "data",
+        "step_id": "b9294b28-b6c7-4bae-9edd-b3ba2020ebfc",
+        "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/data/data/b9294b28-b6c7-4bae-9edd-b3ba2020ebfc/40f87c46"
+      },
+      {
+        "artifact_id": "b812e9ca-f8d5-4b0b-ba6d-f4a53ad0fe06",
+        "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+        "name": "initial",
+        "node_id": "initial",
+        "port": "initial",
+        "step_id": "96a62c7a-e511-410b-a893-49f31c262541",
+        "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/initial/initial/96a62c7a-e511-410b-a893-49f31c262541/30ed48c6"
+      }
+    ],
+    "backend": "zenml",
+    "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+    "backend_snapshot_id": "8d11c7b0-9d2d-4bdc-ada8-3503eb6f58b3",
+    "backend_status": "running",
+    "backend_version": "0.97.0",
+    "error": null,
+    "executed_recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+    "last_reconciled_at": "2026-10-09T15:43:11.798329+00:00",
+    "log_available": true,
+    "metrics": {},
+    "model_version_ref": "c68392e5-3b05-4302-805e-9b82592e95f5",
+    "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1",
+    "parent_checkpoint_ref": null,
+    "parent_recipe_digest": null,
+    "parent_recipe_id": null,
+    "parent_recipe_revision": null,
+    "parent_run_id": null,
+    "process_group_alive": true,
+    "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+    "recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+    "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+    "recipe_revision": 2,
+    "resume_mode": null,
+    "runtime_status_source": "verified_local_supervisor",
+    "status": "running",
+    "submitted_at": "2026-10-09T15:43:03.796979+00:00",
+    "supervisor_alive": true,
+    "termination": {},
+    "termination_record_source": null,
+    "worker_alive": true,
+    "worker_exit_code": null,
+    "worker_pid": 75,
+    "created_at": "2026-10-09T15:43:04.061908+00:00",
+    "errors": [],
+    "revision": 3
+  },
+  "transcript": [
+    {
+      "tool": "project_create",
+      "request": {
+        "slug": "mcp-trained",
+        "model_name": "MCP CPU model",
+        "idempotency_key": "p"
+      },
+      "response": {
+        "schema_version": "0",
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "slug": "mcp-trained",
+        "model_name": "MCP CPU model",
+        "description": "",
+        "created_at": "2026-10-09T15:42:58.010219+00:00",
+        "updated_at": "2026-10-09T15:42:58.010219+00:00",
+        "git_remote": null,
+        "head_commit": null,
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "active_recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "recipe_migration": {},
+        "active_model_version_ref": null,
+        "research_watch_config": null,
+        "status": "active",
+        "revision": 1
+      },
+      "is_error": false
+    },
+    {
+      "tool": "recipe_get",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651"
+      },
+      "response": {
+        "capabilities": [
+          "local_cpu"
+        ],
+        "digest": "d54385cf30023a711532055bb3fe9f691102f67c3da89778c7f803bf78dc010d",
+        "edges": [],
+        "environment": {
+          "python": "3.12",
+          "requirements": []
+        },
+        "evaluation": {},
+        "external_dependencies": [],
+        "licenses": [
+          {
+            "license": "NOASSERTION",
+            "redistribution_allowed": false,
+            "scope": "source"
+          }
+        ],
+        "name": "MCP CPU model recipe",
+        "nodes": [],
+        "outputs": [],
+        "permissions": {
+          "execute_on_import": false,
+          "network": false
+        },
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "resources": [],
+        "revision": 1,
+        "schema_version": "0",
+        "source": {
+          "commit": "0000000000000000000000000000000000000000",
+          "files": [],
+          "repository": "https://example.invalid/unconfigured.git"
+        }
+      },
+      "is_error": false
+    },
+    {
+      "tool": "recipe_create",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe": {
+          "schema_version": "0",
+          "recipe_id": "recipe-custom",
+          "project_id": "example-custom",
+          "revision": 1,
+          "name": "Custom gated-residual CPU model",
+          "source": {
+            "repository": "https://github.com/greghavens/modelbuilder",
+            "commit": "e3a81645531eebd6b66675e1c457e76479664b42",
+            "files": [
+              {
+                "path": "src/modelbuilder/backend/fixtures.py",
+                "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
+              }
+            ]
+          },
+          "nodes": [
+            {
+              "id": "data",
+              "kind": "dataset.synthetic",
+              "implementation_ref": "builtin:dataset.synthetic",
+              "inputs": [],
+              "outputs": [
+                {
+                  "name": "data",
+                  "type": "dataset",
+                  "required": true
+                }
+              ],
+              "parameters": {
+                "fixture": "custom",
+                "seed": 1234,
+                "count": 240
+              },
+              "environment_ref": "default",
+              "resource_request": {
+                "cpu": 1,
+                "memory_mb": 1024,
+                "gpu": 0
+              },
+              "retry": {
+                "max_attempts": 1,
+                "backoff_seconds": 0
+              },
+              "timeout": 300,
+              "cache_policy": "disabled",
+              "provenance": {
+                "implementation": "modelbuilder.backend.fixtures",
+                "purpose": "deterministic CPU validation fixture"
+              }
+            },
+            {
+              "id": "evaluate",
+              "kind": "model.evaluate",
+              "implementation_ref": "builtin:model.evaluate",
+              "inputs": [
+                {
+                  "name": "checkpoint",
+                  "type": "checkpoint",
+                  "required": true
+                },
+                {
+                  "name": "data",
+                  "type": "dataset",
+                  "required": true
+                }
+              ],
+              "outputs": [
+                {
+                  "name": "metrics",
+                  "type": "metrics",
+                  "required": true
+                }
+              ],
+              "parameters": {
+                "fixture": "custom",
+                "checkpoint_kind": "best"
+              },
+              "environment_ref": "default",
+              "resource_request": {
+                "cpu": 1,
+                "memory_mb": 1024,
+                "gpu": 0
+              },
+              "retry": {
+                "max_attempts": 1,
+                "backoff_seconds": 0
+              },
+              "timeout": 300,
+              "cache_policy": "disabled",
+              "provenance": {
+                "implementation": "modelbuilder.backend.fixtures",
+                "purpose": "deterministic CPU validation fixture"
+              }
+            },
+            {
+              "id": "export",
+              "kind": "model.export",
+              "implementation_ref": "builtin:model.export",
+              "inputs": [
+                {
+                  "name": "checkpoint",
+                  "type": "checkpoint",
+                  "required": true
+                },
+                {
+                  "name": "data",
+                  "type": "dataset",
+                  "required": true
+                }
+              ],
+              "outputs": [
+                {
+                  "name": "export",
+                  "type": "artifact",
+                  "required": true
+                }
+              ],
+              "parameters": {
+                "fixture": "custom",
+                "checkpoint_kind": "best"
+              },
+              "environment_ref": "default",
+              "resource_request": {
+                "cpu": 1,
+                "memory_mb": 1024,
+                "gpu": 0
+              },
+              "retry": {
+                "max_attempts": 1,
+                "backoff_seconds": 0
+              },
+              "timeout": 300,
+              "cache_policy": "disabled",
+              "provenance": {
+                "implementation": "modelbuilder.backend.fixtures",
+                "purpose": "deterministic CPU validation fixture"
+              }
+            },
+            {
+              "id": "initial",
+              "kind": "model.initialize",
+              "implementation_ref": "builtin:model.initialize",
+              "inputs": [
+                {
+                  "name": "data",
+                  "type": "dataset",
+                  "required": true
+                }
+              ],
+              "outputs": [
+                {
+                  "name": "initial",
+                  "type": "checkpoint",
+                  "required": true
+                }
+              ],
+              "parameters": {
+                "fixture": "custom",
+                "width": 12,
+                "seed": 44
+              },
+              "environment_ref": "default",
+              "resource_request": {
+                "cpu": 1,
+                "memory_mb": 1024,
+                "gpu": 0
+              },
+              "retry": {
+                "max_attempts": 1,
+                "backoff_seconds": 0
+              },
+              "timeout": 300,
+              "cache_policy": "disabled",
+              "provenance": {
+                "implementation": "modelbuilder.backend.fixtures",
+                "purpose": "deterministic CPU validation fixture"
+              }
+            },
+            {
+              "id": "train",
+              "kind": "model.train",
+              "implementation_ref": "builtin:model.train",
+              "inputs": [
+                {
+                  "name": "data",
+                  "type": "dataset",
+                  "required": true
+                },
+                {
+                  "name": "initial",
+                  "type": "checkpoint",
+                  "required": true
+                }
+              ],
+              "outputs": [
+                {
+                  "name": "checkpoint",
+                  "type": "checkpoint",
+                  "required": true
+                }
+              ],
+              "parameters": {
+                "fixture": "custom",
+                "width": 12,
+                "steps": 30,
+                "learning_rate": 0.025,
+                "seed": 44,
+                "batch_size": 60,
+                "scheduler_gamma": 0.99,
+                "kl": {
+                  "enabled": false,
+                  "coefficient": 0.0,
+                  "direction": "reference_to_model",
+                  "reference_model_ref": "initial",
+                  "frozen": true,
+                  "applies_to": "logits"
+                },
+                "step_delay": 0.15
+              },
+              "environment_ref": "default",
+              "resource_request": {
+                "cpu": 1,
+                "memory_mb": 1024,
+                "gpu": 0
+              },
+              "retry": {
+                "max_attempts": 1,
+                "backoff_seconds": 0
+              },
+              "timeout": 300,
+              "cache_policy": "disabled",
+              "provenance": {
+                "implementation": "modelbuilder.backend.fixtures",
+                "purpose": "deterministic CPU validation fixture"
+              },
+              "parameter_schema": {
+                "type": "object",
+                "required": [
+                  "fixture",
+                  "width",
+                  "steps",
+                  "learning_rate",
+                  "seed",
+                  "batch_size",
+                  "kl"
+                ],
+                "properties": {
+                  "fixture": {
+                    "enum": [
+                      "custom",
+                      "pretrained"
+                    ]
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 2,
+                    "maximum": 256
+                  },
+                  "steps": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10000
+                  },
+                  "learning_rate": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "seed": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "batch_size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10000
+                  },
+                  "scheduler_gamma": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1
+                  },
+                  "kl": {
+                    "type": "object",
+                    "required": [
+                      "enabled",
+                      "coefficient",
+                      "direction",
+                      "reference_model_ref",
+                      "frozen",
+                      "applies_to"
+                    ],
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "coefficient": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "direction": {
+                        "enum": [
+                          "reference_to_model",
+                          "model_to_reference"
+                        ]
+                      },
+                      "reference_model_ref": {
+                        "type": "string"
+                      },
+                      "frozen": {
+                        "type": "boolean"
+                      },
+                      "applies_to": {
+                        "enum": [
+                          "logits"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "intentional_failure_step": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "step_delay": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 5
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          ],
+          "edges": [
+            {
+              "source_node": "data",
+              "source_port": "data",
+              "target_node": "evaluate",
+              "target_port": "data"
+            },
+            {
+              "source_node": "data",
+              "source_port": "data",
+              "target_node": "export",
+              "target_port": "data"
+            },
+            {
+              "source_node": "data",
+              "source_port": "data",
+              "target_node": "initial",
+              "target_port": "data"
+            },
+            {
+              "source_node": "data",
+              "source_port": "data",
+              "target_node": "train",
+              "target_port": "data"
+            },
+            {
+              "source_node": "initial",
+              "source_port": "initial",
+              "target_node": "train",
+              "target_port": "initial"
+            },
+            {
+              "source_node": "train",
+              "source_port": "checkpoint",
+              "target_node": "evaluate",
+              "target_port": "checkpoint"
+            },
+            {
+              "source_node": "train",
+              "source_port": "checkpoint",
+              "target_node": "export",
+              "target_port": "checkpoint"
+            }
+          ],
+          "resources": [],
+          "environment": {
+            "python": "3.12.14",
+            "requirements": [
+              "numpy==2.2.6",
+              "torch==2.9.0+cpu",
+              "transformers==4.57.1",
+              "zenml[server]==0.97.0"
+            ],
+            "lock_file": {
+              "path": "requirements/backend.lock",
+              "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+            }
+          },
+          "evaluation": {
+            "validation_metric": "validation_loss",
+            "selection_rule": {
+              "metric": "validation_loss",
+              "direction": "minimize",
+              "split": "validation"
+            },
+            "heldout_split": "heldout",
+            "checkpoint_kind": "best",
+            "keep_negative_outcomes": true
+          },
+          "outputs": [
+            {
+              "name": "export",
+              "type": "artifact"
+            },
+            {
+              "name": "metrics",
+              "type": "metrics"
+            }
+          ],
+          "external_dependencies": [],
+          "capabilities": [
+            "local_cpu"
+          ],
+          "licenses": [
+            {
+              "scope": "source",
+              "license": "NOASSERTION",
+              "redistribution_allowed": false
+            }
+          ],
+          "permissions": {
+            "network": false,
+            "execute_on_import": false
+          },
+          "description": "Trusted repository-owned deterministic CPU pipeline for one model project. Import advances the project-owned recipe under revision checks; model.initialize explicitly selects custom or pretrained initialization. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay. Metrics are not model-quality claims."
+        },
+        "expected_revision": 1,
+        "idempotency_key": "r"
+      },
+      "response": {
+        "schema_version": "0",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "revision": 2,
+        "name": "Custom gated-residual CPU model",
+        "source": {
+          "repository": "https://github.com/greghavens/modelbuilder",
+          "commit": "e3a81645531eebd6b66675e1c457e76479664b42",
+          "files": [
+            {
+              "path": "src/modelbuilder/backend/fixtures.py",
+              "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "data",
+            "kind": "dataset.synthetic",
+            "implementation_ref": "builtin:dataset.synthetic",
+            "inputs": [],
+            "outputs": [
+              {
+                "name": "data",
+                "type": "dataset",
+                "required": true
+              }
+            ],
+            "parameters": {
+              "fixture": "custom",
+              "seed": 1234,
+              "count": 240
+            },
+            "environment_ref": "default",
+            "resource_request": {
+              "cpu": 1,
+              "memory_mb": 1024,
+              "gpu": 0
+            },
+            "retry": {
+              "max_attempts": 1,
+              "backoff_seconds": 0
+            },
+            "timeout": 300,
+            "cache_policy": "disabled",
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            }
+          },
+          {
+            "id": "evaluate",
+            "kind": "model.evaluate",
+            "implementation_ref": "builtin:model.evaluate",
+            "inputs": [
+              {
+                "name": "checkpoint",
+                "type": "checkpoint",
+                "required": true
+              },
+              {
+                "name": "data",
+                "type": "dataset",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "name": "metrics",
+                "type": "metrics",
+                "required": true
+              }
+            ],
+            "parameters": {
+              "fixture": "custom",
+              "checkpoint_kind": "best"
+            },
+            "environment_ref": "default",
+            "resource_request": {
+              "cpu": 1,
+              "memory_mb": 1024,
+              "gpu": 0
+            },
+            "retry": {
+              "max_attempts": 1,
+              "backoff_seconds": 0
+            },
+            "timeout": 300,
+            "cache_policy": "disabled",
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            }
+          },
+          {
+            "id": "export",
+            "kind": "model.export",
+            "implementation_ref": "builtin:model.export",
+            "inputs": [
+              {
+                "name": "checkpoint",
+                "type": "checkpoint",
+                "required": true
+              },
+              {
+                "name": "data",
+                "type": "dataset",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "name": "export",
+                "type": "artifact",
+                "required": true
+              }
+            ],
+            "parameters": {
+              "fixture": "custom",
+              "checkpoint_kind": "best"
+            },
+            "environment_ref": "default",
+            "resource_request": {
+              "cpu": 1,
+              "memory_mb": 1024,
+              "gpu": 0
+            },
+            "retry": {
+              "max_attempts": 1,
+              "backoff_seconds": 0
+            },
+            "timeout": 300,
+            "cache_policy": "disabled",
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            }
+          },
+          {
+            "id": "initial",
+            "kind": "model.initialize",
+            "implementation_ref": "builtin:model.initialize",
+            "inputs": [
+              {
+                "name": "data",
+                "type": "dataset",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "name": "initial",
+                "type": "checkpoint",
+                "required": true
+              }
+            ],
+            "parameters": {
+              "fixture": "custom",
+              "width": 12,
+              "seed": 44
+            },
+            "environment_ref": "default",
+            "resource_request": {
+              "cpu": 1,
+              "memory_mb": 1024,
+              "gpu": 0
+            },
+            "retry": {
+              "max_attempts": 1,
+              "backoff_seconds": 0
+            },
+            "timeout": 300,
+            "cache_policy": "disabled",
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            }
+          },
+          {
+            "id": "train",
+            "kind": "model.train",
+            "implementation_ref": "builtin:model.train",
+            "inputs": [
+              {
+                "name": "data",
+                "type": "dataset",
+                "required": true
+              },
+              {
+                "name": "initial",
+                "type": "checkpoint",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "name": "checkpoint",
+                "type": "checkpoint",
+                "required": true
+              }
+            ],
+            "parameters": {
+              "fixture": "custom",
+              "width": 12,
+              "steps": 30,
+              "learning_rate": 0.025,
+              "seed": 44,
+              "batch_size": 60,
+              "scheduler_gamma": 0.99,
+              "kl": {
+                "enabled": false,
+                "coefficient": 0.0,
+                "direction": "reference_to_model",
+                "reference_model_ref": "initial",
+                "frozen": true,
+                "applies_to": "logits"
+              },
+              "step_delay": 0.15
+            },
+            "environment_ref": "default",
+            "resource_request": {
+              "cpu": 1,
+              "memory_mb": 1024,
+              "gpu": 0
+            },
+            "retry": {
+              "max_attempts": 1,
+              "backoff_seconds": 0
+            },
+            "timeout": 300,
+            "cache_policy": "disabled",
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "parameter_schema": {
+              "type": "object",
+              "required": [
+                "fixture",
+                "width",
+                "steps",
+                "learning_rate",
+                "seed",
+                "batch_size",
+                "kl"
+              ],
+              "properties": {
+                "fixture": {
+                  "enum": [
+                    "custom",
+                    "pretrained"
+                  ]
+                },
+                "width": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 256
+                },
+                "steps": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10000
+                },
+                "learning_rate": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "seed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "batch_size": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10000
+                },
+                "scheduler_gamma": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                },
+                "kl": {
+                  "type": "object",
+                  "required": [
+                    "enabled",
+                    "coefficient",
+                    "direction",
+                    "reference_model_ref",
+                    "frozen",
+                    "applies_to"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "coefficient": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "direction": {
+                      "enum": [
+                        "reference_to_model",
+                        "model_to_reference"
+                      ]
+                    },
+                    "reference_model_ref": {
+                      "type": "string"
+                    },
+                    "frozen": {
+                      "type": "boolean"
+                    },
+                    "applies_to": {
+                      "enum": [
+                        "logits"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "intentional_failure_step": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "step_delay": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 5
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        ],
+        "edges": [
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "evaluate",
+            "target_port": "data"
+          },
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "export",
+            "target_port": "data"
+          },
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "initial",
+            "target_port": "data"
+          },
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "train",
+            "target_port": "data"
+          },
+          {
+            "source_node": "initial",
+            "source_port": "initial",
+            "target_node": "train",
+            "target_port": "initial"
+          },
+          {
+            "source_node": "train",
+            "source_port": "checkpoint",
+            "target_node": "evaluate",
+            "target_port": "checkpoint"
+          },
+          {
+            "source_node": "train",
+            "source_port": "checkpoint",
+            "target_node": "export",
+            "target_port": "checkpoint"
+          }
+        ],
+        "resources": [],
+        "environment": {
+          "python": "3.12.14",
+          "requirements": [
+            "numpy==2.2.6",
+            "torch==2.9.0+cpu",
+            "transformers==4.57.1",
+            "zenml[server]==0.97.0"
+          ],
+          "lock_file": {
+            "path": "requirements/backend.lock",
+            "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+          }
+        },
+        "evaluation": {
+          "validation_metric": "validation_loss",
+          "selection_rule": {
+            "metric": "validation_loss",
+            "direction": "minimize",
+            "split": "validation"
+          },
+          "heldout_split": "heldout",
+          "checkpoint_kind": "best",
+          "keep_negative_outcomes": true
+        },
+        "outputs": [
+          {
+            "name": "export",
+            "type": "artifact"
+          },
+          {
+            "name": "metrics",
+            "type": "metrics"
+          }
+        ],
+        "external_dependencies": [],
+        "capabilities": [
+          "local_cpu"
+        ],
+        "licenses": [
+          {
+            "scope": "source",
+            "license": "NOASSERTION",
+            "redistribution_allowed": false
+          }
+        ],
+        "permissions": {
+          "network": false,
+          "execute_on_import": false
+        },
+        "description": "Trusted repository-owned deterministic CPU pipeline for one model project. Import advances the project-owned recipe under revision checks; model.initialize explicitly selects custom or pretrained initialization. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay. Metrics are not model-quality claims.",
+        "digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d"
+      },
+      "is_error": false
+    },
+    {
+      "tool": "run_submit",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "expected_revision": 2,
+        "trusted": true,
+        "idempotency_key": "submit"
+      },
+      "response": {
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1",
+        "backend_run_id": null,
+        "status": "submitted",
+        "backend": "zenml",
+        "backend_version": "0.97.0",
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "submitted_at": "2026-10-09T15:43:03.796979+00:00",
+        "last_reconciled_at": "2026-10-09T15:43:04.061911+00:00",
+        "supervisor_pid": 74,
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "recipe_revision": 2,
+        "recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "created_at": "2026-10-09T15:43:04.061908+00:00",
+        "revision": 1,
+        "errors": []
+      },
+      "is_error": false
+    },
+    {
+      "tool": "run_submit",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "expected_revision": 2,
+        "trusted": true,
+        "idempotency_key": "submit"
+      },
+      "response": {
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1",
+        "backend_run_id": null,
+        "status": "submitted",
+        "backend": "zenml",
+        "backend_version": "0.97.0",
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "submitted_at": "2026-10-09T15:43:03.796979+00:00",
+        "last_reconciled_at": "2026-10-09T15:43:04.061911+00:00",
+        "supervisor_pid": 74,
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "recipe_revision": 2,
+        "recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "created_at": "2026-10-09T15:43:04.061908+00:00",
+        "revision": 1,
+        "errors": []
+      },
+      "is_error": false
+    },
+    {
+      "tool": "run_status",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1"
+      },
+      "response": {
+        "artifacts": [],
+        "backend": "zenml",
+        "backend_run_id": null,
+        "backend_snapshot_id": null,
+        "backend_status": null,
+        "backend_version": "0.97.0",
+        "error": null,
+        "executed_recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "last_reconciled_at": "2026-10-09T15:43:07.758229+00:00",
+        "log_available": true,
+        "metrics": {},
+        "model_version_ref": null,
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1",
+        "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
+        "parent_run_id": null,
+        "process_group_alive": true,
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "recipe_revision": 2,
+        "resume_mode": null,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "submitted",
+        "submitted_at": "2026-10-09T15:43:03.796979+00:00",
+        "supervisor_alive": true,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": true,
+        "worker_exit_code": null,
+        "worker_pid": 75,
+        "created_at": "2026-10-09T15:43:04.061908+00:00",
+        "errors": [],
+        "revision": 2
+      },
+      "is_error": false
+    },
+    {
+      "tool": "run_status",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1"
+      },
+      "response": {
+        "artifacts": [
+          {
+            "artifact_id": "97655623-b2db-4396-b2cc-d682f021601d",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "data",
+            "node_id": "data",
+            "port": "data",
+            "step_id": "b9294b28-b6c7-4bae-9edd-b3ba2020ebfc",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/data/data/b9294b28-b6c7-4bae-9edd-b3ba2020ebfc/40f87c46"
+          },
+          {
+            "artifact_id": "b812e9ca-f8d5-4b0b-ba6d-f4a53ad0fe06",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "initial",
+            "node_id": "initial",
+            "port": "initial",
+            "step_id": "96a62c7a-e511-410b-a893-49f31c262541",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/initial/initial/96a62c7a-e511-410b-a893-49f31c262541/30ed48c6"
+          }
+        ],
+        "backend": "zenml",
+        "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+        "backend_snapshot_id": "8d11c7b0-9d2d-4bdc-ada8-3503eb6f58b3",
+        "backend_status": "running",
+        "backend_version": "0.97.0",
+        "error": null,
+        "executed_recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "last_reconciled_at": "2026-10-09T15:43:11.798329+00:00",
+        "log_available": true,
+        "metrics": {},
+        "model_version_ref": "c68392e5-3b05-4302-805e-9b82592e95f5",
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1",
+        "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
+        "parent_run_id": null,
+        "process_group_alive": true,
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "recipe_revision": 2,
+        "resume_mode": null,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "running",
+        "submitted_at": "2026-10-09T15:43:03.796979+00:00",
+        "supervisor_alive": true,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": true,
+        "worker_exit_code": null,
+        "worker_pid": 75,
+        "created_at": "2026-10-09T15:43:04.061908+00:00",
+        "errors": [],
+        "revision": 3
+      },
+      "is_error": false
+    },
+    {
+      "tool": "run_status",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1"
+      },
+      "response": {
+        "artifacts": [
+          {
+            "artifact_id": "97655623-b2db-4396-b2cc-d682f021601d",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "data",
+            "node_id": "data",
+            "port": "data",
+            "step_id": "b9294b28-b6c7-4bae-9edd-b3ba2020ebfc",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/data/data/b9294b28-b6c7-4bae-9edd-b3ba2020ebfc/40f87c46"
+          },
+          {
+            "artifact_id": "b812e9ca-f8d5-4b0b-ba6d-f4a53ad0fe06",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "initial",
+            "node_id": "initial",
+            "port": "initial",
+            "step_id": "96a62c7a-e511-410b-a893-49f31c262541",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/initial/initial/96a62c7a-e511-410b-a893-49f31c262541/30ed48c6"
+          }
+        ],
+        "backend": "zenml",
+        "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+        "backend_snapshot_id": "8d11c7b0-9d2d-4bdc-ada8-3503eb6f58b3",
+        "backend_status": "running",
+        "backend_version": "0.97.0",
+        "error": null,
+        "executed_recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "last_reconciled_at": "2026-10-09T15:43:15.824536+00:00",
+        "log_available": true,
+        "metrics": {},
+        "model_version_ref": "c68392e5-3b05-4302-805e-9b82592e95f5",
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1",
+        "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
+        "parent_run_id": null,
+        "process_group_alive": true,
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "recipe_revision": 2,
+        "resume_mode": null,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "running",
+        "submitted_at": "2026-10-09T15:43:03.796979+00:00",
+        "supervisor_alive": true,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": true,
+        "worker_exit_code": null,
+        "worker_pid": 75,
+        "created_at": "2026-10-09T15:43:04.061908+00:00",
+        "errors": [],
+        "revision": 4
+      },
+      "is_error": false
+    },
+    {
+      "tool": "run_status",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1"
+      },
+      "response": {
+        "artifacts": [
+          {
+            "artifact_id": "97655623-b2db-4396-b2cc-d682f021601d",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "data",
+            "node_id": "data",
+            "port": "data",
+            "step_id": "b9294b28-b6c7-4bae-9edd-b3ba2020ebfc",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/data/data/b9294b28-b6c7-4bae-9edd-b3ba2020ebfc/40f87c46"
+          },
+          {
+            "artifact_id": "b812e9ca-f8d5-4b0b-ba6d-f4a53ad0fe06",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "initial",
+            "node_id": "initial",
+            "port": "initial",
+            "step_id": "96a62c7a-e511-410b-a893-49f31c262541",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/initial/initial/96a62c7a-e511-410b-a893-49f31c262541/30ed48c6"
+          },
+          {
+            "artifact_id": "bc802392-31ee-4d4b-9dd5-8ee176a14156",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "checkpoint",
+            "node_id": "train",
+            "port": "checkpoint",
+            "step_id": "2422915a-399d-4252-ac82-935ba2e2b11a",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/train/checkpoint/2422915a-399d-4252-ac82-935ba2e2b11a/f3eeef90"
+          },
+          {
+            "artifact_id": "69247340-f403-448c-957d-d1c9616bd603",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "metrics",
+            "node_id": "evaluate",
+            "port": "metrics",
+            "step_id": "5edcf56d-eff4-48d9-b6de-51efb1638007",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/evaluate/metrics/5edcf56d-eff4-48d9-b6de-51efb1638007/73d79207"
+          },
+          {
+            "artifact_id": "8817dd52-542e-4ccd-b155-a6dba11a8cbe",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "export",
+            "node_id": "export",
+            "port": "export",
+            "step_id": "f4979a49-c6ef-4a38-b232-c4714170d07e",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/export/export/f4979a49-c6ef-4a38-b232-c4714170d07e/efd76e4b"
+          }
+        ],
+        "backend": "zenml",
+        "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+        "backend_snapshot_id": "8d11c7b0-9d2d-4bdc-ada8-3503eb6f58b3",
+        "backend_status": "completed",
+        "backend_version": "0.97.0",
+        "error": null,
+        "executed_recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "last_reconciled_at": "2026-10-09T15:43:20.429025+00:00",
+        "log_available": true,
+        "metrics": {
+          "accuracy": 0.8666666746139526,
+          "best_step": 30,
+          "best_validation_loss": 0.24631698429584503,
+          "brier": 0.13341984152793884,
+          "checkpoint_kind": "best",
+          "consumed_dataset_artifact": true,
+          "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8",
+          "device": "cpu",
+          "fixture": "custom",
+          "heldout_count": 30,
+          "heldout_logits": [
+            [
+              0.19725769758224487,
+              -1.6881252527236938
+            ],
+            [
+              -0.4627853333950043,
+              -0.2734029293060303
+            ],
+            [
+              -0.2577212154865265,
+              1.3509377241134644
+            ],
+            [
+              0.09489858150482178,
+              -1.4629186391830444
+            ],
+            [
+              -1.5885519981384277,
+              2.3009233474731445
+            ],
+            [
+              -0.9899387359619141,
+              0.7676081657409668
+            ],
+            [
+              -0.9280484914779663,
+              1.0443395376205444
+            ],
+            [
+              -0.3578602075576782,
+              0.11098481714725494
+            ],
+            [
+              -0.9976639151573181,
+              1.4744473695755005
+            ],
+            [
+              -0.9395735859870911,
+              0.9781821370124817
+            ],
+            [
+              -1.4396369457244873,
+              1.8679333925247192
+            ],
+            [
+              -0.03960080444812775,
+              -0.7083717584609985
+            ],
+            [
+              -1.259533166885376,
+              1.3589986562728882
+            ],
+            [
+              0.8941593766212463,
+              -2.3929336071014404
+            ],
+            [
+              -0.5459171533584595,
+              0.9728905558586121
+            ],
+            [
+              -0.5615208148956299,
+              0.5550416111946106
+            ],
+            [
+              0.456024706363678,
+              -0.32704752683639526
+            ],
+            [
+              0.5134568810462952,
+              -1.456297516822815
+            ],
+            [
+              -1.1908893585205078,
+              1.6578336954116821
+            ],
+            [
+              0.19099730253219604,
+              -2.1804866790771484
+            ],
+            [
+              0.20465269684791565,
+              -1.004350185394287
+            ],
+            [
+              -0.8645415306091309,
+              0.9553199410438538
+            ],
+            [
+              0.02870967984199524,
+              -1.3516299724578857
+            ],
+            [
+              0.07210618257522583,
+              -1.5250747203826904
+            ],
+            [
+              -1.4419093132019043,
+              2.1406657695770264
+            ],
+            [
+              -0.6240167617797852,
+              0.16692374646663666
+            ],
+            [
+              -0.26945751905441284,
+              1.1357375383377075
+            ],
+            [
+              0.420123815536499,
+              -1.0115691423416138
+            ],
+            [
+              -0.9718621373176575,
+              0.3947269916534424
+            ],
+            [
+              0.36583948135375977,
+              -0.22313296794891357
+            ]
+          ],
+          "kl": {
+            "batch_size": 60,
+            "coefficient": 0.0,
+            "direction": "reference_to_model",
+            "learning_rate": 0.025,
+            "scheduler_gamma": 0.99
+          },
+          "resume_mode": null,
+          "start_step": 0,
+          "step": 30,
+          "train_count": 180,
+          "validation_count": 30,
+          "validation_loss": 0.24631698429584503,
+          "width": 12
+        },
+        "model_version_ref": "c68392e5-3b05-4302-805e-9b82592e95f5",
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1",
+        "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
+        "parent_run_id": null,
+        "process_group_alive": false,
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "recipe_revision": 2,
+        "resume_mode": null,
+        "runtime_status_source": "verified_local_supervisor",
+        "status": "succeeded",
+        "submitted_at": "2026-10-09T15:43:03.796979+00:00",
+        "supervisor_alive": true,
+        "termination": {},
+        "termination_record_source": null,
+        "worker_alive": false,
+        "worker_exit_code": 0,
+        "worker_pid": 75,
+        "created_at": "2026-10-09T15:43:04.061908+00:00",
+        "errors": [],
+        "revision": 5
+      },
+      "is_error": false
+    },
+    {
+      "tool": "recipe_get",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651"
+      },
+      "response": {
+        "capabilities": [
+          "local_cpu"
+        ],
+        "description": "Trusted repository-owned deterministic CPU pipeline for one model project. Import advances the project-owned recipe under revision checks; model.initialize explicitly selects custom or pretrained initialization. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay. Metrics are not model-quality claims.",
+        "digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+        "edges": [
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "evaluate",
+            "target_port": "data"
+          },
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "export",
+            "target_port": "data"
+          },
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "initial",
+            "target_port": "data"
+          },
+          {
+            "source_node": "data",
+            "source_port": "data",
+            "target_node": "train",
+            "target_port": "data"
+          },
+          {
+            "source_node": "initial",
+            "source_port": "initial",
+            "target_node": "train",
+            "target_port": "initial"
+          },
+          {
+            "source_node": "train",
+            "source_port": "checkpoint",
+            "target_node": "evaluate",
+            "target_port": "checkpoint"
+          },
+          {
+            "source_node": "train",
+            "source_port": "checkpoint",
+            "target_node": "export",
+            "target_port": "checkpoint"
+          }
+        ],
+        "environment": {
+          "lock_file": {
+            "path": "requirements/backend.lock",
+            "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+          },
+          "python": "3.12.14",
+          "requirements": [
+            "numpy==2.2.6",
+            "torch==2.9.0+cpu",
+            "transformers==4.57.1",
+            "zenml[server]==0.97.0"
+          ]
+        },
+        "evaluation": {
+          "checkpoint_kind": "best",
+          "heldout_split": "heldout",
+          "keep_negative_outcomes": true,
+          "selection_rule": {
+            "direction": "minimize",
+            "metric": "validation_loss",
+            "split": "validation"
+          },
+          "validation_metric": "validation_loss"
+        },
+        "external_dependencies": [],
+        "licenses": [
+          {
+            "license": "NOASSERTION",
+            "redistribution_allowed": false,
+            "scope": "source"
+          }
+        ],
+        "name": "Custom gated-residual CPU model",
+        "nodes": [
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "data",
+            "implementation_ref": "builtin:dataset.synthetic",
+            "inputs": [],
+            "kind": "dataset.synthetic",
+            "outputs": [
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              }
+            ],
+            "parameters": {
+              "count": 240,
+              "fixture": "custom",
+              "seed": 1234
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          },
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "evaluate",
+            "implementation_ref": "builtin:model.evaluate",
+            "inputs": [
+              {
+                "name": "checkpoint",
+                "required": true,
+                "type": "checkpoint"
+              },
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              }
+            ],
+            "kind": "model.evaluate",
+            "outputs": [
+              {
+                "name": "metrics",
+                "required": true,
+                "type": "metrics"
+              }
+            ],
+            "parameters": {
+              "checkpoint_kind": "best",
+              "fixture": "custom"
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          },
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "export",
+            "implementation_ref": "builtin:model.export",
+            "inputs": [
+              {
+                "name": "checkpoint",
+                "required": true,
+                "type": "checkpoint"
+              },
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              }
+            ],
+            "kind": "model.export",
+            "outputs": [
+              {
+                "name": "export",
+                "required": true,
+                "type": "artifact"
+              }
+            ],
+            "parameters": {
+              "checkpoint_kind": "best",
+              "fixture": "custom"
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          },
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "initial",
+            "implementation_ref": "builtin:model.initialize",
+            "inputs": [
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              }
+            ],
+            "kind": "model.initialize",
+            "outputs": [
+              {
+                "name": "initial",
+                "required": true,
+                "type": "checkpoint"
+              }
+            ],
+            "parameters": {
+              "fixture": "custom",
+              "seed": 44,
+              "width": 12
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          },
+          {
+            "cache_policy": "disabled",
+            "environment_ref": "default",
+            "id": "train",
+            "implementation_ref": "builtin:model.train",
+            "inputs": [
+              {
+                "name": "data",
+                "required": true,
+                "type": "dataset"
+              },
+              {
+                "name": "initial",
+                "required": true,
+                "type": "checkpoint"
+              }
+            ],
+            "kind": "model.train",
+            "outputs": [
+              {
+                "name": "checkpoint",
+                "required": true,
+                "type": "checkpoint"
+              }
+            ],
+            "parameter_schema": {
+              "additionalProperties": false,
+              "properties": {
+                "batch_size": {
+                  "maximum": 10000,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "fixture": {
+                  "enum": [
+                    "custom",
+                    "pretrained"
+                  ]
+                },
+                "intentional_failure_step": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "kl": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "applies_to": {
+                      "enum": [
+                        "logits"
+                      ]
+                    },
+                    "coefficient": {
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    "direction": {
+                      "enum": [
+                        "reference_to_model",
+                        "model_to_reference"
+                      ]
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "frozen": {
+                      "type": "boolean"
+                    },
+                    "reference_model_ref": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "enabled",
+                    "coefficient",
+                    "direction",
+                    "reference_model_ref",
+                    "frozen",
+                    "applies_to"
+                  ],
+                  "type": "object"
+                },
+                "learning_rate": {
+                  "exclusiveMinimum": 0,
+                  "type": "number"
+                },
+                "scheduler_gamma": {
+                  "exclusiveMinimum": 0,
+                  "maximum": 1,
+                  "type": "number"
+                },
+                "seed": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "step_delay": {
+                  "maximum": 5,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "steps": {
+                  "maximum": 10000,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "width": {
+                  "maximum": 256,
+                  "minimum": 2,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "fixture",
+                "width",
+                "steps",
+                "learning_rate",
+                "seed",
+                "batch_size",
+                "kl"
+              ],
+              "type": "object"
+            },
+            "parameters": {
+              "batch_size": 60,
+              "fixture": "custom",
+              "kl": {
+                "applies_to": "logits",
+                "coefficient": 0.0,
+                "direction": "reference_to_model",
+                "enabled": false,
+                "frozen": true,
+                "reference_model_ref": "initial"
+              },
+              "learning_rate": 0.025,
+              "scheduler_gamma": 0.99,
+              "seed": 44,
+              "step_delay": 0.15,
+              "steps": 30,
+              "width": 12
+            },
+            "provenance": {
+              "implementation": "modelbuilder.backend.fixtures",
+              "purpose": "deterministic CPU validation fixture"
+            },
+            "resource_request": {
+              "cpu": 1,
+              "gpu": 0,
+              "memory_mb": 1024
+            },
+            "retry": {
+              "backoff_seconds": 0,
+              "max_attempts": 1
+            },
+            "timeout": 300
+          }
+        ],
+        "outputs": [
+          {
+            "name": "export",
+            "type": "artifact"
+          },
+          {
+            "name": "metrics",
+            "type": "metrics"
+          }
+        ],
+        "permissions": {
+          "execute_on_import": false,
+          "network": false
+        },
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "resources": [],
+        "revision": 2,
+        "schema_version": "0",
+        "source": {
+          "commit": "e3a81645531eebd6b66675e1c457e76479664b42",
+          "files": [
+            {
+              "path": "src/modelbuilder/backend/fixtures.py",
+              "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
+            }
+          ],
+          "repository": "https://github.com/greghavens/modelbuilder"
+        }
+      },
+      "is_error": false
+    },
+    {
+      "tool": "recipe_get",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "revision": 1
+      },
+      "response": {
+        "capabilities": [
+          "local_cpu"
+        ],
+        "digest": "d54385cf30023a711532055bb3fe9f691102f67c3da89778c7f803bf78dc010d",
+        "edges": [],
+        "environment": {
+          "python": "3.12",
+          "requirements": []
+        },
+        "evaluation": {},
+        "external_dependencies": [],
+        "licenses": [
+          {
+            "license": "NOASSERTION",
+            "redistribution_allowed": false,
+            "scope": "source"
+          }
+        ],
+        "name": "MCP CPU model recipe",
+        "nodes": [],
+        "outputs": [],
+        "permissions": {
+          "execute_on_import": false,
+          "network": false
+        },
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "resources": [],
+        "revision": 1,
+        "schema_version": "0",
+        "source": {
+          "commit": "0000000000000000000000000000000000000000",
+          "files": [],
+          "repository": "https://example.invalid/unconfigured.git"
+        }
+      },
+      "is_error": false
+    },
+    {
+      "tool": "recipe_history",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a"
+      },
+      "response": {
+        "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+        "current_revision": 2,
+        "revisions": [
+          {
+            "capabilities": [
+              "local_cpu"
+            ],
+            "digest": "d54385cf30023a711532055bb3fe9f691102f67c3da89778c7f803bf78dc010d",
+            "edges": [],
+            "environment": {
+              "python": "3.12",
+              "requirements": []
+            },
+            "evaluation": {},
+            "external_dependencies": [],
+            "licenses": [
+              {
+                "license": "NOASSERTION",
+                "redistribution_allowed": false,
+                "scope": "source"
+              }
+            ],
+            "name": "MCP CPU model recipe",
+            "nodes": [],
+            "outputs": [],
+            "permissions": {
+              "execute_on_import": false,
+              "network": false
+            },
+            "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+            "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+            "resources": [],
+            "revision": 1,
+            "schema_version": "0",
+            "source": {
+              "commit": "0000000000000000000000000000000000000000",
+              "files": [],
+              "repository": "https://example.invalid/unconfigured.git"
+            }
+          },
+          {
+            "capabilities": [
+              "local_cpu"
+            ],
+            "description": "Trusted repository-owned deterministic CPU pipeline for one model project. Import advances the project-owned recipe under revision checks; model.initialize explicitly selects custom or pretrained initialization. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay. Metrics are not model-quality claims.",
+            "digest": "50b5d16331ad4ec2f03901d7a20a04ed149107b0183f1f3067a71e8f1c5afc9d",
+            "edges": [
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "evaluate",
+                "target_port": "data"
+              },
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "export",
+                "target_port": "data"
+              },
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "initial",
+                "target_port": "data"
+              },
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "train",
+                "target_port": "data"
+              },
+              {
+                "source_node": "initial",
+                "source_port": "initial",
+                "target_node": "train",
+                "target_port": "initial"
+              },
+              {
+                "source_node": "train",
+                "source_port": "checkpoint",
+                "target_node": "evaluate",
+                "target_port": "checkpoint"
+              },
+              {
+                "source_node": "train",
+                "source_port": "checkpoint",
+                "target_node": "export",
+                "target_port": "checkpoint"
+              }
+            ],
+            "environment": {
+              "lock_file": {
+                "path": "requirements/backend.lock",
+                "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+              },
+              "python": "3.12.14",
+              "requirements": [
+                "numpy==2.2.6",
+                "torch==2.9.0+cpu",
+                "transformers==4.57.1",
+                "zenml[server]==0.97.0"
+              ]
+            },
+            "evaluation": {
+              "checkpoint_kind": "best",
+              "heldout_split": "heldout",
+              "keep_negative_outcomes": true,
+              "selection_rule": {
+                "direction": "minimize",
+                "metric": "validation_loss",
+                "split": "validation"
+              },
+              "validation_metric": "validation_loss"
+            },
+            "external_dependencies": [],
+            "licenses": [
+              {
+                "license": "NOASSERTION",
+                "redistribution_allowed": false,
+                "scope": "source"
+              }
+            ],
+            "name": "Custom gated-residual CPU model",
+            "nodes": [
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "data",
+                "implementation_ref": "builtin:dataset.synthetic",
+                "inputs": [],
+                "kind": "dataset.synthetic",
+                "outputs": [
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "parameters": {
+                  "count": 240,
+                  "fixture": "custom",
+                  "seed": 1234
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "evaluate",
+                "implementation_ref": "builtin:model.evaluate",
+                "inputs": [
+                  {
+                    "name": "checkpoint",
+                    "required": true,
+                    "type": "checkpoint"
+                  },
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "kind": "model.evaluate",
+                "outputs": [
+                  {
+                    "name": "metrics",
+                    "required": true,
+                    "type": "metrics"
+                  }
+                ],
+                "parameters": {
+                  "checkpoint_kind": "best",
+                  "fixture": "custom"
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "export",
+                "implementation_ref": "builtin:model.export",
+                "inputs": [
+                  {
+                    "name": "checkpoint",
+                    "required": true,
+                    "type": "checkpoint"
+                  },
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "kind": "model.export",
+                "outputs": [
+                  {
+                    "name": "export",
+                    "required": true,
+                    "type": "artifact"
+                  }
+                ],
+                "parameters": {
+                  "checkpoint_kind": "best",
+                  "fixture": "custom"
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "initial",
+                "implementation_ref": "builtin:model.initialize",
+                "inputs": [
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "kind": "model.initialize",
+                "outputs": [
+                  {
+                    "name": "initial",
+                    "required": true,
+                    "type": "checkpoint"
+                  }
+                ],
+                "parameters": {
+                  "fixture": "custom",
+                  "seed": 44,
+                  "width": 12
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "train",
+                "implementation_ref": "builtin:model.train",
+                "inputs": [
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  },
+                  {
+                    "name": "initial",
+                    "required": true,
+                    "type": "checkpoint"
+                  }
+                ],
+                "kind": "model.train",
+                "outputs": [
+                  {
+                    "name": "checkpoint",
+                    "required": true,
+                    "type": "checkpoint"
+                  }
+                ],
+                "parameter_schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "batch_size": {
+                      "maximum": 10000,
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "fixture": {
+                      "enum": [
+                        "custom",
+                        "pretrained"
+                      ]
+                    },
+                    "intentional_failure_step": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "kl": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "applies_to": {
+                          "enum": [
+                            "logits"
+                          ]
+                        },
+                        "coefficient": {
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "direction": {
+                          "enum": [
+                            "reference_to_model",
+                            "model_to_reference"
+                          ]
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "frozen": {
+                          "type": "boolean"
+                        },
+                        "reference_model_ref": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "enabled",
+                        "coefficient",
+                        "direction",
+                        "reference_model_ref",
+                        "frozen",
+                        "applies_to"
+                      ],
+                      "type": "object"
+                    },
+                    "learning_rate": {
+                      "exclusiveMinimum": 0,
+                      "type": "number"
+                    },
+                    "scheduler_gamma": {
+                      "exclusiveMinimum": 0,
+                      "maximum": 1,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "step_delay": {
+                      "maximum": 5,
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    "steps": {
+                      "maximum": 10000,
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "width": {
+                      "maximum": 256,
+                      "minimum": 2,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "fixture",
+                    "width",
+                    "steps",
+                    "learning_rate",
+                    "seed",
+                    "batch_size",
+                    "kl"
+                  ],
+                  "type": "object"
+                },
+                "parameters": {
+                  "batch_size": 60,
+                  "fixture": "custom",
+                  "kl": {
+                    "applies_to": "logits",
+                    "coefficient": 0.0,
+                    "direction": "reference_to_model",
+                    "enabled": false,
+                    "frozen": true,
+                    "reference_model_ref": "initial"
+                  },
+                  "learning_rate": 0.025,
+                  "scheduler_gamma": 0.99,
+                  "seed": 44,
+                  "step_delay": 0.15,
+                  "steps": 30,
+                  "width": 12
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              }
+            ],
+            "outputs": [
+              {
+                "name": "export",
+                "type": "artifact"
+              },
+              {
+                "name": "metrics",
+                "type": "metrics"
+              }
+            ],
+            "permissions": {
+              "execute_on_import": false,
+              "network": false
+            },
+            "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+            "recipe_id": "2258794b-704d-5618-9452-2cbb7b454651",
+            "resources": [],
+            "revision": 2,
+            "schema_version": "0",
+            "source": {
+              "commit": "e3a81645531eebd6b66675e1c457e76479664b42",
+              "files": [
+                {
+                  "path": "src/modelbuilder/backend/fixtures.py",
+                  "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
+                }
+              ],
+              "repository": "https://github.com/greghavens/modelbuilder"
+            }
+          }
+        ],
+        "legacy_recipes": [],
+        "migration": {}
+      },
+      "is_error": false
+    },
+    {
+      "tool": "run_artifacts",
+      "request": {
+        "project_id": "109de2b9-2e74-4fdc-972f-349f1db30e9a",
+        "operation_id": "b5895327-5efe-5fa5-8b00-f90cb13b1aa1"
+      },
+      "response": {
+        "artifacts": [
+          {
+            "artifact_id": "97655623-b2db-4396-b2cc-d682f021601d",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "data",
+            "node_id": "data",
+            "port": "data",
+            "step_id": "b9294b28-b6c7-4bae-9edd-b3ba2020ebfc",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/data/data/b9294b28-b6c7-4bae-9edd-b3ba2020ebfc/40f87c46"
+          },
+          {
+            "artifact_id": "b812e9ca-f8d5-4b0b-ba6d-f4a53ad0fe06",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "initial",
+            "node_id": "initial",
+            "port": "initial",
+            "step_id": "96a62c7a-e511-410b-a893-49f31c262541",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/initial/initial/96a62c7a-e511-410b-a893-49f31c262541/30ed48c6"
+          },
+          {
+            "artifact_id": "bc802392-31ee-4d4b-9dd5-8ee176a14156",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "checkpoint",
+            "node_id": "train",
+            "port": "checkpoint",
+            "step_id": "2422915a-399d-4252-ac82-935ba2e2b11a",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/train/checkpoint/2422915a-399d-4252-ac82-935ba2e2b11a/f3eeef90"
+          },
+          {
+            "artifact_id": "69247340-f403-448c-957d-d1c9616bd603",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "metrics",
+            "node_id": "evaluate",
+            "port": "metrics",
+            "step_id": "5edcf56d-eff4-48d9-b6de-51efb1638007",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/evaluate/metrics/5edcf56d-eff4-48d9-b6de-51efb1638007/73d79207"
+          },
+          {
+            "artifact_id": "8817dd52-542e-4ccd-b155-a6dba11a8cbe",
+            "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878",
+            "name": "export",
+            "node_id": "export",
+            "port": "export",
+            "step_id": "f4979a49-c6ef-4a38-b232-c4714170d07e",
+            "uri": "/tmp/pytest-of-agent/pytest-103/test_mcp_real_training_and_ser0/mcp-training/backend/zenml-stores/ed668976-c78f-44bc-a843-b8d6ac8b8785/export/export/f4979a49-c6ef-4a38-b232-c4714170d07e/efd76e4b"
+          }
+        ],
+        "backend_run_id": "cb0d4e74-f464-4091-b90d-1f026048e878"
+      },
+      "is_error": false
+    }
+  ]
+}

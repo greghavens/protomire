@@ -1,0 +1,113 @@
+{
+  "status": "FAIL",
+  "tests": [
+    {
+      "name": "project-landing-before-workspace",
+      "status": "PASS",
+      "evidence": {
+        "workspace_visible": false,
+        "project_picker": "landing only",
+        "workspace_selectors": 0
+      }
+    },
+    {
+      "name": "fixed-single-model-workspace",
+      "status": "PASS",
+      "evidence": {
+        "model": "GUI parity model",
+        "project_id": "caf7bff1-9351-4bc7-8a0b-e5d911da13c7",
+        "recipe_id": "4eb38db1-c24b-50c0-a4bd-bdaa84285a6c",
+        "workspace_selectors": 0
+      }
+    },
+    {
+      "name": "graph-authoring-typed-python",
+      "status": "PASS",
+      "evidence": {
+        "revision": 3,
+        "digest": "95174631427cf522beb4aa023e581792b197a5beb84e9a3152ec82ae20b31786",
+        "nodes": [
+          "custom",
+          "data"
+        ],
+        "edge": {
+          "source_node": "data",
+          "source_port": "tensor",
+          "target_node": "custom",
+          "target_port": "data"
+        }
+      }
+    },
+    {
+      "name": "gui-to-external-mcp-digest-equality",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "4eb38db1-c24b-50c0-a4bd-bdaa84285a6c",
+        "revision": 3,
+        "digest": "95174631427cf522beb4aa023e581792b197a5beb84e9a3152ec82ae20b31786"
+      }
+    },
+    {
+      "name": "external-mcp-to-visible-gui",
+      "status": "PASS",
+      "evidence": {
+        "revision": 4,
+        "digest": "ab82b569ab5dcc47890b22725f5621d74a9a7d6326641b6d6640d31fe610d14a"
+      }
+    },
+    {
+      "name": "single-recipe-identity-tracks-remote-revision",
+      "status": "PASS",
+      "evidence": {
+        "identity": "MCP edited this exact recipe  ·  4eb38db1-c24b-50c0-a4bd-bdaa84285a6c  ·  revision 4\nSHA256 ab82b569ab5dcc47890b22725f5621d74a9a7d6326641b6d6640d31fe610d14a",
+        "recipe_id": "4eb38db1-c24b-50c0-a4bd-bdaa84285a6c",
+        "revision": 4
+      }
+    },
+    {
+      "name": "concurrent-edit-conflict-preserves-draft",
+      "status": "PASS",
+      "evidence": {
+        "local_revision": 4,
+        "server_revision": 5,
+        "draft_preserved": true,
+        "diff_visible": "{\n  \"recipe_id\": \"4eb38db1-c24b-50c0-a4bd-bdaa84285a6c\",\n  \"current_revision\": 5,\n  \"equal\": false,\n  \"diff\": \"--- client\\n+++ server\\n@@ -2,7 +2,7 @@\\n   \\\"capabilities\\\": [\\n     \\\"local_cpu\\\"\\n   ],\\n-  \\\"digest\\\": \\\"ab82b569ab5dcc47890b22725f5621d74a9a7d6326641b6d6640d31fe610d14a\\\",\\n+  \\\"digest\\\": \\\"9ad1243103e21800e869c7282ecedc4200dfb519341ab18829db15a3d291123c\\\",\\n   \\\"edges\\\": [\\n     {\\n       \\\"source_node\\\": \\\"data\\\",\\n@@ -24,7 +24,7 @@\\n       \\\"scope\\\": \\\"source\\\"\\n     }\\n   ],\\n-  \\\"name\\\": \\\"Unsaved GUI draft\\\",\\n+  \\\"name\\\": \\\"Concurrent MCP revision\\\",\\n   \\\"nodes\\\": [\\n     {\\n       \\\"cache_policy\\\": \\\"disabled\\\",\\n@@ -93,7 +93,7 @@\\n   \\\"project_id\\\": \\\"caf7bff1-9351-4bc7-8a0b-e5d911da13c7\\\",\\n   \\\"recipe_id\\\": \\\"4eb38db1-c24b-50c0-a4bd-bdaa84285a6c\\\",\\n   \\\"resources\\\": [],\\n-  \\\"revision\\\": 4,\\n+  \\\"revision\\\": 5,\\n   \\\"schema_version\\\": \\\"0\\\",\\n   \\\"source\\\": {\\n     \\\"commit\\\": \\\"0000000000000000000000000000000000000000\\\",\"\n}"
+      }
+    },
+    {
+      "name": "invalid-source-visual-edit-protection",
+      "status": "PASS",
+      "evidence": {
+        "source_preserved": true
+      }
+    },
+    {
+      "name": "reload-cancel-preserves-draft",
+      "status": "PASS",
+      "evidence": {
+        "draft_preserved": true,
+        "explicit_cancel": true
+      }
+    },
+    {
+      "name": "explicit-reload-loads-server",
+      "status": "PASS",
+      "evidence": {
+        "revision": 5,
+        "digest": "9ad1243103e21800e869c7282ecedc4200dfb519341ab18829db15a3d291123c",
+        "explicit_discard": true,
+        "identity": "Concurrent MCP revision  ·  4eb38db1-c24b-50c0-a4bd-bdaa84285a6c  ·  revision 5\nSHA256 9ad1243103e21800e869c7282ecedc4200dfb519341ab18829db15a3d291123c"
+      }
+    },
+    {
+      "name": "import-cancel-preserves-current-recipe",
+      "status": "PASS",
+      "evidence": {
+        "recipe_id": "4eb38db1-c24b-50c0-a4bd-bdaa84285a6c",
+        "revision": 5,
+        "cancel_preserved": true
+      }
+    }
+  ],
+  "error": "Error: Timed out waiting for actual GUI state\n    at wait (/workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:6:182)\n    at async /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:32:268\n    at async check (/workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:11:43)\n    at async /workspace/scratch/f9ccb8889bfe/modelbuilder/packages/ide_feature/test/guiDom.cjs:32:3"
+}

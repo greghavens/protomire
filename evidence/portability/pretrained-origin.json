@@ -110,12 +110,12 @@
     "installed_source_sha256": {
       "src/modelbuilder/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
       "src/modelbuilder/backend/__init__.py": "4d6b1d0be44fb3e8dc7111d3cbb42f6911aad66e957a559e16006d0ca3300fb4",
-      "src/modelbuilder/backend/adapter.py": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff",
-      "src/modelbuilder/backend/common.py": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb",
-      "src/modelbuilder/backend/fixtures.py": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9",
-      "src/modelbuilder/backend/sdk.py": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d",
+      "src/modelbuilder/backend/adapter.py": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2",
+      "src/modelbuilder/backend/common.py": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab",
+      "src/modelbuilder/backend/fixtures.py": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d",
+      "src/modelbuilder/backend/sdk.py": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb",
       "src/modelbuilder/backend/supervisor.py": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1",
-      "src/modelbuilder/backend/worker.py": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099"
+      "src/modelbuilder/backend/worker.py": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20"
     },
     "modules": {
       "modelbuilder": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-portability-origin-backend/lib/python3.12/site-packages/modelbuilder/__init__.py",
@@ -133,12 +133,12 @@
     "python": "3.12.14",
     "pythonpath": null,
     "store": {
-      "artifact_store_id": "cd2a9dfc-2302-44e8-a61e-01d9e852d387",
-      "artifact_store_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387",
-      "metadata_url": "sqlite:////workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/default_zen_store/zenml.db",
-      "stack_id": "0d8d83a3-aa37-4336-a96c-0a3e3bc5babe",
-      "zenml_config_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-config",
-      "zenml_local_stores_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores"
+      "artifact_store_id": "35209ef6-8630-4c1e-bbe0-24732f06eca0",
+      "artifact_store_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0",
+      "metadata_url": "sqlite:////workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/default_zen_store/zenml.db",
+      "stack_id": "6df60b06-512a-43ef-a2d6-0c040fd424f9",
+      "zenml_config_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-config",
+      "zenml_local_stores_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores"
     },
     "sys_path": [
       "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python312.zip",
@@ -147,14 +147,15 @@
       "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-portability-origin-backend/lib/python3.12/site-packages"
     ]
   },
-  "data_dir": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data",
-  "executed_recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
+  "data_dir": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data",
+  "executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
   "external_resource_sha256": {
     "bert-tiny-config-json": "cf3179684f7c360dd6185962d480e7d426ceb8fe49f5db7b64bdc15dba0b8798",
     "bert-tiny-pytorch_model-bin": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
     "bert-tiny-vocab-txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
   },
   "import_execution_allowed": false,
+  "import_transport": "bundle_json",
   "installed_source_verified": true,
   "output_sha256": {
     "evaluate/metrics.json": "fbc12402505cb27ae29df4e0393dc8e7a62716db28be4decc8d84dfe950a72ae",
@@ -164,67 +165,84 @@
     "export/special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
     "export/tokenizer_config.json": "e711904cac23112776b678356ccf702cf934babaa01125f698ac43bf9ad38e73",
     "export/vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
-    "initial/checkpoint.pt": "c5a456a4543f1c84e23d7f941ac0d8c27896b14ec05641195fa05a1e2f532988",
-    "train/best.pt": "5c1775749c37b4388182013fc74df4761157554804b2dccf2e6fc96ca95fa6e6",
-    "train/checkpoint.pt": "e6d3c25e2d8922d8ae3941823c9ce7d63f7c134231c0b60d045c3934a91e8f6a"
+    "initial/checkpoint.pt": "37bedf93d20b10c997055cf4e8deac2eaf6fd27ce0293dacec218764714f49a9",
+    "train/best.pt": "0766c3eee9c8e362dada99e01e47a5ad8149d0955d28dae224702120364d66fb",
+    "train/checkpoint.pt": "da576a55341c9282d145c05809b16035aaa6ebb59ec4897ed6c08354df2cd34e"
+  },
+  "recipe_identity": {
+    "imported_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+    "imported_recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+    "imported_revision": 2,
+    "initial_revision": 1,
+    "listed_recipe_ids": [
+      "ee990a0e-767c-5df6-af32-9c5ecc2e4394"
+    ],
+    "native_executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+    "original_revision_unchanged": true,
+    "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+    "project_recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+    "run_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+    "run_recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+    "run_recipe_revision": 2
   },
   "run": {
     "artifacts": [
       {
-        "artifact_id": "7fbeabd2-a002-4826-a12a-b2b312412e98",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "artifact_id": "b25f9af4-e8b1-4664-b7c2-795c7d990f20",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
         "name": "data",
         "node_id": "data",
         "port": "data",
-        "step_id": "7566845d-8354-48d9-b2f9-8588ffc9e010",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/data/data/7566845d-8354-48d9-b2f9-8588ffc9e010/2bd01465"
+        "step_id": "a99fd51e-af77-4ce2-a475-89d7d2f4fdae",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/data/data/a99fd51e-af77-4ce2-a475-89d7d2f4fdae/a9efbbfe"
       },
       {
-        "artifact_id": "85023bc0-cb50-46e3-8e42-b989cf24fc16",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "artifact_id": "b154ce99-03e1-4af0-a71c-5ade1db66ac6",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
         "name": "initial",
         "node_id": "initial",
         "port": "initial",
-        "step_id": "9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/initial/initial/9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef/d58389ba"
+        "step_id": "bc777e7a-62eb-420b-b63a-71cf99571471",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/initial/initial/bc777e7a-62eb-420b-b63a-71cf99571471/1e328ac5"
       },
       {
-        "artifact_id": "352f9dd0-f583-4c7c-9e3c-49c49d739739",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "artifact_id": "8e0c9cf6-7452-4435-b833-e7cd0cf1cf9d",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
         "name": "checkpoint",
         "node_id": "train",
         "port": "checkpoint",
-        "step_id": "8bca06ee-b896-4a96-8f16-024bd59db347",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/train/checkpoint/8bca06ee-b896-4a96-8f16-024bd59db347/4d6d84bc"
+        "step_id": "4424e7ca-c1f3-451e-8c78-632520fd922c",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/train/checkpoint/4424e7ca-c1f3-451e-8c78-632520fd922c/4bbaf3af"
       },
       {
-        "artifact_id": "795dcc8f-8656-4168-9596-8f440f7820b6",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "artifact_id": "327f1d93-4ef8-4e35-ab7b-617b15f0cd45",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
         "name": "metrics",
         "node_id": "evaluate",
         "port": "metrics",
-        "step_id": "d854b355-d83f-459e-8179-6c6feb62775b",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/evaluate/metrics/d854b355-d83f-459e-8179-6c6feb62775b/ce9a1b79"
+        "step_id": "f409d798-92f2-4eee-a77a-aba7004af906",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/evaluate/metrics/f409d798-92f2-4eee-a77a-aba7004af906/d3b2b28d"
       },
       {
-        "artifact_id": "a65e4c03-17ff-44e4-9caf-7b24643ca148",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "artifact_id": "deabf734-f314-4ddc-964c-f26f9712c77a",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
         "name": "export",
         "node_id": "export",
         "port": "export",
-        "step_id": "fef78638-bd6b-40e2-b4ee-a2f1b87083c8",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/export/export/fef78638-bd6b-40e2-b4ee-a2f1b87083c8/53fb15a8"
+        "step_id": "fd7ff048-5963-47f3-9c68-29a625d30878",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/export/export/fd7ff048-5963-47f3-9c68-29a625d30878/68f6b540"
       }
     ],
     "backend": "zenml",
-    "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+    "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
+    "backend_snapshot_id": "e58877d1-6c51-4e85-b4cd-b2d1040475c7",
     "backend_status": "completed",
     "backend_version": "0.97.0",
-    "created_at": "2026-10-09T14:51:47.058500+00:00",
+    "created_at": "2026-10-09T15:47:26.594353+00:00",
     "error": null,
     "errors": [],
-    "executed_recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-    "last_reconciled_at": "2026-10-09T14:52:13.929259+00:00",
+    "executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+    "last_reconciled_at": "2026-10-09T15:47:54.260665+00:00",
     "log_available": true,
     "metrics": {
       "accuracy": 1.0,
@@ -291,26 +309,29 @@
       "vocabulary_size": 30522,
       "width": 12
     },
-    "model_version_ref": "c84bdd08-5c58-49be-b5b0-a62b66fc33a3",
+    "model_version_ref": "28f19602-5871-426e-a40c-686e3956470f",
     "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
     "parent_checkpoint_ref": null,
+    "parent_recipe_digest": null,
+    "parent_recipe_id": null,
+    "parent_recipe_revision": null,
     "parent_run_id": null,
     "process_group_alive": false,
-    "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
-    "recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-    "recipe_id": "a1989914-3d40-40ac-8034-3b79ce315852",
-    "recipe_revision": 1,
+    "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+    "recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+    "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+    "recipe_revision": 2,
     "resume_mode": null,
     "revision": 7,
     "runtime_status_source": "verified_local_supervisor",
     "status": "succeeded",
-    "submitted_at": "2026-10-09T14:51:46.794377+00:00",
+    "submitted_at": "2026-10-09T15:47:26.327982+00:00",
     "supervisor_alive": false,
     "termination": {},
     "termination_record_source": null,
     "worker_alive": false,
     "worker_exit_code": 0,
-    "worker_pid": 10
+    "worker_pid": 188
   },
   "service_identity": {
     "base_prefix": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python",
@@ -390,21 +411,21 @@
     "executable": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-portability-origin/bin/python",
     "installed_source_sha256": {
       "src/modelbuilder/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
-      "src/modelbuilder/api.py": "f2df4f30d1224e15a68e4df326557726199552ded7ca183e9f357e97cf13b3d7",
+      "src/modelbuilder/api.py": "e2702afa96c989c61c746eac0b067dd13c1ef17a0d0d8e79421e8b717ef7c9df",
       "src/modelbuilder/auth.py": "fbb19260a3059fe3ee6058a0cc63fa46f10f588dff854f71b7a8a9d431c10999",
       "src/modelbuilder/backend/__init__.py": "4d6b1d0be44fb3e8dc7111d3cbb42f6911aad66e957a559e16006d0ca3300fb4",
-      "src/modelbuilder/backend/adapter.py": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff",
-      "src/modelbuilder/backend/common.py": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb",
-      "src/modelbuilder/backend/fixtures.py": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9",
-      "src/modelbuilder/backend/sdk.py": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d",
+      "src/modelbuilder/backend/adapter.py": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2",
+      "src/modelbuilder/backend/common.py": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab",
+      "src/modelbuilder/backend/fixtures.py": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d",
+      "src/modelbuilder/backend/sdk.py": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb",
       "src/modelbuilder/backend/supervisor.py": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1",
-      "src/modelbuilder/backend/worker.py": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099",
+      "src/modelbuilder/backend/worker.py": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20",
       "src/modelbuilder/literature.py": "744fa1b146c11199e299bd38958626c2d774bf19fee563163e3f9e35ed24918a",
       "src/modelbuilder/mcp_server.py": "6ab7dc4c4e45e3e39c13b0f63a8891e66ed485a487aae9489d6fcfaa3dff1e9d",
-      "src/modelbuilder/models.py": "f6596ef4395d2c1d990981dd004dc694af8482188a8a036035877c574c54f37f",
-      "src/modelbuilder/recipe.py": "1b5498b4378fc0e4ebf91c0594391773f93b4987d3c86a80c5d243de196b58c0",
-      "src/modelbuilder/service.py": "1fc9d7d1ce519420a3ae50b42f93dd33fbb2026c909c8119bcf3bd82524e7cc3",
-      "src/modelbuilder/store.py": "ef360987019db94be38c5f0d56e1a63d50d9cf26beff459ebfedccea5b8cce3b"
+      "src/modelbuilder/models.py": "a98cd50574f2b3fdf98c18d16274f52cf32045729f871d8dc730ebd31cc1122a",
+      "src/modelbuilder/recipe.py": "4553c2aabcbc0205e026baba2fe875063fa17b9df150ed5a35a948698eb68cd2",
+      "src/modelbuilder/service.py": "790f7e2441f45ae9ea9cad861a89cbd192614213a45fcb0b3f114364b8819fba",
+      "src/modelbuilder/store.py": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"
     },
     "modules": {
       "jsonschema": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-portability-origin/lib/python3.12/site-packages/jsonschema/__init__.py",
@@ -426,28 +447,70 @@
       "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-portability-origin/lib/python3.12/site-packages"
     ]
   },
-  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
-  "source_root": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-source",
+  "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
+  "source_root": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-source",
   "status": "PASS",
   "transcript": [
     {
       "operation": "project.create",
       "result": {
         "active_model_version_ref": null,
-        "active_recipe_id": null,
-        "created_at": "2026-10-09T14:51:41.327895+00:00",
+        "active_recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "created_at": "2026-10-09T15:47:21.436009+00:00",
         "description": "",
         "git_remote": null,
         "head_commit": null,
-        "id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
+        "id": "3ce5931f-56d0-4874-aa93-843d9902771f",
         "model_name": "Pinned BERT-tiny CPU adaptation",
-        "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "recipe_migration": {},
         "research_watch_config": null,
         "revision": 1,
         "schema_version": "0",
         "slug": "portable-cpu",
         "status": "active",
-        "updated_at": "2026-10-09T14:51:41.327895+00:00"
+        "updated_at": "2026-10-09T15:47:21.436009+00:00"
+      }
+    },
+    {
+      "operation": "recipe.get",
+      "result": {
+        "capabilities": [
+          "local_cpu"
+        ],
+        "digest": "ff56b50e150a91de6ec7fd2187500478e59073ef039a6e8d76287c76fdfff7a4",
+        "edges": [],
+        "environment": {
+          "python": "3.12",
+          "requirements": []
+        },
+        "evaluation": {},
+        "external_dependencies": [],
+        "licenses": [
+          {
+            "license": "NOASSERTION",
+            "redistribution_allowed": false,
+            "scope": "source"
+          }
+        ],
+        "name": "Pinned BERT-tiny CPU adaptation recipe",
+        "nodes": [],
+        "outputs": [],
+        "permissions": {
+          "execute_on_import": false,
+          "network": false
+        },
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "resources": [],
+        "revision": 1,
+        "schema_version": "0",
+        "source": {
+          "commit": "0000000000000000000000000000000000000000",
+          "files": [],
+          "repository": "https://example.invalid/unconfigured.git"
+        }
       }
     },
     {
@@ -456,8 +519,8 @@
         "capabilities": [
           "local_cpu"
         ],
-        "description": "Trusted repository-owned deterministic CPU smoke fixture. Metrics are not model-quality claims. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay.",
-        "digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
+        "description": "Trusted repository-owned deterministic CPU pipeline for one model project. Import advances the project-owned recipe under revision checks; model.initialize explicitly selects custom or pretrained initialization. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay. Metrics are not model-quality claims.",
+        "digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
         "edges": [
           {
             "source_node": "data",
@@ -917,8 +980,8 @@
           "execute_on_import": false,
           "network": false
         },
-        "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
-        "recipe_id": "a1989914-3d40-40ac-8034-3b79ce315852",
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
         "resources": [
           {
             "id": "bert-tiny-config-json",
@@ -951,10 +1014,10 @@
             "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/vocab.txt"
           }
         ],
-        "revision": 1,
+        "revision": 2,
         "schema_version": "0",
         "source": {
-          "commit": "4d545df2b111de7f2365e8121a65717b37713054",
+          "commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
           "files": [
             {
               "path": "pyproject.toml",
@@ -970,7 +1033,7 @@
             },
             {
               "path": "scripts/replay_bundle.py",
-              "sha256": "fc78e5814798da1bbe61111be3e0a74fbd98551e054ebe2d9251949a396c5af9"
+              "sha256": "dee53b8e50dfdea403b407ab12283d8021de1dbb972b6a5d575be69a19489bd0"
             },
             {
               "path": "src/modelbuilder/__init__.py",
@@ -978,7 +1041,7 @@
             },
             {
               "path": "src/modelbuilder/api.py",
-              "sha256": "f2df4f30d1224e15a68e4df326557726199552ded7ca183e9f357e97cf13b3d7"
+              "sha256": "e2702afa96c989c61c746eac0b067dd13c1ef17a0d0d8e79421e8b717ef7c9df"
             },
             {
               "path": "src/modelbuilder/auth.py",
@@ -990,19 +1053,19 @@
             },
             {
               "path": "src/modelbuilder/backend/adapter.py",
-              "sha256": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff"
+              "sha256": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2"
             },
             {
               "path": "src/modelbuilder/backend/common.py",
-              "sha256": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb"
+              "sha256": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab"
             },
             {
               "path": "src/modelbuilder/backend/fixtures.py",
-              "sha256": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9"
+              "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
             },
             {
               "path": "src/modelbuilder/backend/sdk.py",
-              "sha256": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d"
+              "sha256": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb"
             },
             {
               "path": "src/modelbuilder/backend/supervisor.py",
@@ -1010,7 +1073,7 @@
             },
             {
               "path": "src/modelbuilder/backend/worker.py",
-              "sha256": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099"
+              "sha256": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20"
             },
             {
               "path": "src/modelbuilder/literature.py",
@@ -1022,23 +1085,607 @@
             },
             {
               "path": "src/modelbuilder/models.py",
-              "sha256": "f6596ef4395d2c1d990981dd004dc694af8482188a8a036035877c574c54f37f"
+              "sha256": "a98cd50574f2b3fdf98c18d16274f52cf32045729f871d8dc730ebd31cc1122a"
             },
             {
               "path": "src/modelbuilder/recipe.py",
-              "sha256": "1b5498b4378fc0e4ebf91c0594391773f93b4987d3c86a80c5d243de196b58c0"
+              "sha256": "4553c2aabcbc0205e026baba2fe875063fa17b9df150ed5a35a948698eb68cd2"
             },
             {
               "path": "src/modelbuilder/service.py",
-              "sha256": "1fc9d7d1ce519420a3ae50b42f93dd33fbb2026c909c8119bcf3bd82524e7cc3"
+              "sha256": "790f7e2441f45ae9ea9cad861a89cbd192614213a45fcb0b3f114364b8819fba"
             },
             {
               "path": "src/modelbuilder/store.py",
-              "sha256": "ef360987019db94be38c5f0d56e1a63d50d9cf26beff459ebfedccea5b8cce3b"
+              "sha256": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"
             }
           ],
           "repository": "https://github.com/greghavens/modelbuilder"
         }
+      }
+    },
+    {
+      "operation": "recipe.get",
+      "result": {
+        "capabilities": [
+          "local_cpu"
+        ],
+        "digest": "ff56b50e150a91de6ec7fd2187500478e59073ef039a6e8d76287c76fdfff7a4",
+        "edges": [],
+        "environment": {
+          "python": "3.12",
+          "requirements": []
+        },
+        "evaluation": {},
+        "external_dependencies": [],
+        "licenses": [
+          {
+            "license": "NOASSERTION",
+            "redistribution_allowed": false,
+            "scope": "source"
+          }
+        ],
+        "name": "Pinned BERT-tiny CPU adaptation recipe",
+        "nodes": [],
+        "outputs": [],
+        "permissions": {
+          "execute_on_import": false,
+          "network": false
+        },
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "resources": [],
+        "revision": 1,
+        "schema_version": "0",
+        "source": {
+          "commit": "0000000000000000000000000000000000000000",
+          "files": [],
+          "repository": "https://example.invalid/unconfigured.git"
+        }
+      }
+    },
+    {
+      "operation": "recipe.list",
+      "result": {
+        "current_recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "recipes": [
+          {
+            "capabilities": [
+              "local_cpu"
+            ],
+            "description": "Trusted repository-owned deterministic CPU pipeline for one model project. Import advances the project-owned recipe under revision checks; model.initialize explicitly selects custom or pretrained initialization. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay. Metrics are not model-quality claims.",
+            "digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+            "edges": [
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "evaluate",
+                "target_port": "data"
+              },
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "export",
+                "target_port": "data"
+              },
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "initial",
+                "target_port": "data"
+              },
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "train",
+                "target_port": "data"
+              },
+              {
+                "source_node": "initial",
+                "source_port": "initial",
+                "target_node": "train",
+                "target_port": "initial"
+              },
+              {
+                "source_node": "train",
+                "source_port": "checkpoint",
+                "target_node": "evaluate",
+                "target_port": "checkpoint"
+              },
+              {
+                "source_node": "train",
+                "source_port": "checkpoint",
+                "target_node": "export",
+                "target_port": "checkpoint"
+              }
+            ],
+            "environment": {
+              "lock_file": {
+                "path": "requirements/backend.lock",
+                "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+              },
+              "python": "3.12.14",
+              "requirements": [
+                "numpy==2.2.6",
+                "torch==2.9.0+cpu",
+                "transformers==4.57.1",
+                "zenml[server]==0.97.0"
+              ]
+            },
+            "evaluation": {
+              "checkpoint_kind": "best",
+              "heldout_split": "heldout",
+              "keep_negative_outcomes": true,
+              "selection_rule": {
+                "direction": "minimize",
+                "metric": "validation_loss",
+                "split": "validation"
+              },
+              "validation_metric": "validation_loss"
+            },
+            "external_dependencies": [],
+            "licenses": [
+              {
+                "license": "NOASSERTION",
+                "redistribution_allowed": false,
+                "scope": "source"
+              }
+            ],
+            "name": "Pinned BERT-tiny CPU adaptation",
+            "nodes": [
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "data",
+                "implementation_ref": "builtin:dataset.synthetic",
+                "inputs": [],
+                "kind": "dataset.synthetic",
+                "outputs": [
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "parameters": {
+                  "fixture": "pretrained",
+                  "seed": 1234
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "evaluate",
+                "implementation_ref": "builtin:model.evaluate",
+                "inputs": [
+                  {
+                    "name": "checkpoint",
+                    "required": true,
+                    "type": "checkpoint"
+                  },
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "kind": "model.evaluate",
+                "outputs": [
+                  {
+                    "name": "metrics",
+                    "required": true,
+                    "type": "metrics"
+                  }
+                ],
+                "parameters": {
+                  "checkpoint_kind": "best",
+                  "fixture": "pretrained"
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "export",
+                "implementation_ref": "builtin:model.export",
+                "inputs": [
+                  {
+                    "name": "checkpoint",
+                    "required": true,
+                    "type": "checkpoint"
+                  },
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "kind": "model.export",
+                "outputs": [
+                  {
+                    "name": "export",
+                    "required": true,
+                    "type": "artifact"
+                  }
+                ],
+                "parameters": {
+                  "checkpoint_kind": "best",
+                  "fixture": "pretrained"
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "initial",
+                "implementation_ref": "builtin:model.initialize",
+                "inputs": [
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "kind": "model.initialize",
+                "outputs": [
+                  {
+                    "name": "initial",
+                    "required": true,
+                    "type": "checkpoint"
+                  }
+                ],
+                "parameters": {
+                  "fixture": "pretrained",
+                  "seed": 701,
+                  "width": 12
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "train",
+                "implementation_ref": "builtin:model.train",
+                "inputs": [
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  },
+                  {
+                    "name": "initial",
+                    "required": true,
+                    "type": "checkpoint"
+                  }
+                ],
+                "kind": "model.train",
+                "outputs": [
+                  {
+                    "name": "checkpoint",
+                    "required": true,
+                    "type": "checkpoint"
+                  }
+                ],
+                "parameter_schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "batch_size": {
+                      "maximum": 10000,
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "fixture": {
+                      "enum": [
+                        "custom",
+                        "pretrained"
+                      ]
+                    },
+                    "intentional_failure_step": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "kl": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "applies_to": {
+                          "enum": [
+                            "logits"
+                          ]
+                        },
+                        "coefficient": {
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "direction": {
+                          "enum": [
+                            "reference_to_model",
+                            "model_to_reference"
+                          ]
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "frozen": {
+                          "type": "boolean"
+                        },
+                        "reference_model_ref": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "enabled",
+                        "coefficient",
+                        "direction",
+                        "reference_model_ref",
+                        "frozen",
+                        "applies_to"
+                      ],
+                      "type": "object"
+                    },
+                    "learning_rate": {
+                      "exclusiveMinimum": 0,
+                      "type": "number"
+                    },
+                    "scheduler_gamma": {
+                      "exclusiveMinimum": 0,
+                      "maximum": 1,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "step_delay": {
+                      "maximum": 5,
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    "steps": {
+                      "maximum": 10000,
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "width": {
+                      "maximum": 256,
+                      "minimum": 2,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "fixture",
+                    "width",
+                    "steps",
+                    "learning_rate",
+                    "seed",
+                    "batch_size",
+                    "kl"
+                  ],
+                  "type": "object"
+                },
+                "parameters": {
+                  "batch_size": 32,
+                  "fixture": "pretrained",
+                  "kl": {
+                    "applies_to": "logits",
+                    "coefficient": 0.0,
+                    "direction": "model_to_reference",
+                    "enabled": false,
+                    "frozen": true,
+                    "reference_model_ref": "initial"
+                  },
+                  "learning_rate": 0.001,
+                  "scheduler_gamma": 0.99,
+                  "seed": 701,
+                  "steps": 18,
+                  "width": 12
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              }
+            ],
+            "outputs": [
+              {
+                "name": "export",
+                "type": "artifact"
+              },
+              {
+                "name": "metrics",
+                "type": "metrics"
+              }
+            ],
+            "permissions": {
+              "execute_on_import": false,
+              "network": false
+            },
+            "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+            "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+            "resources": [
+              {
+                "id": "bert-tiny-config-json",
+                "kind": "model",
+                "license": "MIT",
+                "private": false,
+                "redistribution_allowed": false,
+                "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+                "sha256": "cf3179684f7c360dd6185962d480e7d426ceb8fe49f5db7b64bdc15dba0b8798",
+                "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/config.json"
+              },
+              {
+                "id": "bert-tiny-pytorch_model-bin",
+                "kind": "model",
+                "license": "MIT",
+                "private": false,
+                "redistribution_allowed": false,
+                "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+                "sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+                "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/pytorch_model.bin"
+              },
+              {
+                "id": "bert-tiny-vocab-txt",
+                "kind": "model",
+                "license": "MIT",
+                "private": false,
+                "redistribution_allowed": false,
+                "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+                "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+                "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/vocab.txt"
+              }
+            ],
+            "revision": 2,
+            "schema_version": "0",
+            "source": {
+              "commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
+              "files": [
+                {
+                  "path": "pyproject.toml",
+                  "sha256": "bd2e8fadd1fc3b8f8315a15844c1b45b180942128d9ade6bf5d51114919b1d46"
+                },
+                {
+                  "path": "requirements/backend.lock",
+                  "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+                },
+                {
+                  "path": "requirements/service.lock",
+                  "sha256": "02b3918fe148881089cf3ba31151ef1e387b2f4b902c34c74a1a70544b8477d7"
+                },
+                {
+                  "path": "scripts/replay_bundle.py",
+                  "sha256": "dee53b8e50dfdea403b407ab12283d8021de1dbb972b6a5d575be69a19489bd0"
+                },
+                {
+                  "path": "src/modelbuilder/__init__.py",
+                  "sha256": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed"
+                },
+                {
+                  "path": "src/modelbuilder/api.py",
+                  "sha256": "e2702afa96c989c61c746eac0b067dd13c1ef17a0d0d8e79421e8b717ef7c9df"
+                },
+                {
+                  "path": "src/modelbuilder/auth.py",
+                  "sha256": "fbb19260a3059fe3ee6058a0cc63fa46f10f588dff854f71b7a8a9d431c10999"
+                },
+                {
+                  "path": "src/modelbuilder/backend/__init__.py",
+                  "sha256": "4d6b1d0be44fb3e8dc7111d3cbb42f6911aad66e957a559e16006d0ca3300fb4"
+                },
+                {
+                  "path": "src/modelbuilder/backend/adapter.py",
+                  "sha256": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2"
+                },
+                {
+                  "path": "src/modelbuilder/backend/common.py",
+                  "sha256": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab"
+                },
+                {
+                  "path": "src/modelbuilder/backend/fixtures.py",
+                  "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
+                },
+                {
+                  "path": "src/modelbuilder/backend/sdk.py",
+                  "sha256": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb"
+                },
+                {
+                  "path": "src/modelbuilder/backend/supervisor.py",
+                  "sha256": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1"
+                },
+                {
+                  "path": "src/modelbuilder/backend/worker.py",
+                  "sha256": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20"
+                },
+                {
+                  "path": "src/modelbuilder/literature.py",
+                  "sha256": "744fa1b146c11199e299bd38958626c2d774bf19fee563163e3f9e35ed24918a"
+                },
+                {
+                  "path": "src/modelbuilder/mcp_server.py",
+                  "sha256": "6ab7dc4c4e45e3e39c13b0f63a8891e66ed485a487aae9489d6fcfaa3dff1e9d"
+                },
+                {
+                  "path": "src/modelbuilder/models.py",
+                  "sha256": "a98cd50574f2b3fdf98c18d16274f52cf32045729f871d8dc730ebd31cc1122a"
+                },
+                {
+                  "path": "src/modelbuilder/recipe.py",
+                  "sha256": "4553c2aabcbc0205e026baba2fe875063fa17b9df150ed5a35a948698eb68cd2"
+                },
+                {
+                  "path": "src/modelbuilder/service.py",
+                  "sha256": "790f7e2441f45ae9ea9cad861a89cbd192614213a45fcb0b3f114364b8819fba"
+                },
+                {
+                  "path": "src/modelbuilder/store.py",
+                  "sha256": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"
+                }
+              ],
+              "repository": "https://github.com/greghavens/modelbuilder"
+            }
+          }
+        ]
       }
     },
     {
@@ -1047,18 +1694,18 @@
         "backend": "zenml",
         "backend_run_id": null,
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:51:47.058500+00:00",
+        "created_at": "2026-10-09T15:47:26.594353+00:00",
         "errors": [],
-        "last_reconciled_at": "2026-10-09T14:51:47.058503+00:00",
+        "last_reconciled_at": "2026-10-09T15:47:26.594356+00:00",
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
-        "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
-        "recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "recipe_id": "a1989914-3d40-40ac-8034-3b79ce315852",
-        "recipe_revision": 1,
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "recipe_revision": 2,
         "revision": 1,
         "status": "submitted",
-        "submitted_at": "2026-10-09T14:51:46.794377+00:00",
-        "supervisor_pid": 9
+        "submitted_at": "2026-10-09T15:47:26.327982+00:00",
+        "supervisor_pid": 187
       }
     },
     {
@@ -1067,35 +1714,39 @@
         "artifacts": [],
         "backend": "zenml",
         "backend_run_id": null,
+        "backend_snapshot_id": null,
         "backend_status": null,
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:51:47.058500+00:00",
+        "created_at": "2026-10-09T15:47:26.594353+00:00",
         "error": null,
         "errors": [],
-        "executed_recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "last_reconciled_at": "2026-10-09T14:51:50.333610+00:00",
+        "executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "last_reconciled_at": "2026-10-09T15:47:30.382209+00:00",
         "log_available": true,
         "metrics": {},
         "model_version_ref": null,
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
         "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
         "parent_run_id": null,
         "process_group_alive": true,
-        "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
-        "recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "recipe_id": "a1989914-3d40-40ac-8034-3b79ce315852",
-        "recipe_revision": 1,
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "recipe_revision": 2,
         "resume_mode": null,
         "revision": 2,
         "runtime_status_source": "verified_local_supervisor",
         "status": "submitted",
-        "submitted_at": "2026-10-09T14:51:46.794377+00:00",
+        "submitted_at": "2026-10-09T15:47:26.327982+00:00",
         "supervisor_alive": true,
         "termination": {},
         "termination_record_source": null,
         "worker_alive": true,
         "worker_exit_code": null,
-        "worker_pid": 10
+        "worker_pid": 188
       }
     },
     {
@@ -1103,36 +1754,40 @@
       "result": {
         "artifacts": [],
         "backend": "zenml",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
+        "backend_snapshot_id": "e58877d1-6c51-4e85-b4cd-b2d1040475c7",
         "backend_status": "running",
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:51:47.058500+00:00",
+        "created_at": "2026-10-09T15:47:26.594353+00:00",
         "error": null,
         "errors": [],
-        "executed_recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "last_reconciled_at": "2026-10-09T14:51:55.217421+00:00",
+        "executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "last_reconciled_at": "2026-10-09T15:47:34.714038+00:00",
         "log_available": true,
         "metrics": {},
-        "model_version_ref": "c84bdd08-5c58-49be-b5b0-a62b66fc33a3",
+        "model_version_ref": "28f19602-5871-426e-a40c-686e3956470f",
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
         "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
         "parent_run_id": null,
         "process_group_alive": true,
-        "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
-        "recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "recipe_id": "a1989914-3d40-40ac-8034-3b79ce315852",
-        "recipe_revision": 1,
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "recipe_revision": 2,
         "resume_mode": null,
         "revision": 3,
         "runtime_status_source": "verified_local_supervisor",
         "status": "running",
-        "submitted_at": "2026-10-09T14:51:46.794377+00:00",
+        "submitted_at": "2026-10-09T15:47:26.327982+00:00",
         "supervisor_alive": true,
         "termination": {},
         "termination_record_source": null,
         "worker_alive": true,
         "worker_exit_code": null,
-        "worker_pid": 10
+        "worker_pid": 188
       }
     },
     {
@@ -1140,55 +1795,59 @@
       "result": {
         "artifacts": [
           {
-            "artifact_id": "7fbeabd2-a002-4826-a12a-b2b312412e98",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "b25f9af4-e8b1-4664-b7c2-795c7d990f20",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "data",
             "node_id": "data",
             "port": "data",
-            "step_id": "7566845d-8354-48d9-b2f9-8588ffc9e010",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/data/data/7566845d-8354-48d9-b2f9-8588ffc9e010/2bd01465"
+            "step_id": "a99fd51e-af77-4ce2-a475-89d7d2f4fdae",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/data/data/a99fd51e-af77-4ce2-a475-89d7d2f4fdae/a9efbbfe"
           },
           {
-            "artifact_id": "85023bc0-cb50-46e3-8e42-b989cf24fc16",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "b154ce99-03e1-4af0-a71c-5ade1db66ac6",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "initial",
             "node_id": "initial",
             "port": "initial",
-            "step_id": "9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/initial/initial/9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef/d58389ba"
+            "step_id": "bc777e7a-62eb-420b-b63a-71cf99571471",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/initial/initial/bc777e7a-62eb-420b-b63a-71cf99571471/1e328ac5"
           }
         ],
         "backend": "zenml",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
+        "backend_snapshot_id": "e58877d1-6c51-4e85-b4cd-b2d1040475c7",
         "backend_status": "running",
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:51:47.058500+00:00",
+        "created_at": "2026-10-09T15:47:26.594353+00:00",
         "error": null,
         "errors": [],
-        "executed_recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "last_reconciled_at": "2026-10-09T14:52:00.051105+00:00",
+        "executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "last_reconciled_at": "2026-10-09T15:47:39.495712+00:00",
         "log_available": true,
         "metrics": {},
-        "model_version_ref": "c84bdd08-5c58-49be-b5b0-a62b66fc33a3",
+        "model_version_ref": "28f19602-5871-426e-a40c-686e3956470f",
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
         "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
         "parent_run_id": null,
         "process_group_alive": true,
-        "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
-        "recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "recipe_id": "a1989914-3d40-40ac-8034-3b79ce315852",
-        "recipe_revision": 1,
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "recipe_revision": 2,
         "resume_mode": null,
         "revision": 4,
         "runtime_status_source": "verified_local_supervisor",
         "status": "running",
-        "submitted_at": "2026-10-09T14:51:46.794377+00:00",
+        "submitted_at": "2026-10-09T15:47:26.327982+00:00",
         "supervisor_alive": true,
         "termination": {},
         "termination_record_source": null,
         "worker_alive": true,
         "worker_exit_code": null,
-        "worker_pid": 10
+        "worker_pid": 188
       }
     },
     {
@@ -1196,64 +1855,59 @@
       "result": {
         "artifacts": [
           {
-            "artifact_id": "7fbeabd2-a002-4826-a12a-b2b312412e98",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "b25f9af4-e8b1-4664-b7c2-795c7d990f20",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "data",
             "node_id": "data",
             "port": "data",
-            "step_id": "7566845d-8354-48d9-b2f9-8588ffc9e010",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/data/data/7566845d-8354-48d9-b2f9-8588ffc9e010/2bd01465"
+            "step_id": "a99fd51e-af77-4ce2-a475-89d7d2f4fdae",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/data/data/a99fd51e-af77-4ce2-a475-89d7d2f4fdae/a9efbbfe"
           },
           {
-            "artifact_id": "85023bc0-cb50-46e3-8e42-b989cf24fc16",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "b154ce99-03e1-4af0-a71c-5ade1db66ac6",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "initial",
             "node_id": "initial",
             "port": "initial",
-            "step_id": "9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/initial/initial/9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef/d58389ba"
-          },
-          {
-            "artifact_id": "352f9dd0-f583-4c7c-9e3c-49c49d739739",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
-            "name": "checkpoint",
-            "node_id": "train",
-            "port": "checkpoint",
-            "step_id": "8bca06ee-b896-4a96-8f16-024bd59db347",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/train/checkpoint/8bca06ee-b896-4a96-8f16-024bd59db347/4d6d84bc"
+            "step_id": "bc777e7a-62eb-420b-b63a-71cf99571471",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/initial/initial/bc777e7a-62eb-420b-b63a-71cf99571471/1e328ac5"
           }
         ],
         "backend": "zenml",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
+        "backend_snapshot_id": "e58877d1-6c51-4e85-b4cd-b2d1040475c7",
         "backend_status": "running",
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:51:47.058500+00:00",
+        "created_at": "2026-10-09T15:47:26.594353+00:00",
         "error": null,
         "errors": [],
-        "executed_recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "last_reconciled_at": "2026-10-09T14:52:04.277166+00:00",
+        "executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "last_reconciled_at": "2026-10-09T15:47:44.043653+00:00",
         "log_available": true,
         "metrics": {},
-        "model_version_ref": "c84bdd08-5c58-49be-b5b0-a62b66fc33a3",
+        "model_version_ref": "28f19602-5871-426e-a40c-686e3956470f",
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
         "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
         "parent_run_id": null,
         "process_group_alive": true,
-        "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
-        "recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "recipe_id": "a1989914-3d40-40ac-8034-3b79ce315852",
-        "recipe_revision": 1,
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "recipe_revision": 2,
         "resume_mode": null,
         "revision": 5,
         "runtime_status_source": "verified_local_supervisor",
         "status": "running",
-        "submitted_at": "2026-10-09T14:51:46.794377+00:00",
+        "submitted_at": "2026-10-09T15:47:26.327982+00:00",
         "supervisor_alive": true,
         "termination": {},
         "termination_record_source": null,
         "worker_alive": true,
         "worker_exit_code": null,
-        "worker_pid": 10
+        "worker_pid": 188
       }
     },
     {
@@ -1261,60 +1915,61 @@
       "result": {
         "artifacts": [
           {
-            "artifact_id": "7fbeabd2-a002-4826-a12a-b2b312412e98",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "b25f9af4-e8b1-4664-b7c2-795c7d990f20",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "data",
             "node_id": "data",
             "port": "data",
-            "step_id": "7566845d-8354-48d9-b2f9-8588ffc9e010",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/data/data/7566845d-8354-48d9-b2f9-8588ffc9e010/2bd01465"
+            "step_id": "a99fd51e-af77-4ce2-a475-89d7d2f4fdae",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/data/data/a99fd51e-af77-4ce2-a475-89d7d2f4fdae/a9efbbfe"
           },
           {
-            "artifact_id": "85023bc0-cb50-46e3-8e42-b989cf24fc16",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "b154ce99-03e1-4af0-a71c-5ade1db66ac6",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "initial",
             "node_id": "initial",
             "port": "initial",
-            "step_id": "9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/initial/initial/9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef/d58389ba"
+            "step_id": "bc777e7a-62eb-420b-b63a-71cf99571471",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/initial/initial/bc777e7a-62eb-420b-b63a-71cf99571471/1e328ac5"
           },
           {
-            "artifact_id": "352f9dd0-f583-4c7c-9e3c-49c49d739739",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "8e0c9cf6-7452-4435-b833-e7cd0cf1cf9d",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "checkpoint",
             "node_id": "train",
             "port": "checkpoint",
-            "step_id": "8bca06ee-b896-4a96-8f16-024bd59db347",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/train/checkpoint/8bca06ee-b896-4a96-8f16-024bd59db347/4d6d84bc"
+            "step_id": "4424e7ca-c1f3-451e-8c78-632520fd922c",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/train/checkpoint/4424e7ca-c1f3-451e-8c78-632520fd922c/4bbaf3af"
           },
           {
-            "artifact_id": "795dcc8f-8656-4168-9596-8f440f7820b6",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "327f1d93-4ef8-4e35-ab7b-617b15f0cd45",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "metrics",
             "node_id": "evaluate",
             "port": "metrics",
-            "step_id": "d854b355-d83f-459e-8179-6c6feb62775b",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/evaluate/metrics/d854b355-d83f-459e-8179-6c6feb62775b/ce9a1b79"
+            "step_id": "f409d798-92f2-4eee-a77a-aba7004af906",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/evaluate/metrics/f409d798-92f2-4eee-a77a-aba7004af906/d3b2b28d"
           },
           {
-            "artifact_id": "a65e4c03-17ff-44e4-9caf-7b24643ca148",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "deabf734-f314-4ddc-964c-f26f9712c77a",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "export",
             "node_id": "export",
             "port": "export",
-            "step_id": "fef78638-bd6b-40e2-b4ee-a2f1b87083c8",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/export/export/fef78638-bd6b-40e2-b4ee-a2f1b87083c8/53fb15a8"
+            "step_id": "fd7ff048-5963-47f3-9c68-29a625d30878",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/export/export/fd7ff048-5963-47f3-9c68-29a625d30878/68f6b540"
           }
         ],
         "backend": "zenml",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
+        "backend_snapshot_id": "e58877d1-6c51-4e85-b4cd-b2d1040475c7",
         "backend_status": "completed",
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:51:47.058500+00:00",
+        "created_at": "2026-10-09T15:47:26.594353+00:00",
         "error": null,
         "errors": [],
-        "executed_recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "last_reconciled_at": "2026-10-09T14:52:09.103535+00:00",
+        "executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "last_reconciled_at": "2026-10-09T15:47:49.132218+00:00",
         "log_available": true,
         "metrics": {
           "accuracy": 1.0,
@@ -1381,26 +2036,29 @@
           "vocabulary_size": 30522,
           "width": 12
         },
-        "model_version_ref": "c84bdd08-5c58-49be-b5b0-a62b66fc33a3",
+        "model_version_ref": "28f19602-5871-426e-a40c-686e3956470f",
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
         "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
         "parent_run_id": null,
         "process_group_alive": true,
-        "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
-        "recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "recipe_id": "a1989914-3d40-40ac-8034-3b79ce315852",
-        "recipe_revision": 1,
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "recipe_revision": 2,
         "resume_mode": null,
         "revision": 6,
         "runtime_status_source": "verified_local_supervisor",
         "status": "succeeded",
-        "submitted_at": "2026-10-09T14:51:46.794377+00:00",
+        "submitted_at": "2026-10-09T15:47:26.327982+00:00",
         "supervisor_alive": true,
         "termination": {},
         "termination_record_source": null,
         "worker_alive": true,
         "worker_exit_code": null,
-        "worker_pid": 10
+        "worker_pid": 188
       }
     },
     {
@@ -1408,60 +2066,61 @@
       "result": {
         "artifacts": [
           {
-            "artifact_id": "7fbeabd2-a002-4826-a12a-b2b312412e98",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "b25f9af4-e8b1-4664-b7c2-795c7d990f20",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "data",
             "node_id": "data",
             "port": "data",
-            "step_id": "7566845d-8354-48d9-b2f9-8588ffc9e010",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/data/data/7566845d-8354-48d9-b2f9-8588ffc9e010/2bd01465"
+            "step_id": "a99fd51e-af77-4ce2-a475-89d7d2f4fdae",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/data/data/a99fd51e-af77-4ce2-a475-89d7d2f4fdae/a9efbbfe"
           },
           {
-            "artifact_id": "85023bc0-cb50-46e3-8e42-b989cf24fc16",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "b154ce99-03e1-4af0-a71c-5ade1db66ac6",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "initial",
             "node_id": "initial",
             "port": "initial",
-            "step_id": "9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/initial/initial/9b7b5dcc-dfd1-4f8c-a231-0974c5e5c7ef/d58389ba"
+            "step_id": "bc777e7a-62eb-420b-b63a-71cf99571471",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/initial/initial/bc777e7a-62eb-420b-b63a-71cf99571471/1e328ac5"
           },
           {
-            "artifact_id": "352f9dd0-f583-4c7c-9e3c-49c49d739739",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "8e0c9cf6-7452-4435-b833-e7cd0cf1cf9d",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "checkpoint",
             "node_id": "train",
             "port": "checkpoint",
-            "step_id": "8bca06ee-b896-4a96-8f16-024bd59db347",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/train/checkpoint/8bca06ee-b896-4a96-8f16-024bd59db347/4d6d84bc"
+            "step_id": "4424e7ca-c1f3-451e-8c78-632520fd922c",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/train/checkpoint/4424e7ca-c1f3-451e-8c78-632520fd922c/4bbaf3af"
           },
           {
-            "artifact_id": "795dcc8f-8656-4168-9596-8f440f7820b6",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "327f1d93-4ef8-4e35-ab7b-617b15f0cd45",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "metrics",
             "node_id": "evaluate",
             "port": "metrics",
-            "step_id": "d854b355-d83f-459e-8179-6c6feb62775b",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/evaluate/metrics/d854b355-d83f-459e-8179-6c6feb62775b/ce9a1b79"
+            "step_id": "f409d798-92f2-4eee-a77a-aba7004af906",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/evaluate/metrics/f409d798-92f2-4eee-a77a-aba7004af906/d3b2b28d"
           },
           {
-            "artifact_id": "a65e4c03-17ff-44e4-9caf-7b24643ca148",
-            "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+            "artifact_id": "deabf734-f314-4ddc-964c-f26f9712c77a",
+            "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
             "name": "export",
             "node_id": "export",
             "port": "export",
-            "step_id": "fef78638-bd6b-40e2-b4ee-a2f1b87083c8",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/origin-pretrained-data/backend/zenml-stores/cd2a9dfc-2302-44e8-a61e-01d9e852d387/export/export/fef78638-bd6b-40e2-b4ee-a2f1b87083c8/53fb15a8"
+            "step_id": "fd7ff048-5963-47f3-9c68-29a625d30878",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/origin-pretrained-data/backend/zenml-stores/35209ef6-8630-4c1e-bbe0-24732f06eca0/export/export/fd7ff048-5963-47f3-9c68-29a625d30878/68f6b540"
           }
         ],
         "backend": "zenml",
-        "backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+        "backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
+        "backend_snapshot_id": "e58877d1-6c51-4e85-b4cd-b2d1040475c7",
         "backend_status": "completed",
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:51:47.058500+00:00",
+        "created_at": "2026-10-09T15:47:26.594353+00:00",
         "error": null,
         "errors": [],
-        "executed_recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "last_reconciled_at": "2026-10-09T14:52:13.929259+00:00",
+        "executed_recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "last_reconciled_at": "2026-10-09T15:47:54.260665+00:00",
         "log_available": true,
         "metrics": {
           "accuracy": 1.0,
@@ -1528,30 +2187,33 @@
           "vocabulary_size": 30522,
           "width": 12
         },
-        "model_version_ref": "c84bdd08-5c58-49be-b5b0-a62b66fc33a3",
+        "model_version_ref": "28f19602-5871-426e-a40c-686e3956470f",
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
         "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
         "parent_run_id": null,
         "process_group_alive": false,
-        "project_id": "dfd4417c-7dde-4af8-81bc-031b1f6f3e23",
-        "recipe_digest": "a6fd2096a4d387226f953c16a09a16c473c6d4845bc81152132966e1324f5d11",
-        "recipe_id": "a1989914-3d40-40ac-8034-3b79ce315852",
-        "recipe_revision": 1,
+        "project_id": "3ce5931f-56d0-4874-aa93-843d9902771f",
+        "recipe_digest": "7603ab0a1deeea6f9f0aa01b0260db242b780852e8d2d639e05f6af92f304a8f",
+        "recipe_id": "ee990a0e-767c-5df6-af32-9c5ecc2e4394",
+        "recipe_revision": 2,
         "resume_mode": null,
         "revision": 7,
         "runtime_status_source": "verified_local_supervisor",
         "status": "succeeded",
-        "submitted_at": "2026-10-09T14:51:46.794377+00:00",
+        "submitted_at": "2026-10-09T15:47:26.327982+00:00",
         "supervisor_alive": false,
         "termination": {},
         "termination_record_source": null,
         "worker_alive": false,
         "worker_exit_code": 0,
-        "worker_pid": 10
+        "worker_pid": 188
       }
     }
   ],
-  "transport_recipe_digest": "bebb94afcb6a5ac7c1ee71bb0f5b81571b060be33c2cf901d29c0bcdcd997459",
+  "transport_recipe_digest": "b18c4782fafa129cf7d11e9f8d14cb516f57c9bdf3abced00c5b09c145ec9947",
   "unresolved_dependencies_at_import": [
     {
       "id": "bert-tiny-config-json",

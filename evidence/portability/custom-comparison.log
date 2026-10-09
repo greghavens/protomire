@@ -11,6 +11,8 @@
     "independent_data_dirs": true,
     "independent_run_ids": true,
     "independent_source_roots": true,
+    "origin_single_owned_recipe_identity": true,
+    "replay_single_owned_recipe_identity": true,
     "service_identity_independent_prefix": true,
     "service_identity_same_python": true,
     "service_identity_same_distributions": true,
@@ -31,11 +33,11 @@
     "independent_metadata_url": true,
     "independent_zenml_config_path": true
   },
-  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
-  "recipe_digest": "c75e076c52d177099730074be5709d2c8f710319c851b672df16bd5b4dd76615",
+  "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
+  "recipe_digest": "787536d2a146a931413d8bd9e6a20a814fc92bb45dc24ac9b4316c4eb2070d78",
   "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8",
-  "origin_backend_run_id": "ad896910-a611-4bdf-a74b-99271fb37f29",
-  "replay_backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+  "origin_backend_run_id": "0ca7813f-fbd3-4d8b-97a4-fc71e7ea1709",
+  "replay_backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
   "limitations": [
     "Same CPU host and operating system; no cross-platform or GPU claim",
     "Trusted local source only; no untrusted-code sandbox or redistribution clearance"

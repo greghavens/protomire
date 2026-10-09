@@ -1,0 +1,44 @@
+
+> modelbuilder-workbench@0.1.0 package
+> npm run compile && vsce package --no-dependencies --allow-missing-repository --out modelbuilder-workbench-0.1.0.vsix
+
+
+> modelbuilder-workbench@0.1.0 compile
+> node scripts/build.mjs
+
+Executing prepublish script 'npm run vscode:prepublish'...
+
+> modelbuilder-workbench@0.1.0 vscode:prepublish
+> npm run compile
+
+
+> modelbuilder-workbench@0.1.0 compile
+> node scripts/build.mjs
+
+ INFO  Files included in the VSIX:
+modelbuilder-workbench-0.1.0.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ .gitignore [0.04 KB]
+   ├─ LICENSE.txt [0.18 KB]
+   ├─ package.json [3.61 KB]
+   ├─ readme.md 
+   ├─ media/
+   │  ├─ model.svg [0.32 KB]
+   │  ├─ workbench.css [7.09 KB]
+   │  ├─ workbench.js [36.23 KB]
+   │  └─ workbench.js.map [56.96 KB]
+   ├─ out/
+   │  ├─ client.js [3.4 KB]
+   │  ├─ client.js.map [5.34 KB]
+   │  ├─ document.js [4.66 KB]
+   │  ├─ document.js.map [6.28 KB]
+   │  ├─ extension.js [33.82 KB]
+   │  ├─ extension.js.map [54.42 KB]
+   │  ├─ security.js [2.88 KB]
+   │  └─ security.js.map [2.9 KB]
+   └─ schemas/
+      └─ recipe.v0.schema.json [13.5 KB]
+
+ DONE  Packaged: modelbuilder-workbench-0.1.0.vsix (19 files, 72.71 KB)

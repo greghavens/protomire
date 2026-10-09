@@ -1,5 +1,5 @@
 {
-  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
   "python": "3.12.14",
   "locks": {
     "requirements/service.lock": "02b3918fe148881089cf3ba31151ef1e387b2f4b902c34c74a1a70544b8477d7",
@@ -21,5 +21,5 @@
     "runtime_environments": 103
   },
   "all_install_and_dependency_checks_passed": true,
-  "separation": "Ordinary wheel installs with distinct installed paths; shared package-download hardlink cache only."
+  "separation": "Distinct ordinary wheel installs, installed paths and fresh stores; shared package-download hardlink cache only."
 }

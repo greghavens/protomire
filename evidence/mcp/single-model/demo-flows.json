@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "build": {
+    "project": {
+      "schema_version": "0",
+      "project_id": "c12086dc-ed63-4a18-8588-9933aef043c5",
+      "id": "c12086dc-ed63-4a18-8588-9933aef043c5",
+      "slug": "demo-a3000cc5ddde",
+      "model_name": "custom-pytorch demo",
+      "description": "",
+      "created_at": "2026-10-09T15:24:17.544469+00:00",
+      "updated_at": "2026-10-09T15:24:17.544469+00:00",
+      "git_remote": null,
+      "head_commit": null,
+      "recipe_id": "d930c258-260b-51bc-8d1e-d10ae89684f6",
+      "active_recipe_id": "d930c258-260b-51bc-8d1e-d10ae89684f6",
+      "recipe_migration": {},
+      "active_model_version_ref": null,
+      "research_watch_config": null,
+      "status": "active",
+      "revision": 1
+    },
+    "recipe_id": "d930c258-260b-51bc-8d1e-d10ae89684f6",
+    "recipe_digest": "d1088abab7ab92d8b2d577708a002f799327dfae70996b67bed3d152e6e68107",
+    "hypothesis_id": "7aeccf2a-f737-4c64-8549-73ee795d73ea",
+    "recipe_revision": 2,
+    "recipe_flow": "build",
+    "executed": false
+  },
+  "import": {
+    "project": {
+      "schema_version": "0",
+      "project_id": "e6165423-2d0d-47af-bbcf-f12496749b70",
+      "id": "e6165423-2d0d-47af-bbcf-f12496749b70",
+      "slug": "demo-455fa433920e",
+      "model_name": "custom-pytorch demo",
+      "description": "",
+      "created_at": "2026-10-09T15:24:18.144769+00:00",
+      "updated_at": "2026-10-09T15:24:18.144769+00:00",
+      "git_remote": null,
+      "head_commit": null,
+      "recipe_id": "b0878423-f7b1-581d-a4e1-1a7ea7e0fd02",
+      "active_recipe_id": "b0878423-f7b1-581d-a4e1-1a7ea7e0fd02",
+      "recipe_migration": {},
+      "active_model_version_ref": null,
+      "research_watch_config": null,
+      "status": "active",
+      "revision": 1
+    },
+    "recipe_id": "b0878423-f7b1-581d-a4e1-1a7ea7e0fd02",
+    "recipe_digest": "f86797a95bdac8ed3df027c2d7479b05d3716eb41c71b4bf43403fa7ed7c8085",
+    "hypothesis_id": "21d2d7ad-16d3-4cf6-845d-721ffe3f3cbb",
+    "recipe_revision": 2,
+    "recipe_flow": "import",
+    "executed": false
+  },
+  "single_current_recipe_per_project": true
+}

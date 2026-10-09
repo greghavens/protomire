@@ -1,0 +1,9 @@
+diff --git a/src/vs/workbench/workbench.common.main.ts b/src/vs/workbench/workbench.common.main.ts
+index 61d63db7..7ec16c85 100644
+--- a/src/vs/workbench/workbench.common.main.ts
++++ b/src/vs/workbench/workbench.common.main.ts
+@@ -426,3 +426,4 @@ import './contrib/editTelemetry/browser/editTelemetry.contribution.js';
+ 
+ 
+ //#endregion
++import './contrib/modelbuilder/browser/modelbuilderMenus.contribution.js';

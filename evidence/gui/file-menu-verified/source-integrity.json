@@ -1,0 +1,11 @@
+{
+  "commit": "03c265b1adee71ac88f833e065f7bb956b60550a",
+  "core_patches": 1,
+  "composition_imports": 1,
+  "added_product_workbench_modules": 1,
+  "tracked_overlay_files": [
+    "product.json",
+    "src/vs/workbench/workbench.common.main.ts"
+  ],
+  "builtin_feature": true
+}

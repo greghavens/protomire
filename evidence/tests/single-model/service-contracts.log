@@ -1,0 +1,73 @@
+.............F.......................................................... [ 25%]
+........................................................................ [ 51%]
+........................................................................ [ 76%]
+..................................................................       [100%]
+=================================== FAILURES ===================================
+_ test_concurrent_restarts_migrate_legacy_history_once_without_duplicate_revisions _
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-101/test_concurrent_restarts_migra0')
+
+    def test_concurrent_restarts_migrate_legacy_history_once_without_duplicate_revisions(tmp_path):
+        path = tmp_path / "concurrent-legacy.sqlite3"
+        pid, versions, operation = legacy_database(path)
+        barrier = Barrier(6)
+    
+        def reopen(_):
+            barrier.wait()
+            service = OperationService(path)
+            try:
+                current = canonical(service, pid)
+                for old in versions:
+                    assert historical(service, pid, old["recipe_id"], old["revision"]) == old
+                assert service.invoke("operation.get", {"project_id": pid,
+                    "operation_id": operation["operation_id"]}, OWNER) == operation
+                return current
+            finally:
+                service.store.close()
+    
+        with ThreadPoolExecutor(max_workers=6) as pool:
+>           results = list(pool.map(reopen, range(6)))
+
+tests/domain/test_single_recipe.py:354: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+tests/domain/test_single_recipe.py:342: in reopen
+    service = OperationService(path)
+src/modelbuilder/service.py:25: in __init__
+    self.store = store if isinstance(store, SQLiteStore) else SQLiteStore(db_path or store or "modelbuilder.sqlite3")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <modelbuilder.store.SQLiteStore object at 0x7f33c15ae8a0>
+path = PosixPath('/tmp/pytest-of-agent/pytest-101/test_concurrent_restarts_migra0/concurrent-legacy.sqlite3')
+
+    def __init__(self, path: str | Path = "modelbuilder.sqlite3"):
+        self.path = str(path)
+        if self.path != ":memory:":
+            Path(self.path).parent.mkdir(parents=True, exist_ok=True)
+        self.connection = sqlite3.connect(self.path, isolation_level=None, check_same_thread=False, timeout=30)
+        self.connection.row_factory = sqlite3.Row
+        self._lock = threading.RLock()
+        self.connection.execute("PRAGMA foreign_keys=ON")
+>       self.connection.execute("PRAGMA journal_mode=WAL")
+E       sqlite3.OperationalError: database is locked
+
+src/modelbuilder/store.py:22: OperationalError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/starlette/testclient.py:37
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/lib/python3.12/site-packages/starlette/testclient.py:37: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/single-model/service-contracts.xml -
+=========================== short test summary info ============================
+FAILED tests/domain/test_single_recipe.py::test_concurrent_restarts_migrate_legacy_history_once_without_duplicate_revisions
+1 failed, 281 passed, 2 skipped, 5 deselected, 1 warning in 9.64s

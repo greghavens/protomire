@@ -1,0 +1,124 @@
+{
+  "targets": [
+    {
+      "target": {
+        "targetId": "D8E97E25E20FE4B9E54AFAC32C140DA3",
+        "type": "page",
+        "title": "[Extension Development Host] GUI real ZenML CPU run - gui-workspace - Modelbuilder IDE Dev",
+        "url": "vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/code/electron-browser/workbench/workbench-dev.html",
+        "attached": true,
+        "canAccessOpener": false,
+        "browserContextId": "F982ADF7A35C71FD5D9AB990766C5BDD"
+      },
+      "sessionId": "850B1B6A5DA677EE2BE925A90C838A8C"
+    },
+    {
+      "target": {
+        "targetId": "C778334872ABEE09E158F1E327A12980",
+        "type": "iframe",
+        "title": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec/index.html?id=53dc3c14-dd68-446e-9e91-be93506c1b27&parentId=1&origin=5adda108-ac48-4263-b02c-9f72ba3f49b6&swVersion=4&extensionId=modelbuilder.modelbuilder-workbench&platform=electron&vscode-resource-base-authority=vscode-resource.vscode-cdn.net&parentOrigin=vscode-file%3A%2F%2Fvscode-app",
+        "url": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec/index.html?id=53dc3c14-dd68-446e-9e91-be93506c1b27&parentId=1&origin=5adda108-ac48-4263-b02c-9f72ba3f49b6&swVersion=4&extensionId=modelbuilder.modelbuilder-workbench&platform=electron&vscode-resource-base-authority=vscode-resource.vscode-cdn.net&parentOrigin=vscode-file%3A%2F%2Fvscode-app",
+        "attached": true,
+        "canAccessOpener": false,
+        "browserContextId": "F982ADF7A35C71FD5D9AB990766C5BDD"
+      },
+      "sessionId": "438242D904C4FAA61A94CEB3AF7102C0"
+    }
+  ],
+  "contexts": [
+    {
+      "sessionId": "850B1B6A5DA677EE2BE925A90C838A8C",
+      "id": 4,
+      "origin": "",
+      "name": "__playwright_utility_world_page@c67cfc53b26c629a25ff5a2d9bd745f5",
+      "uniqueId": "9162487715311761799.1518959122037530337",
+      "auxData": {
+        "isDefault": false,
+        "type": "isolated",
+        "frameId": "D8E97E25E20FE4B9E54AFAC32C140DA3"
+      }
+    },
+    {
+      "sessionId": "850B1B6A5DA677EE2BE925A90C838A8C",
+      "id": 2,
+      "origin": "vscode-file://vscode-app",
+      "name": "Electron Isolated Context",
+      "uniqueId": "6852607484510130703.-7463041739270357402",
+      "auxData": {
+        "isDefault": false,
+        "type": "isolated",
+        "frameId": "D8E97E25E20FE4B9E54AFAC32C140DA3"
+      }
+    },
+    {
+      "sessionId": "850B1B6A5DA677EE2BE925A90C838A8C",
+      "id": 1,
+      "origin": "vscode-file://vscode-app",
+      "name": "",
+      "uniqueId": "-6183797540647435254.4754190439811173934",
+      "auxData": {
+        "isDefault": true,
+        "type": "default",
+        "frameId": "D8E97E25E20FE4B9E54AFAC32C140DA3"
+      }
+    },
+    {
+      "sessionId": "438242D904C4FAA61A94CEB3AF7102C0",
+      "id": 2,
+      "origin": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec",
+      "name": "",
+      "uniqueId": "-1242252458109809734.3469461400079967480",
+      "auxData": {
+        "isDefault": true,
+        "type": "default",
+        "frameId": "08A697AFCF067A1054A49BE92FFB2BAA"
+      }
+    },
+    {
+      "sessionId": "438242D904C4FAA61A94CEB3AF7102C0",
+      "id": 1,
+      "origin": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec",
+      "name": "",
+      "uniqueId": "1590355728001466283.-5677543634629016790",
+      "auxData": {
+        "isDefault": true,
+        "type": "default",
+        "frameId": "C778334872ABEE09E158F1E327A12980"
+      }
+    }
+  ],
+  "probes": [
+    {
+      "id": 4,
+      "sessionId": "850B1B6A5DA677EE2BE925A90C838A8C",
+      "found": false
+    },
+    {
+      "id": 2,
+      "sessionId": "850B1B6A5DA677EE2BE925A90C838A8C",
+      "found": false
+    },
+    {
+      "id": 1,
+      "sessionId": "850B1B6A5DA677EE2BE925A90C838A8C",
+      "found": false
+    },
+    {
+      "id": 2,
+      "sessionId": "438242D904C4FAA61A94CEB3AF7102C0",
+      "found": true
+    }
+  ],
+  "selectedContext": {
+    "sessionId": "438242D904C4FAA61A94CEB3AF7102C0",
+    "id": 2,
+    "origin": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec",
+    "name": "",
+    "uniqueId": "-1242252458109809734.3469461400079967480",
+    "auxData": {
+      "isDefault": true,
+      "type": "default",
+      "frameId": "08A697AFCF067A1054A49BE92FFB2BAA"
+    }
+  }
+}

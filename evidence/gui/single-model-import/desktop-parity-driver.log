@@ -1,0 +1,31 @@
+[10032:1009/102706.840160:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[10032:1009/102707.082786:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[10032:1009/102707.082826:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+
+DevTools listening on ws://127.0.0.1:9222/devtools/browser/399c2235-2a5b-4e93-b795-6fed4e4ece46
+[10032:1009/102707.110058:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:234] Floss manager service not available, cannot set Floss enable/disable.
+[10075:1009/102707.185373:ERROR:components/viz/service/main/viz_main_impl.cc:184] Exiting GPU process due to errors during initialization
+[10112:1009/102707.213026:WARNING:ui/gfx/linux/gpu_memory_buffer_support_x11.cc:49] dri3 extension not supported.
+[10112:1009/102707.214192:WARNING:sandbox/policy/linux/sandbox_linux.cc:415] InitializeSandbox() called with multiple threads in process gpu-process.
+[10032:1009/102707.428210:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[10032:1009/102707.428264:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[10032:1009/102707.428273:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[10032:1009/102707.438001:WARNING:electron/shell/browser/lib/power_observer_linux.cc:181] Failed to connect to PrepareForShutdown
+[10032:1009/102707.438040:WARNING:electron/shell/browser/lib/power_observer_linux.cc:181] Failed to connect to PrepareForSleep
+[10032:1009/102707.438046:WARNING:electron/shell/browser/lib/power_observer_linux.cc:70] org.freedesktop.login1 not available
+[90m[main 2026-10-09T15:27:07.475Z][0m [CSS_DEV] DONE, 273 css modules (33ms)
+[90m[main 2026-10-09T15:27:07.536Z][0m update#setState disabled
+[10032:1009/102711.511629:ERROR:ui/gfx/platform_font_skia.cc:255] Could not find any font: OpenAI Sans, sans. Falling back to the default
+[10032:1009/102711.615791:INFO:CONSOLE:279] "%c[Extension Host] %cdebugger listening on port 5870 color: blue color:", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/extensions/electron-browser/localProcessExtensionHost.js (279)
+[10032:1009/102711.635007:INFO:CONSOLE:233] "%c INFO color: #33f Started local extension host with pid 10206.", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/platform/log/common/log.js (233)
+[10032:1009/102711.815984:INFO:CONSOLE:233] "%c INFO color: #33f Loading development extension at /workspace/scratch/f9ccb8889bfe/modelbuilder/tests/gui", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/platform/log/common/log.js (233)
+[10032:1009/102711.816409:INFO:CONSOLE:253] "%c  ERR color: #f33 Extension 'openai.chatgpt' wants API proposal 'languageModelProxy' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/platform/log/common/log.js (253)
+[10032:1009/102711.829039:INFO:CONSOLE:48] "Overwriting extension <<copilot-instructions.md>> to now point to mime <<text/x-instructions>>", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/editor/common/services/languagesAssociations.js (48)
+[10032:1009/102711.850838:INFO:CONSOLE:243] "%c WARN color: #993 [ms-python.python]: Cannot register 'python.venvPath'. This property is already registered.", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/platform/log/common/log.js (243)
+[10032:1009/102711.974555:INFO:CONSOLE:210] "%c[Extension Host] %cdebugger inspector at devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=127.0.0.1:5870/b86cdc93-c468-4c2d-859f-c61081ed0d85 color: blue color:", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/services/extensions/electron-browser/localProcessExtensionHost.js (210)
+[10032:1009/102716.849314:WARNING:components/os_crypt/sync/key_storage_linux.cc:166] OSCrypt tried Libsecret but couldn't initialise.
+[10032:1009/102716.855696:INFO:CONSOLE:34] "You're running in a GNOME environment but the OS keyring is not available for encryption. Ensure you have gnome-keyring or another libsecret compatible implementation installed and running.", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/browser/parts/notifications/notificationsAlerts.js (34)
+[10032:1009/102717.678047:INFO:CONSOLE:357] "An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing.", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/workbench/contrib/webview/browser/webviewElement.js (357)
+[10032:1009/102721.271199:ERROR:ui/gfx/platform_font_skia.cc:255] Could not find any font: OpenAI Sans, sans. Falling back to the default
+[90m[main 2026-10-09T15:29:33.736Z][0m Extension host with pid 10206 exited with code: 0, signal: unknown.
+[10032:1009/102933.739786:INFO:CONSOLE:243] "%c WARN color: #993 [backup tracker] suspended, ignoring unregister event modelrecipe:/caf7bff1-9351-4bc7-8a0b-e5d911da13c7/4eb38db1-c24b-50c0-a4bd-bdaa84285a6c.modelrecipe.json ", source: vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/platform/log/common/log.js (243)

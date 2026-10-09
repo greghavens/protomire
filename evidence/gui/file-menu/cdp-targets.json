@@ -1,0 +1,132 @@
+{
+  "targets": [
+    {
+      "target": {
+        "targetId": "4C5355DB50A2B725A58855736E620D35",
+        "type": "page",
+        "title": "[Extension Development Host] Model Workbench - gui-workspace - Modelbuilder IDE Dev",
+        "url": "vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/code/electron-browser/workbench/workbench-dev.html",
+        "attached": true,
+        "canAccessOpener": false,
+        "browserContextId": "A8D565E7435F1BA95CAA722EA80ECF99"
+      },
+      "sessionId": "A2541B36D7C8C211E9723A7A026FF2BB"
+    },
+    {
+      "target": {
+        "targetId": "4075DE23FA9D5C8BA4E818C560DB268F",
+        "type": "iframe",
+        "title": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec/index.html?id=a1cb124f-566e-4a62-a403-638e181e65f8&parentId=1&origin=5adda108-ac48-4263-b02c-9f72ba3f49b6&swVersion=4&extensionId=modelbuilder.modelbuilder-workbench&platform=electron&vscode-resource-base-authority=vscode-resource.vscode-cdn.net&parentOrigin=vscode-file%3A%2F%2Fvscode-app",
+        "url": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec/index.html?id=a1cb124f-566e-4a62-a403-638e181e65f8&parentId=1&origin=5adda108-ac48-4263-b02c-9f72ba3f49b6&swVersion=4&extensionId=modelbuilder.modelbuilder-workbench&platform=electron&vscode-resource-base-authority=vscode-resource.vscode-cdn.net&parentOrigin=vscode-file%3A%2F%2Fvscode-app",
+        "attached": true,
+        "canAccessOpener": false,
+        "browserContextId": "A8D565E7435F1BA95CAA722EA80ECF99"
+      },
+      "sessionId": "00099345330D690D1FD688F7F022A718"
+    }
+  ],
+  "contexts": [
+    {
+      "sessionId": "A2541B36D7C8C211E9723A7A026FF2BB",
+      "id": 4,
+      "origin": "",
+      "name": "__playwright_utility_world_page@ca30cb80c25ac8fd37b13652806aafa8",
+      "uniqueId": "-5370510553189596943.-6808563362011841182",
+      "auxData": {
+        "isDefault": false,
+        "type": "isolated",
+        "frameId": "4C5355DB50A2B725A58855736E620D35"
+      }
+    },
+    {
+      "sessionId": "A2541B36D7C8C211E9723A7A026FF2BB",
+      "id": 2,
+      "origin": "vscode-file://vscode-app",
+      "name": "Electron Isolated Context",
+      "uniqueId": "3693128377413589474.-26610522372228635",
+      "auxData": {
+        "isDefault": false,
+        "type": "isolated",
+        "frameId": "4C5355DB50A2B725A58855736E620D35"
+      }
+    },
+    {
+      "sessionId": "A2541B36D7C8C211E9723A7A026FF2BB",
+      "id": 1,
+      "origin": "vscode-file://vscode-app",
+      "name": "",
+      "uniqueId": "-6353962676292081149.-1731672291358896211",
+      "auxData": {
+        "isDefault": true,
+        "type": "default",
+        "frameId": "4C5355DB50A2B725A58855736E620D35"
+      }
+    },
+    {
+      "sessionId": "00099345330D690D1FD688F7F022A718",
+      "id": 2,
+      "origin": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec",
+      "name": "",
+      "uniqueId": "-423770024281426707.7624775577499425372",
+      "auxData": {
+        "isDefault": true,
+        "type": "default",
+        "frameId": "476D47CBFDE4A176738F6E7A3A49C4D2"
+      }
+    },
+    {
+      "sessionId": "00099345330D690D1FD688F7F022A718",
+      "id": 1,
+      "origin": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec",
+      "name": "",
+      "uniqueId": "-1764479405351817016.8026815861992942547",
+      "auxData": {
+        "isDefault": true,
+        "type": "default",
+        "frameId": "4075DE23FA9D5C8BA4E818C560DB268F"
+      }
+    }
+  ],
+  "probes": [
+    {
+      "id": 4,
+      "sessionId": "A2541B36D7C8C211E9723A7A026FF2BB",
+      "found": false
+    },
+    {
+      "id": 2,
+      "sessionId": "A2541B36D7C8C211E9723A7A026FF2BB",
+      "found": false
+    },
+    {
+      "id": 1,
+      "sessionId": "A2541B36D7C8C211E9723A7A026FF2BB",
+      "found": false
+    },
+    {
+      "id": 2,
+      "sessionId": "00099345330D690D1FD688F7F022A718",
+      "found": true
+    }
+  ],
+  "selectedContext": {
+    "sessionId": "00099345330D690D1FD688F7F022A718",
+    "id": 2,
+    "origin": "vscode-webview://1t80oucn28p4jint5ioe9epnaen23qp5ed0i2kv8qg545igvkkec",
+    "name": "",
+    "uniqueId": "-423770024281426707.7624775577499425372",
+    "auxData": {
+      "isDefault": true,
+      "type": "default",
+      "frameId": "476D47CBFDE4A176738F6E7A3A49C4D2"
+    }
+  },
+  "playwright": [
+    {
+      "url": "vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/code/electron-browser/workbench/workbench-dev.html",
+      "frames": [
+        "vscode-file://vscode-app/workspace/scratch/f9ccb8889bfe/modelbuilder/.cache/code-oss/out/vs/code/electron-browser/workbench/workbench-dev.html"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "source_commit": "03c265b1adee71ac88f833e065f7bb956b60550a",
+  "source_tag": "1.105.0",
+  "node_version": "22.19.0",
+  "core_patches": 0,
+  "tracked_overlay_files": [
+    "product.json"
+  ],
+  "artifacts": {
+    "out/main.js": "1e68c5b1b78da74b7ff2d9b151e066693489a850e98c981b078c900760ff5248",
+    ".build/electron/modelbuilder-ide": "a4db74cdacc6d82ab26f6dfe08023f0ad21f127e6bb2b6bd89f38b1f8a5951df",
+    "extensions/modelbuilder-workbench/out/extension.js": "4f705f5b26aef12c60347467ebf609faab6f07d60eee13ec08a48e08a94bf2d0",
+    "LICENSE.txt": "cce33203a80863c22499035b1cfb6aba5df5f02e4ea2669cf5bc5730c1864236",
+    "ThirdPartyNotices.txt": "e9982436a9846eee020cd48663dc887309fabe14aed06eb67335f527c89acbe1"
+  },
+  "gui_status": "UNVERIFIED",
+  "note": "Artifact existence and hashes do not establish GUI functionality."
+}

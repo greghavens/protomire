@@ -1,22 +1,12 @@
 {
-  "verified_at": "2026-10-09T14:59:30Z",
+  "verified_at": "2026-10-09T16:04:11.038919+00:00",
   "editor_version": "1.105.0",
   "source_commit": "03c265b1adee71ac88f833e065f7bb956b60550a",
-  "core_patches": 0,
-  "source_compilation": "PASS_ZERO_ERRORS",
+  "core_patches": 1,
+  "source_compilation": "PASS_ZERO_ERRORS_CURRENT_ONE_IMPORT_BUILD",
   "sandbox_disabled": false,
   "production_packaging": "NOT_RUN",
   "pristine_unattended_bootstrap": "UNVERIFIED_REGISTRY_403_MANUAL_DEPENDENCY_RECOVERY",
-  "editor_smoke": {
-    "status": "PASS",
-    "passed": 8,
-    "report": "smoke-results.json"
-  },
-  "graph_json_mcp_dom": {
-    "status": "PASS",
-    "passed": 7,
-    "report": "../workbench/workbench-dom-results.json"
-  },
   "vendor_extensions": {
     "installation": "PASS",
     "activation": "PASS",
@@ -46,13 +36,65 @@
     "codex-claude-auth-required.jpg": {
       "sha256": "01b07827b479100c02c34266e79bc4d857c4df6c16ef9586f857e62ea19d0e9c",
       "meaning": "Native CUA capture of both exact-fork vendor account sign-in screens"
+    },
+    "../file-menu-smoke/jupyter-kernel.png": {
+      "sha256": "5e2066f32497db3f233f13116e921786b0414cf20f524c34c82d91aa77ecb272",
+      "meaning": "Current one-import binary actual Jupyter output42"
+    },
+    "../file-menu-smoke/python-debugger-breakpoint.png": {
+      "sha256": "538dd9c9b872fa01a6f0be77ba91960de4c78901a123b3915c14d999dfbcdce4",
+      "meaning": "Current one-import binary actual debugpy breakpoint and answer42"
+    },
+    "../file-menu-smoke/python-edit-and-lsp.png": {
+      "sha256": "d80a935f155e3c7b337e77b2362d84f974c40227e25b7e0c73fd8ca72bd18351",
+      "meaning": "Current one-import binary Monaco and basedpyright diagnostic"
     }
   },
-  "gui_backend_execution": {
+  "domain_acceptance_note": "Historical selector-based workspace was rejected. Current implementation correction evidence is File-menu-verified and File-menu-execution; these test passes do not constitute owner product acceptance.",
+  "corrected_domain_verified_at": "2026-10-09T16:03:29.129733+00:00",
+  "corrected_domain_gui": {
+    "status": "PASS",
+    "dom_checks": 23,
+    "native_monaco_save": "PASS",
+    "report": "../file-menu-verified/workbench-dom-results.json",
+    "scope": "Landing first; fixed project/model/recipe; actual File menu; supported Open/Save choosers; byte-preserving file roundtrip; overwrite/cancel/tamper/concurrent MCP protections",
+    "dialog_presentation": "Test profile supported Code OSS simple chooser; normal GTK dialog separately captured in ../file-menu/default-os-import-dialog.jpg"
+  },
+  "historical_gui_backend_execution": {
     "status": "PASS",
     "passed": 3,
     "report": "../execution/gui-execution-dom-results.json",
     "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
     "operation_id": "a7601b48-7158-587c-a435-a5c188ded046"
+  },
+  "corrected_domain_execution": {
+    "status": "PASS",
+    "dom_checks": 3,
+    "report": "../file-menu-execution/gui-execution-dom-results.json",
+    "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
+    "backend_run_id": "0b98377e-8d79-48f1-88f0-3b00aafae57d",
+    "operation_id": "b429f7ff-4245-5f9d-84cf-40db0950add4",
+    "backend_status": "completed",
+    "service_status": "succeeded",
+    "scope": "Actual Run recipe button + normal confirmation; reconciled native status, metrics, model-version, logs, artifact IDs"
+  },
+  "composition_imports": 1,
+  "added_product_workbench_modules": 1,
+  "source_build_manifest": "../file-menu/build-manifest.json",
+  "historical_graph_json_mcp_dom": {
+    "status": "PASS",
+    "passed": 7,
+    "report": "../workbench/workbench-dom-results.json"
+  },
+  "historical_editor_smoke": {
+    "status": "PASS",
+    "passed": 8,
+    "report": "smoke-results.json"
+  },
+  "editor_smoke": {
+    "status": "PASS",
+    "passed": 8,
+    "report": "../file-menu-smoke/smoke-results.json",
+    "scope": "Actual repeat on rebuilt current one-import binary; basedpyright diagnostics, Git, terminal, debugpy breakpoint/evaluate42, Jupyter42"
   }
 }

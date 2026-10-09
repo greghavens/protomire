@@ -1,14 +1,16 @@
 {
   "status": "PASS",
   "acceptance": "T19",
-  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
   "source_repository": "https://github.com/greghavens/modelbuilder",
-  "verified_at": "2026-10-09T14:53:57.664448+00:00",
-  "scope": "Two genuine CPU fixtures replayed in independent installed Python environments and independent native ZenML metadata/artifact stores on the same host.",
+  "verified_at": "2026-10-09T15:49:57.164947+00:00",
+  "scope": "Two genuine CPU fixtures replayed through raw JSON import in independent installed Python environments and independent native stores, preserving one project-owned recipe identity and immutable revision history.",
   "environment_count": 4,
   "native_runs": 4,
-  "packaging_and_security_unit_tests": 17,
-  "recipe_plus_portability_unit_tests": 56,
+  "packaging_and_security_unit_tests": 24,
+  "recipe_plus_portability_unit_tests": 63,
+  "import_transport": "bundle_json",
+  "domain": "One project / one model / one stable recipe ID with immutable revisions",
   "fixtures": {
     "custom": {
       "checks": {
@@ -31,7 +33,9 @@
         "independent_stack_id": true,
         "independent_zenml_config_path": true,
         "metrics_equal": true,
+        "origin_single_owned_recipe_identity": true,
         "output_hashes_equal": true,
+        "replay_single_owned_recipe_identity": true,
         "service_identity_independent_prefix": true,
         "service_identity_no_origin_imports": true,
         "service_identity_no_pythonpath": true,
@@ -47,12 +51,12 @@
         "Same CPU host and operating system; no cross-platform or GPU claim",
         "Trusted local source only; no untrusted-code sandbox or redistribution clearance"
       ],
-      "origin_backend_run_id": "ad896910-a611-4bdf-a74b-99271fb37f29",
-      "recipe_digest": "c75e076c52d177099730074be5709d2c8f710319c851b672df16bd5b4dd76615",
-      "replay_backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
-      "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+      "origin_backend_run_id": "0ca7813f-fbd3-4d8b-97a4-fc71e7ea1709",
+      "recipe_digest": "787536d2a146a931413d8bd9e6a20a814fc92bb45dc24ac9b4316c4eb2070d78",
+      "replay_backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
+      "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
       "status": "PASS",
-      "checks_passed": 29,
+      "checks_passed": 31,
       "output_hash_count": 6,
       "metrics": {
         "validation_loss": 0.24631698429584503,
@@ -60,20 +64,24 @@
         "brier": 0.13341984152793884
       },
       "origin_artifact_ids": [
-        "c771712c-c5e7-4faa-9c0f-6461b8751dc1",
-        "8af32fdd-e26e-42af-8a4e-8f9749d0be40",
-        "fa6d6a69-4717-45d4-b8a9-d69e9e2918b9",
-        "e6373a60-c6b0-44a7-a9c2-4ae48db91759",
-        "13d64278-a6a6-464b-b3a2-d43e4c8a7edc"
+        "46d40f53-35b9-4925-96a6-ec6ec1437cc6",
+        "19b4c34d-0879-4211-a736-46517afa1cc3",
+        "6c8c0e51-5d76-473c-a9ed-2c55cc1ec1b2",
+        "90546449-3c36-4e1f-a576-b96c692b59df",
+        "5411e418-cce3-4ae3-a08f-cba6b61010ad"
       ],
       "replay_artifact_ids": [
-        "d9fa35ef-d7a7-42f9-9157-376eb6ac860d",
-        "bfdf959e-b4f6-42d1-825d-26b75636e1c4",
-        "4c79a12f-73eb-4153-b452-dd11dea0cbf5",
-        "8a82f84e-656d-4b9c-8bfb-471568e66452",
-        "eb5fddcb-b31e-4505-8625-a87bc5ae3a36"
+        "33b24468-6e83-4a57-9306-4722cd2d058c",
+        "32b17ff9-7e03-4282-b778-bd13ad337939",
+        "c64ebc92-57af-4bef-8364-104a456be9ef",
+        "c7f8cd2d-5bf9-4a9b-a074-c715312c8fbd",
+        "292d5d68-d91c-4855-98a1-e0ff3d16e6c0"
       ],
-      "export_reload_max_abs_difference": 0.0
+      "export_reload_max_abs_difference": 0.0,
+      "recipe_revisions": [
+        1,
+        2
+      ]
     },
     "pretrained": {
       "checks": {
@@ -96,7 +104,9 @@
         "independent_stack_id": true,
         "independent_zenml_config_path": true,
         "metrics_equal": true,
+        "origin_single_owned_recipe_identity": true,
         "output_hashes_equal": true,
+        "replay_single_owned_recipe_identity": true,
         "service_identity_independent_prefix": true,
         "service_identity_no_origin_imports": true,
         "service_identity_no_pythonpath": true,
@@ -112,12 +122,12 @@
         "Same CPU host and operating system; no cross-platform or GPU claim",
         "Trusted local source only; no untrusted-code sandbox or redistribution clearance"
       ],
-      "origin_backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
-      "recipe_digest": "bebb94afcb6a5ac7c1ee71bb0f5b81571b060be33c2cf901d29c0bcdcd997459",
-      "replay_backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
-      "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+      "origin_backend_run_id": "34ff5340-e365-4550-9a62-d22c1a66f66d",
+      "recipe_digest": "b18c4782fafa129cf7d11e9f8d14cb516f57c9bdf3abced00c5b09c145ec9947",
+      "replay_backend_run_id": "de4a0253-0ed9-4ce5-ab00-b2aff767c1fe",
+      "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
       "status": "PASS",
-      "checks_passed": 29,
+      "checks_passed": 31,
       "output_hash_count": 10,
       "metrics": {
         "validation_loss": 0.025669865310192108,
@@ -125,22 +135,30 @@
         "brier": 0.0006469727959483862
       },
       "origin_artifact_ids": [
-        "7fbeabd2-a002-4826-a12a-b2b312412e98",
-        "85023bc0-cb50-46e3-8e42-b989cf24fc16",
-        "352f9dd0-f583-4c7c-9e3c-49c49d739739",
-        "795dcc8f-8656-4168-9596-8f440f7820b6",
-        "a65e4c03-17ff-44e4-9caf-7b24643ca148"
+        "b25f9af4-e8b1-4664-b7c2-795c7d990f20",
+        "b154ce99-03e1-4af0-a71c-5ade1db66ac6",
+        "8e0c9cf6-7452-4435-b833-e7cd0cf1cf9d",
+        "327f1d93-4ef8-4e35-ab7b-617b15f0cd45",
+        "deabf734-f314-4ddc-964c-f26f9712c77a"
       ],
       "replay_artifact_ids": [
-        "4f31b415-6bd5-439e-baaf-c4ec2c48f718",
-        "dd49c525-a604-4b74-aa2a-543be0424769",
-        "0f08d9c9-110e-4818-b449-480f5cb32389",
-        "df4b93b3-36ca-4216-9a95-9ded99cee4f0",
-        "a0494200-ce44-4b10-b04c-826dd7cbd685"
+        "f80e8916-c68d-42ed-bb22-5d1d7b4801b1",
+        "97ebcd8d-9fc7-4673-8972-ac74973ded94",
+        "4d4ee8d9-c954-4334-9bba-a4cede3183b0",
+        "09159c97-8a81-4cf2-9836-78fc96da3dc5",
+        "c457f749-3630-420e-844d-e01b152cc426"
       ],
-      "export_reload_max_abs_difference": 0.0
+      "export_reload_max_abs_difference": 0.0,
+      "recipe_revisions": [
+        1,
+        2
+      ]
     }
   },
+  "historical_evidence": [
+    "historical/4d545df2/",
+    "historical/f37cbc94/"
+  ],
   "limitations": [
     "Same CPU host and OS; no cross-platform, GPU, remote or container-isolation claim.",
     "Trusted repository-owned source only; untrusted execution remains blocked.",

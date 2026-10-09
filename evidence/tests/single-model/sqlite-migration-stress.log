@@ -1,0 +1,6 @@
+20/100 migration races passed
+40/100 migration races passed
+60/100 migration races passed
+80/100 migration races passed
+100/100 migration races passed
+{"status": "passed", "iterations": 100, "simultaneous_openers_per_iteration": 6, "total_openers": 600, "elapsed_seconds": 2.176, "store_sha256": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"}

@@ -110,12 +110,12 @@
     "installed_source_sha256": {
       "src/modelbuilder/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
       "src/modelbuilder/backend/__init__.py": "4d6b1d0be44fb3e8dc7111d3cbb42f6911aad66e957a559e16006d0ca3300fb4",
-      "src/modelbuilder/backend/adapter.py": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff",
-      "src/modelbuilder/backend/common.py": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb",
-      "src/modelbuilder/backend/fixtures.py": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9",
-      "src/modelbuilder/backend/sdk.py": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d",
+      "src/modelbuilder/backend/adapter.py": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2",
+      "src/modelbuilder/backend/common.py": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab",
+      "src/modelbuilder/backend/fixtures.py": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d",
+      "src/modelbuilder/backend/sdk.py": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb",
       "src/modelbuilder/backend/supervisor.py": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1",
-      "src/modelbuilder/backend/worker.py": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099"
+      "src/modelbuilder/backend/worker.py": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20"
     },
     "modules": {
       "modelbuilder": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages/modelbuilder/__init__.py",
@@ -133,12 +133,12 @@
     "python": "3.12.14",
     "pythonpath": null,
     "store": {
-      "artifact_store_id": "6ce05fe2-9da2-4ffe-99f8-9c3423626aa1",
-      "artifact_store_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1",
-      "metadata_url": "sqlite:////workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/default_zen_store/zenml.db",
-      "stack_id": "39a4bd10-8881-46bc-801b-fcccf852131a",
-      "zenml_config_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-config",
-      "zenml_local_stores_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores"
+      "artifact_store_id": "7d5d75e8-ee12-4465-85bf-3c09da833e5c",
+      "artifact_store_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c",
+      "metadata_url": "sqlite:////workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/default_zen_store/zenml.db",
+      "stack_id": "66cf38cd-2e1c-4e05-b372-28d3b67d46a8",
+      "zenml_config_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-config",
+      "zenml_local_stores_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores"
     },
     "sys_path": [
       "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python312.zip",
@@ -147,76 +147,94 @@
       "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay-backend/lib/python3.12/site-packages"
     ]
   },
-  "data_dir": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data",
-  "executed_recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
+  "data_dir": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data",
+  "executed_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
   "external_resource_sha256": {},
   "import_execution_allowed": false,
+  "import_transport": "bundle_json",
   "installed_source_verified": true,
   "output_sha256": {
     "evaluate/metrics.json": "a4f5022efd3a8ec85a1ba647c6190f2e9a4958e6e9a5b7d523132a3b1671dbc5",
     "export/model.pt": "be16324873f3c94b757a2133607592f99207b6cea174e7ed01343db4a4d848d2",
     "export/parity.json": "3c7b2598547c009e971cfae2b8c9ee9aa7d1e23b328522eb30e380b7b30661c9",
-    "initial/checkpoint.pt": "df05f112c5b11baf6d81f97aac4d06bbb8f1db21354e0719dbfca40c02639c01",
-    "train/best.pt": "934814196d5e7fcc4f9248beaba0a19ffd2558943a5995dcfe498c24e87b1f7c",
-    "train/checkpoint.pt": "e9fee5ada18cbc0f7ae6d9b1db2c4d1c0bbc28c392c77b28c9ee9ebd7a1da6bb"
+    "initial/checkpoint.pt": "a466cb3efb848386fc4cd4651dba7ffa92e2ff5869a308691b4182684e187977",
+    "train/best.pt": "a813b470896c4d8b280ef2d34dce5508d13d6448057601787a937bfde1a126f6",
+    "train/checkpoint.pt": "fceb1830acfcb9d39657c6621738e4ba65bec47170ecce44f1df766226f4716c"
+  },
+  "recipe_identity": {
+    "imported_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+    "imported_recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+    "imported_revision": 2,
+    "initial_revision": 1,
+    "listed_recipe_ids": [
+      "b1a1e93c-c223-5178-a5d4-cac33061ef9e"
+    ],
+    "native_executed_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+    "original_revision_unchanged": true,
+    "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+    "project_recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+    "run_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+    "run_recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+    "run_recipe_revision": 2
   },
   "run": {
     "artifacts": [
       {
-        "artifact_id": "d9fa35ef-d7a7-42f9-9157-376eb6ac860d",
-        "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+        "artifact_id": "33b24468-6e83-4a57-9306-4722cd2d058c",
+        "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
         "name": "data",
         "node_id": "data",
         "port": "data",
-        "step_id": "80ec11cf-2351-43d6-81cf-720822e60ab2",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/data/data/80ec11cf-2351-43d6-81cf-720822e60ab2/02155416"
+        "step_id": "548b4dc5-fd15-4501-92f0-851b6fb12d44",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/data/data/548b4dc5-fd15-4501-92f0-851b6fb12d44/c20786df"
       },
       {
-        "artifact_id": "bfdf959e-b4f6-42d1-825d-26b75636e1c4",
-        "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+        "artifact_id": "32b17ff9-7e03-4282-b778-bd13ad337939",
+        "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
         "name": "initial",
         "node_id": "initial",
         "port": "initial",
-        "step_id": "df2189ab-e8f6-4012-a6dc-8d5dc3ea8a30",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/initial/initial/df2189ab-e8f6-4012-a6dc-8d5dc3ea8a30/3216b571"
+        "step_id": "1e67672d-8c09-4693-9eb7-1c51838a8c84",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/initial/initial/1e67672d-8c09-4693-9eb7-1c51838a8c84/25c57378"
       },
       {
-        "artifact_id": "4c79a12f-73eb-4153-b452-dd11dea0cbf5",
-        "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+        "artifact_id": "c64ebc92-57af-4bef-8364-104a456be9ef",
+        "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
         "name": "checkpoint",
         "node_id": "train",
         "port": "checkpoint",
-        "step_id": "f909db3b-15b9-4f28-a877-e6049e51b8b5",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/train/checkpoint/f909db3b-15b9-4f28-a877-e6049e51b8b5/f5ebf518"
+        "step_id": "951a048a-5e76-4533-9a80-28d355572632",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/train/checkpoint/951a048a-5e76-4533-9a80-28d355572632/df998edb"
       },
       {
-        "artifact_id": "8a82f84e-656d-4b9c-8bfb-471568e66452",
-        "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+        "artifact_id": "c7f8cd2d-5bf9-4a9b-a074-c715312c8fbd",
+        "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
         "name": "metrics",
         "node_id": "evaluate",
         "port": "metrics",
-        "step_id": "fae663e9-5276-4858-9984-dedae6aba7ec",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/evaluate/metrics/fae663e9-5276-4858-9984-dedae6aba7ec/6336e354"
+        "step_id": "e9583a98-79d3-47f3-8ef6-fbb7c0c52333",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/evaluate/metrics/e9583a98-79d3-47f3-8ef6-fbb7c0c52333/cf0694cd"
       },
       {
-        "artifact_id": "eb5fddcb-b31e-4505-8625-a87bc5ae3a36",
-        "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+        "artifact_id": "292d5d68-d91c-4855-98a1-e0ff3d16e6c0",
+        "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
         "name": "export",
         "node_id": "export",
         "port": "export",
-        "step_id": "218fd24f-b490-4f83-bc9c-a36479d1c2ed",
-        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/export/export/218fd24f-b490-4f83-bc9c-a36479d1c2ed/613404bc"
+        "step_id": "56fe0baf-2ae4-4c30-a2d7-e44dd39c7b56",
+        "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/export/export/56fe0baf-2ae4-4c30-a2d7-e44dd39c7b56/da6e1027"
       }
     ],
     "backend": "zenml",
-    "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+    "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
+    "backend_snapshot_id": "45f61b43-aa23-40da-8abe-b4f271008e83",
     "backend_status": "completed",
     "backend_version": "0.97.0",
-    "created_at": "2026-10-09T14:50:32.739572+00:00",
+    "created_at": "2026-10-09T15:47:03.948828+00:00",
     "error": null,
     "errors": [],
-    "executed_recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
-    "last_reconciled_at": "2026-10-09T14:50:45.976862+00:00",
+    "executed_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+    "last_reconciled_at": "2026-10-09T15:47:17.553941+00:00",
     "log_available": true,
     "metrics": {
       "accuracy": 0.8666666746139526,
@@ -366,26 +384,29 @@
       "validation_loss": 0.24631698429584503,
       "width": 12
     },
-    "model_version_ref": "f331308f-336a-45c4-bfdd-f49083bc5b2a",
+    "model_version_ref": "d3157381-1777-4eb7-9fcf-b1098a2e6a8c",
     "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
     "parent_checkpoint_ref": null,
+    "parent_recipe_digest": null,
+    "parent_recipe_id": null,
+    "parent_recipe_revision": null,
     "parent_run_id": null,
     "process_group_alive": false,
-    "project_id": "63353e9e-b40a-4626-9c03-4c219c82d12c",
-    "recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
-    "recipe_id": "56c3c573-957a-4f5a-99db-d52667e026fd",
-    "recipe_revision": 1,
+    "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+    "recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+    "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+    "recipe_revision": 2,
     "resume_mode": null,
     "revision": 4,
     "runtime_status_source": "verified_local_supervisor",
     "status": "succeeded",
-    "submitted_at": "2026-10-09T14:50:32.472168+00:00",
-    "supervisor_alive": true,
+    "submitted_at": "2026-10-09T15:47:03.680515+00:00",
+    "supervisor_alive": false,
     "termination": {},
     "termination_record_source": null,
     "worker_alive": false,
     "worker_exit_code": 0,
-    "worker_pid": 204
+    "worker_pid": 163
   },
   "service_identity": {
     "base_prefix": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python",
@@ -465,21 +486,21 @@
     "executable": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/bin/python",
     "installed_source_sha256": {
       "src/modelbuilder/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
-      "src/modelbuilder/api.py": "f2df4f30d1224e15a68e4df326557726199552ded7ca183e9f357e97cf13b3d7",
+      "src/modelbuilder/api.py": "e2702afa96c989c61c746eac0b067dd13c1ef17a0d0d8e79421e8b717ef7c9df",
       "src/modelbuilder/auth.py": "fbb19260a3059fe3ee6058a0cc63fa46f10f588dff854f71b7a8a9d431c10999",
       "src/modelbuilder/backend/__init__.py": "4d6b1d0be44fb3e8dc7111d3cbb42f6911aad66e957a559e16006d0ca3300fb4",
-      "src/modelbuilder/backend/adapter.py": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff",
-      "src/modelbuilder/backend/common.py": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb",
-      "src/modelbuilder/backend/fixtures.py": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9",
-      "src/modelbuilder/backend/sdk.py": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d",
+      "src/modelbuilder/backend/adapter.py": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2",
+      "src/modelbuilder/backend/common.py": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab",
+      "src/modelbuilder/backend/fixtures.py": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d",
+      "src/modelbuilder/backend/sdk.py": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb",
       "src/modelbuilder/backend/supervisor.py": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1",
-      "src/modelbuilder/backend/worker.py": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099",
+      "src/modelbuilder/backend/worker.py": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20",
       "src/modelbuilder/literature.py": "744fa1b146c11199e299bd38958626c2d774bf19fee563163e3f9e35ed24918a",
       "src/modelbuilder/mcp_server.py": "6ab7dc4c4e45e3e39c13b0f63a8891e66ed485a487aae9489d6fcfaa3dff1e9d",
-      "src/modelbuilder/models.py": "f6596ef4395d2c1d990981dd004dc694af8482188a8a036035877c574c54f37f",
-      "src/modelbuilder/recipe.py": "1b5498b4378fc0e4ebf91c0594391773f93b4987d3c86a80c5d243de196b58c0",
-      "src/modelbuilder/service.py": "1fc9d7d1ce519420a3ae50b42f93dd33fbb2026c909c8119bcf3bd82524e7cc3",
-      "src/modelbuilder/store.py": "ef360987019db94be38c5f0d56e1a63d50d9cf26beff459ebfedccea5b8cce3b"
+      "src/modelbuilder/models.py": "a98cd50574f2b3fdf98c18d16274f52cf32045729f871d8dc730ebd31cc1122a",
+      "src/modelbuilder/recipe.py": "4553c2aabcbc0205e026baba2fe875063fa17b9df150ed5a35a948698eb68cd2",
+      "src/modelbuilder/service.py": "790f7e2441f45ae9ea9cad861a89cbd192614213a45fcb0b3f114364b8819fba",
+      "src/modelbuilder/store.py": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"
     },
     "modules": {
       "jsonschema": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/lib/python3.12/site-packages/jsonschema/__init__.py",
@@ -501,28 +522,70 @@
       "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-replay/lib/python3.12/site-packages"
     ]
   },
-  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
-  "source_root": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-source",
+  "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
+  "source_root": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-source",
   "status": "PASS",
   "transcript": [
     {
       "operation": "project.create",
       "result": {
         "active_model_version_ref": null,
-        "active_recipe_id": null,
-        "created_at": "2026-10-09T14:50:27.139365+00:00",
+        "active_recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+        "created_at": "2026-10-09T15:46:58.479228+00:00",
         "description": "",
         "git_remote": null,
         "head_commit": null,
-        "id": "63353e9e-b40a-4626-9c03-4c219c82d12c",
+        "id": "392bc1a8-c992-49df-ab63-3de89f99b402",
         "model_name": "Custom gated-residual CPU model",
-        "project_id": "63353e9e-b40a-4626-9c03-4c219c82d12c",
+        "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+        "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+        "recipe_migration": {},
         "research_watch_config": null,
         "revision": 1,
         "schema_version": "0",
         "slug": "portable-cpu",
         "status": "active",
-        "updated_at": "2026-10-09T14:50:27.139365+00:00"
+        "updated_at": "2026-10-09T15:46:58.479228+00:00"
+      }
+    },
+    {
+      "operation": "recipe.get",
+      "result": {
+        "capabilities": [
+          "local_cpu"
+        ],
+        "digest": "7204f49836f16944bc95e04a79278e84aafdc5683c77872762ef09065cbed31b",
+        "edges": [],
+        "environment": {
+          "python": "3.12",
+          "requirements": []
+        },
+        "evaluation": {},
+        "external_dependencies": [],
+        "licenses": [
+          {
+            "license": "NOASSERTION",
+            "redistribution_allowed": false,
+            "scope": "source"
+          }
+        ],
+        "name": "Custom gated-residual CPU model recipe",
+        "nodes": [],
+        "outputs": [],
+        "permissions": {
+          "execute_on_import": false,
+          "network": false
+        },
+        "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+        "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+        "resources": [],
+        "revision": 1,
+        "schema_version": "0",
+        "source": {
+          "commit": "0000000000000000000000000000000000000000",
+          "files": [],
+          "repository": "https://example.invalid/unconfigured.git"
+        }
       }
     },
     {
@@ -531,8 +594,8 @@
         "capabilities": [
           "local_cpu"
         ],
-        "description": "Trusted repository-owned deterministic CPU smoke fixture. Metrics are not model-quality claims. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay.",
-        "digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
+        "description": "Trusted repository-owned deterministic CPU pipeline for one model project. Import advances the project-owned recipe under revision checks; model.initialize explicitly selects custom or pretrained initialization. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay. Metrics are not model-quality claims.",
+        "digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
         "edges": [
           {
             "source_node": "data",
@@ -975,13 +1038,13 @@
           "execute_on_import": false,
           "network": false
         },
-        "project_id": "63353e9e-b40a-4626-9c03-4c219c82d12c",
-        "recipe_id": "56c3c573-957a-4f5a-99db-d52667e026fd",
+        "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+        "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
         "resources": [],
-        "revision": 1,
+        "revision": 2,
         "schema_version": "0",
         "source": {
-          "commit": "4d545df2b111de7f2365e8121a65717b37713054",
+          "commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
           "files": [
             {
               "path": "pyproject.toml",
@@ -997,7 +1060,7 @@
             },
             {
               "path": "scripts/replay_bundle.py",
-              "sha256": "fc78e5814798da1bbe61111be3e0a74fbd98551e054ebe2d9251949a396c5af9"
+              "sha256": "dee53b8e50dfdea403b407ab12283d8021de1dbb972b6a5d575be69a19489bd0"
             },
             {
               "path": "src/modelbuilder/__init__.py",
@@ -1005,7 +1068,7 @@
             },
             {
               "path": "src/modelbuilder/api.py",
-              "sha256": "f2df4f30d1224e15a68e4df326557726199552ded7ca183e9f357e97cf13b3d7"
+              "sha256": "e2702afa96c989c61c746eac0b067dd13c1ef17a0d0d8e79421e8b717ef7c9df"
             },
             {
               "path": "src/modelbuilder/auth.py",
@@ -1017,19 +1080,19 @@
             },
             {
               "path": "src/modelbuilder/backend/adapter.py",
-              "sha256": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff"
+              "sha256": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2"
             },
             {
               "path": "src/modelbuilder/backend/common.py",
-              "sha256": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb"
+              "sha256": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab"
             },
             {
               "path": "src/modelbuilder/backend/fixtures.py",
-              "sha256": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9"
+              "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
             },
             {
               "path": "src/modelbuilder/backend/sdk.py",
-              "sha256": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d"
+              "sha256": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb"
             },
             {
               "path": "src/modelbuilder/backend/supervisor.py",
@@ -1037,7 +1100,7 @@
             },
             {
               "path": "src/modelbuilder/backend/worker.py",
-              "sha256": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099"
+              "sha256": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20"
             },
             {
               "path": "src/modelbuilder/literature.py",
@@ -1049,23 +1112,577 @@
             },
             {
               "path": "src/modelbuilder/models.py",
-              "sha256": "f6596ef4395d2c1d990981dd004dc694af8482188a8a036035877c574c54f37f"
+              "sha256": "a98cd50574f2b3fdf98c18d16274f52cf32045729f871d8dc730ebd31cc1122a"
             },
             {
               "path": "src/modelbuilder/recipe.py",
-              "sha256": "1b5498b4378fc0e4ebf91c0594391773f93b4987d3c86a80c5d243de196b58c0"
+              "sha256": "4553c2aabcbc0205e026baba2fe875063fa17b9df150ed5a35a948698eb68cd2"
             },
             {
               "path": "src/modelbuilder/service.py",
-              "sha256": "1fc9d7d1ce519420a3ae50b42f93dd33fbb2026c909c8119bcf3bd82524e7cc3"
+              "sha256": "790f7e2441f45ae9ea9cad861a89cbd192614213a45fcb0b3f114364b8819fba"
             },
             {
               "path": "src/modelbuilder/store.py",
-              "sha256": "ef360987019db94be38c5f0d56e1a63d50d9cf26beff459ebfedccea5b8cce3b"
+              "sha256": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"
             }
           ],
           "repository": "https://github.com/greghavens/modelbuilder"
         }
+      }
+    },
+    {
+      "operation": "recipe.get",
+      "result": {
+        "capabilities": [
+          "local_cpu"
+        ],
+        "digest": "7204f49836f16944bc95e04a79278e84aafdc5683c77872762ef09065cbed31b",
+        "edges": [],
+        "environment": {
+          "python": "3.12",
+          "requirements": []
+        },
+        "evaluation": {},
+        "external_dependencies": [],
+        "licenses": [
+          {
+            "license": "NOASSERTION",
+            "redistribution_allowed": false,
+            "scope": "source"
+          }
+        ],
+        "name": "Custom gated-residual CPU model recipe",
+        "nodes": [],
+        "outputs": [],
+        "permissions": {
+          "execute_on_import": false,
+          "network": false
+        },
+        "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+        "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+        "resources": [],
+        "revision": 1,
+        "schema_version": "0",
+        "source": {
+          "commit": "0000000000000000000000000000000000000000",
+          "files": [],
+          "repository": "https://example.invalid/unconfigured.git"
+        }
+      }
+    },
+    {
+      "operation": "recipe.list",
+      "result": {
+        "current_recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+        "recipes": [
+          {
+            "capabilities": [
+              "local_cpu"
+            ],
+            "description": "Trusted repository-owned deterministic CPU pipeline for one model project. Import advances the project-owned recipe under revision checks; model.initialize explicitly selects custom or pretrained initialization. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay. Metrics are not model-quality claims.",
+            "digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+            "edges": [
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "evaluate",
+                "target_port": "data"
+              },
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "export",
+                "target_port": "data"
+              },
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "initial",
+                "target_port": "data"
+              },
+              {
+                "source_node": "data",
+                "source_port": "data",
+                "target_node": "train",
+                "target_port": "data"
+              },
+              {
+                "source_node": "initial",
+                "source_port": "initial",
+                "target_node": "train",
+                "target_port": "initial"
+              },
+              {
+                "source_node": "train",
+                "source_port": "checkpoint",
+                "target_node": "evaluate",
+                "target_port": "checkpoint"
+              },
+              {
+                "source_node": "train",
+                "source_port": "checkpoint",
+                "target_node": "export",
+                "target_port": "checkpoint"
+              }
+            ],
+            "environment": {
+              "lock_file": {
+                "path": "requirements/backend.lock",
+                "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+              },
+              "python": "3.12.14",
+              "requirements": [
+                "numpy==2.2.6",
+                "torch==2.9.0+cpu",
+                "transformers==4.57.1",
+                "zenml[server]==0.97.0"
+              ]
+            },
+            "evaluation": {
+              "checkpoint_kind": "best",
+              "heldout_split": "heldout",
+              "keep_negative_outcomes": true,
+              "selection_rule": {
+                "direction": "minimize",
+                "metric": "validation_loss",
+                "split": "validation"
+              },
+              "validation_metric": "validation_loss"
+            },
+            "external_dependencies": [],
+            "licenses": [
+              {
+                "license": "NOASSERTION",
+                "redistribution_allowed": false,
+                "scope": "source"
+              }
+            ],
+            "name": "Custom gated-residual CPU model",
+            "nodes": [
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "data",
+                "implementation_ref": "builtin:dataset.synthetic",
+                "inputs": [],
+                "kind": "dataset.synthetic",
+                "outputs": [
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "parameters": {
+                  "count": 240,
+                  "fixture": "custom",
+                  "seed": 1234
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "evaluate",
+                "implementation_ref": "builtin:model.evaluate",
+                "inputs": [
+                  {
+                    "name": "checkpoint",
+                    "required": true,
+                    "type": "checkpoint"
+                  },
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "kind": "model.evaluate",
+                "outputs": [
+                  {
+                    "name": "metrics",
+                    "required": true,
+                    "type": "metrics"
+                  }
+                ],
+                "parameters": {
+                  "checkpoint_kind": "best",
+                  "fixture": "custom"
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "export",
+                "implementation_ref": "builtin:model.export",
+                "inputs": [
+                  {
+                    "name": "checkpoint",
+                    "required": true,
+                    "type": "checkpoint"
+                  },
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "kind": "model.export",
+                "outputs": [
+                  {
+                    "name": "export",
+                    "required": true,
+                    "type": "artifact"
+                  }
+                ],
+                "parameters": {
+                  "checkpoint_kind": "best",
+                  "fixture": "custom"
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "initial",
+                "implementation_ref": "builtin:model.initialize",
+                "inputs": [
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  }
+                ],
+                "kind": "model.initialize",
+                "outputs": [
+                  {
+                    "name": "initial",
+                    "required": true,
+                    "type": "checkpoint"
+                  }
+                ],
+                "parameters": {
+                  "fixture": "custom",
+                  "seed": 44,
+                  "width": 12
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              },
+              {
+                "cache_policy": "disabled",
+                "environment_ref": "default",
+                "id": "train",
+                "implementation_ref": "builtin:model.train",
+                "inputs": [
+                  {
+                    "name": "data",
+                    "required": true,
+                    "type": "dataset"
+                  },
+                  {
+                    "name": "initial",
+                    "required": true,
+                    "type": "checkpoint"
+                  }
+                ],
+                "kind": "model.train",
+                "outputs": [
+                  {
+                    "name": "checkpoint",
+                    "required": true,
+                    "type": "checkpoint"
+                  }
+                ],
+                "parameter_schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "batch_size": {
+                      "maximum": 10000,
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "fixture": {
+                      "enum": [
+                        "custom",
+                        "pretrained"
+                      ]
+                    },
+                    "intentional_failure_step": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "kl": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "applies_to": {
+                          "enum": [
+                            "logits"
+                          ]
+                        },
+                        "coefficient": {
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "direction": {
+                          "enum": [
+                            "reference_to_model",
+                            "model_to_reference"
+                          ]
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "frozen": {
+                          "type": "boolean"
+                        },
+                        "reference_model_ref": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "enabled",
+                        "coefficient",
+                        "direction",
+                        "reference_model_ref",
+                        "frozen",
+                        "applies_to"
+                      ],
+                      "type": "object"
+                    },
+                    "learning_rate": {
+                      "exclusiveMinimum": 0,
+                      "type": "number"
+                    },
+                    "scheduler_gamma": {
+                      "exclusiveMinimum": 0,
+                      "maximum": 1,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "step_delay": {
+                      "maximum": 5,
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    "steps": {
+                      "maximum": 10000,
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "width": {
+                      "maximum": 256,
+                      "minimum": 2,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "fixture",
+                    "width",
+                    "steps",
+                    "learning_rate",
+                    "seed",
+                    "batch_size",
+                    "kl"
+                  ],
+                  "type": "object"
+                },
+                "parameters": {
+                  "batch_size": 60,
+                  "fixture": "custom",
+                  "kl": {
+                    "applies_to": "logits",
+                    "coefficient": 0.0,
+                    "direction": "reference_to_model",
+                    "enabled": false,
+                    "frozen": true,
+                    "reference_model_ref": "initial"
+                  },
+                  "learning_rate": 0.025,
+                  "scheduler_gamma": 0.99,
+                  "seed": 44,
+                  "steps": 30,
+                  "width": 12
+                },
+                "provenance": {
+                  "implementation": "modelbuilder.backend.fixtures",
+                  "purpose": "deterministic CPU validation fixture"
+                },
+                "resource_request": {
+                  "cpu": 1,
+                  "gpu": 0,
+                  "memory_mb": 1024
+                },
+                "retry": {
+                  "backoff_seconds": 0,
+                  "max_attempts": 1
+                },
+                "timeout": 300
+              }
+            ],
+            "outputs": [
+              {
+                "name": "export",
+                "type": "artifact"
+              },
+              {
+                "name": "metrics",
+                "type": "metrics"
+              }
+            ],
+            "permissions": {
+              "execute_on_import": false,
+              "network": false
+            },
+            "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+            "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+            "resources": [],
+            "revision": 2,
+            "schema_version": "0",
+            "source": {
+              "commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
+              "files": [
+                {
+                  "path": "pyproject.toml",
+                  "sha256": "bd2e8fadd1fc3b8f8315a15844c1b45b180942128d9ade6bf5d51114919b1d46"
+                },
+                {
+                  "path": "requirements/backend.lock",
+                  "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+                },
+                {
+                  "path": "requirements/service.lock",
+                  "sha256": "02b3918fe148881089cf3ba31151ef1e387b2f4b902c34c74a1a70544b8477d7"
+                },
+                {
+                  "path": "scripts/replay_bundle.py",
+                  "sha256": "dee53b8e50dfdea403b407ab12283d8021de1dbb972b6a5d575be69a19489bd0"
+                },
+                {
+                  "path": "src/modelbuilder/__init__.py",
+                  "sha256": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed"
+                },
+                {
+                  "path": "src/modelbuilder/api.py",
+                  "sha256": "e2702afa96c989c61c746eac0b067dd13c1ef17a0d0d8e79421e8b717ef7c9df"
+                },
+                {
+                  "path": "src/modelbuilder/auth.py",
+                  "sha256": "fbb19260a3059fe3ee6058a0cc63fa46f10f588dff854f71b7a8a9d431c10999"
+                },
+                {
+                  "path": "src/modelbuilder/backend/__init__.py",
+                  "sha256": "4d6b1d0be44fb3e8dc7111d3cbb42f6911aad66e957a559e16006d0ca3300fb4"
+                },
+                {
+                  "path": "src/modelbuilder/backend/adapter.py",
+                  "sha256": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2"
+                },
+                {
+                  "path": "src/modelbuilder/backend/common.py",
+                  "sha256": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab"
+                },
+                {
+                  "path": "src/modelbuilder/backend/fixtures.py",
+                  "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
+                },
+                {
+                  "path": "src/modelbuilder/backend/sdk.py",
+                  "sha256": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb"
+                },
+                {
+                  "path": "src/modelbuilder/backend/supervisor.py",
+                  "sha256": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1"
+                },
+                {
+                  "path": "src/modelbuilder/backend/worker.py",
+                  "sha256": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20"
+                },
+                {
+                  "path": "src/modelbuilder/literature.py",
+                  "sha256": "744fa1b146c11199e299bd38958626c2d774bf19fee563163e3f9e35ed24918a"
+                },
+                {
+                  "path": "src/modelbuilder/mcp_server.py",
+                  "sha256": "6ab7dc4c4e45e3e39c13b0f63a8891e66ed485a487aae9489d6fcfaa3dff1e9d"
+                },
+                {
+                  "path": "src/modelbuilder/models.py",
+                  "sha256": "a98cd50574f2b3fdf98c18d16274f52cf32045729f871d8dc730ebd31cc1122a"
+                },
+                {
+                  "path": "src/modelbuilder/recipe.py",
+                  "sha256": "4553c2aabcbc0205e026baba2fe875063fa17b9df150ed5a35a948698eb68cd2"
+                },
+                {
+                  "path": "src/modelbuilder/service.py",
+                  "sha256": "790f7e2441f45ae9ea9cad861a89cbd192614213a45fcb0b3f114364b8819fba"
+                },
+                {
+                  "path": "src/modelbuilder/store.py",
+                  "sha256": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"
+                }
+              ],
+              "repository": "https://github.com/greghavens/modelbuilder"
+            }
+          }
+        ]
       }
     },
     {
@@ -1074,18 +1691,18 @@
         "backend": "zenml",
         "backend_run_id": null,
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:50:32.739572+00:00",
+        "created_at": "2026-10-09T15:47:03.948828+00:00",
         "errors": [],
-        "last_reconciled_at": "2026-10-09T14:50:32.739575+00:00",
+        "last_reconciled_at": "2026-10-09T15:47:03.948832+00:00",
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
-        "project_id": "63353e9e-b40a-4626-9c03-4c219c82d12c",
-        "recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
-        "recipe_id": "56c3c573-957a-4f5a-99db-d52667e026fd",
-        "recipe_revision": 1,
+        "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+        "recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+        "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+        "recipe_revision": 2,
         "revision": 1,
         "status": "submitted",
-        "submitted_at": "2026-10-09T14:50:32.472168+00:00",
-        "supervisor_pid": 203
+        "submitted_at": "2026-10-09T15:47:03.680515+00:00",
+        "supervisor_pid": 162
       }
     },
     {
@@ -1094,35 +1711,39 @@
         "artifacts": [],
         "backend": "zenml",
         "backend_run_id": null,
+        "backend_snapshot_id": null,
         "backend_status": null,
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:50:32.739572+00:00",
+        "created_at": "2026-10-09T15:47:03.948828+00:00",
         "error": null,
         "errors": [],
-        "executed_recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
-        "last_reconciled_at": "2026-10-09T14:50:36.670366+00:00",
+        "executed_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+        "last_reconciled_at": "2026-10-09T15:47:07.326191+00:00",
         "log_available": true,
         "metrics": {},
         "model_version_ref": null,
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
         "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
         "parent_run_id": null,
         "process_group_alive": true,
-        "project_id": "63353e9e-b40a-4626-9c03-4c219c82d12c",
-        "recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
-        "recipe_id": "56c3c573-957a-4f5a-99db-d52667e026fd",
-        "recipe_revision": 1,
+        "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+        "recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+        "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+        "recipe_revision": 2,
         "resume_mode": null,
         "revision": 2,
         "runtime_status_source": "verified_local_supervisor",
         "status": "submitted",
-        "submitted_at": "2026-10-09T14:50:32.472168+00:00",
+        "submitted_at": "2026-10-09T15:47:03.680515+00:00",
         "supervisor_alive": true,
         "termination": {},
         "termination_record_source": null,
         "worker_alive": true,
         "worker_exit_code": null,
-        "worker_pid": 204
+        "worker_pid": 163
       }
     },
     {
@@ -1130,55 +1751,68 @@
       "result": {
         "artifacts": [
           {
-            "artifact_id": "d9fa35ef-d7a7-42f9-9157-376eb6ac860d",
-            "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+            "artifact_id": "33b24468-6e83-4a57-9306-4722cd2d058c",
+            "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
             "name": "data",
             "node_id": "data",
             "port": "data",
-            "step_id": "80ec11cf-2351-43d6-81cf-720822e60ab2",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/data/data/80ec11cf-2351-43d6-81cf-720822e60ab2/02155416"
+            "step_id": "548b4dc5-fd15-4501-92f0-851b6fb12d44",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/data/data/548b4dc5-fd15-4501-92f0-851b6fb12d44/c20786df"
           },
           {
-            "artifact_id": "bfdf959e-b4f6-42d1-825d-26b75636e1c4",
-            "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+            "artifact_id": "32b17ff9-7e03-4282-b778-bd13ad337939",
+            "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
             "name": "initial",
             "node_id": "initial",
             "port": "initial",
-            "step_id": "df2189ab-e8f6-4012-a6dc-8d5dc3ea8a30",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/initial/initial/df2189ab-e8f6-4012-a6dc-8d5dc3ea8a30/3216b571"
+            "step_id": "1e67672d-8c09-4693-9eb7-1c51838a8c84",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/initial/initial/1e67672d-8c09-4693-9eb7-1c51838a8c84/25c57378"
+          },
+          {
+            "artifact_id": "c64ebc92-57af-4bef-8364-104a456be9ef",
+            "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
+            "name": "checkpoint",
+            "node_id": "train",
+            "port": "checkpoint",
+            "step_id": "951a048a-5e76-4533-9a80-28d355572632",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/train/checkpoint/951a048a-5e76-4533-9a80-28d355572632/df998edb"
           }
         ],
         "backend": "zenml",
-        "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+        "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
+        "backend_snapshot_id": "45f61b43-aa23-40da-8abe-b4f271008e83",
         "backend_status": "running",
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:50:32.739572+00:00",
+        "created_at": "2026-10-09T15:47:03.948828+00:00",
         "error": null,
         "errors": [],
-        "executed_recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
-        "last_reconciled_at": "2026-10-09T14:50:41.400363+00:00",
+        "executed_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+        "last_reconciled_at": "2026-10-09T15:47:11.753631+00:00",
         "log_available": true,
         "metrics": {},
-        "model_version_ref": "f331308f-336a-45c4-bfdd-f49083bc5b2a",
+        "model_version_ref": "d3157381-1777-4eb7-9fcf-b1098a2e6a8c",
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
         "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
         "parent_run_id": null,
         "process_group_alive": true,
-        "project_id": "63353e9e-b40a-4626-9c03-4c219c82d12c",
-        "recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
-        "recipe_id": "56c3c573-957a-4f5a-99db-d52667e026fd",
-        "recipe_revision": 1,
+        "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+        "recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+        "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+        "recipe_revision": 2,
         "resume_mode": null,
         "revision": 3,
         "runtime_status_source": "verified_local_supervisor",
         "status": "running",
-        "submitted_at": "2026-10-09T14:50:32.472168+00:00",
+        "submitted_at": "2026-10-09T15:47:03.680515+00:00",
         "supervisor_alive": true,
         "termination": {},
         "termination_record_source": null,
         "worker_alive": true,
         "worker_exit_code": null,
-        "worker_pid": 204
+        "worker_pid": 163
       }
     },
     {
@@ -1186,60 +1820,61 @@
       "result": {
         "artifacts": [
           {
-            "artifact_id": "d9fa35ef-d7a7-42f9-9157-376eb6ac860d",
-            "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+            "artifact_id": "33b24468-6e83-4a57-9306-4722cd2d058c",
+            "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
             "name": "data",
             "node_id": "data",
             "port": "data",
-            "step_id": "80ec11cf-2351-43d6-81cf-720822e60ab2",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/data/data/80ec11cf-2351-43d6-81cf-720822e60ab2/02155416"
+            "step_id": "548b4dc5-fd15-4501-92f0-851b6fb12d44",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/data/data/548b4dc5-fd15-4501-92f0-851b6fb12d44/c20786df"
           },
           {
-            "artifact_id": "bfdf959e-b4f6-42d1-825d-26b75636e1c4",
-            "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+            "artifact_id": "32b17ff9-7e03-4282-b778-bd13ad337939",
+            "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
             "name": "initial",
             "node_id": "initial",
             "port": "initial",
-            "step_id": "df2189ab-e8f6-4012-a6dc-8d5dc3ea8a30",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/initial/initial/df2189ab-e8f6-4012-a6dc-8d5dc3ea8a30/3216b571"
+            "step_id": "1e67672d-8c09-4693-9eb7-1c51838a8c84",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/initial/initial/1e67672d-8c09-4693-9eb7-1c51838a8c84/25c57378"
           },
           {
-            "artifact_id": "4c79a12f-73eb-4153-b452-dd11dea0cbf5",
-            "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+            "artifact_id": "c64ebc92-57af-4bef-8364-104a456be9ef",
+            "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
             "name": "checkpoint",
             "node_id": "train",
             "port": "checkpoint",
-            "step_id": "f909db3b-15b9-4f28-a877-e6049e51b8b5",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/train/checkpoint/f909db3b-15b9-4f28-a877-e6049e51b8b5/f5ebf518"
+            "step_id": "951a048a-5e76-4533-9a80-28d355572632",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/train/checkpoint/951a048a-5e76-4533-9a80-28d355572632/df998edb"
           },
           {
-            "artifact_id": "8a82f84e-656d-4b9c-8bfb-471568e66452",
-            "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+            "artifact_id": "c7f8cd2d-5bf9-4a9b-a074-c715312c8fbd",
+            "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
             "name": "metrics",
             "node_id": "evaluate",
             "port": "metrics",
-            "step_id": "fae663e9-5276-4858-9984-dedae6aba7ec",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/evaluate/metrics/fae663e9-5276-4858-9984-dedae6aba7ec/6336e354"
+            "step_id": "e9583a98-79d3-47f3-8ef6-fbb7c0c52333",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/evaluate/metrics/e9583a98-79d3-47f3-8ef6-fbb7c0c52333/cf0694cd"
           },
           {
-            "artifact_id": "eb5fddcb-b31e-4505-8625-a87bc5ae3a36",
-            "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+            "artifact_id": "292d5d68-d91c-4855-98a1-e0ff3d16e6c0",
+            "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
             "name": "export",
             "node_id": "export",
             "port": "export",
-            "step_id": "218fd24f-b490-4f83-bc9c-a36479d1c2ed",
-            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-4d545df2/replay-custom-data/backend/zenml-stores/6ce05fe2-9da2-4ffe-99f8-9c3423626aa1/export/export/218fd24f-b490-4f83-bc9c-a36479d1c2ed/613404bc"
+            "step_id": "56fe0baf-2ae4-4c30-a2d7-e44dd39c7b56",
+            "uri": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portability/final-086908e3/replay-custom-data/backend/zenml-stores/7d5d75e8-ee12-4465-85bf-3c09da833e5c/export/export/56fe0baf-2ae4-4c30-a2d7-e44dd39c7b56/da6e1027"
           }
         ],
         "backend": "zenml",
-        "backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+        "backend_run_id": "677da5f0-f93e-475b-beca-47450ca5450c",
+        "backend_snapshot_id": "45f61b43-aa23-40da-8abe-b4f271008e83",
         "backend_status": "completed",
         "backend_version": "0.97.0",
-        "created_at": "2026-10-09T14:50:32.739572+00:00",
+        "created_at": "2026-10-09T15:47:03.948828+00:00",
         "error": null,
         "errors": [],
-        "executed_recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
-        "last_reconciled_at": "2026-10-09T14:50:45.976862+00:00",
+        "executed_recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+        "last_reconciled_at": "2026-10-09T15:47:17.553941+00:00",
         "log_available": true,
         "metrics": {
           "accuracy": 0.8666666746139526,
@@ -1389,30 +2024,33 @@
           "validation_loss": 0.24631698429584503,
           "width": 12
         },
-        "model_version_ref": "f331308f-336a-45c4-bfdd-f49083bc5b2a",
+        "model_version_ref": "d3157381-1777-4eb7-9fcf-b1098a2e6a8c",
         "operation_id": "68705848-e74a-5861-913e-79f8dfd4ecff",
         "parent_checkpoint_ref": null,
+        "parent_recipe_digest": null,
+        "parent_recipe_id": null,
+        "parent_recipe_revision": null,
         "parent_run_id": null,
         "process_group_alive": false,
-        "project_id": "63353e9e-b40a-4626-9c03-4c219c82d12c",
-        "recipe_digest": "dc1fe6e0ba3d7df4860d71303a53d8eac7fe10e097943a3744104d6aa316b681",
-        "recipe_id": "56c3c573-957a-4f5a-99db-d52667e026fd",
-        "recipe_revision": 1,
+        "project_id": "392bc1a8-c992-49df-ab63-3de89f99b402",
+        "recipe_digest": "0d91a32ad51fea7c8d1af1752263b96c9ab7f0289f7db922f7c43062d6511166",
+        "recipe_id": "b1a1e93c-c223-5178-a5d4-cac33061ef9e",
+        "recipe_revision": 2,
         "resume_mode": null,
         "revision": 4,
         "runtime_status_source": "verified_local_supervisor",
         "status": "succeeded",
-        "submitted_at": "2026-10-09T14:50:32.472168+00:00",
-        "supervisor_alive": true,
+        "submitted_at": "2026-10-09T15:47:03.680515+00:00",
+        "supervisor_alive": false,
         "termination": {},
         "termination_record_source": null,
         "worker_alive": false,
         "worker_exit_code": 0,
-        "worker_pid": 204
+        "worker_pid": 163
       }
     }
   ],
-  "transport_recipe_digest": "c75e076c52d177099730074be5709d2c8f710319c851b672df16bd5b4dd76615",
+  "transport_recipe_digest": "787536d2a146a931413d8bd9e6a20a814fc92bb45dc24ac9b4316c4eb2070d78",
   "unresolved_dependencies_at_import": [
     {
       "id": "source_license",

@@ -1,8 +1,10 @@
 {
-  "digest": "bebb94afcb6a5ac7c1ee71bb0f5b81571b060be33c2cf901d29c0bcdcd997459",
-  "bundle_digest": "b38154bedc56ae8ef5a96440af3c71dc455c0e6927d458ebd31739177e5cd412",
-  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "path": "evidence/portability/pretrained.recipe.tar",
+  "bytes": 512000,
+  "sha256": "02175fac39caceab687122e272ebace0526584218742a289a13d0474725adfae",
+  "recipe_digest": "b18c4782fafa129cf7d11e9f8d14cb516f57c9bdf3abced00c5b09c145ec9947",
+  "bundle_digest": "9ea1b2b9083f34e58830be44dad8f07bd5cc0d80c54e01e7fc224511d63713ed",
+  "source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
   "source_files": 20,
-  "archive_sha256": "12232c5f6a92744d0b12b271ae63d3c2773fcbd641bc05f08e1785bab190fecd",
   "execution_allowed": false
 }

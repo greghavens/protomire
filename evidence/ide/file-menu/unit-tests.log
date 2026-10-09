@@ -1,0 +1,78 @@
+
+> modelbuilder-workbench@0.1.0 test
+> npm run compile && node --test test/*.test.cjs
+
+
+> modelbuilder-workbench@0.1.0 compile
+> node scripts/build.mjs
+
+✔ thin transport calls exact operation endpoint and bearer auth (6.925633ms)
+✔ catalog uses same authenticated service (1.321266ms)
+✔ missing secret fails before any network request (2.930427ms)
+✔ 409 structured conflict is preserved (0.821483ms)
+✔ 403 scope failure is preserved (0.796596ms)
+✔ transport failure never echoes token or raw fetch exception (0.467696ms)
+✔ invalid JSON response does not masquerade as success (0.81267ms)
+✔ reject unsafe service URL http://remote.example (0.274478ms)
+✔ reject unsafe service URL file:///etc/passwd (0.283612ms)
+✔ reject unsafe service URL https://user:password@remote.example (0.40986ms)
+✔ reject unsafe service URL https://remote.example?token=x (0.183814ms)
+✔ reject unsafe service URL https://remote.example#token (0.148521ms)
+✔ reject unsafe service URL http://127.0.0.1.evil.example (0.108631ms)
+✔ allow explicit safe service URL http://localhost:8765 (0.186828ms)
+✔ allow explicit safe service URL http://127.0.0.1:8765 (0.104956ms)
+✔ allow explicit safe service URL http://[::1]:8765 (0.101111ms)
+✔ allow explicit safe service URL https://service.example/base (0.086238ms)
+✔ operation path injection fails before request (0.211925ms)
+✔ CSP URI escaping rejects HTML interpolation (1.489016ms)
+✔ webview message structural and size limits (7.663967ms)
+✔ operation bridge excludes spend, publish and arbitrary endpoints (0.163463ms)
+✔ credential lookup is bound to the exact normalized destination snapshot (0.534585ms)
+✔ raw bundle JSON retains numeric lexemes through the thin HTTP transport (0.553043ms)
+✔ save uses loaded revision even if draft metadata changes (1.516738ms)
+✔ conflicting save leaves base revision intact, never silent rebase (0.408769ms)
+✔ recipe identity cannot be changed by a webview draft (0.391543ms)
+✔ validation and diff forward full draft to authority (0.48361ms)
+✔ node parameter edit preserves arbitrary Python and unknown recipe fields (0.676407ms)
+✔ remove node also removes dangling attached edges (0.178486ms)
+✔ Python node template carries typed IO and full code entrypoint ref (0.166228ms)
+✔ all mutations require a loaded base (0.24211ms)
+✔ invalid source blocks visual edits instead of overwriting draft (0.471141ms)
+✔ stale node panel cannot overwrite newer source node parameters (0.435769ms)
+✔ native JSON omits computed response digest while retaining canonical body fields (0.231504ms)
+✔ open model resolves its single current recipe without a recipe picker (0.166478ms)
+✔ open model does not choose arbitrarily among recipes or cross project boundaries (0.190283ms)
+✔ in-flight recipe A poll cannot replace newly opened recipe B (2.207535ms)
+✔ in-flight poll cannot roll back a newer save on same document (0.364432ms)
+✔ dirty source created during poll read remains preserved (0.361037ms)
+✔ run details returned after navigation are not shown in the new project (0.320016ms)
+✔ restored unsaved draft retains original base revision even after remote edits (0.521186ms)
+✔ draft backup cannot replace host base revision with webview metadata (0.709416ms)
+✔ save completion preserves edits that arrived after submission (8.261076ms)
+✔ native explorer shows landing before a project and only the fixed active model afterward (0.652971ms)
+✔ opening a project ignores arbitrary recipe navigation and loads its one current recipe (0.500454ms)
+✔ closing model project clears context and invalidates in-flight work before landing (0.53068ms)
+✔ workspace cannot open a different project without returning to landing (0.459935ms)
+✔ import cannot clear an unsaved recipe draft or advance its revision (0.953349ms)
+✔ non-recipe resource updates retain their own expected revision (0.244173ms)
+✔ late project-list response cannot clear a newer model navigation (4.323095ms)
+✔ closing a project hides stale workspace even if listing projects fails (0.310622ms)
+✔ native File import forwards exact UTF-8 bundle string into the fixed recipe (0.529077ms)
+✔ native File export captures server bytes before Save dialog and writes them unchanged (0.254038ms)
+✔ native File dialog cancel leaves recipe and filesystem unchanged (0.186107ms)
+✔ dirty native JSON blocks File import and export without discarding source (0.188471ms)
+✔ project change during native Open dialog aborts before reading or importing (0.184014ms)
+✔ project change during native Save dialog cannot export into chosen file (0.176322ms)
+✔ native File import rejects oversized file before reading bytes (0.145556ms)
+✔ native File import rejects invalid UTF-8 without replacing bytes (0.279667ms)
+✔ recipe bundle transfer cannot be invoked through the webview operation bridge (0.227478ms)
+✔ File import keeps the revision captured before Open dialog rather than rebasing (0.515026ms)
+✔ File export retains captured bytes even if source revision advances during Save dialog (0.281358ms)
+ℹ tests 62
+ℹ suites 0
+ℹ pass 62
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 138.339252

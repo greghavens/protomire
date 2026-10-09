@@ -1,0 +1,150 @@
+{
+  "status": "PASS",
+  "acceptance": "T19",
+  "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "source_repository": "https://github.com/greghavens/modelbuilder",
+  "verified_at": "2026-10-09T14:53:57.664448+00:00",
+  "scope": "Two genuine CPU fixtures replayed in independent installed Python environments and independent native ZenML metadata/artifact stores on the same host.",
+  "environment_count": 4,
+  "native_runs": 4,
+  "packaging_and_security_unit_tests": 17,
+  "recipe_plus_portability_unit_tests": 56,
+  "fixtures": {
+    "custom": {
+      "checks": {
+        "backend_identity_independent_prefix": true,
+        "backend_identity_no_origin_imports": true,
+        "backend_identity_no_pythonpath": true,
+        "backend_identity_no_shared_pth": true,
+        "backend_identity_own_modules": true,
+        "backend_identity_same_distributions": true,
+        "backend_identity_same_python": true,
+        "both_succeeded": true,
+        "dataset_sha256_equal": true,
+        "external_resource_hashes_equal": true,
+        "independent_artifact_store_id": true,
+        "independent_artifact_store_path": true,
+        "independent_data_dirs": true,
+        "independent_metadata_url": true,
+        "independent_run_ids": true,
+        "independent_source_roots": true,
+        "independent_stack_id": true,
+        "independent_zenml_config_path": true,
+        "metrics_equal": true,
+        "output_hashes_equal": true,
+        "service_identity_independent_prefix": true,
+        "service_identity_no_origin_imports": true,
+        "service_identity_no_pythonpath": true,
+        "service_identity_no_shared_pth": true,
+        "service_identity_own_modules": true,
+        "service_identity_same_distributions": true,
+        "service_identity_same_python": true,
+        "source_commit_equal": true,
+        "transport_recipe_digest_equal": true
+      },
+      "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8",
+      "limitations": [
+        "Same CPU host and operating system; no cross-platform or GPU claim",
+        "Trusted local source only; no untrusted-code sandbox or redistribution clearance"
+      ],
+      "origin_backend_run_id": "ad896910-a611-4bdf-a74b-99271fb37f29",
+      "recipe_digest": "c75e076c52d177099730074be5709d2c8f710319c851b672df16bd5b4dd76615",
+      "replay_backend_run_id": "330ed858-f0fe-482a-9ea5-cdca489362f9",
+      "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+      "status": "PASS",
+      "checks_passed": 29,
+      "output_hash_count": 6,
+      "metrics": {
+        "validation_loss": 0.24631698429584503,
+        "accuracy": 0.8666666746139526,
+        "brier": 0.13341984152793884
+      },
+      "origin_artifact_ids": [
+        "c771712c-c5e7-4faa-9c0f-6461b8751dc1",
+        "8af32fdd-e26e-42af-8a4e-8f9749d0be40",
+        "fa6d6a69-4717-45d4-b8a9-d69e9e2918b9",
+        "e6373a60-c6b0-44a7-a9c2-4ae48db91759",
+        "13d64278-a6a6-464b-b3a2-d43e4c8a7edc"
+      ],
+      "replay_artifact_ids": [
+        "d9fa35ef-d7a7-42f9-9157-376eb6ac860d",
+        "bfdf959e-b4f6-42d1-825d-26b75636e1c4",
+        "4c79a12f-73eb-4153-b452-dd11dea0cbf5",
+        "8a82f84e-656d-4b9c-8bfb-471568e66452",
+        "eb5fddcb-b31e-4505-8625-a87bc5ae3a36"
+      ],
+      "export_reload_max_abs_difference": 0.0
+    },
+    "pretrained": {
+      "checks": {
+        "backend_identity_independent_prefix": true,
+        "backend_identity_no_origin_imports": true,
+        "backend_identity_no_pythonpath": true,
+        "backend_identity_no_shared_pth": true,
+        "backend_identity_own_modules": true,
+        "backend_identity_same_distributions": true,
+        "backend_identity_same_python": true,
+        "both_succeeded": true,
+        "dataset_sha256_equal": true,
+        "external_resource_hashes_equal": true,
+        "independent_artifact_store_id": true,
+        "independent_artifact_store_path": true,
+        "independent_data_dirs": true,
+        "independent_metadata_url": true,
+        "independent_run_ids": true,
+        "independent_source_roots": true,
+        "independent_stack_id": true,
+        "independent_zenml_config_path": true,
+        "metrics_equal": true,
+        "output_hashes_equal": true,
+        "service_identity_independent_prefix": true,
+        "service_identity_no_origin_imports": true,
+        "service_identity_no_pythonpath": true,
+        "service_identity_no_shared_pth": true,
+        "service_identity_own_modules": true,
+        "service_identity_same_distributions": true,
+        "service_identity_same_python": true,
+        "source_commit_equal": true,
+        "transport_recipe_digest_equal": true
+      },
+      "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+      "limitations": [
+        "Same CPU host and operating system; no cross-platform or GPU claim",
+        "Trusted local source only; no untrusted-code sandbox or redistribution clearance"
+      ],
+      "origin_backend_run_id": "45618d5c-00a9-4722-94c7-7a065b6c183d",
+      "recipe_digest": "bebb94afcb6a5ac7c1ee71bb0f5b81571b060be33c2cf901d29c0bcdcd997459",
+      "replay_backend_run_id": "762d1761-4801-4a9c-8ae5-b2927a876af0",
+      "source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+      "status": "PASS",
+      "checks_passed": 29,
+      "output_hash_count": 10,
+      "metrics": {
+        "validation_loss": 0.025669865310192108,
+        "accuracy": 1.0,
+        "brier": 0.0006469727959483862
+      },
+      "origin_artifact_ids": [
+        "7fbeabd2-a002-4826-a12a-b2b312412e98",
+        "85023bc0-cb50-46e3-8e42-b989cf24fc16",
+        "352f9dd0-f583-4c7c-9e3c-49c49d739739",
+        "795dcc8f-8656-4168-9596-8f440f7820b6",
+        "a65e4c03-17ff-44e4-9caf-7b24643ca148"
+      ],
+      "replay_artifact_ids": [
+        "4f31b415-6bd5-439e-baaf-c4ec2c48f718",
+        "dd49c525-a604-4b74-aa2a-543be0424769",
+        "0f08d9c9-110e-4818-b449-480f5cb32389",
+        "df4b93b3-36ca-4216-9a95-9ded99cee4f0",
+        "a0494200-ce44-4b10-b04c-826dd7cbd685"
+      ],
+      "export_reload_max_abs_difference": 0.0
+    }
+  },
+  "limitations": [
+    "Same CPU host and OS; no cross-platform, GPU, remote or container-isolation claim.",
+    "Trusted repository-owned source only; untrusted execution remains blocked.",
+    "Source license NOASSERTION remains a redistribution-review issue.",
+    "Pretrained resources were resolved by SHA256-verified copies of previously downloaded immutable resources; this was not a fresh network-download test."
+  ]
+}

@@ -98,28 +98,41 @@ MCP client test. No paid inference or new authentication is performed here.
 ## Observed acceptance (2026-10-09)
 
 The source build compiled with zero errors and launched on the supported cloud
-desktop with Electron sandboxing intact. The final real editor smoke passed all
+desktop with Electron sandboxing intact. The current one-import binary repeat at
+`evidence/gui/file-menu-smoke/smoke-results.json` passed all
 eight checks, including actual basedpyright diagnostics, integrated terminal,
 Git, a debugpy breakpoint/variable evaluation (`answer=42`), and Jupyter execution
-(`42`). `evidence/gui/distribution/smoke-results.json` is authoritative; screenshots
+(`42`). The earlier `evidence/gui/distribution/smoke-results.json` is historical; screenshots
 now capture the actual Electron workbench rather than an unrelated foreground
 terminal. Initial attempts and the interrupted repeat are retained separately.
 The original workbench passed graph/MCP checks and GUI-submitted ZenML CPU
 execution, but its multi-model/recipe-selector UX was subsequently rejected.
 `evidence/gui/workbench`, `final-caption`, and `execution` are historical proof,
 not acceptance of the corrected one-project/one-model/one-recipe design.
-Corrected landing, fixed-workspace and execution results are recorded separately
-under `evidence/gui/single-model` and `evidence/gui/single-model-execution`.
-The later `evidence/gui/single-model-roundtrip` suite passes 17 actual DOM checks
-plus native Monaco saving, including the full five-node recipe import/export,
-fixed identity, raw bundle preservation and tamper rejection. The initial failed
-numeric round-trip probe remains recorded under `single-model-import`.
+The current File-menu build compiled with zero errors and exactly one documented
+composition import (see `FILE_MENU_EXCEPTION.md`). Its actual workbench suite at
+`evidence/gui/file-menu-verified` passes 23 DOM checks plus native Monaco saving.
+This covers landing-first fixed model identity, genuine application File menu
+entries, supported Open/Save dialogs, five-node recipe import, byte-exact export
+and re-import, cancellation, overwrite cancellation, tamper rejection and
+concurrent external MCP edits during both dialogs. The acceptance profile uses
+Code OSS's supported simple file chooser; the separate CUA capture
+`file-menu/default-os-import-dialog.jpg` verifies the normal GTK OS chooser.
+The first two menu-driver attempts are retained: upstream intentionally delays
+mouse-up registration by 100 ms, so the corrected driver waits for readiness.
+Earlier `single-model*` proofs are historical with respect to the final menu
+placement. The initial failed numeric round-trip probe remains recorded under
+`single-model-import`.
 Portable bundles must use `recipe.export` with `format=json` and pass its
 `bundle_json` string unchanged to import. The integrity algorithm is unchanged;
 parsing and reserializing bundle contents in JavaScript can alter number syntax.
-Corrected-domain training is a separate gate: consult the terminal status in
-`single-model-execution`, not historical execution screenshots. The
-manual `gui.yml` workflow reproduces these suites on a sandbox-capable Xvfb host;
+Corrected-domain training also passes all three actual GUI execution checks in
+`file-menu-execution`, using complete source pin
+`086908e3eb20ff025bbd50108e6b6563855b7512`. The real ZenML run
+`0b98377e-8d79-48f1-88f0-3b00aafae57d` completed successfully; the UI
+showed reconciled status, metrics, model version, logs and artifact IDs. These
+are implementation correction tests, not owner product acceptance. The manual
+`gui.yml` workflow reproduces these suites on a sandbox-capable Xvfb host;
 local success does not assert that the remote workflow has run.
 
 The full initial `npm ci` was interrupted by a registry HTTP 403 late in upstream

@@ -1,6 +1,8 @@
 {
-  "status": "IMPLEMENTED_WITH_EXPLICIT_BLOCKED_GATES",
-  "runtime_source_commit": "4d545df2b111de7f2365e8121a65717b37713054",
+  "status": "CORRECTED_SLICE_VERIFIED_WITH_EXPLICIT_BLOCKED_GATES",
+  "runtime_source_commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
+  "implementation_commit": "8ac10dfba4da0681566515c92c66e7e3924d01a4",
+  "design": "One model per project, one training/evaluation pipeline recipe with immutable revisions. Recipe import/export only in File menu. Original design inputs unchanged.",
   "acceptance": {
     "passed": [
       "T01",
@@ -26,75 +28,98 @@
       "T23",
       "T24"
     ],
+    "pending": [],
     "blocked": {
-      "T21": "Vendor authentication absent; Codex bundled app-server local thread also hits a read-only sandbox mount lock. Installation, activation and MCP discovery passed, authenticated tool behavior not verified.",
-      "T22": "P5 paid-provider authorization not granted; remote execution and spend remain disabled."
+      "T21": "Vendor authentication absent; exact authenticated Claude/Codex MCP calls remain unverified. Prior installation, activation and MCP discovery are historical evidence; vendor sandbox mount-lock blocker also recorded.",
+      "T22": "P5 paid-provider authorization not granted; remote execution/spend disabled."
     }
   },
   "validation_profiles": {
     "service_contract": {
-      "passed": 238,
+      "passed": 309,
       "skipped_collection_modules": 2,
-      "why_skipped": "Torch modules execute separately in backend environment",
-      "evidence": "evidence/tests/final-contracts.xml"
+      "deselected_integration": 5,
+      "evidence": "evidence/tests/unit-service-mcp.xml"
+    },
+    "full_default_script": {
+      "exit_code": 0,
+      "evidence": "evidence/tests/single-model/full-script.log"
     },
     "service_mcp_sdk_integration": {
       "passed": 3,
-      "evidence": "evidence/tests/integration.xml"
-    },
-    "actual_cpu_native_lifecycle": {
-      "passed": 15,
-      "evidence": "evidence/tests/cpu-fixtures.xml"
+      "evidence": "evidence/tests/single-model/integration.xml"
     },
     "frontend_unit": {
-      "passed": 42,
-      "evidence": "evidence/ide/dropdown-unit-tests.log"
+      "passed": 62,
+      "evidence": "evidence/ide/file-menu/unit-tests.log"
     },
     "frontend_external_mcp_http": {
       "passed": 7,
-      "evidence": "evidence/ide/real-service-mcp-parity.json"
+      "evidence": "evidence/ide/file-menu/service-mcp-parity.json"
     },
-    "editor_gui": {
+    "backend_native_current_domain": {
       "passed": 8,
-      "evidence": "evidence/gui/distribution/smoke-results.json"
+      "evidence": "evidence/backend/current-domain-native.xml"
     },
-    "graph_mcp_gui": {
+    "cpu_fixture_current_domain": {
       "passed": 8,
-      "native_monaco_save": true,
-      "evidence": "evidence/gui/final-caption/workbench-host-results.json",
-      "includes_latest_dropdown_revision_assertion": true
-    },
-    "actual_gui_training": {
-      "passed": 3,
-      "backend_run_id": "61a8d953-2df8-4f83-a9d1-fca06c19a3c4",
-      "evidence": "evidence/gui/execution/gui-execution-dom-results.json"
+      "evidence": "evidence/backend/cpu-fixtures-current-domain.xml"
     },
     "clean_replay": {
       "fixtures": 2,
-      "real_native_runs": 4,
-      "checks_per_fixture": 29,
+      "native_runs": 4,
+      "checks_per_fixture": 31,
       "evidence": "evidence/portability/summary.json"
     },
-    "portability_helper": {
-      "passed": 17,
-      "overlaps_service_contract_profile": true
+    "sqlite_startup": {
+      "focused_tests": 19,
+      "migration_races": 100,
+      "openers_per_race": 6,
+      "original_failure_preserved": true,
+      "evidence": "evidence/tests/single-model/sqlite-startup.xml"
+    },
+    "graph_mcp_file_menu_gui": {
+      "passed": 23,
+      "native_monaco_save": true,
+      "evidence": "evidence/gui/file-menu-verified/workbench-host-results.json"
+    },
+    "actual_gui_training": {
+      "passed": 3,
+      "backend_run_id": "0b98377e-8d79-48f1-88f0-3b00aafae57d",
+      "evidence": "evidence/gui/file-menu-execution/gui-execution-dom-results.json"
+    },
+    "editor_gui": {
+      "passed": 8,
+      "evidence": "evidence/gui/file-menu-smoke/smoke-results.json",
+      "binary": "Current one-composition-import rebuild"
     }
   },
-  "verified_ci": {
-    "sha": "9f0732f803fb2cc4d79898e6292a7a159a644cbf",
-    "run_id": 37947375390,
-    "url": "https://github.com/greghavens/modelbuilder/actions/runs/37947375390",
-    "jobs": {
-      "contracts": "success",
-      "cpu-lifecycle": "success"
-    }
+  "distribution": {
+    "initial_core_patches": 0,
+    "current_core_patches": 1,
+    "composition_imports": 1,
+    "added_product_modules": 1,
+    "reason": "Documented public extension API blocker for owner-required native File menu",
+    "evidence": "distribution/FILE_MENU_EXCEPTION.md",
+    "pristine_unattended_bootstrap": "UNVERIFIED: upstream dependency retrieval needed a documented official-source workaround",
+    "current_rebuild": "PASS: zero compilation errors",
+    "actual_file_dialog_suite": "PASS: 23 DOM checks and native Monaco; actual default OS import chooser separately verified",
+    "actual_editor_smoke": "PASS: current binary, 8 checks"
   },
-  "final_publication_ci": "Runs after this evidence commit; consult the current pull request head checks. The verified_ci entry is a separately identified already-passed run.",
-  "limits": [
-    "Linux development distribution, not signed multi-OS installer",
-    "Trusted local CPU only; no verified arbitrary untrusted-code sandbox",
-    "OS keyring unavailable on test host; ephemeral test credentials removed",
-    "Same-host independent-environment replay, not cross-hardware determinism",
-    "Full product and paid P5 not declared complete"
-  ]
+  "ci": {
+    "run_id": 37954882683,
+    "commit": "8ac10dfba4da0681566515c92c66e7e3924d01a4",
+    "contracts": "PASS",
+    "cpu_lifecycle": "PASS",
+    "url": "https://github.com/greghavens/modelbuilder/actions/runs/37954882683"
+  },
+  "historical_evidence": "Earlier selector and workspace transfer-button screenshots/test counts are not acceptance of the corrected UI. Superseded source replay evidence is explicitly separated.",
+  "scope_limits": [
+    "Authenticated vendor assistants",
+    "Paid remote/GPU budget enforcement",
+    "Production signing/updating and multi-OS packaging",
+    "Verified arbitrary-untrusted-code isolation",
+    "Broader component catalog, monitoring, external judges and registry"
+  ],
+  "owner_acceptance": "NOT_CLAIMED"
 }

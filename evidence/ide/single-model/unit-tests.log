@@ -1,0 +1,68 @@
+
+> modelbuilder-workbench@0.1.0 test
+> npm run compile && node --test test/*.test.cjs
+
+
+> modelbuilder-workbench@0.1.0 compile
+> node scripts/build.mjs
+
+✔ thin transport calls exact operation endpoint and bearer auth (7.237545ms)
+✔ catalog uses same authenticated service (1.107177ms)
+✔ missing secret fails before any network request (1.975638ms)
+✔ 409 structured conflict is preserved (0.967159ms)
+✔ 403 scope failure is preserved (0.794532ms)
+✔ transport failure never echoes token or raw fetch exception (0.506603ms)
+✔ invalid JSON response does not masquerade as success (0.761082ms)
+✔ reject unsafe service URL http://remote.example (0.300397ms)
+✔ reject unsafe service URL file:///etc/passwd (0.270252ms)
+✔ reject unsafe service URL https://user:password@remote.example (0.364592ms)
+✔ reject unsafe service URL https://remote.example?token=x (0.17425ms)
+✔ reject unsafe service URL https://remote.example#token (0.170723ms)
+✔ reject unsafe service URL http://127.0.0.1.evil.example (0.131235ms)
+✔ allow explicit safe service URL http://localhost:8765 (0.162922ms)
+✔ allow explicit safe service URL http://127.0.0.1:8765 (0.130113ms)
+✔ allow explicit safe service URL http://[::1]:8765 (0.110515ms)
+✔ allow explicit safe service URL https://service.example/base (0.093279ms)
+✔ operation path injection fails before request (1.294425ms)
+✔ CSP URI escaping rejects HTML interpolation (0.258614ms)
+✔ webview message structural and size limits (8.505841ms)
+✔ operation bridge excludes spend, publish and arbitrary endpoints (0.190323ms)
+✔ credential lookup is bound to the exact normalized destination snapshot (0.903494ms)
+✔ raw bundle JSON retains numeric lexemes through the thin HTTP transport (0.747582ms)
+✔ save uses loaded revision even if draft metadata changes (1.62061ms)
+✔ conflicting save leaves base revision intact, never silent rebase (0.764637ms)
+✔ recipe identity cannot be changed by a webview draft (0.617649ms)
+✔ validation and diff forward full draft to authority (0.775774ms)
+✔ node parameter edit preserves arbitrary Python and unknown recipe fields (0.798477ms)
+✔ remove node also removes dangling attached edges (0.277582ms)
+✔ Python node template carries typed IO and full code entrypoint ref (0.3026ms)
+✔ all mutations require a loaded base (0.322359ms)
+✔ invalid source blocks visual edits instead of overwriting draft (0.687222ms)
+✔ stale node panel cannot overwrite newer source node parameters (0.465553ms)
+✔ native JSON omits computed response digest while retaining canonical body fields (0.341829ms)
+✔ open model resolves its single current recipe without a recipe picker (0.204955ms)
+✔ open model does not choose arbitrarily among recipes or cross project boundaries (0.337993ms)
+✔ in-flight recipe A poll cannot replace newly opened recipe B (2.655319ms)
+✔ in-flight poll cannot roll back a newer save on same document (0.281969ms)
+✔ dirty source created during poll read remains preserved (0.255561ms)
+✔ run details returned after navigation are not shown in the new project (0.214249ms)
+✔ restored unsaved draft retains original base revision even after remote edits (0.609847ms)
+✔ draft backup cannot replace host base revision with webview metadata (0.453405ms)
+✔ save completion preserves edits that arrived after submission (9.511948ms)
+✔ native explorer shows landing before a project and only the fixed active model afterward (1.294755ms)
+✔ opening a project ignores arbitrary recipe navigation and loads its one current recipe (0.610528ms)
+✔ closing model project clears context and invalidates in-flight work before landing (0.815342ms)
+✔ workspace cannot open a different project without returning to landing (0.488687ms)
+✔ import cannot clear an unsaved recipe draft or advance its revision (0.862313ms)
+✔ non-recipe resource updates retain their own expected revision (0.255249ms)
+✔ late project-list response cannot clear a newer model navigation (2.832142ms)
+✔ closing a project hides stale workspace even if listing projects fails (0.311092ms)
+✔ GUI export requests lossless server JSON rather than reserializing a bundle object (0.222371ms)
+ℹ tests 52
+ℹ suites 0
+ℹ pass 52
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 146.255219

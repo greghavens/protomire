@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "observation": "Actual File > Import Recipe menu activation opened the normal GTK OS file chooser; canceled without selecting a file.",
+  "automation": "Supported cloud desktop CUA",
+  "dialog_presentation": "default OS dialog, files.simpleDialog.enable restored to original value by completed suite",
+  "screenshot": "default-os-import-dialog.jpg",
+  "sha256": "4479e9cf68fe272e16bc5fd2081a0005551b667f75a72031bdb73d0afd973938",
+  "file_operation_completed": false
+}

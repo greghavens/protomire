@@ -1,0 +1,25 @@
+{
+  "source_commit": "03c265b1adee71ac88f833e065f7bb956b60550a",
+  "source_tag": "1.105.0",
+  "node_version": "22.19.0",
+  "core_patches": 1,
+  "composition_imports": 1,
+  "added_product_workbench_modules": 1,
+  "tracked_overlay_files": [
+    "product.json",
+    "src/vs/workbench/workbench.common.main.ts"
+  ],
+  "artifacts": {
+    "out/main.js": "1e68c5b1b78da74b7ff2d9b151e066693489a850e98c981b078c900760ff5248",
+    ".build/electron/modelbuilder-ide": "a4db74cdacc6d82ab26f6dfe08023f0ad21f127e6bb2b6bd89f38b1f8a5951df",
+    "extensions/modelbuilder-workbench/out/extension.js": "4c2f196239b1825f07a7137d5e3834d5d397f8b93a565fd667e09c15eba1f61b",
+    "LICENSE.txt": "cce33203a80863c22499035b1cfb6aba5df5f02e4ea2669cf5bc5730c1864236",
+    "ThirdPartyNotices.txt": "e9982436a9846eee020cd48663dc887309fabe14aed06eb67335f527c89acbe1",
+    "src/vs/workbench/workbench.common.main.ts": "e8ebb3202bb15256d83897859eefdccf01f3b1128555a917b667ea85d5db54f5",
+    "src/vs/workbench/contrib/modelbuilder/browser/modelbuilderMenus.contribution.ts": "06f1c89ec17e8d55e1aede8b617f6f36d4fde7b80eab735e23ca7898aba29714",
+    "out/vs/workbench/contrib/modelbuilder/browser/modelbuilderMenus.contribution.js": "945115db81cb465544b159b2b0d1bf7da93e6d7251ec8b486a96a3f8f6a4b000",
+    "out/vs/workbench/workbench.common.main.js": "f69ee6304ae33fe344b189d85f0b192a50d68aebb0e3176fe86166a15db8973c"
+  },
+  "gui_status": "UNVERIFIED",
+  "note": "Artifact existence and hashes do not establish GUI functionality."
+}

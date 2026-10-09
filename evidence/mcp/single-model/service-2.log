@@ -1,0 +1,23 @@
+INFO:     Started server process [15]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:58531 (Press CTRL+C to quit)
+INFO:     127.0.0.1:35204 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/project.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/project.open HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.create HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/recipe.get HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35208 - "POST /v1/operations/project.history HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [15]

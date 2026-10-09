@@ -1,0 +1,8 @@
+{
+  "status": "REPRODUCED_PRE_FIX",
+  "original_declared_digest": "c75e076c52d177099730074be5709d2c8f710319c851b672df16bd5b4dd76615",
+  "original_computed_digest": "c75e076c52d177099730074be5709d2c8f710319c851b672df16bd5b4dd76615",
+  "javascript_roundtrip_computed_digest": "fc9db79b4eb95cad34cd792d170dc3ea83ba8df8e8c76925ff66689b1f31b311",
+  "transformation": "JavaScript JSON.parse then JSON.stringify, with no semantic edits",
+  "explanation": "Integral float 0.0 becomes integer0; Python canonical JSON differentiates them. This is not a reason to bypass integrity verification."
+}

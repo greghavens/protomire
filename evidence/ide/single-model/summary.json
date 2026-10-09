@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "scope": "Correction to one fixed model project and one current training/evaluation recipe; existing documented views preserved",
+  "unit_tests": 52,
+  "typescript_compile": "PASS",
+  "vsix_package": "PASS",
+  "vsix_sha256": "940705d0d7854970493bb53d019444949d692672757ad4f6f0b5d4d24b7312ee",
+  "real_service_external_mcp_checks": 7,
+  "real_gui_dom_checks": 17,
+  "native_monaco_save": "PASS",
+  "gui_report": "evidence/gui/single-model-roundtrip/workbench-dom-results.json",
+  "gui_screenshot": "evidence/gui/single-model-roundtrip/corrected-single-model-workspace.png",
+  "project_id": "3aaa7e88-bc32-4687-a4aa-ed23f970f7da",
+  "recipe_id": "c78a55ba-090a-5626-b9b2-8c5ec651130d",
+  "final_recipe_revision": 7,
+  "import_export_control": "Paste/import and copy/export exact bundle JSON; no native file picker claimed",
+  "integrity": "Server raw JSON string preserves original numeric lexemes; unchanged strict digest validation rejects tampering",
+  "prior_evidence": "Earlier multi-selector screenshots are historical. Failed numeric integrity GUI attempt preserved in evidence/gui/single-model-import/.",
+  "execution": "The authoring suite does not execute training. Corrected execution suite runs separately after final immutable source pin."
+}

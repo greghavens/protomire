@@ -1,0 +1,47 @@
+name: contracts-service-mcp
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: contracts-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+      - run: bash scripts/bootstrap.sh
+      - run: bash scripts/test_all.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: contracts-evidence
+          path: evidence/tests/
+  cpu-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+      - run: bash scripts/bootstrap.sh --backend
+      - run: MODELBUILDER_RUN_INTEGRATION=1 bash scripts/test_all.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cpu-evidence
+          path: evidence/tests/

@@ -1,0 +1,24 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const {OperationClient,OperationError}=require('../out/client');
+const {serviceUrl,escapeHtml,checkMessage,UI_OPERATIONS}=require('../out/security');
+const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
+test('thin transport calls exact operation endpoint and bearer auth',async()=>{
+ let seen;
+ const client=new OperationClient(()=> 'http://127.0.0.1:8765',async()=> 'test-token',async(url,options)=>{seen={url,options};return json({recipe_id:'r',revision:1});});
+ assert.deepEqual(await client.invoke('recipe.get',{project_id:'p',recipe_id:'r'}),{recipe_id:'r',revision:1});
+ assert.equal(seen.url,'http://127.0.0.1:8765/v1/operations/recipe.get');assert.equal(seen.options.headers.Authorization,'Bearer test-token');assert.equal(seen.options.redirect,'error');assert.equal(seen.options.body,'{"project_id":"p","recipe_id":"r"}');
+});
+test('catalog uses same authenticated service',async()=>{let options;const client=new OperationClient(()=> 'http://localhost:8765',async()=> 'x',async(url,o)=>{assert.equal(url,'http://localhost:8765/v1/catalog');options=o;return json({operations:[{name:'project.list'}]});});assert.deepEqual(await client.catalog(),[{name:'project.list'}]);assert.equal(options.method,'GET');assert.equal(options.body,undefined);});
+test('missing secret fails before any network request',async()=>{let called=false;const client=new OperationClient(()=> 'http://localhost:8765',async()=>undefined,async()=>{called=true;return json({});});await assert.rejects(client.invoke('project.list',{}),e=>e.code==='not_configured');assert.equal(called,false);});
+test('409 structured conflict is preserved',async()=>{const client=new OperationClient(()=> 'https://service.example',async()=> 'secret',async()=>json({error:{code:'conflict',message:'Stale revision',details:{expected_revision:1,current_revision:2}}},409));await assert.rejects(client.invoke('recipe.update',{}),e=>e instanceof OperationError&&e.status===409&&e.details.current_revision===2);});
+test('403 scope failure is preserved',async()=>{const client=new OperationClient(()=> 'http://localhost:1',async()=> 'secret',async()=>json({error:{code:'forbidden',message:'Missing modify'}},403));await assert.rejects(client.invoke('recipe.update',{}),e=>e.status===403&&e.code==='forbidden');});
+test('transport failure never echoes token or raw fetch exception',async()=>{const client=new OperationClient(()=> 'http://localhost:1',async()=> 'secret',async()=>{throw new Error('secret should not leak');});await assert.rejects(client.catalog(),e=>e.code==='connection_failed'&&!e.message.includes('secret'));});
+test('invalid JSON response does not masquerade as success',async()=>{const client=new OperationClient(()=> 'http://localhost:1',async()=> 'secret',async()=>new Response('<html>oops</html>'));await assert.rejects(client.catalog(),e=>e.code==='invalid_response');});
+for(const url of ['http://remote.example','file:///etc/passwd','https://user:password@remote.example','https://remote.example?token=x','https://remote.example#token','http://127.0.0.1.evil.example'])test(`reject unsafe service URL ${url}`,()=>assert.throws(()=>serviceUrl(url)));
+for(const url of ['http://localhost:8765','http://127.0.0.1:8765','http://[::1]:8765','https://service.example/base'])test(`allow explicit safe service URL ${url}`,()=>assert.equal(serviceUrl(url),url));
+test('operation path injection fails before request',async()=>{const client=new OperationClient(()=> 'http://localhost:1',async()=> 'x',async()=>{throw Error('network');});await assert.rejects(client.invoke('../admin',{}),/Invalid operation/);});
+test('CSP URI escaping rejects HTML interpolation',()=>assert.equal(escapeHtml('<script x="a">&\''),'&lt;script x=&quot;a&quot;&gt;&amp;&#39;'));
+test('webview message structural and size limits',()=>{assert.throws(()=>checkMessage(null));assert.throws(()=>checkMessage([]));assert.throws(()=>checkMessage({}));assert.throws(()=>checkMessage({type:'x',data:'x'.repeat(2_000_001)}));assert.equal(checkMessage({type:'ready'}).type,'ready');});
+test('operation bridge excludes spend, publish and arbitrary endpoints',()=>{assert.equal(UI_OPERATIONS.has('recipe.publish'),false);assert.equal(UI_OPERATIONS.has('policy.update'),false);assert.equal(UI_OPERATIONS.has('run.cancel'),true);});
+test('credential lookup is bound to the exact normalized destination snapshot',async()=>{let destination;const client=new OperationClient(()=> 'https://service.example/',async(base)=>{destination=base;return 'x';},async()=>json({}));await client.invoke('project.list',{});assert.equal(destination,'https://service.example');});

@@ -1,0 +1,433 @@
+{
+  "schema_version": "0",
+  "recipe_id": "recipe-custom",
+  "project_id": "example-custom",
+  "revision": 1,
+  "name": "Custom gated-residual CPU model",
+  "source": {
+    "repository": "https://github.com/greghavens/modelbuilder",
+    "commit": "a983989c7fbea964bea041c39576ac485a29bfc9",
+    "files": [
+      {
+        "path": "requirements/backend.lock",
+        "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+      },
+      {
+        "path": "src/modelbuilder/backend/fixtures.py",
+        "sha256": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "data",
+      "kind": "dataset.synthetic",
+      "implementation_ref": "builtin:dataset.synthetic",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "data",
+          "type": "dataset",
+          "required": true
+        }
+      ],
+      "parameters": {
+        "fixture": "custom",
+        "seed": 1234,
+        "count": 240
+      },
+      "environment_ref": "default",
+      "resource_request": {
+        "cpu": 1,
+        "memory_mb": 1024,
+        "gpu": 0
+      },
+      "retry": {
+        "max_attempts": 1,
+        "backoff_seconds": 0
+      },
+      "timeout": 300,
+      "cache_policy": "disabled",
+      "provenance": {
+        "implementation": "modelbuilder.backend.fixtures",
+        "purpose": "deterministic CPU validation fixture"
+      }
+    },
+    {
+      "id": "evaluate",
+      "kind": "model.evaluate",
+      "implementation_ref": "builtin:model.evaluate",
+      "inputs": [
+        {
+          "name": "checkpoint",
+          "type": "checkpoint",
+          "required": true
+        },
+        {
+          "name": "data",
+          "type": "dataset",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "metrics",
+          "type": "metrics",
+          "required": true
+        }
+      ],
+      "parameters": {
+        "fixture": "custom",
+        "checkpoint_kind": "best"
+      },
+      "environment_ref": "default",
+      "resource_request": {
+        "cpu": 1,
+        "memory_mb": 1024,
+        "gpu": 0
+      },
+      "retry": {
+        "max_attempts": 1,
+        "backoff_seconds": 0
+      },
+      "timeout": 300,
+      "cache_policy": "disabled",
+      "provenance": {
+        "implementation": "modelbuilder.backend.fixtures",
+        "purpose": "deterministic CPU validation fixture"
+      }
+    },
+    {
+      "id": "export",
+      "kind": "model.export",
+      "implementation_ref": "builtin:model.export",
+      "inputs": [
+        {
+          "name": "checkpoint",
+          "type": "checkpoint",
+          "required": true
+        },
+        {
+          "name": "data",
+          "type": "dataset",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "export",
+          "type": "artifact",
+          "required": true
+        }
+      ],
+      "parameters": {
+        "fixture": "custom",
+        "checkpoint_kind": "best"
+      },
+      "environment_ref": "default",
+      "resource_request": {
+        "cpu": 1,
+        "memory_mb": 1024,
+        "gpu": 0
+      },
+      "retry": {
+        "max_attempts": 1,
+        "backoff_seconds": 0
+      },
+      "timeout": 300,
+      "cache_policy": "disabled",
+      "provenance": {
+        "implementation": "modelbuilder.backend.fixtures",
+        "purpose": "deterministic CPU validation fixture"
+      }
+    },
+    {
+      "id": "initial",
+      "kind": "model.initialize",
+      "implementation_ref": "builtin:model.initialize",
+      "inputs": [
+        {
+          "name": "data",
+          "type": "dataset",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "initial",
+          "type": "checkpoint",
+          "required": true
+        }
+      ],
+      "parameters": {
+        "fixture": "custom",
+        "width": 12,
+        "seed": 44
+      },
+      "environment_ref": "default",
+      "resource_request": {
+        "cpu": 1,
+        "memory_mb": 1024,
+        "gpu": 0
+      },
+      "retry": {
+        "max_attempts": 1,
+        "backoff_seconds": 0
+      },
+      "timeout": 300,
+      "cache_policy": "disabled",
+      "provenance": {
+        "implementation": "modelbuilder.backend.fixtures",
+        "purpose": "deterministic CPU validation fixture"
+      }
+    },
+    {
+      "id": "train",
+      "kind": "model.train",
+      "implementation_ref": "builtin:model.train",
+      "inputs": [
+        {
+          "name": "data",
+          "type": "dataset",
+          "required": true
+        },
+        {
+          "name": "initial",
+          "type": "checkpoint",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "checkpoint",
+          "type": "checkpoint",
+          "required": true
+        }
+      ],
+      "parameters": {
+        "fixture": "custom",
+        "width": 12,
+        "steps": 30,
+        "learning_rate": 0.025,
+        "seed": 44,
+        "batch_size": 60,
+        "scheduler_gamma": 0.99,
+        "kl": {
+          "enabled": false,
+          "coefficient": 0.0,
+          "direction": "reference_to_model",
+          "reference_model_ref": "initial",
+          "frozen": true,
+          "applies_to": "logits"
+        }
+      },
+      "environment_ref": "default",
+      "resource_request": {
+        "cpu": 1,
+        "memory_mb": 1024,
+        "gpu": 0
+      },
+      "retry": {
+        "max_attempts": 1,
+        "backoff_seconds": 0
+      },
+      "timeout": 300,
+      "cache_policy": "disabled",
+      "provenance": {
+        "implementation": "modelbuilder.backend.fixtures",
+        "purpose": "deterministic CPU validation fixture"
+      },
+      "parameter_schema": {
+        "type": "object",
+        "required": [
+          "fixture",
+          "width",
+          "steps",
+          "learning_rate",
+          "seed",
+          "batch_size",
+          "kl"
+        ],
+        "properties": {
+          "fixture": {
+            "enum": [
+              "custom",
+              "pretrained"
+            ]
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 256
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "learning_rate": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "batch_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "scheduler_gamma": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1
+          },
+          "kl": {
+            "type": "object",
+            "required": [
+              "enabled",
+              "coefficient",
+              "direction",
+              "reference_model_ref",
+              "frozen",
+              "applies_to"
+            ],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "coefficient": {
+                "type": "number",
+                "minimum": 0
+              },
+              "direction": {
+                "enum": [
+                  "reference_to_model",
+                  "model_to_reference"
+                ]
+              },
+              "reference_model_ref": {
+                "type": "string"
+              },
+              "frozen": {
+                "type": "boolean"
+              },
+              "applies_to": {
+                "enum": [
+                  "logits"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "intentional_failure_step": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "step_delay": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source_node": "data",
+      "source_port": "data",
+      "target_node": "evaluate",
+      "target_port": "data"
+    },
+    {
+      "source_node": "data",
+      "source_port": "data",
+      "target_node": "export",
+      "target_port": "data"
+    },
+    {
+      "source_node": "data",
+      "source_port": "data",
+      "target_node": "initial",
+      "target_port": "data"
+    },
+    {
+      "source_node": "data",
+      "source_port": "data",
+      "target_node": "train",
+      "target_port": "data"
+    },
+    {
+      "source_node": "initial",
+      "source_port": "initial",
+      "target_node": "train",
+      "target_port": "initial"
+    },
+    {
+      "source_node": "train",
+      "source_port": "checkpoint",
+      "target_node": "evaluate",
+      "target_port": "checkpoint"
+    },
+    {
+      "source_node": "train",
+      "source_port": "checkpoint",
+      "target_node": "export",
+      "target_port": "checkpoint"
+    }
+  ],
+  "resources": [],
+  "environment": {
+    "python": "3.12.14",
+    "requirements": [
+      "numpy==2.2.6",
+      "torch==2.9.0+cpu",
+      "transformers==4.57.1",
+      "zenml[server]==0.97.0"
+    ],
+    "lock_file": {
+      "path": "requirements/backend.lock",
+      "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+    }
+  },
+  "evaluation": {
+    "validation_metric": "validation_loss",
+    "selection_rule": {
+      "metric": "validation_loss",
+      "direction": "minimize",
+      "split": "validation"
+    },
+    "heldout_split": "heldout",
+    "checkpoint_kind": "best",
+    "keep_negative_outcomes": true
+  },
+  "outputs": [
+    {
+      "name": "export",
+      "type": "artifact"
+    },
+    {
+      "name": "metrics",
+      "type": "metrics"
+    }
+  ],
+  "external_dependencies": [],
+  "capabilities": [
+    "local_cpu"
+  ],
+  "licenses": [
+    {
+      "scope": "source",
+      "license": "NOASSERTION",
+      "redistribution_allowed": false
+    }
+  ],
+  "permissions": {
+    "network": false,
+    "execute_on_import": false
+  },
+  "description": "Trusted repository-owned deterministic CPU smoke fixture. Metrics are not model-quality claims. Source inventory pins workload modules; full application portability inventory is finalized separately."
+}

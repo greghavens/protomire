@@ -1,0 +1,2126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "claim.create"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "confidence": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "contradicts": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "evidence_ids": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "proposition": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "review_status": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "supports": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "uncertainty": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "evidence_ids",
+            "proposition",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "claim.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "claim_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "claim_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "claim.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "claim.update"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "changes": {
+              "type": "object"
+            },
+            "claim_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "claim_id",
+            "expected_revision",
+            "changes",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "cost.estimate"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "decision.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "decision.record"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "hypothesis_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "outcome": {
+              "enum": [
+                "accepted",
+                "rejected",
+                "inconclusive"
+              ]
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "rationale": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "run_ids": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "selection_rule": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id",
+            "recipe_revision",
+            "hypothesis_id",
+            "run_ids",
+            "selection_rule",
+            "outcome",
+            "rationale",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "evidence.add"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "authors": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "citation_metadata": {
+              "type": "object"
+            },
+            "content_hash": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "excerpt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "publication_date": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "source_identifier": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "source_url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "title": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "title",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "evidence.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "evidence_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "evidence_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "evidence.search"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "limit": {
+              "maximum": 10,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "provider": {
+              "enum": [
+                "local",
+                "openalex"
+              ]
+            },
+            "query": {
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "execution.targets"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "hypothesis.create"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "acceptance_metric": {
+              "type": "object"
+            },
+            "claim_ids": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "evidence_ids": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "expected_outcome": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "proposed_change": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "scope": {
+              "type": "string"
+            },
+            "status": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "proposed_change",
+            "expected_outcome",
+            "acceptance_metric",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "hypothesis.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "hypothesis_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "hypothesis_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "hypothesis.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "hypothesis.update"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "changes": {
+              "type": "object"
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "hypothesis_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "hypothesis_id",
+            "expected_revision",
+            "changes",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "model.checkpoint.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "checkpoint_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "checkpoint_kind": {
+              "enum": [
+                "last",
+                "best"
+              ]
+            },
+            "checkpoint_ref": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operation_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "model.version.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "model_version_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "model_version_ref": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "model.version.lineage"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "model_version_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "model_version_ref": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "model.version.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "model.version.promote"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "decision_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "model_version_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "model_version_ref": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "stage": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "decision_id",
+            "expected_revision",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "operation.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "operation_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "operation_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "policy.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "policy.update"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "changes": {
+              "type": "object"
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "expected_revision",
+            "changes",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "project.create"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "active_model_version_ref": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "active_recipe_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "description": {
+              "type": "string"
+            },
+            "git_remote": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "head_commit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "model_name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "research_watch_config": {
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "slug": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "status": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "slug",
+            "model_name",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "project.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "project.history"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "limit": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "project.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "project.open"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "project.update"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "changes": {
+              "type": "object"
+            },
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "expected_revision",
+            "changes",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.clone"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id",
+            "expected_revision",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.create"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe": {
+              "type": "object"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.diff"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "from_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe": {
+              "type": "object"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "to_revision": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.export"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.get"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "revision": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.import"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "bundle": {
+              "type": "object"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "bundle",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.resolve_dependencies"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.update"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe": {
+              "type": "object"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id",
+            "recipe",
+            "expected_revision",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "recipe.validate"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe": {
+              "type": "object"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "run.artifacts"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operation_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "run.cancel"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "operation_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "run.compare"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "enum": [
+                "minimize",
+                "maximize"
+              ]
+            },
+            "metric": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "run_ids": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 2,
+              "type": "array"
+            }
+          },
+          "required": [
+            "project_id",
+            "run_ids",
+            "metric",
+            "direction"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "run.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "run.logs"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "cursor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "operation_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "run.plan"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "parameters": {
+              "description": "Edit canonical recipe node parameters instead of execution-time overrides.",
+              "maxProperties": 0,
+              "type": "object"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "run.resume"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "checkpoint_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "checkpoint_kind": {
+              "enum": [
+                "last",
+                "best"
+              ]
+            },
+            "checkpoint_ref": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "mode": {
+              "enum": [
+                "exact_state",
+                "warm_start"
+              ]
+            },
+            "operation_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "parameters": {
+              "description": "Edit canonical recipe node parameters instead of execution-time overrides.",
+              "maxProperties": 0,
+              "type": "object"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "resume_mode": {
+              "enum": [
+                "exact_state",
+                "warm_start"
+              ]
+            },
+            "steps": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "trusted": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "project_id",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "run.status"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "backend_run_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operation_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "run.submit"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "expected_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "parameters": {
+              "description": "Edit canonical recipe node parameters instead of execution-time overrides.",
+              "maxProperties": 0,
+              "type": "object"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipe_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "trusted": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "project_id",
+            "recipe_id",
+            "expected_revision",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    }
+  ],
+  "title": "ModelBuilderOperationRequest"
+}

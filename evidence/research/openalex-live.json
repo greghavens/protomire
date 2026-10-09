@@ -1,0 +1,46 @@
+{
+  "provider": "OpenAlex",
+  "query": "On Calibration of Modern Neural Networks",
+  "results": [
+    {
+      "source_url": "https://doi.org/10.48550/arxiv.1706.04599",
+      "source_identifier": "https://openalex.org/W2626967530",
+      "title": "On Calibration of Modern Neural Networks",
+      "publication_date": "2017-06-14",
+      "authors": [
+        "Chuan Guo",
+        "Geoff Pleiss",
+        "Yu Sun",
+        "Kilian Q. Weinberger"
+      ],
+      "citation_metadata": {
+        "provider": "OpenAlex",
+        "doi": "https://doi.org/10.48550/arxiv.1706.04599",
+        "claim_verified": false,
+        "metadata_only": true
+      }
+    },
+    {
+      "source_url": "https://doi.org/10.48550/arxiv.2106.07998",
+      "source_identifier": "https://openalex.org/W3170360335",
+      "title": "Revisiting the Calibration of Modern Neural Networks",
+      "publication_date": "2021-06-15",
+      "authors": [
+        "Matthias Minderer",
+        "Josip Djolonga",
+        "Rob Romijnders",
+        "Frances Ann Hubis",
+        "Xiaohua Zhai",
+        "Neil Houlsby",
+        "Dustin Tran",
+        "Mario Lu\u010di\u0107"
+      ],
+      "citation_metadata": {
+        "provider": "OpenAlex",
+        "doi": "https://doi.org/10.48550/arxiv.2106.07998",
+        "claim_verified": false,
+        "metadata_only": true
+      }
+    }
+  ]
+}

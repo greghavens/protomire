@@ -1,0 +1,1837 @@
+{
+  "operations": [
+    {
+      "description": "Create a proposition with evidence and contradiction links.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "contradicts": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "evidence_ids": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "proposition": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "review_status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "supports": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "uncertainty": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "evidence_ids",
+          "proposition",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "claim.create",
+      "operation": "claim.create",
+      "scope": "modify"
+    },
+    {
+      "description": "Read a research claim.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "claim_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "claim.get",
+      "operation": "claim.get",
+      "scope": "read"
+    },
+    {
+      "description": "List project claims.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "claim.list",
+      "operation": "claim.list",
+      "scope": "read"
+    },
+    {
+      "description": "Revise a claim and preserve review history.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "changes": {
+            "type": "object"
+          },
+          "claim_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "claim_id",
+          "expected_revision",
+          "changes",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "claim.update",
+      "operation": "claim.update",
+      "scope": "modify"
+    },
+    {
+      "description": "Inspect local cost limits; remote estimates unavailable without a provider.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "target": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "cost.estimate",
+      "operation": "cost.estimate",
+      "scope": "read"
+    },
+    {
+      "description": "List positive, negative, and inconclusive research decisions.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "decision.list",
+      "operation": "decision.list",
+      "scope": "read"
+    },
+    {
+      "description": "Record a decision tied to real runs and an immutable recipe revision.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "hypothesis_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "accepted",
+              "rejected",
+              "inconclusive"
+            ]
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "rationale": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "run_ids": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "selection_rule": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "project_id",
+          "recipe_id",
+          "recipe_revision",
+          "hypothesis_id",
+          "run_ids",
+          "selection_rule",
+          "outcome",
+          "rationale",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "decision.record",
+      "operation": "decision.record",
+      "scope": "modify"
+    },
+    {
+      "description": "Store a citation; a citation alone does not prove a claim.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "authors": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "citation_metadata": {
+            "type": "object"
+          },
+          "content_hash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "excerpt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "publication_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "source_identifier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "title",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "evidence.add",
+      "operation": "evidence.add",
+      "scope": "modify"
+    },
+    {
+      "description": "Read a cited evidence record.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "evidence_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "evidence.get",
+      "operation": "evidence.get",
+      "scope": "read"
+    },
+    {
+      "description": "Search saved evidence or retrieve public OpenAlex metadata without persisting it.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "maximum": 10,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "provider": {
+            "enum": [
+              "local",
+              "openalex"
+            ]
+          },
+          "query": {
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "evidence.search",
+      "operation": "evidence.search",
+      "scope": "read"
+    },
+    {
+      "description": "List actual supported targets and capabilities.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "execution.targets",
+      "operation": "execution.targets",
+      "scope": "read"
+    },
+    {
+      "description": "Create an evidence-linked measurable hypothesis.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "acceptance_metric": {
+            "type": "object"
+          },
+          "claim_ids": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "evidence_ids": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "expected_outcome": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "proposed_change": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "status": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "proposed_change",
+          "expected_outcome",
+          "acceptance_metric",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "hypothesis.create",
+      "operation": "hypothesis.create",
+      "scope": "modify"
+    },
+    {
+      "description": "Read a hypothesis.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "hypothesis_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "hypothesis_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "hypothesis.get",
+      "operation": "hypothesis.get",
+      "scope": "read"
+    },
+    {
+      "description": "List hypotheses including negative and abandoned outcomes.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "hypothesis.list",
+      "operation": "hypothesis.list",
+      "scope": "read"
+    },
+    {
+      "description": "Revise a hypothesis without losing previous outcomes.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "changes": {
+            "type": "object"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "hypothesis_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "hypothesis_id",
+          "expected_revision",
+          "changes",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "hypothesis.update",
+      "operation": "hypothesis.update",
+      "scope": "modify"
+    },
+    {
+      "description": "Read a checkpoint and its verified resume capabilities.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "backend_run_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "checkpoint_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "checkpoint_kind": {
+            "enum": [
+              "last",
+              "best"
+            ]
+          },
+          "checkpoint_ref": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "operation_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "model.checkpoint.get",
+      "operation": "model.checkpoint.get",
+      "scope": "read"
+    },
+    {
+      "description": "Read an authoritative model version.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "model_version_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "model_version_ref": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "model.version.get",
+      "operation": "model.version.get",
+      "scope": "read"
+    },
+    {
+      "description": "Read actual model-version parents and artifacts.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "model_version_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "model_version_ref": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "model.version.lineage",
+      "operation": "model.version.lineage",
+      "scope": "read"
+    },
+    {
+      "description": "List authoritative ZenML model versions.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "model.version.list",
+      "operation": "model.version.list",
+      "scope": "read"
+    },
+    {
+      "description": "Promote a version using a recorded, measurable decision.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "decision_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "model_version_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "model_version_ref": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "stage": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "decision_id",
+          "expected_revision",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "model.version.promote",
+      "operation": "model.version.promote",
+      "scope": "modify"
+    },
+    {
+      "description": "Read a stored application-operation correlation.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "operation_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "operation_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "operation.get",
+      "operation": "operation.get",
+      "scope": "read"
+    },
+    {
+      "description": "Read project permissions and fail-closed remote-execution policy.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "policy.get",
+      "operation": "policy.get",
+      "scope": "read"
+    },
+    {
+      "description": "Update bounded local policy; remote spending remains disabled.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "changes": {
+            "type": "object"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "expected_revision",
+          "changes",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "policy.update",
+      "operation": "policy.update",
+      "scope": "modify"
+    },
+    {
+      "description": "Create a single-model lifecycle project.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "active_model_version_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "active_recipe_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "git_remote": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "head_commit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "model_name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "research_watch_config": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "slug": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "model_name",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "project.create",
+      "operation": "project.create",
+      "scope": "modify"
+    },
+    {
+      "description": "Read a project.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "project.get",
+      "operation": "project.get",
+      "scope": "read"
+    },
+    {
+      "description": "Read append-only project audit history.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "maximum": 1000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "project.history",
+      "operation": "project.history",
+      "scope": "read"
+    },
+    {
+      "description": "List authorized model projects.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "project.list",
+      "operation": "project.list",
+      "scope": "read"
+    },
+    {
+      "description": "Open a project and its lifecycle resources.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "project.open",
+      "operation": "project.open",
+      "scope": "read"
+    },
+    {
+      "description": "Update project with optimistic concurrency.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "changes": {
+            "type": "object"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "expected_revision",
+          "changes",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "project.update",
+      "operation": "project.update",
+      "scope": "modify"
+    },
+    {
+      "description": "Clone a recipe into the same project with a fresh identity.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "recipe_id",
+          "expected_revision",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "recipe.clone",
+      "operation": "recipe.clone",
+      "scope": "modify"
+    },
+    {
+      "description": "Create a canonical recipe; defaults form an editable draft.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe": {
+            "type": "object"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "recipe.create",
+      "operation": "recipe.create",
+      "scope": "modify"
+    },
+    {
+      "description": "Compare revisions or a draft against the current recipe.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "from_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe": {
+            "type": "object"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "to_revision": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "recipe_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "recipe.diff",
+      "operation": "recipe.diff",
+      "scope": "read"
+    },
+    {
+      "description": "Export a portable, secret-checked bundle without execution.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "recipe_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "recipe.export",
+      "operation": "recipe.export",
+      "scope": "read"
+    },
+    {
+      "description": "Read a recipe at its current or historical revision.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "recipe_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "recipe.get",
+      "operation": "recipe.get",
+      "scope": "read"
+    },
+    {
+      "description": "Validate bundle integrity and import as a new untrusted recipe.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "bundle": {
+            "type": "object"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "bundle",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "recipe.import",
+      "operation": "recipe.import",
+      "scope": "modify"
+    },
+    {
+      "description": "List project recipes.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "recipe.list",
+      "operation": "recipe.list",
+      "scope": "read"
+    },
+    {
+      "description": "Inspect immutable dependency references and readiness.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "recipe_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "recipe.resolve_dependencies",
+      "operation": "recipe.resolve_dependencies",
+      "scope": "read"
+    },
+    {
+      "description": "Atomically replace the same recipe using its expected revision.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe": {
+            "type": "object"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "recipe_id",
+          "recipe",
+          "expected_revision",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "recipe.update",
+      "operation": "recipe.update",
+      "scope": "modify"
+    },
+    {
+      "description": "Validate a recipe without executing any code.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe": {
+            "type": "object"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "recipe.validate",
+      "operation": "recipe.validate",
+      "scope": "read"
+    },
+    {
+      "description": "Read authoritative artifact identifiers and hashes.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "backend_run_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "operation_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "run.artifacts",
+      "operation": "run.artifacts",
+      "scope": "read"
+    },
+    {
+      "description": "Request real cancellation; requested is not confirmed termination.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "backend_run_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "operation_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "run.cancel",
+      "operation": "run.cancel",
+      "scope": "execute"
+    },
+    {
+      "description": "Compare metrics from actual backend runs by a declared criterion.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "direction": {
+            "enum": [
+              "minimize",
+              "maximize"
+            ]
+          },
+          "metric": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "run_ids": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 2,
+            "type": "array"
+          }
+        },
+        "required": [
+          "project_id",
+          "run_ids",
+          "metric",
+          "direction"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "run.compare",
+      "operation": "run.compare",
+      "scope": "read"
+    },
+    {
+      "description": "List and reconcile project operation correlations with the backend.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "run.list",
+      "operation": "run.list",
+      "scope": "read"
+    },
+    {
+      "description": "Read actual backend logs.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "backend_run_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "operation_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "run.logs",
+      "operation": "run.logs",
+      "scope": "read"
+    },
+    {
+      "description": "Validate an execution plan; never launch from this operation.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "parameters": {
+            "description": "Edit canonical recipe node parameters instead of execution-time overrides.",
+            "maxProperties": 0,
+            "type": "object"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "target": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "recipe_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "run.plan",
+      "operation": "run.plan",
+      "scope": "read"
+    },
+    {
+      "description": "Resume an actual checkpoint; distinguish exact state and warm start.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "backend_run_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "checkpoint_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "checkpoint_kind": {
+            "enum": [
+              "last",
+              "best"
+            ]
+          },
+          "checkpoint_ref": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "exact_state",
+              "warm_start"
+            ]
+          },
+          "operation_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "parameters": {
+            "description": "Edit canonical recipe node parameters instead of execution-time overrides.",
+            "maxProperties": 0,
+            "type": "object"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "resume_mode": {
+            "enum": [
+              "exact_state",
+              "warm_start"
+            ]
+          },
+          "steps": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "trusted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "project_id",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "run.resume",
+      "operation": "run.resume",
+      "scope": "execute"
+    },
+    {
+      "description": "Reconcile status with the authoritative backend.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "backend_run_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "operation_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "run.status",
+      "operation": "run.status",
+      "scope": "read"
+    },
+    {
+      "description": "Submit an explicitly permitted local fixture to the real backend.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "parameters": {
+            "description": "Edit canonical recipe node parameters instead of execution-time overrides.",
+            "maxProperties": 0,
+            "type": "object"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipe_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "target": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "trusted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "project_id",
+          "recipe_id",
+          "expected_revision",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "run.submit",
+      "operation": "run.submit",
+      "scope": "execute"
+    }
+  ],
+  "schema_version": "0"
+}

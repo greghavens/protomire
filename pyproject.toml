@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling==1.28.0"]
+build-backend = "hatchling.build"
+[project]
+name = "modelbuilder"
+version = "0.1.0"
+description = "Model lifecycle workbench operation service and native MCP"
+requires-python = ">=3.12,<3.13"
+dependencies = ["fastapi==0.115.12", "uvicorn==0.34.2", "pydantic==2.11.4", "httpx==0.28.1", "mcp==1.30.0", "jsonschema==4.23.0"]
+[project.optional-dependencies]
+test = ["pytest==8.3.5", "pytest-asyncio==0.26.0", "ruff==0.11.8"]
+[project.scripts]
+modelbuilder-service = "modelbuilder.api:main"
+modelbuilder-mcp = "modelbuilder.mcp_server:main"
+[tool.hatch.build.targets.wheel]
+packages = ["src/modelbuilder"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = ["integration: real backend execution", "portability: independent environment replay", "gui: real IDE automation"]
+[tool.ruff]
+line-length = 110

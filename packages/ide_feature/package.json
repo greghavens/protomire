@@ -1,0 +1,123 @@
+{
+  "name": "modelbuilder-workbench",
+  "displayName": "ModelBuilder Workbench",
+  "description": "Permanent model lifecycle workbench for the ModelBuilder Code - OSS distribution.",
+  "version": "0.1.0",
+  "publisher": "modelbuilder",
+  "license": "UNLICENSED",
+  "private": true,
+  "engines": {
+    "vscode": "^1.95.0",
+    "node": ">=20"
+  },
+  "categories": [
+    "Other",
+    "Data Science"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onFileSystem:modelrecipe"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Read and author recipes. Execution and connection changes require a trusted workspace."
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "modelbuilder.openWorkbench",
+        "title": "ModelBuilder: Open Model Workbench"
+      },
+      {
+        "command": "modelbuilder.configureConnection",
+        "title": "ModelBuilder: Configure Service Connection"
+      },
+      {
+        "command": "modelbuilder.createProject",
+        "title": "ModelBuilder: Create Model Project"
+      },
+      {
+        "command": "modelbuilder.refresh",
+        "title": "ModelBuilder: Refresh Model Explorer",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "modelbuilder.openRecipeSource",
+        "title": "ModelBuilder: Open Recipe JSON Source"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "modelbuilder",
+          "title": "ModelBuilder",
+          "icon": "media/model.svg"
+        }
+      ]
+    },
+    "views": {
+      "modelbuilder": [
+        {
+          "id": "modelbuilder.explorer",
+          "name": "Model Explorer"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "modelbuilder.explorer",
+        "contents": "Develop one model through research, recipes, runs and versions.\n[Connect to service](command:modelbuilder.configureConnection)\n[Create model project](command:modelbuilder.createProject)\n[Open workbench](command:modelbuilder.openWorkbench)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "modelbuilder.refresh",
+          "when": "view == modelbuilder.explorer",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ModelBuilder",
+      "properties": {
+        "modelbuilder.serviceUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:8765",
+          "scope": "machine",
+          "description": "Shared operation service. HTTP allowed only on loopback. Tokens are kept in SecretStorage, never settings."
+        }
+      }
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": "*.modelrecipe.json",
+        "url": "./schemas/recipe.v0.schema.json"
+      }
+    ],
+    "configurationDefaults": {
+      "chat.disableAIFeatures": true,
+      "workbench.startupEditor": "none",
+      "workbench.secondarySideBar.defaultVisibility": "hidden"
+    }
+  },
+  "scripts": {
+    "compile": "node scripts/build.mjs",
+    "check": "tsc --noEmit && tsc -p tsconfig.webview.json --noEmit",
+    "test": "npm run compile && node --test test/*.test.cjs",
+    "package": "npm run compile && vsce package --no-dependencies --allow-missing-repository --out modelbuilder-workbench-0.1.0.vsix",
+    "vscode:prepublish": "npm run compile",
+    "test:service": "npm run compile && node test/serviceParity.cjs"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/vscode": "1.95.0",
+    "@vscode/vsce": "3.6.2",
+    "esbuild": "0.25.12",
+    "playwright-core": "1.56.1",
+    "typescript": "5.9.3"
+  }
+}

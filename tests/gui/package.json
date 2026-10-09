@@ -1,0 +1,9 @@
+{
+  "name": "modelbuilder-gui-smoke",
+  "publisher": "modelbuilder",
+  "version": "0.1.0",
+  "engines": {"vscode": "^1.105.0"},
+  "private": true,
+  "main": "./extension.cjs",
+  "activationEvents": ["onStartupFinished"]
+}

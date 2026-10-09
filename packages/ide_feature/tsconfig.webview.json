@@ -1,0 +1,1 @@
+{"compilerOptions":{"target":"ES2022","module":"ESNext","moduleResolution":"bundler","strict":true,"skipLibCheck":true,"lib":["ES2022","DOM","DOM.Iterable"],"types":[],"noEmit":true},"include":["src/webview.ts","src/document.ts","src/types.ts"]}

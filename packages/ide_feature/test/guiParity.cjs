@@ -1,0 +1,57 @@
+/* Run only inside the real Code - OSS Extension Host, not node or a mock browser. */
+const vscode=require('vscode');
+const assert=require('node:assert/strict');
+const fs=require('node:fs/promises');
+const path=require('node:path');
+const os=require('node:os');
+const crypto=require('node:crypto');
+const cp=require('node:child_process');
+const net=require('node:net');
+const {promisify}=require('node:util');
+exports.run=async function(){
+ const root=path.resolve(__dirname,'../../..');
+ const evidence=process.env.MODELBUILDER_GUI_EVIDENCE||path.join(root,'evidence/gui/workbench');
+ await fs.mkdir(evidence,{recursive:true});
+ const tmp=await fs.mkdtemp(path.join(os.tmpdir(),'modelbuilder-gui-'));
+ const python=process.env.MODELBUILDER_GUI_PYTHON||path.join(root,'.venv/bin/python');
+ const token=crypto.randomBytes(32).toString('hex');
+ const server=net.createServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const port=server.address().port;await new Promise(resolve=>server.close(resolve));
+ const url=`http://127.0.0.1:${port}`;
+ const env={...process.env,PYTHONPATH:path.join(root,'src'),MODELBUILDER_DB_PATH:path.join(tmp,'model.sqlite3'),MODELBUILDER_PORT:String(port),MODELBUILDER_HOST:'127.0.0.1',MODELBUILDER_BACKEND:'none',MODELBUILDER_TOKEN:token,MODELBUILDER_API_URL:url,MODELBUILDER_GUI_PYTHON:python,MODELBUILDER_GUI_EVIDENCE:evidence};
+ delete env.MODELBUILDER_TOKENS_JSON;
+ const api=cp.spawn(python,['-m','modelbuilder.api'],{cwd:root,env,stdio:['ignore','pipe','pipe']});let apiLog='';api.stdout.on('data',b=>apiLog+=b);api.stderr.on('data',b=>apiLog+=b);
+ let exported;
+ const report={app:vscode.env.appName,editor:vscode.version,status:'RUNNING',tests:[]};
+ const save=()=>fs.writeFile(path.join(evidence,'workbench-host-results.json'),JSON.stringify(report,null,2));
+ const wait=async(fn,timeout=30000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await fn())return;await new Promise(r=>setTimeout(r,150));}throw Error('Timed out waiting for real runtime state');};
+ const check=async(name,fn)=>{const result=await fn();report.tests.push({name,status:'PASS',evidence:result});await save();};
+ try{
+  await wait(async()=>fetch(url+'/health').then(r=>r.ok).catch(()=>false));
+  assert(vscode.workspace.isTrusted,'Test workspace must be trusted through normal Code - OSS workspace trust UI.');
+  const extension=vscode.extensions.getExtension('modelbuilder.modelbuilder-workbench');assert(extension,'Built-in workbench missing');
+  exported=await extension.activate();
+  await vscode.commands.executeCommand('modelbuilder.configureConnection',{url,token});
+  const project=await exported.client.invoke('project.create',{model_name:'GUI parity model',slug:'gui-'+crypto.randomUUID().slice(0,8),idempotency_key:crypto.randomUUID()});
+  let recipe=await exported.client.invoke('recipe.create',{project_id:project.project_id,name:'GUI recipe',idempotency_key:crypto.randomUUID()});
+  await check('native-monaco-source-save',async()=>{
+   const uri=await exported.files.open(project.project_id,recipe.recipe_id);
+   const doc=await vscode.workspace.openTextDocument(uri);const editor=await vscode.window.showTextDocument(doc);
+   const draft=JSON.parse(doc.getText());draft.name='Native JSON authored recipe';
+   assert(await editor.edit(edit=>edit.replace(new vscode.Range(doc.positionAt(0),doc.positionAt(doc.getText().length)),JSON.stringify(draft,null,2))));assert(await doc.save());
+   recipe=await exported.client.invoke('recipe.get',{project_id:project.project_id,recipe_id:recipe.recipe_id});
+   assert.equal(recipe.name,draft.name);assert.equal(recipe.revision,2);assert.equal(doc.languageId,'json');
+   return {project_id:recipe.project_id,recipe_id:recipe.recipe_id,revision:recipe.revision,digest:recipe.digest,scheme:doc.uri.scheme,language:doc.languageId};
+  });
+  await vscode.commands.executeCommand('modelbuilder.openWorkbench',{projectId:project.project_id,recipeId:recipe.recipe_id,section:'Recipes'});
+  await new Promise(resolve=>setTimeout(resolve,2500));
+  const fixture={project_id:project.project_id,recipe_id:recipe.recipe_id,initial_revision:recipe.revision};
+  await fs.writeFile(path.join(evidence,'fixture-identities.json'),JSON.stringify(fixture,null,2));
+  await check('real-webview-graph-mcp-parity',async()=>{
+   const result=await promisify(cp.execFile)(process.env.MODELBUILDER_GUI_NODE||'node',[path.join(__dirname,'guiDom.cjs'),JSON.stringify(fixture)],{cwd:root,env,timeout:180000,maxBuffer:8*1024*1024});
+   await fs.writeFile(path.join(evidence,'dom-driver.log'),result.stdout+result.stderr);
+   const dom=JSON.parse(await fs.readFile(path.join(evidence,'workbench-dom-results.json'),'utf8'));assert.equal(dom.status,'PASS');return dom;
+  });
+  report.status='PASS';await save();
+ }catch(error){report.status='FAIL';report.error=String(error.stack||error);await save();throw error;}
+ finally{await exported?.clearConnection();api.kill('SIGTERM');await fs.writeFile(path.join(evidence,'operation-service.log'),apiLog);await fs.rm(tmp,{recursive:true,force:true});}
+};

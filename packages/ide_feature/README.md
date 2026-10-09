@@ -1,0 +1,19 @@
+# ModelBuilder permanent workbench
+
+This is the first-party built-in feature module for the dedicated Code - OSS distribution, not a temporary third-party extension or a chatbot. No editor core patches are required. It is bundled by the distribution build; the VSIX is an additional local test/install artifact, not a Marketplace publication.
+
+## Build and test
+
+Node 22 or newer is recommended; Node 20+ is supported by the feature runtime. Run `npm ci`, `npm test`, and `npm run package`. The authoritative recipe JSON Schema is copied from `../../schemas/recipe.v0.schema.json` at build time. Source business validation, scopes, revision checks, digest normalization, execution and research semantics belong only to the Python operation service.
+
+Use **ModelBuilder: Configure Service Connection** to set the loopback service URL and scoped bearer credential. The token is stored in Code - OSS SecretStorage. It is never placed in settings, recipe JSON, the webview, browser fetches, or logs. Remote URLs require HTTPS; HTTP redirects are rejected. Workspace trust is required before connecting a credential or starting/cancelling/resuming execution.
+
+The native Model Explorer opens Research, Code, Data, Recipes, Runs, and Versions. The workbench supports typed SVG graph authoring, pan/zoom, node/edge edits, arbitrary Python references and parameter JSON, full canonical JSON, and a schema-backed native Monaco source editor. Save uses the exact previously read revision. A 409 preserves the draft and displays the service diff and both documents. Explicit reload requires confirmation before discarding a dirty draft. Invalid JSON blocks graphical mutations; stale node parameter panels cannot overwrite newer source edits. Unsaved JSON and node-panel drafts are locally recovered after closing/reopening the workbench, retaining their original service revision for conflict checks. In-flight poll results cannot replace a newer navigation or save.
+
+Research, claims, hypotheses, decisions, model lineage and compute forms are generated from `/v1/catalog` input schemas. Only explicit allowlisted operations are bridged from the webview. Project identity is enforced by the host and authorization by the service. The webview CSP denies network connections, inline scripts and command URIs; untrusted content is rendered as text. Run panes show application correlation IDs separately from authoritative backend IDs, reconciled state, actual logs and artifact references. A stop request never locally changes a run to cancelled.
+
+## Actual Code - OSS GUI acceptance
+
+Run `test/guiParity.cjs` as an Extension Host test in the built distribution, with its repository-owned workspace trusted using the normal UI and `--remote-debugging-port=9222` bound to loopback. Set `MODELBUILDER_GUI_PYTHON` to the project's `.venv/bin/python`, `MODELBUILDER_GUI_NODE` if Node is not on PATH, and `MODELBUILDER_GUI_EVIDENCE` to an output directory. The runner starts an isolated real service with an ephemeral token, invokes the real extension/native editor, and drives the actual webview over CDP. `test/mcpEdit.py` is a separate official MCP SDK client over stdio. It checks graph authoring, typed Python preservation, GUI/MCP digest parity in both directions, conflicts, and invalid-source preservation. This test does not count as passing until run against the real built editor; unit tests are not GUI evidence.
+
+No paid target, public registry, public recipe publishing, assistant binary, or custom training runtime is included here. First-party licensing remains UNLICENSED pending the repository owner's decision; dependencies retain their respective licenses.

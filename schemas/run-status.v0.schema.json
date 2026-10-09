@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ApplicationRunCorrelation",
+  "type": "object",
+  "properties": {
+    "operation_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "backend_run_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "submitted",
+        "running",
+        "cancel_requested",
+        "cancelled",
+        "failed",
+        "succeeded",
+        "unknown"
+      ]
+    },
+    "last_reconciled_at": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "operation_id",
+    "project_id",
+    "backend_run_id",
+    "status",
+    "last_reconciled_at"
+  ]
+}

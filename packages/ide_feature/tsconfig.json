@@ -1,0 +1,1 @@
+{"compilerOptions":{"target":"ES2022","module":"commonjs","moduleResolution":"node","strict":true,"esModuleInterop":true,"skipLibCheck":true,"outDir":"out","rootDir":"src","types":["node","vscode"],"lib":["ES2022","DOM","DOM.Iterable"],"sourceMap":true},"include":["src/**/*.ts"],"exclude":["src/webview.ts"]}

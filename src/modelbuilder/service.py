@@ -16,6 +16,7 @@ from . import recipe as recipe_module
 from .models import (Actor, Claim, Decision, Evidence, Hypothesis, ModelProject, OPERATIONS,
                      PROJECT_FIELDS, CLAIM_FIELDS, HYPOTHESIS_FIELDS, MAX_BUNDLE_JSON_BYTES, ServiceError, new_id,
                      operation_catalog, utcnow)
+from .source_provenance import verify_export_git_provenance
 from .store import SQLiteStore
 from .tracking import resolve_tracking, disclosure
 
@@ -394,6 +395,7 @@ class OperationService:
                     "equal": before == after, "diff": self._diff(before, after)}
         if action == "export":
             bundle = recipe_module.export_bundle({k: v for k, v in recipe.items() if k != "digest"}, source_root=self.source_root)
+            verify_export_git_provenance(bundle, self.source_root)
             if p.get("format", "object") == "json":
                 text = recipe_module.canonical_json(bundle)
                 if len(text.encode("utf-8")) > MAX_BUNDLE_JSON_BYTES:
@@ -618,7 +620,11 @@ class OperationService:
                     if len(selected_trainers) != 1 or any(node["kind"] == "model.train" for node in resumed_recipe["nodes"]):
                         raise ServiceError("capability_unavailable", "Selected recipe must have exactly one checkpoint-consuming training component")
                 else:
-                    resumed_recipe = copy.deepcopy(parent_recipe)
+                    resumed_recipe = copy.deepcopy(current_recipe if mode == "warm_start" else parent_recipe)
+                    selected_trainers = [node for node in resumed_recipe["nodes"] if node["kind"] == "model.train"]
+                    if len(selected_trainers) != 1 or any(node["kind"] == "component.run" and
+                            node.get("component", {}).get("role") == "training" for node in resumed_recipe["nodes"]):
+                        raise ServiceError("capability_unavailable", "Selected recipe must have exactly one checkpoint-consuming built-in training node")
                     if "steps" not in p:
                         raise ServiceError("validation_error", "Resume requires a declared final total step count")
                     for node in resumed_recipe["nodes"]:

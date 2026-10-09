@@ -1,0 +1,3 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const {selectedCitations}=require('../out/citations');
+test('citation picker preserves exact quoted passage metadata and deduplicates selections',()=>{const quote={evidence_id:'a',text_id:'text',quote:'Exact source text',start:9,end:26};const selected=selectedCitations(JSON.stringify([quote,{evidence_id:'old'}]),['a','b','a']);assert.deepEqual(selected,[quote,{evidence_id:'b'}]);});
+test('invalid advanced citation draft cannot be overwritten by picker',()=>{for(const source of ['[', '{}','[null]','[{"quote":"missing identity"}]'])assert.throws(()=>selectedCitations(source,['a']));});

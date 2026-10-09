@@ -233,7 +233,9 @@ def test_explicitly_trusted_python_uses_public_native_step_boundary(tmp_path):
                 parameters={"value": {"answer": 42}})
     node.pop("parameter_schema", None)
     body.update(nodes=[node], edges=[], resources=[], external_dependencies=[])
-    backend = ZenMLBackend(tmp_path, trusted_code_roots=[str(ROOT / "src/modelbuilder/backend")])
+    # Trust the owned repository closure; a nested module directory cannot
+    # authorize the repository root used to stage immutable source snapshots.
+    backend = ZenMLBackend(tmp_path, trusted_code_roots=[str(ROOT)])
     request = submit(backend, body)
     result = wait(backend, request)
     assert result["status"] == "succeeded", result

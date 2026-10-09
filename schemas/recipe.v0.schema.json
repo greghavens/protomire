@@ -81,6 +81,7 @@
           "kind": {
             "enum": [
               "dataset.import",
+              "dataset.version.import",
               "dataset.synthetic",
               "dataset.validate",
               "model.initialize",
@@ -90,6 +91,7 @@
               "model.checkpoint",
               "model.export",
               "code.python",
+              "component.run",
               "training.kl_anchor"
             ]
           },
@@ -195,6 +197,83 @@
           },
           "parameter_schema": {
             "type": "object"
+          },
+          "component": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "version",
+              "protocol",
+              "role",
+              "parameter_schema",
+              "capabilities"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "protocol": {
+                "const": "modelbuilder.component/v1"
+              },
+              "role": {
+                "enum": [
+                  "training",
+                  "evaluation",
+                  "export",
+                  "dataset",
+                  "model",
+                  "utility"
+                ]
+              },
+              "description": {
+                "type": "string"
+              },
+              "parameter_schema": {
+                "type": "object"
+              },
+              "capabilities": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "resume_modes",
+                  "export_formats",
+                  "frameworks"
+                ],
+                "properties": {
+                  "checkpoint_events": {
+                    "type": "boolean"
+                  },
+                  "resume_modes": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                      "enum": [
+                        "exact_state",
+                        "warm_start"
+                      ]
+                    }
+                  },
+                  "export_formats": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "frameworks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           },
           "environment_ref": {
             "type": "string",

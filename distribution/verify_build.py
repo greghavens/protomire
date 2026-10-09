@@ -7,12 +7,15 @@ import pathlib
 import subprocess
 import sys
 
+from platform_config import detect_target, electron_path, validate_target
+
 from overlay_policy import COMPOSITION, IMPORT_LINE, MODULE, inspect_boundary
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
-def verify(source: pathlib.Path) -> dict:
+def verify(source: pathlib.Path, target: str | None = None) -> dict:
+    target = validate_target(target or detect_target())
     pin = json.loads((ROOT / "distribution/code_oss_pin.json").read_text())
     sha = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
     assert sha == pin["commit"], "Upstream commit mismatch"
@@ -29,7 +32,7 @@ def verify(source: pathlib.Path) -> dict:
     assert defaults["workbench.secondarySideBar.defaultVisibility"] == "hidden"
     required = [
         source / "out/main.js",
-        source / ".build/electron/modelbuilder-ide",
+        electron_path(source, product, target),
         feature.parent / manifest["main"],
         source / "LICENSE.txt",
         source / "ThirdPartyNotices.txt",
@@ -45,6 +48,7 @@ def verify(source: pathlib.Path) -> dict:
     )
     return {
         "source_commit": sha,
+        "target": target,
         "source_tag": pin["tag"],
         "node_version": pin["node_version"],
         "core_patches": 1,

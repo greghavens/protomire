@@ -1,73 +1,108 @@
 """Real process cancellation before native run creation, without invented IDs."""
+from contextlib import contextmanager
 import hashlib
 import json
+import os
+import signal
 import subprocess
 import time
 import uuid
 from pathlib import Path
 
 import pytest
+import psutil
 from modelbuilder.backend import BackendError, ZenMLBackend
-from modelbuilder.backend.common import read_json
+from modelbuilder.backend.common import alive, read_json
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
 PYTHON = ROOT / ".venv-backend/bin/python"
 
 
+@pytest.fixture(autouse=True)
+def cancel_unfinished_owned_jobs(tmp_path):
+    yield
+    for path in (tmp_path / "data/backend/jobs").glob("*/request.json"):
+        state = read_json(path.parent / "state.json")
+        if alive(state.get("worker_pid"), state.get("worker_identity")):
+            request = read_json(path)
+            backend = ZenMLBackend(tmp_path / "data", python_executable=str(PYTHON),
+                                   source_root=request["source_root"],
+                                   trusted_code_roots=request["trusted_code_roots"])
+            backend.invoke("run.cancel", request)
+
+
+@contextmanager
 def early_request(tmp_path):
     if not PYTHON.is_file():
         pytest.skip("Pinned backend interpreter is required")
     source = tmp_path / "trusted-source"
     source.mkdir()
-    code = source / "slow_import.py"
-    code.write_text('import time\nfrom pathlib import Path\n'
-                    'Path(__file__).with_name("import-started").write_text("ready")\n'
-                    'time.sleep(60)\n'
-                    'def result() -> str:\n    return "finished"\n')
+    code = source / "owned_workload.py"
+    code.write_text('def result() -> str:\n    return "finished"\n')
     subprocess.run(["git", "init", "-q", str(source)], check=True)
-    subprocess.run(["git", "add", "slow_import.py"], cwd=source, check=True)
+    subprocess.run(["git", "add", code.name], cwd=source, check=True)
     subprocess.run(["git", "-c", "user.name=Modelbuilder fixture", "-c", "user.email=fixture@example.invalid",
                     "commit", "-qm", "Pin owned slow-start test source"], cwd=source, check=True)
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
     sha = hashlib.sha256(code.read_bytes()).hexdigest()
-    recipe = {"schema_version": "0", "source": {"repository": "https://example.invalid/disposable-test.git",
+    project_id = str(uuid.uuid4())
+    recipe = {"schema_version": "0", "recipe_id": str(uuid.uuid4()), "revision": 1,
+              "project_id": project_id, "source": {"repository": "https://example.invalid/disposable-test.git",
                                                 "commit": commit, "files": [{"path": code.name, "sha256": sha}]},
-              "nodes": [{"id": "slow_import", "kind": "code.python", "implementation_ref": {
-                  "module": "owned_slow_import", "entrypoint": "result", "path": code.name, "sha256": sha, "commit": commit},
-                  "inputs": [], "outputs": [{"name": "result", "type": "str"}], "parameters": {}}],
+              "nodes": [{"id": "owned_workload", "kind": "code.python", "implementation_ref": {
+                  "module": "owned_workload", "entrypoint": "result", "path": code.name, "sha256": sha, "commit": commit},
+                  "inputs": [], "outputs": [{"name": "result", "type": "str"}], "parameters": {}, "timeout": 120}],
               "edges": [], "resources": [], "external_dependencies": [],
               "environment": {"python": "3.12", "requirements": ["zenml==0.97.0"]}}
     backend = ZenMLBackend(tmp_path / "data", python_executable=str(PYTHON), source_root=source,
                            trusted_code_roots=[str(source)])
-    request = {"project_id": str(uuid.uuid4()), "operation_id": str(uuid.uuid4()), "trusted": True,
+    request = {"project_id": project_id, "operation_id": str(uuid.uuid4()), "trusted": True,
                "idempotency_key": str(uuid.uuid4()), "recipe": recipe, "max_runtime_seconds": 90}
     backend.invoke("run.submit", request)
-    deadline = time.monotonic() + 30
-    while not (source / "import-started").exists() and time.monotonic() < deadline:
-        time.sleep(0.05)
-    assert (source / "import-started").exists(), read_json(backend.root / "jobs" / request["operation_id"] / "state.json")
-    return backend, request
+    job = backend.root / "jobs" / request["operation_id"]
+    try:
+        deadline = time.monotonic() + 10
+        state = read_json(job / "state.json")
+        while not state.get("worker_pid") and time.monotonic() < deadline:
+            time.sleep(0.01)
+            state = read_json(job / "state.json")
+        assert alive(state.get("worker_pid"), state.get("worker_identity")), state
+        # code.python imports now happen inside an already-created native step.
+        # Hold the actual supervised process during startup instead, before
+        # native registration. Cancellation must still prove OS termination.
+        os.kill(state["worker_pid"], signal.SIGSTOP)
+        while psutil.Process(state["worker_pid"]).status() != psutil.STATUS_STOPPED and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert psutil.Process(state["worker_pid"]).status() == psutil.STATUS_STOPPED
+        assert alive(state["worker_pid"], state["worker_identity"])
+        assert not read_json(job / "native.json"), "Fixture must stop before actual native run creation"
+        yield backend, request
+    finally:
+        state = read_json(job / "state.json")
+        if alive(state.get("worker_pid"), state.get("worker_identity")):
+            # The supervisor escalates to SIGKILL even for a stopped worker.
+            backend.invoke("run.cancel", request)
 
 
 def test_confirmed_cancel_before_native_run_creation(tmp_path):
-    backend, request = early_request(tmp_path)
-    before = backend.invoke("run.status", request)
-    assert before["backend_run_id"] is None and before["worker_alive"] is True
-    cancelled = backend.invoke("run.cancel", request)
-    (ROOT / "evidence/backend/early-cancellation.json").write_text(json.dumps({"before": before, "after": cancelled}, indent=2))
-    assert cancelled["status"] == "cancelled", cancelled
-    assert cancelled["backend_run_id"] is None and cancelled["backend_status"] is None
-    assert cancelled["cancellation_acknowledged"] is True
-    assert cancelled["worker_alive"] is False and cancelled["process_group_alive"] is False
-    assert cancelled["termination"]["reason"] == "cancelled"
-    assert cancelled["termination"]["proof_source"] == "local_supervisor_wait_and_group_observation"
-    restarted = ZenMLBackend(tmp_path / "data", python_executable=str(PYTHON), source_root=backend.repository,
-                             trusted_code_roots=[str(backend.repository)])
-    assert restarted.invoke("run.status", request)["status"] == "cancelled"
-    with pytest.raises(BackendError, match="checkpoint"):
-        restarted.invoke("run.resume", {**request, "parent_operation_id": request["operation_id"],
-                                         "operation_id": str(uuid.uuid4()), "mode": "exact_state", "steps": 2})
+    with early_request(tmp_path) as (backend, request):
+        before = backend.invoke("run.status", request)
+        assert before["backend_run_id"] is None and before["worker_alive"] is True
+        cancelled = backend.invoke("run.cancel", request)
+        (ROOT / "evidence/backend/early-cancellation.json").write_text(json.dumps({"before": before, "after": cancelled}, indent=2))
+        assert cancelled["status"] == "cancelled", cancelled
+        assert cancelled["backend_run_id"] is None and cancelled["backend_status"] is None
+        assert cancelled["cancellation_acknowledged"] is True
+        assert cancelled["worker_alive"] is False and cancelled["process_group_alive"] is False
+        assert cancelled["termination"]["reason"] == "cancelled"
+        assert cancelled["termination"]["proof_source"] == "local_supervisor_wait_and_group_observation"
+        restarted = ZenMLBackend(tmp_path / "data", python_executable=str(PYTHON), source_root=backend.repository,
+                                 trusted_code_roots=[str(backend.repository)])
+        assert restarted.invoke("run.status", request)["status"] == "cancelled"
+        with pytest.raises(BackendError, match="checkpoint"):
+            restarted.invoke("run.resume", {**request, "parent_operation_id": request["operation_id"],
+                                             "operation_id": str(uuid.uuid4()), "mode": "exact_state", "steps": 2})
 
 
 def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
@@ -77,15 +112,22 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
 
     source = tmp_path / "owned-source"
     source.mkdir()
+    recipe = json.loads((ROOT / "examples/custom-pytorch/recipe.json").read_text())
+    recipe.pop("digest", None)
+    lock_path = Path(recipe["environment"]["lock_file"]["path"])
+    copied_lock = source / lock_path
+    copied_lock.parent.mkdir(parents=True)
+    copied_lock.write_bytes((ROOT / lock_path).read_bytes())
     fixture_path = Path("src/modelbuilder/backend/fixtures.py")
     copied_fixture = source / fixture_path
     copied_fixture.parent.mkdir(parents=True)
     copied_fixture.write_bytes((ROOT / fixture_path).read_bytes())
     pause = source / "pause.py"
-    pause.write_text('import signal\nimport time\nfrom pathlib import Path\n'
-                     'def pause(checkpoint: Path) -> str:\n'
+    marker = tmp_path / "pause-started.json"
+    pause.write_text('import json\nimport signal\nimport time\nfrom pathlib import Path\n'
+                     'def pause(checkpoint: Path, marker_path: str) -> str:\n'
                      '    signal.signal(signal.SIGTERM, signal.SIG_IGN)\n'
-                     '    Path(__file__).with_name("pause-started").write_text("ready")\n'
+                     '    Path(marker_path).write_text(json.dumps({"source_file": __file__, "checkpoint": str(checkpoint)}))\n'
                      '    time.sleep(60)\n'
                      '    return str(checkpoint)\n')
     subprocess.run(["git", "init", "-q", str(source)], check=True)
@@ -93,16 +135,15 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
     subprocess.run(["git", "-c", "user.name=Modelbuilder fixture", "-c", "user.email=fixture@example.invalid",
                     "commit", "-qm", "Pin owned pending-cancel fixture"], cwd=source, check=True)
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
-    recipe = json.loads((ROOT / "examples/custom-pytorch/recipe.json").read_text())
-    recipe.pop("digest", None)
     recipe["source"] = {"repository": "https://example.invalid/owned-test.git", "commit": commit,
                         "files": [{"path": str(fixture_path), "sha256": hashlib.sha256(copied_fixture.read_bytes()).hexdigest()},
+                                  {"path": str(lock_path), "sha256": hashlib.sha256(copied_lock.read_bytes()).hexdigest()},
                                   {"path": "pause.py", "sha256": hashlib.sha256(pause.read_bytes()).hexdigest()}]}
     next(n for n in recipe["nodes"] if n["kind"] == "model.train")["parameters"]["steps"] = 3
     recipe["nodes"].append({"id": "pause", "kind": "code.python", "implementation_ref": {
         "module": "owned_checkpoint_pause", "entrypoint": "pause", "path": "pause.py", "commit": commit,
-        "sha256": hashlib.sha256(pause.read_bytes()).hexdigest()}, "inputs": [{"name": "checkpoint", "type": "checkpoint"}],
-        "outputs": [{"name": "result", "type": "str"}], "parameters": {}})
+        "sha256": hashlib.sha256(pause.read_bytes()).hexdigest()}, "inputs": [{"name": "checkpoint", "type": "Path"}],
+        "outputs": [{"name": "result", "type": "str"}], "parameters": {"marker_path": str(marker)}, "timeout": 120})
     recipe["edges"].append({"source_node": "train", "source_port": "checkpoint", "target_node": "pause", "target_port": "checkpoint"})
     backend = ZenMLBackend(tmp_path / "data", python_executable=str(PYTHON), source_root=source, trusted_code_roots=[str(source)])
     project_id = str(uuid.uuid4())
@@ -111,9 +152,17 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
                "idempotency_key": str(uuid.uuid4()), "max_runtime_seconds": 90}
     backend.invoke("run.submit", request)
     deadline = time.monotonic() + 45
-    while not (source / "pause-started").exists() and time.monotonic() < deadline:
+    while not marker.exists() and time.monotonic() < deadline:
+        state = read_json(backend.root / "jobs" / request["operation_id"] / "state.json")
+        assert not state.get("worker_reaped"), state
         time.sleep(0.1)
-    assert (source / "pause-started").exists()
+    assert marker.exists(), read_json(backend.root / "jobs" / request["operation_id"] / "state.json")
+    # The marker is explicitly external to the checkout. __file__ proves the
+    # callback came from the immutable pinned snapshot, not mutable user source.
+    paused = read_json(marker)
+    snapshot_source = Path(paused["source_file"])
+    assert not snapshot_source.is_relative_to(source)
+    assert hashlib.sha256(snapshot_source.read_bytes()).hexdigest() == hashlib.sha256(pause.read_bytes()).hexdigest()
     before = backend.invoke("run.status", request)
     assert before["status"] == "running"
     assert any(a["port"] == "checkpoint" for a in before["artifacts"])
@@ -127,8 +176,10 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
     with ThreadPoolExecutor(max_workers=1) as executor:
         cancellation = executor.submit(backend.invoke, "run.cancel", request)
         cancel_file = backend.root / "jobs" / request["operation_id"] / "cancel.json"
-        while not cancel_file.exists():
+        deadline = time.monotonic() + 20
+        while not cancel_file.exists() and time.monotonic() < deadline:
             time.sleep(0.02)
+        assert cancel_file.exists(), "Cancellation request did not reach the supervisor"
         with pytest.raises(BackendError) as rejection:
             backend.invoke("run.resume", resume)
         assert rejection.value.code == "conflict"

@@ -41,7 +41,8 @@ def boundary(tmp_path, monkeypatch):
 def test_source_and_toolchain_are_immutable():
     pin = json.loads((ROOT / "distribution/code_oss_pin.json").read_text())
     assert len(pin["commit"]) == 40
-    assert len(pin["node_linux_x64_sha256"]) == 64
+    assert len(pin["node_artifacts"]) == 7
+    assert all(len(artifact["sha256"]) == 64 for artifact in pin["node_artifacts"].values())
     assert pin["core_patches"] == 1
     assert "composition import" in pin["core_patch_exception"]
     assert pin["node_version"] == "22.19.0"
@@ -64,22 +65,26 @@ def test_extension_lock_has_individual_pins_and_licenses():
         "ms-toolsai.jupyter",
         "detachhead.basedpyright",
     }
+    assert lock["schema_version"] == 2
     for extension in lock["extensions"]:
         assert extension["license"] == "MIT"
-        assert len(extension["sha256"]) == 64
-        assert extension["version"] in extension["url"]
-        assert extension["url"].startswith("https://open-vsx.org/")
-        assert "darwin" not in extension["url"]
+        assert extension["artifacts"]
+        for platform, artifact in extension["artifacts"].items():
+            assert len(artifact["sha256"]) == 64
+            assert len(artifact["license_sha256"]) == 64
+            assert extension["version"] in artifact["url"]
+            assert artifact["url"].startswith("https://open-vsx.org/")
+            assert artifact["target_platform"] == platform
 
 
 def test_smoke_does_not_disable_sandbox_or_silently_skip():
-    script = (ROOT / "scripts/smoke_ide.sh").read_text()
+    script = (ROOT / "distribution/smoke_ide.py").read_text().replace(chr(34), chr(39))
     assert "--no-sandbox" not in "\n".join(
         line for line in script.splitlines() if not line.lstrip().startswith("#")
     )
-    assert "'status':'BLOCKED'" in script
+    assert "'status': 'BLOCKED'" in script
     assert "extensionDevelopmentPath" in script
-    assert "status']=='PASS'" in script
+    assert "result.get('status') == 'PASS'" in script
 
 
 def test_file_menu_overlay_is_exact_and_idempotent(boundary):

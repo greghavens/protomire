@@ -1,0 +1,2 @@
+# Preserve raw command evidence byte-for-byte, including terminal padding.
+evidence/** -whitespace

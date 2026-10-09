@@ -7,11 +7,15 @@ export function serviceUrl(raw: string): string {
 }
 export function escapeHtml(value: string): string { return value.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!)); }
 export const UI_OPERATIONS = new Set([
+  'dataset.register', 'dataset.version', 'dataset.get', 'dataset.list', 'dataset.validate', 'dataset.preview',
+  'research.watch.create', 'research.watch.get', 'research.watch.list', 'research.watch.update', 'research.watch.refresh', 'research.watch.refresh_due',
+  'research.finding.list', 'research.finding.review', 'research.text.import', 'research.text.get',
+  'research.proposal.create', 'research.proposal.list', 'research.proposal.get', 'research.proposal.review', 'research.proposal.apply',
   'project.history', 'project.update', 'recipe.resolve_dependencies',
   'evidence.add', 'evidence.get', 'evidence.search', 'claim.create', 'claim.get', 'claim.list', 'claim.update',
   'hypothesis.create', 'hypothesis.get', 'hypothesis.list', 'hypothesis.update', 'decision.record', 'decision.list',
   'execution.targets', 'policy.get', 'cost.estimate', 'run.plan', 'run.submit', 'run.status', 'run.logs', 'run.cancel',
-  'run.resume', 'run.artifacts', 'run.compare', 'model.version.list', 'model.version.get', 'model.version.lineage',
+  'run.evaluations.list', 'run.events.list', 'run.resume', 'run.artifacts', 'run.compare', 'model.version.list', 'model.version.get', 'model.version.lineage',
   'model.version.promote', 'model.checkpoint.get'
 ]);
 export function checkMessage(raw: unknown): Record<string, any> {

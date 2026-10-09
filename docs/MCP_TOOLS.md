@@ -14,9 +14,19 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `claim_get` | `claim.get` | `read` | Read a research claim. |
 | `claim_list` | `claim.list` | `read` | List project claims. |
 | `claim_update` | `claim.update` | `modify` | Revise a claim and preserve review history. |
+| `component_get` | `component.get` | `read` | Read a declared component by identity and optional node identity. |
+| `component_list` | `component.list` | `read` | Inspect inert component declarations in this project's recipe; never load user code. |
+| `component_validate` | `component.validate` | `read` | Validate an inert component node declaration and parameters without execution. |
 | `cost_estimate` | `cost.estimate` | `read` | Inspect local cost limits; remote estimates unavailable without a provider. |
+| `dataset_get` | `dataset.get` | `read` | Read a project dataset at its current or historical immutable revision. |
+| `dataset_list` | `dataset.list` | `read` | List datasets registered to this model project. |
+| `dataset_preview` | `dataset.preview` | `read` | Preview a bounded page from a verified immutable dataset split. |
+| `dataset_register` | `dataset.register` | `modify` | Register an immutable local dataset manifest using operator-approved project root aliases. |
+| `dataset_validate` | `dataset.validate` | `read` | Verify a dataset manifest or stored revision against its declared files and splits without training. |
+| `dataset_version` | `dataset.version` | `modify` | Create the next immutable dataset version with optimistic concurrency. |
 | `decision_list` | `decision.list` | `read` | List positive, negative, and inconclusive research decisions. |
 | `decision_record` | `decision.record` | `modify` | Record a decision tied to real runs and an immutable recipe revision. |
+| `evaluation_validate` | `evaluation.validate` | `read` | Validate sealed evaluation evidence without executing a model. |
 | `evidence_add` | `evidence.add` | `modify` | Store a citation; a citation alone does not prove a claim. |
 | `evidence_get` | `evidence.get` | `read` | Read a cited evidence record. |
 | `evidence_search` | `evidence.search` | `read` | Search saved evidence or retrieve public OpenAlex metadata without persisting it. |
@@ -50,15 +60,32 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `recipe_resolve_dependencies` | `recipe.resolve_dependencies` | `read` | Inspect immutable dependency references and readiness. |
 | `recipe_update` | `recipe.update` | `modify` | Atomically replace the same recipe using its expected revision. |
 | `recipe_validate` | `recipe.validate` | `read` | Validate a recipe without executing any code. |
+| `research_finding_list` | `research.finding.list` | `read` | Read watch findings with immutable citation and change provenance. |
+| `research_finding_review` | `research.finding.review` | `modify` | Record human or external-assistant triage without verifying a scientific claim. |
+| `research_proposal_apply` | `research.proposal.apply` | `modify` | Explicitly apply a reviewed proposal as the next revision of the same recipe; never execute training. |
+| `research_proposal_create` | `research.proposal.create` | `modify` | Stage a citation-linked recipe revision and exact diff for explicit review, without applying or training. |
+| `research_proposal_get` | `research.proposal.get` | `read` | Read a staged proposal with immutable citation snapshots, review and applied revision linkage. |
+| `research_proposal_list` | `research.proposal.list` | `read` | List retained research proposals, including rejected and applied proposals. |
+| `research_proposal_review` | `research.proposal.review` | `modify` | Explicitly approve or reject the exact staged proposal; approval does not apply or validate claims. |
+| `research_text_get` | `research.text.get` | `read` | Read locally imported source text and its exact content hash and rights declaration. |
+| `research_text_import` | `research.text.import` | `modify` | Import bounded user-supplied licensed text, pin bytes to a citation and preserve rights attestation; never fetch a URL. |
+| `research_watch_create` | `research.watch.create` | `modify` | Create a project-scoped bounded metadata query watch; no scheduler starts. |
+| `research_watch_get` | `research.watch.get` | `read` | Read a watch, refresh status and next due time. |
+| `research_watch_list` | `research.watch.list` | `read` | List project research watches; never fetch implicitly. |
+| `research_watch_refresh` | `research.watch.refresh` | `modify` | Explicitly fetch one configured watch, persisting citation snapshots and deduplicated findings. |
+| `research_watch_refresh_due` | `research.watch.refresh_due` | `modify` | Explicit bounded scheduler tick: refresh up to five enabled due watches; does not start a scheduler. |
+| `research_watch_update` | `research.watch.update` | `modify` | Edit or disable a watch using optimistic concurrency. |
 | `run_artifacts` | `run.artifacts` | `read` | Read authoritative artifact identifiers and hashes. |
 | `run_cancel` | `run.cancel` | `execute` | Request real cancellation; requested is not confirmed termination. |
 | `run_compare` | `run.compare` | `read` | Compare metrics from actual backend runs by a declared criterion. |
+| `run_evaluations_list` | `run.evaluations.list` | `read` | Read checkpoint evaluation results while training is running, including pending and failed evaluations. |
+| `run_events_list` | `run.events.list` | `read` | Read durable run events after a replayable cursor for live progress and notifications. |
 | `run_list` | `run.list` | `read` | List and reconcile project operation correlations with the backend. |
 | `run_logs` | `run.logs` | `read` | Read actual backend logs. |
 | `run_plan` | `run.plan` | `read` | Validate an execution plan; never launch from this operation. |
 | `run_resume` | `run.resume` | `execute, modify` | Resume an actual checkpoint and advance this recipe revision; requires execute and modify. Exact state differs from warm start. |
 | `run_status` | `run.status` | `read` | Reconcile status with the authoritative backend. |
-| `run_submit` | `run.submit` | `execute` | Submit an explicitly permitted local fixture to the real backend. |
+| `run_submit` | `run.submit` | `execute` | Submit an explicitly permitted source-bound local pipeline to the real backend. |
 
 Remote execution/spending, publication, discovery, and public recipe forking remain unavailable.
 A configured ZenML backend is required for execution and model records. The service never returns fabricated native runs.

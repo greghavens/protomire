@@ -1,15 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "extensions": [
     {
       "id": "ms-python.python",
       "version": "2026.4.0",
       "registry": "Open VSX",
-      "url": "https://open-vsx.org/api/ms-python/python/2026.4.0/file/ms-python.python-2026.4.0.vsix",
-      "sha256": "232aeafb01f069824fdd92d3e628c1c442bbcfa1d3cc945ff97076340bb2b4a6",
       "license": "MIT",
-      "license_url": "https://open-vsx.org/api/ms-python/python/2026.4.0/file/LICENSE.txt",
-      "license_sha256": "b3e677dfc054c000e37274dfb8bfcaefc221b71eb92b4f0b7502751b6d1f0210",
       "engines": {
         "vscode": "^1.95.0"
       },
@@ -18,17 +14,22 @@
         "ms-python.vscode-pylance",
         "ms-python.debugpy",
         "ms-python.vscode-python-envs"
-      ]
+      ],
+      "artifacts": {
+        "universal": {
+          "url": "https://open-vsx.org/api/ms-python/python/2026.4.0/file/ms-python.python-2026.4.0.vsix",
+          "sha256": "232aeafb01f069824fdd92d3e628c1c442bbcfa1d3cc945ff97076340bb2b4a6",
+          "license_url": "https://open-vsx.org/api/ms-python/python/2026.4.0/file/LICENSE.txt",
+          "license_sha256": "b3e677dfc054c000e37274dfb8bfcaefc221b71eb92b4f0b7502751b6d1f0210",
+          "target_platform": "universal"
+        }
+      }
     },
     {
       "id": "ms-toolsai.jupyter",
       "version": "2025.9.1",
       "registry": "Open VSX",
-      "url": "https://open-vsx.org/api/ms-toolsai/jupyter/2025.9.1/file/ms-toolsai.jupyter-2025.9.1.vsix",
-      "sha256": "110660656944c4ab0ff687db488c2e8c59c67ec121dcf09bcaa54b6edd9ce71f",
       "license": "MIT",
-      "license_url": "https://open-vsx.org/api/ms-toolsai/jupyter/2025.9.1/file/LICENSE.txt",
-      "license_sha256": "ad0cf28f3381ca9bb0bf101d127402d44c17bfa0991e1a00bff7ae6679e9dada",
       "engines": {
         "vscode": "^1.105.0"
       },
@@ -38,32 +39,42 @@
         "ms-toolsai.jupyter-renderers",
         "ms-toolsai.vscode-jupyter-slideshow",
         "ms-toolsai.vscode-jupyter-cell-tags"
-      ]
+      ],
+      "artifacts": {
+        "universal": {
+          "url": "https://open-vsx.org/api/ms-toolsai/jupyter/2025.9.1/file/ms-toolsai.jupyter-2025.9.1.vsix",
+          "sha256": "110660656944c4ab0ff687db488c2e8c59c67ec121dcf09bcaa54b6edd9ce71f",
+          "license_url": "https://open-vsx.org/api/ms-toolsai/jupyter/2025.9.1/file/LICENSE.txt",
+          "license_sha256": "ad0cf28f3381ca9bb0bf101d127402d44c17bfa0991e1a00bff7ae6679e9dada",
+          "target_platform": "universal"
+        }
+      }
     },
     {
       "id": "detachhead.basedpyright",
       "version": "1.40.2",
       "registry": "Open VSX",
-      "url": "https://open-vsx.org/api/detachhead/basedpyright/1.40.2/file/detachhead.basedpyright-1.40.2.vsix",
-      "sha256": "9c87b0b992714ca2f9298cb7e98bda621612f0ee96121a8e77ee7fcccce2f351",
       "license": "MIT",
-      "license_url": "https://open-vsx.org/api/detachhead/basedpyright/1.40.2/file/LICENSE.txt",
-      "license_sha256": "f7c936bc43f132b08497ac952e9376cbc102e5eedb4bf6ec902ea8442bd9c68d",
       "engines": {
         "vscode": "^1.101.0"
       },
       "dependencies": [],
-      "extension_pack": []
+      "extension_pack": [],
+      "artifacts": {
+        "universal": {
+          "url": "https://open-vsx.org/api/detachhead/basedpyright/1.40.2/file/detachhead.basedpyright-1.40.2.vsix",
+          "sha256": "9c87b0b992714ca2f9298cb7e98bda621612f0ee96121a8e77ee7fcccce2f351",
+          "license_url": "https://open-vsx.org/api/detachhead/basedpyright/1.40.2/file/LICENSE.txt",
+          "license_sha256": "f7c936bc43f132b08497ac952e9376cbc102e5eedb4bf6ec902ea8442bd9c68d",
+          "target_platform": "universal"
+        }
+      }
     },
     {
       "id": "ms-python.debugpy",
       "version": "2026.6.0",
       "registry": "Open VSX",
-      "url": "https://open-vsx.org/api/ms-python/debugpy/linux-x64/2026.6.0/file/ms-python.debugpy-2026.6.0@linux-x64.vsix",
-      "sha256": "c7744af4bf72978f5792624a71c80e2b622a1118574fada3a903d70ac03d5bca",
       "license": "MIT",
-      "license_url": "https://open-vsx.org/api/ms-python/debugpy/linux-x64/2026.6.0/file/LICENSE.txt",
-      "license_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
       "engines": {
         "vscode": "^1.92.0"
       },
@@ -71,7 +82,57 @@
         "ms-python.python"
       ],
       "extension_pack": [],
-      "target_platform": "linux-x64"
+      "artifacts": {
+        "linux-x64": {
+          "url": "https://open-vsx.org/api/ms-python/debugpy/linux-x64/2026.6.0/file/ms-python.debugpy-2026.6.0@linux-x64.vsix",
+          "sha256": "c7744af4bf72978f5792624a71c80e2b622a1118574fada3a903d70ac03d5bca",
+          "license_url": "https://open-vsx.org/api/ms-python/debugpy/linux-x64/2026.6.0/file/LICENSE.txt",
+          "license_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "target_platform": "linux-x64"
+        },
+        "win32-x64": {
+          "url": "https://open-vsx.org/api/ms-python/debugpy/win32-x64/2026.6.0/file/ms-python.debugpy-2026.6.0@win32-x64.vsix",
+          "sha256": "f4a8ba033acc9a1e14bf53f124d8d0848318702bbb161f2a5e47ae3d3d756a67",
+          "license_url": "https://open-vsx.org/api/ms-python/debugpy/win32-x64/2026.6.0/file/LICENSE.txt",
+          "license_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "target_platform": "win32-x64"
+        },
+        "win32-arm64": {
+          "url": "https://open-vsx.org/api/ms-python/debugpy/win32-arm64/2026.6.0/file/ms-python.debugpy-2026.6.0@win32-arm64.vsix",
+          "sha256": "44a161a79f97f35177cfeefb1aeb54efa0c296b8fac7879f4b7019e9e06ab224",
+          "license_url": "https://open-vsx.org/api/ms-python/debugpy/win32-arm64/2026.6.0/file/LICENSE.txt",
+          "license_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "target_platform": "win32-arm64"
+        },
+        "darwin-x64": {
+          "url": "https://open-vsx.org/api/ms-python/debugpy/darwin-x64/2026.6.0/file/ms-python.debugpy-2026.6.0@darwin-x64.vsix",
+          "sha256": "7a87aeba6a4dc1f46cfb8e6d457e53256c80b5be75a1781d51d3e0ad5dbb1574",
+          "license_url": "https://open-vsx.org/api/ms-python/debugpy/darwin-x64/2026.6.0/file/LICENSE.txt",
+          "license_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "target_platform": "darwin-x64"
+        },
+        "darwin-arm64": {
+          "url": "https://open-vsx.org/api/ms-python/debugpy/darwin-arm64/2026.6.0/file/ms-python.debugpy-2026.6.0@darwin-arm64.vsix",
+          "sha256": "3425b5251b0f0642b569e64397effe72ab141d138abd966b567041baa5609b4b",
+          "license_url": "https://open-vsx.org/api/ms-python/debugpy/darwin-arm64/2026.6.0/file/LICENSE.txt",
+          "license_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "target_platform": "darwin-arm64"
+        },
+        "linux-armhf": {
+          "url": "https://open-vsx.org/api/ms-python/debugpy/linux-armhf/2026.6.0/file/ms-python.debugpy-2026.6.0@linux-armhf.vsix",
+          "sha256": "f30eb18eaf09de33b09d577b03643070778d183c3045e599e9e7b58f0f1dfe8a",
+          "license_url": "https://open-vsx.org/api/ms-python/debugpy/linux-armhf/2026.6.0/file/LICENSE.txt",
+          "license_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "target_platform": "linux-armhf"
+        },
+        "linux-arm64": {
+          "url": "https://open-vsx.org/api/ms-python/debugpy/linux-arm64/2026.6.0/file/ms-python.debugpy-2026.6.0@linux-arm64.vsix",
+          "sha256": "4e7aa92b0459c1010ee010a79b35ecc16328b943a84589bd9e8ead3d4eb0010b",
+          "license_url": "https://open-vsx.org/api/ms-python/debugpy/linux-arm64/2026.6.0/file/LICENSE.txt",
+          "license_sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "target_platform": "linux-arm64"
+        }
+      }
     }
   ]
 }

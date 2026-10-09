@@ -148,6 +148,14 @@
             "title": "Run Ids",
             "type": "array"
           },
+          "run_provenance": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Run Provenance",
+            "type": "array"
+          },
           "selection_rule": {
             "additionalProperties": true,
             "title": "Selection Rule",
@@ -379,6 +387,76 @@
         "type": "object"
       },
       "ModelProject": {
+        "$defs": {
+          "TrackingConfig": {
+            "additionalProperties": false,
+            "properties": {
+              "artifact_policy": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "metrics_snapshot"
+                ],
+                "title": "Artifact Policy",
+                "type": "string"
+              },
+              "credential_env": {
+                "const": "MODELBUILDER_WANDB_API_KEY",
+                "default": "MODELBUILDER_WANDB_API_KEY",
+                "title": "Credential Env",
+                "type": "string"
+              },
+              "entity": {
+                "anyOf": [
+                  {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Entity"
+              },
+              "metric_names": {
+                "items": {
+                  "pattern": "^[A-Za-z][A-Za-z0-9_./-]{0,127}$",
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "title": "Metric Names",
+                "type": "array",
+                "uniqueItems": true
+              },
+              "mode": {
+                "default": "disabled",
+                "enum": [
+                  "disabled",
+                  "offline",
+                  "online"
+                ],
+                "title": "Mode",
+                "type": "string"
+              },
+              "project": {
+                "anyOf": [
+                  {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Project"
+              }
+            },
+            "title": "TrackingConfig",
+            "type": "object"
+          }
+        },
         "additionalProperties": false,
         "properties": {
           "active_model_version_ref": {
@@ -490,6 +568,9 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "tracking": {
+            "$ref": "#/$defs/TrackingConfig"
           },
           "updated_at": {
             "title": "Updated At",
@@ -1204,6 +1285,390 @@
         ]
       }
     },
+    "/v1/operations/component.get": {
+      "post": {
+        "operationId": "component_get",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "component_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "node_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "component_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read a declared component by identity and optional node identity.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/component.list": {
+      "post": {
+        "operationId": "component_list",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Inspect inert component declarations in this project's recipe; never load user code.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/component.validate": {
+      "post": {
+        "operationId": "component_validate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "node": {
+                    "type": "object"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "node"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Validate an inert component node declaration and parameters without execution.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
     "/v1/operations/cost.estimate": {
       "post": {
         "operationId": "cost_estimate",
@@ -1330,6 +1795,814 @@
         "x-required-scope": "read",
         "x-required-scopes": [
           "read"
+        ]
+      }
+    },
+    "/v1/operations/dataset.get": {
+      "post": {
+        "operationId": "dataset_get",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "dataset_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "dataset_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read a project dataset at its current or historical immutable revision.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/dataset.list": {
+      "post": {
+        "operationId": "dataset_list",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List datasets registered to this model project.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/dataset.preview": {
+      "post": {
+        "operationId": "dataset_preview",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "dataset_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "limit": {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "offset": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "purpose": {
+                    "enum": [
+                      "training",
+                      "evaluation",
+                      "calibration"
+                    ]
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "split_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "dataset_id",
+                  "revision",
+                  "split_id",
+                  "purpose"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Preview a bounded page from a verified immutable dataset split.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/dataset.register": {
+      "post": {
+        "operationId": "dataset_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "manifest": {
+                    "type": "object"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "manifest",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Register an immutable local dataset manifest using operator-approved project root aliases.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/dataset.validate": {
+      "post": {
+        "operationId": "dataset_validate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "dataset_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "manifest": {
+                    "type": "object"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Verify a dataset manifest or stored revision against its declared files and splits without training.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/dataset.version": {
+      "post": {
+        "operationId": "dataset_version",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "dataset_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "manifest": {
+                    "type": "object"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "dataset_id",
+                  "expected_revision",
+                  "manifest",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create the next immutable dataset version with optimistic concurrency.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
         ]
       }
     },
@@ -1619,6 +2892,131 @@
         "x-required-scope": "modify",
         "x-required-scopes": [
           "modify"
+        ]
+      }
+    },
+    "/v1/operations/evaluation.validate": {
+      "post": {
+        "operationId": "evaluation_validate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "record": {
+                    "type": "object"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "record"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Validate sealed evaluation evidence without executing a model.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
         ]
       }
     },
@@ -3845,6 +5243,74 @@
                   "status": {
                     "minLength": 1,
                     "type": "string"
+                  },
+                  "tracking": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "artifact_policy": {
+                        "default": "none",
+                        "enum": [
+                          "none",
+                          "metrics_snapshot"
+                        ],
+                        "title": "Artifact Policy",
+                        "type": "string"
+                      },
+                      "credential_env": {
+                        "const": "MODELBUILDER_WANDB_API_KEY",
+                        "default": "MODELBUILDER_WANDB_API_KEY",
+                        "title": "Credential Env",
+                        "type": "string"
+                      },
+                      "entity": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "default": null,
+                        "title": "Entity"
+                      },
+                      "metric_names": {
+                        "items": {
+                          "pattern": "^[A-Za-z][A-Za-z0-9_./-]{0,127}$",
+                          "type": "string"
+                        },
+                        "maxItems": 64,
+                        "title": "Metric Names",
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "mode": {
+                        "default": "disabled",
+                        "enum": [
+                          "disabled",
+                          "offline",
+                          "online"
+                        ],
+                        "title": "Mode",
+                        "type": "string"
+                      },
+                      "project": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "default": null,
+                        "title": "Project"
+                      }
+                    },
+                    "title": "TrackingConfig",
+                    "type": "object"
                   }
                 },
                 "required": [
@@ -6058,6 +7524,2180 @@
         ]
       }
     },
+    "/v1/operations/research.finding.list": {
+      "post": {
+        "operationId": "research_finding_list",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "unreviewed",
+                      "reviewed",
+                      "dismissed"
+                    ]
+                  },
+                  "watch_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read watch findings with immutable citation and change provenance.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/research.finding.review": {
+      "post": {
+        "operationId": "research_finding_review",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "finding_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "rationale": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "reviewed",
+                      "dismissed"
+                    ]
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "finding_id",
+                  "expected_revision",
+                  "status",
+                  "rationale",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Record human or external-assistant triage without verifying a scientific claim.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/research.proposal.apply": {
+      "post": {
+        "operationId": "research_proposal_apply",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "confirm_apply": {
+                    "const": true
+                  },
+                  "expected_recipe_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "proposal_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "proposal_id",
+                  "expected_revision",
+                  "expected_recipe_revision",
+                  "confirm_apply",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Explicitly apply a reviewed proposal as the next revision of the same recipe; never execute training.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/research.proposal.create": {
+      "post": {
+        "operationId": "research_proposal_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "citations": {
+                    "items": {
+                      "additionalProperties": false,
+                      "dependentRequired": {
+                        "end": [
+                          "text_id",
+                          "quote",
+                          "start"
+                        ],
+                        "quote": [
+                          "text_id",
+                          "start",
+                          "end"
+                        ],
+                        "start": [
+                          "text_id",
+                          "quote",
+                          "end"
+                        ],
+                        "text_id": [
+                          "quote",
+                          "start",
+                          "end"
+                        ]
+                      },
+                      "properties": {
+                        "end": {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "evidence_id": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "quote": {
+                          "maxLength": 4000,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "start": {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "text_id": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "evidence_id"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "expected_recipe_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "hypothesis_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "rationale": {
+                    "maxLength": 16000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "recipe": {
+                    "type": "object"
+                  },
+                  "reconsideration_reason": {
+                    "maxLength": 8000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "title": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "hypothesis_id",
+                  "title",
+                  "rationale",
+                  "citations",
+                  "recipe",
+                  "expected_recipe_revision",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Stage a citation-linked recipe revision and exact diff for explicit review, without applying or training.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/research.proposal.get": {
+      "post": {
+        "operationId": "research_proposal_get",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "proposal_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "proposal_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read a staged proposal with immutable citation snapshots, review and applied revision linkage.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/research.proposal.list": {
+      "post": {
+        "operationId": "research_proposal_list",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List retained research proposals, including rejected and applied proposals.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/research.proposal.review": {
+      "post": {
+        "operationId": "research_proposal_review",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "outcome": {
+                    "enum": [
+                      "approved",
+                      "rejected"
+                    ]
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "proposal_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "rationale": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "proposal_id",
+                  "expected_revision",
+                  "outcome",
+                  "rationale",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Explicitly approve or reject the exact staged proposal; approval does not apply or validate claims.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/research.text.get": {
+      "post": {
+        "operationId": "research_text_get",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "text_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "text_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read locally imported source text and its exact content hash and rights declaration.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/research.text.import": {
+      "post": {
+        "operationId": "research_text_import",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "evidence_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "expected_evidence_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "expected_sha256": {
+                    "pattern": "^[0-9a-f]{64}$",
+                    "type": "string"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "license": {
+                    "maxLength": 300,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "rights_basis": {
+                    "enum": [
+                      "self_authored",
+                      "public_domain",
+                      "licensed",
+                      "permission"
+                    ]
+                  },
+                  "rights_confirmed": {
+                    "const": true
+                  },
+                  "text": {
+                    "maxLength": 200000,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "evidence_id",
+                  "expected_evidence_revision",
+                  "text",
+                  "license",
+                  "rights_basis",
+                  "rights_confirmed",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Import bounded user-supplied licensed text, pin bytes to a citation and preserve rights attestation; never fetch a URL.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/research.watch.create": {
+      "post": {
+        "operationId": "research_watch_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "interval_seconds": {
+                    "maximum": 2592000,
+                    "minimum": 900,
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "maximum": 10,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "name": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "provider": {
+                    "const": "openalex"
+                  },
+                  "query": {
+                    "maxLength": 300,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "name",
+                  "query",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create a project-scoped bounded metadata query watch; no scheduler starts.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/research.watch.get": {
+      "post": {
+        "operationId": "research_watch_get",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "watch_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "watch_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read a watch, refresh status and next due time.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/research.watch.list": {
+      "post": {
+        "operationId": "research_watch_list",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List project research watches; never fetch implicitly.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/research.watch.refresh": {
+      "post": {
+        "operationId": "research_watch_refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "watch_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "watch_id",
+                  "expected_revision",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Explicitly fetch one configured watch, persisting citation snapshots and deduplicated findings.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/research.watch.refresh_due": {
+      "post": {
+        "operationId": "research_watch_refresh_due",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "max_watches": {
+                    "default": 1,
+                    "maximum": 5,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Explicit bounded scheduler tick: refresh up to five enabled due watches; does not start a scheduler.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/research.watch.update": {
+      "post": {
+        "operationId": "research_watch_update",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "changes": {
+                    "additionalProperties": false,
+                    "minProperties": 1,
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "interval_seconds": {
+                        "maximum": 2592000,
+                        "minimum": 900,
+                        "type": "integer"
+                      },
+                      "limit": {
+                        "maximum": 10,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "name": {
+                        "maxLength": 200,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "provider": {
+                        "const": "openalex"
+                      },
+                      "query": {
+                        "maxLength": 300,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "watch_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "watch_id",
+                  "expected_revision",
+                  "changes",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Edit or disable a watch using optimistic concurrency.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
     "/v1/operations/run.artifacts": {
       "post": {
         "operationId": "run_artifacts",
@@ -6331,6 +9971,9 @@
               "schema": {
                 "additionalProperties": false,
                 "properties": {
+                  "comparison_contract": {
+                    "type": "object"
+                  },
                   "direction": {
                     "enum": [
                       "minimize",
@@ -6458,6 +10101,273 @@
           }
         ],
         "summary": "Compare metrics from actual backend runs by a declared criterion.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/run.evaluations.list": {
+      "post": {
+        "operationId": "run_evaluations_list",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "backend_run_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "operation_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read checkpoint evaluation results while training is running, including pending and failed evaluations.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/run.events.list": {
+      "post": {
+        "operationId": "run_events_list",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "after": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "backend_run_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "limit": {
+                    "maximum": 200,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "operation_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read durable run events after a replayable cursor for live progress and notifications.",
         "x-required-scope": "read",
         "x-required-scopes": [
           "read"
@@ -6749,6 +10659,80 @@
                   "target": {
                     "minLength": 1,
                     "type": "string"
+                  },
+                  "tracking": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "artifact_policy": {
+                        "default": "none",
+                        "enum": [
+                          "none",
+                          "metrics_snapshot"
+                        ],
+                        "title": "Artifact Policy",
+                        "type": "string"
+                      },
+                      "credential_env": {
+                        "const": "MODELBUILDER_WANDB_API_KEY",
+                        "default": "MODELBUILDER_WANDB_API_KEY",
+                        "title": "Credential Env",
+                        "type": "string"
+                      },
+                      "entity": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "default": null,
+                        "title": "Entity"
+                      },
+                      "metric_names": {
+                        "items": {
+                          "pattern": "^[A-Za-z][A-Za-z0-9_./-]{0,127}$",
+                          "type": "string"
+                        },
+                        "maxItems": 64,
+                        "title": "Metric Names",
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "mode": {
+                        "default": "disabled",
+                        "enum": [
+                          "disabled",
+                          "offline",
+                          "online"
+                        ],
+                        "title": "Mode",
+                        "type": "string"
+                      },
+                      "project": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "default": null,
+                        "title": "Project"
+                      }
+                    },
+                    "title": "TrackingConfig",
+                    "type": "object"
+                  },
+                  "tracking_online_consent": {
+                    "type": "boolean"
+                  },
+                  "trusted": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -6923,6 +10907,77 @@
                   "steps": {
                     "minimum": 1,
                     "type": "integer"
+                  },
+                  "tracking": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "artifact_policy": {
+                        "default": "none",
+                        "enum": [
+                          "none",
+                          "metrics_snapshot"
+                        ],
+                        "title": "Artifact Policy",
+                        "type": "string"
+                      },
+                      "credential_env": {
+                        "const": "MODELBUILDER_WANDB_API_KEY",
+                        "default": "MODELBUILDER_WANDB_API_KEY",
+                        "title": "Credential Env",
+                        "type": "string"
+                      },
+                      "entity": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "default": null,
+                        "title": "Entity"
+                      },
+                      "metric_names": {
+                        "items": {
+                          "pattern": "^[A-Za-z][A-Za-z0-9_./-]{0,127}$",
+                          "type": "string"
+                        },
+                        "maxItems": 64,
+                        "title": "Metric Names",
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "mode": {
+                        "default": "disabled",
+                        "enum": [
+                          "disabled",
+                          "offline",
+                          "online"
+                        ],
+                        "title": "Mode",
+                        "type": "string"
+                      },
+                      "project": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "default": null,
+                        "title": "Project"
+                      }
+                    },
+                    "title": "TrackingConfig",
+                    "type": "object"
+                  },
+                  "tracking_online_consent": {
+                    "type": "boolean"
                   },
                   "trusted": {
                     "type": "boolean"
@@ -7202,6 +11257,77 @@
                     "minLength": 1,
                     "type": "string"
                   },
+                  "tracking": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "artifact_policy": {
+                        "default": "none",
+                        "enum": [
+                          "none",
+                          "metrics_snapshot"
+                        ],
+                        "title": "Artifact Policy",
+                        "type": "string"
+                      },
+                      "credential_env": {
+                        "const": "MODELBUILDER_WANDB_API_KEY",
+                        "default": "MODELBUILDER_WANDB_API_KEY",
+                        "title": "Credential Env",
+                        "type": "string"
+                      },
+                      "entity": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "default": null,
+                        "title": "Entity"
+                      },
+                      "metric_names": {
+                        "items": {
+                          "pattern": "^[A-Za-z][A-Za-z0-9_./-]{0,127}$",
+                          "type": "string"
+                        },
+                        "maxItems": 64,
+                        "title": "Metric Names",
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "mode": {
+                        "default": "disabled",
+                        "enum": [
+                          "disabled",
+                          "offline",
+                          "online"
+                        ],
+                        "title": "Mode",
+                        "type": "string"
+                      },
+                      "project": {
+                        "anyOf": [
+                          {
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "default": null,
+                        "title": "Project"
+                      }
+                    },
+                    "title": "TrackingConfig",
+                    "type": "object"
+                  },
+                  "tracking_online_consent": {
+                    "type": "boolean"
+                  },
                   "trusted": {
                     "type": "boolean"
                   }
@@ -7305,7 +11431,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Submit an explicitly permitted local fixture to the real backend.",
+        "summary": "Submit an explicitly permitted source-bound local pipeline to the real backend.",
         "x-required-scope": "execute",
         "x-required-scopes": [
           "execute"

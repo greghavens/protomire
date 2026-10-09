@@ -6,15 +6,63 @@
   "name": "Pinned BERT-tiny CPU adaptation",
   "source": {
     "repository": "https://github.com/greghavens/modelbuilder",
-    "commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
+    "commit": "76c0c288b0b5ae9f5273c61244d2c59df7e1f967",
     "files": [
       {
         "path": "pyproject.toml",
-        "sha256": "bd2e8fadd1fc3b8f8315a15844c1b45b180942128d9ade6bf5d51114919b1d46"
+        "sha256": "32b694a5c18385accd249934e901c6c37fef121132ded5d1aa38b3d43af80afb"
       },
       {
         "path": "requirements/backend.lock",
         "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+      },
+      {
+        "path": "requirements/profiles/backend-darwin-arm64.lock",
+        "sha256": "c6a0af3c9c73c6c0293139e581859de8df067d2738e8cd95c7397d844b93bdf7"
+      },
+      {
+        "path": "requirements/profiles/backend-linux-arm64.lock",
+        "sha256": "596b8fa39490b477567001268c509741aa886e7b70e954eb4d1d9ea5ef30324a"
+      },
+      {
+        "path": "requirements/profiles/backend-linux-x64.lock",
+        "sha256": "db08be2d2633f4d21f12beeabdd082b491a9c8710ea8ac268445643428563270"
+      },
+      {
+        "path": "requirements/profiles/service-darwin-arm64.lock",
+        "sha256": "40cde301ccca231c4ac0c3cb4acb19e1593e1a0530db28c70648a576cc184873"
+      },
+      {
+        "path": "requirements/profiles/service-darwin-x64.lock",
+        "sha256": "cc6f2001262cb07582f92398d8d68419e9d5baec2ede71b8071fdf4343458601"
+      },
+      {
+        "path": "requirements/profiles/service-linux-arm64.lock",
+        "sha256": "206d0813b40cfea93a3f6f35fe7382824d73d2f184f8f1e6f8c2facf326076b6"
+      },
+      {
+        "path": "requirements/profiles/service-linux-x64.lock",
+        "sha256": "53d072ed5513339507a0cc759744c5742be5189bcbe5dafe5fb4e51e2f258bb1"
+      },
+      {
+        "path": "requirements/profiles/service-win32-arm64.lock",
+        "sha256": "d86adf27cc95383d7e1ecc31a401d3bd17965de6a1116aad1ce135cbd938a71a"
+      },
+      {
+        "path": "requirements/profiles/service-win32-x64.lock",
+        "sha256": "bbdbb4e85a57da23c9c549cd6ff6b9ffca31ccabd7980c36dd0f085b3f335849"
+      },
+      {
+        "path": "requirements/profiles/tracking-wandb-darwin-arm64.lock",
+        "sha256": "69d1afb50e0eaa4935d47a49e017b512006f1545f754ae5e4326b59eefec6c0d"
+      },
+      {
+        "path": "requirements/profiles/tracking-wandb-linux-arm64.lock",
+        "sha256": "69d1afb50e0eaa4935d47a49e017b512006f1545f754ae5e4326b59eefec6c0d"
+      },
+      {
+        "path": "requirements/profiles/tracking-wandb-linux-x64.lock",
+        "sha256": "69d1afb50e0eaa4935d47a49e017b512006f1545f754ae5e4326b59eefec6c0d"
       },
       {
         "path": "requirements/service.lock",
@@ -22,7 +70,7 @@
       },
       {
         "path": "scripts/replay_bundle.py",
-        "sha256": "dee53b8e50dfdea403b407ab12283d8021de1dbb972b6a5d575be69a19489bd0"
+        "sha256": "26c0d9c771a27cfa4218f6d7da65076c936f9be330e87581397c5d3fa1728f82"
       },
       {
         "path": "src/modelbuilder/__init__.py",
@@ -30,7 +78,7 @@
       },
       {
         "path": "src/modelbuilder/api.py",
-        "sha256": "e2702afa96c989c61c746eac0b067dd13c1ef17a0d0d8e79421e8b717ef7c9df"
+        "sha256": "2ce5c74aef0a8a6ef4c6c3929a42ef4082c941c7b88d49d4a7e585d963a97485"
       },
       {
         "path": "src/modelbuilder/auth.py",
@@ -42,27 +90,71 @@
       },
       {
         "path": "src/modelbuilder/backend/adapter.py",
-        "sha256": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2"
+        "sha256": "5697f09f94dfef52e24f997828eff5e2faf4628977716bcc6fe3e5c0fcb28aa1"
+      },
+      {
+        "path": "src/modelbuilder/backend/admission.py",
+        "sha256": "e784f06d5234e73fa007680d759de2a2490fceef416a6fffe5f299e4df29ef81"
+      },
+      {
+        "path": "src/modelbuilder/backend/calibration.py",
+        "sha256": "e92290dc9091f12f1ee234b8b2a3829a2e679929d46712ae047c1529f9d4a0f5"
       },
       {
         "path": "src/modelbuilder/backend/common.py",
-        "sha256": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab"
+        "sha256": "4afea5af7851cdff155621452b9c2fb6d37b98ff52fd3b30ddc1e6c3eab19555"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/__init__.py",
+        "sha256": "bf514b17f283a3292fe3ec94f8ccfeac6cae72299b16909da5b67b7f87a3ace0"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/runtime.py",
+        "sha256": "12362c4210568062451c97322b233aff0f3c4478a591a163a147c135aeee2a02"
+      },
+      {
+        "path": "src/modelbuilder/backend/execution_limits.py",
+        "sha256": "8d843604f7d22108b996083f59ca7b8ea380f6fdf2797ec09fbf2296b14168f4"
       },
       {
         "path": "src/modelbuilder/backend/fixtures.py",
-        "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
+        "sha256": "ee29c1294e3e38b8f8855d59ac7ba65d21a2dd0855b9eb61fd0d208ec2523d81"
+      },
+      {
+        "path": "src/modelbuilder/backend/live_evaluation.py",
+        "sha256": "b50b6dcc386d5630ff3e609e9d16aad394f761fe1ac4bcf8124cc8d26ac6a1bd"
+      },
+      {
+        "path": "src/modelbuilder/backend/operator_config.py",
+        "sha256": "7b81b300fdc9339d8cca6ac72279504156fc232d6db15228a235f56e92acaf31"
       },
       {
         "path": "src/modelbuilder/backend/sdk.py",
-        "sha256": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb"
+        "sha256": "5f6deefd10e44ba92c234e89b06134a41e4c4c144476f60f8a8a63cd377e82de"
       },
       {
         "path": "src/modelbuilder/backend/supervisor.py",
-        "sha256": "3378df8f8aceaa9251034de3d8fc5ef3ca315a44f9f17b03df5270d40f7c00f1"
+        "sha256": "5e944220f166f28d7034c97bf6f91df61ac30f46ffc84b67d38645a857a5617e"
+      },
+      {
+        "path": "src/modelbuilder/backend/tracking_bridge.py",
+        "sha256": "d1c7c186e172ffaeb8530b1a1d446dcc72b68bd7272050fd1c585861155ae57c"
+      },
+      {
+        "path": "src/modelbuilder/backend/tracking_worker.py",
+        "sha256": "0e66b66e63bee4552b4ef1be02cc7d71c79ccd557ec35f3911c76e9ea9a724dd"
       },
       {
         "path": "src/modelbuilder/backend/worker.py",
-        "sha256": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20"
+        "sha256": "1530c2157b239a27cac5c7509c6756ec794a66021d86f1505f4d87a931c0d060"
+      },
+      {
+        "path": "src/modelbuilder/dataset.py",
+        "sha256": "8a7214ff4a02bd6a05f4dacf8932e64325899dbc66d25118cce1656b497fa4a3"
+      },
+      {
+        "path": "src/modelbuilder/evaluation.py",
+        "sha256": "a09ff1080fa75f4aa0e6823f170d9b5a4e4900391d77528cff29a73620df0847"
       },
       {
         "path": "src/modelbuilder/literature.py",
@@ -74,19 +166,31 @@
       },
       {
         "path": "src/modelbuilder/models.py",
-        "sha256": "a98cd50574f2b3fdf98c18d16274f52cf32045729f871d8dc730ebd31cc1122a"
+        "sha256": "4901e8dde7596dfeb81446fb6d209092f7f37e67f55b654bac83182939fedacd"
       },
       {
         "path": "src/modelbuilder/recipe.py",
-        "sha256": "4553c2aabcbc0205e026baba2fe875063fa17b9df150ed5a35a948698eb68cd2"
+        "sha256": "989d7b684cc91be146b08d784904fa6a642ee804f3b167209df1fd691ef8ec83"
+      },
+      {
+        "path": "src/modelbuilder/research.py",
+        "sha256": "66926940f595948d97fdb83a9df92ef56d276b672a0639115149e0c8fc6c633b"
+      },
+      {
+        "path": "src/modelbuilder/research_contract.py",
+        "sha256": "5f91cdded0c10b4b428a805ed11964af68ae3d2ccab679e2b1f53b6ccf73eb36"
       },
       {
         "path": "src/modelbuilder/service.py",
-        "sha256": "790f7e2441f45ae9ea9cad861a89cbd192614213a45fcb0b3f114364b8819fba"
+        "sha256": "f006c892f74aabd7fad17a189da7bf4d6b3baaa7d8a5eeaf725ed8b894d0f80c"
       },
       {
         "path": "src/modelbuilder/store.py",
         "sha256": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"
+      },
+      {
+        "path": "src/modelbuilder/tracking.py",
+        "sha256": "e44de4b87c7b84617a267f4ccc9ccf2cf240316921fc9aee72972d6b8941e44e"
       }
     ]
   },
@@ -109,8 +213,6 @@
       },
       "environment_ref": "default",
       "resource_request": {
-        "cpu": 1,
-        "memory_mb": 1024,
         "gpu": 0
       },
       "retry": {
@@ -153,8 +255,6 @@
       },
       "environment_ref": "default",
       "resource_request": {
-        "cpu": 1,
-        "memory_mb": 1024,
         "gpu": 0
       },
       "retry": {
@@ -197,8 +297,6 @@
       },
       "environment_ref": "default",
       "resource_request": {
-        "cpu": 1,
-        "memory_mb": 1024,
         "gpu": 0
       },
       "retry": {
@@ -237,8 +335,6 @@
       },
       "environment_ref": "default",
       "resource_request": {
-        "cpu": 1,
-        "memory_mb": 1024,
         "gpu": 0
       },
       "retry": {
@@ -294,8 +390,6 @@
       },
       "environment_ref": "default",
       "resource_request": {
-        "cpu": 1,
-        "memory_mb": 1024,
         "gpu": 0
       },
       "retry": {

@@ -34,7 +34,7 @@ def small_recipe():
         "implementation_ref": "builtin:dataset.synthetic", "inputs": [],
         "outputs": [{"name": "data", "type": "dict"}],
         "parameters": {"fixture": "custom", "count": 40},
-        "environment_ref": "default", "resource_request": {"cpu": 1, "memory_mb": 128},
+        "environment_ref": "default", "resource_request": {"gpu": 0},
         "retry": {"max_attempts": 1, "backoff_seconds": 0},
         "timeout": 30, "cache_policy": "disabled", "provenance": {},
     }]
@@ -325,7 +325,10 @@ def test_failed_process_start_cannot_leave_permanently_submitted_journal(tmp_pat
     payload = {"project_id": "audit-project", "operation_id": str(uuid4()),
                "recipe": body, "trusted": True, "idempotency_key": "start-once"}
     starts = []
+    original_popen = subprocess.Popen
     def launch(*args, **kwargs):
+        if "modelbuilder.backend.supervisor" not in args[0]:
+            return original_popen(*args, **kwargs)
         starts.append(args)
         if len(starts) == 1:
             raise OSError("Synthetic launch failure before creating a process")
@@ -373,7 +376,7 @@ def test_cancellation_waits_for_owned_process_group_not_just_leader(tmp_path, mo
         processes.append(process)
         return process
     monkeypatch.setattr(subprocess, "Popen", controlled_popen)
-    monkeypatch.setitem(sys.modules, "modelbuilder.backend.sdk", SimpleNamespace(reconcile=lambda path: None))
+    monkeypatch.setitem(sys.modules, "modelbuilder.backend.sdk", SimpleNamespace(reconcile=lambda path: None, status=lambda path: {}))
     errors = []
     def supervise():
         try:

@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "benchmark": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "description": {
+      "maxLength": 10000,
+      "type": "string"
+    },
+    "id_column": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "license": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "maxLength": 10000,
+          "type": "string"
+        },
+        "retrieved_at": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "source": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_revision": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "type": "object"
+    },
+    "row_schema": {
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "format": {
+            "enum": [
+              "csv",
+              "jsonl",
+              "parquet"
+            ]
+          },
+          "id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "type": "string"
+          },
+          "root_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "root_id",
+          "path",
+          "format",
+          "sha256"
+        ],
+        "type": "object"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "type": "array"
+    },
+    "splits": {
+      "items": {
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "source_ids"
+            ]
+          },
+          {
+            "required": [
+              "sample_ids"
+            ]
+          }
+        ],
+        "properties": {
+          "id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "train",
+              "validation",
+              "test",
+              "calibration"
+            ]
+          },
+          "sample_ids": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100000,
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "source_ids": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 256,
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "role"
+        ],
+        "type": "object"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "type": "array"
+    },
+    "transformations": {
+      "items": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "casefold": {
+                "type": "boolean"
+              },
+              "fields": {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 256,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "kind": {
+                "const": "text.normalize"
+              },
+              "strip": {
+                "type": "boolean"
+              },
+              "unicode_form": {
+                "enum": [
+                  "NFC",
+                  "NFD",
+                  "NFKC",
+                  "NFKD"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "fields"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "fields": {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 256,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "kind": {
+                "const": "rows.drop_missing"
+              }
+            },
+            "required": [
+              "kind",
+              "fields"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "fields": {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 256,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "kind": {
+                "const": "rows.deduplicate"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "fields": {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 256,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "kind": {
+                "const": "rows.decontaminate"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "fields": {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 256,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "kind": {
+                "const": "columns.select"
+              }
+            },
+            "required": [
+              "kind",
+              "fields"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "maxItems": 32,
+      "type": "array"
+    }
+  },
+  "required": [
+    "name",
+    "benchmark",
+    "license",
+    "provenance",
+    "sources",
+    "id_column",
+    "row_schema",
+    "splits"
+  ],
+  "type": "object"
+}

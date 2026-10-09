@@ -1,12 +1,22 @@
 import { bindRecipeSourcePane } from './sourcePane';
+import { BusyControls } from './busyControls';
+import { renderLiveEvaluations } from './liveEvaluations';
+import { DEFAULT_NOTIFICATION_PREFERENCES, NOTIFICATION_BOOLEAN_KEYS, notificationPreferences } from './notifications';
+import { operationDefaults } from './operationDefaults';
+import { liveEvaluationSettings, withLiveEvaluationSettings, liveSettingsIdentity, assertLiveSettingsCurrent } from './liveRecipe';
+import { executableKindChoices, admissionMessages } from './admission';
+import { renderResearchWorkflow, ResearchCollections } from './researchView';
+import { selectedCitations } from './citations';
+import { renderDatasets, renderDatasetPreview, createDatasetManifestEditor } from './datasetView';
 import { newNode, removeNode, replaceNode, readVisualSource, assertNodePanelCurrent } from './document';
 import { OperationSpec, Recipe, RecipeEdge, RecipeNode, RecordValue } from './types';
 declare function acquireVsCodeApi(): {postMessage(message:unknown):void;setState(value:unknown):void;getState():any};
 const vscode=acquireVsCodeApi();
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
-const send=(type:string,body:RecordValue={})=>{if(type==='saveRecipe'&&nodePanelDirty){report('Apply or explicitly discard node panel changes before saving the recipe.');return;}vscode.postMessage({type,...body});};
+const send=(type:string,body:RecordValue={})=>{if(type==='saveRecipe'&&liveSettingsDirty){report('Apply or discard live evaluation settings before saving the recipe.');return;}if(type==='saveRecipe'&&nodePanelDirty){report('Apply or explicitly discard node panel changes before saving the recipe.');return;}vscode.postMessage({type,...body});};
 const pretty=(value:unknown)=>JSON.stringify(value,null,2);
 const app=$('app');
+const busyControls=new BusyControls(document);
 app.innerHTML=`
 <header><div><span class="eyebrow">MODELBUILDER</span><h1 id="workbench-heading">Model projects</h1></div><div class="connection"><span id="connection" role="status">Connecting…</span><button id="connect">Connection</button></div></header>
 <div id="notice" role="status" hidden></div><div id="error" role="alert" hidden></div>
@@ -22,6 +32,8 @@ app.innerHTML=`
   <p class="muted">Build the dataset, initialization, training, evaluation and model-export pipeline below. Saved revisions and runs stay with this model.</p><div id="recipe-extra-actions" class="toolbar"></div><div id="identity" class="identity">Loading the model recipe…</div>
   <div id="migration" class="warning" hidden></div><div id="remote" class="warning" hidden></div>
   <div id="conflict" class="conflict" hidden><h2>Concurrent edit conflict</h2><p>Your draft is preserved. Compare it to the current server revision before resolving.</p><pre id="conflict-diff"></pre><div class="columns"><div><h3>Current server</h3><pre id="server-json"></pre></div><div><h3>Your draft</h3><pre id="local-json"></pre></div></div><button id="discard-conflict">Load server revision and discard draft</button></div>
+  <details class="run-settings" id="live-recipe-settings"><summary>Evaluate checkpoints during training</summary><p class="muted">Explicitly enable bounded checkpoint evaluation for this recipe. Connect the training checkpoint output to one evaluation component. Results appear in Runs while training continues. No external tracking is required.</p>
+<form id="live-recipe-form"><div class="notification-toggles"><label><input id="live-enabled" type="checkbox"> Evaluate each published checkpoint</label></div><div class="notification-options"><label>Concurrent evaluations<input id="live-concurrency" type="number" min="1" max="4" value="1" required></label><label>Evaluation timeout (seconds)<input id="live-timeout" type="number" min="1" max="3600" value="300" required></label><div id="live-cadences"></div></div><p id="live-cadence-help" class="muted"></p><button type="submit">Apply to recipe draft</button><button type="button" id="reset-live-settings">Discard settings edits</button><span class="muted">Save the recipe revision before running.</span></form></details>
   <div id="recipe-editor" class="editor-grid">
     <div class="graph-pane"><div class="toolbar"><h2>Pipeline graph</h2><button id="toggle-source" type="button" aria-expanded="true" aria-controls="recipe-source-pane">Hide JSON</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit">Reset view</button><span class="muted">Drag to pan · Wheel to zoom</span></div><svg id="graph" role="img" aria-label="Editable typed pipeline graph" viewBox="0 0 900 440"><g id="graph-layer"></g></svg>
       <div class="toolbar"><label for="node-kind">Component</label><select id="node-kind"></select><input id="node-id" placeholder="Unique node ID" aria-label="New node ID"><button id="add-node">Add node</button></div>
@@ -32,10 +44,22 @@ app.innerHTML=`
     <div id="recipe-source-pane" class="source-pane"><div class="toolbar"><h2>Canonical recipe JSON</h2></div><label class="sr-only" for="source">Canonical recipe JSON source</label><textarea id="source" spellcheck="false" aria-describedby="source-help"></textarea><p id="source-help" class="muted">Graph and JSON share this draft. Saving calls the same revision-checked operation as MCP. Ctrl/Cmd+S saves the recipe.</p><span id="parse-error" role="alert"></span></div>
   </div>
 </section>
-<section id="Research" class="page" hidden><h2>Research, evidence and decisions</h2><p>Keep sources, propositions and measurable hypotheses separate. Preserve negative and inconclusive results.</p><div id="research-actions" class="toolbar"></div><div id="research-records" class="cards"></div></section>
-<section id="Code" class="page" hidden><h2>Architecture and code</h2><p>Python is a first-class node with an explicit entrypoint and typed inputs/outputs. Edit arbitrary model code in the native editor.</p><button id="open-code">Open code explorer</button><pre id="code-info"></pre></section>
-<section id="Data" class="page" hidden><h2>Dataset references</h2><p>References and immutable revisions live in your recipe. ModelBuilder does not mirror datasets.</p><pre id="data-info"></pre></section>
-<section id="Runs" class="page" hidden><h2>Runs and evaluations</h2><div class="toolbar" id="run-actions"></div><div class="run-grid"><div id="run-list" class="cards"></div><div><div id="run-summary"></div><p class="warning">A cancellation request is not confirmation that the worker has stopped. Only the reconciled backend status confirms termination.</p><h3>Backend logs</h3><pre id="run-logs">Select a run.</pre><h3>Artifacts and checkpoints</h3><pre id="run-artifacts">No run selected.</pre></div></div></section>
+<section id="Research" class="page" hidden><h2>Research, evidence and decisions</h2><p>Keep sources, propositions and measurable hypotheses separate. Preserve negative and inconclusive results.</p><div id="research-actions" class="toolbar"></div><div id="research-workflow-actions" class="toolbar"></div><p class="muted">Keep citations, source passages and claims distinct. Stage a proposed recipe change, review its exact diff, then explicitly apply an approved revision. Applying a proposal never starts training.</p><div id="research-workflow"></div><h3>Evidence, hypotheses and decisions</h3><div id="research-records" class="cards"></div></section>
+<section id="Code" class="page" hidden><h2>Architecture and code</h2><p>Python is a first-class node with an explicit entrypoint and typed inputs/outputs. Edit arbitrary model code in the native editor.</p><div class="toolbar"><button id="open-code">Open code explorer</button><button id="setup-assistant">Set up optional coding tool…</button></div><p class="muted">Codex and Claude Code are optional, independent tools. Setup reviews exact extension and MCP changes before applying them. It never runs paid inference or copies the IDE credential.</p><pre id="code-info"></pre></section>
+<section id="Data" class="page" hidden><h2>Datasets, versions and splits</h2><p>Register pinned CSV/JSONL manifests using operator-approved file aliases. Dataset contents stay at their source. Immutable revisions preserve sample/split identities, rights and transformation provenance.</p><div id="dataset-actions" class="toolbar"></div><p id="dataset-error" class="warning" hidden></p><div id="dataset-records"></div><section id="dataset-preview" hidden></section><details><summary>Recipe dataset bindings</summary><p class="muted">A registered dataset is not proof of model consumption. To use a version in a recipe, the operator must first resolve its portable reference JSON and pinned source dependencies. Add a dataset.version.import node using that declared reference ID, split and purpose; no reference is fabricated or source uploaded by this screen.</p><pre id="data-info"></pre></details></section>
+<section id="Runs" class="page" hidden><h2>Runs and evaluations</h2><div class="toolbar" id="run-actions"></div>
+<details class="run-settings"><summary>Evaluation notifications</summary><p class="muted">Native IDE notifications for the open model project, including when the workbench is hidden. Historical results are silent on first connection. Notifications are grouped to avoid repeated alerts; nothing is sent outside this IDE.</p>
+<form id="notification-form"><div class="notification-toggles">
+<label><input id="notify-enabled" type="checkbox"> Enable IDE notifications</label>
+<label><input id="notify-results" type="checkbox"> Completed results</label>
+<label><input id="notify-improvements" type="checkbox"> Verified improvements</label>
+<label><input id="notify-regressions" type="checkbox"> Verified regressions</label>
+<label><input id="notify-failures" type="checkbox"> Failed evaluations</label>
+<label><input id="notify-trainingFinished" type="checkbox"> Training finished</label><label><input id="notify-trainingFailed" type="checkbox"> Training failed</label><label><input id="notify-trainingCanceled" type="checkbox"> Confirmed cancellation</label></div>
+<div class="notification-options"><label>Metric filter (blank means all)<input id="notify-metric" maxlength="160"></label><label>Minimum absolute metric change<input id="notify-delta" type="number" min="0" step="any" value="0"></label><label>Minimum seconds between notifications<input id="notify-interval" type="number" min="10" max="3600" value="30"></label></div><button type="submit">Save notification preferences</button><span id="notification-saved" role="status"></span></form></details>
+<details class="run-settings"><summary>Optional Weights &amp; Biases tracking</summary><p class="muted">Off by default. Offline writes local tracking files. Online sends only allowlisted metrics and sanitized run identity to the explicit W&amp;B destination, with confirmation for each run. Source code, datasets and checkpoints are never uploaded.</p>
+<form id="tracking-form"><div class="notification-options"><label>Tracking mode<select id="tracking-mode"><option value="disabled">Disabled</option><option value="offline">Offline only</option><option value="online">Online, confirm each run</option></select></label><label>W&amp;B entity<input id="tracking-entity" autocomplete="off"></label><label>W&amp;B project<input id="tracking-project" autocomplete="off"></label><label>Metric allowlist (comma separated)<input id="tracking-metrics" placeholder="validation_loss, accuracy"></label><label>Artifact policy<select id="tracking-artifacts"><option value="none">No artifacts</option><option value="metrics_snapshot">Sanitized metrics JSON only</option></select></label></div><p class="muted">Online credentials must be configured by the service operator in MODELBUILDER_WANDB_API_KEY. Never paste a credential here.</p><button type="submit">Save project tracking defaults</button><span id="tracking-saved" role="status"></span></form></details>
+<section id="run-admission" class="warning" hidden aria-label="Execution plan diagnostics"></section><div class="run-grid"><div id="run-list" class="cards"></div><div><div id="run-summary"></div><div id="tracking-status" class="muted"></div><section id="live-evaluations" aria-label="Live checkpoint evaluations"></section><p class="warning">A cancellation request is not confirmation that the worker has stopped. Only the reconciled backend status confirms termination.</p><h3>Backend logs</h3><pre id="run-logs">Select a run.</pre><h3>Artifacts and checkpoints</h3><pre id="run-artifacts">No run selected.</pre></div></div></section>
 <section id="Versions" class="page" hidden><h2>Model versions and lineage</h2><div class="toolbar" id="version-actions"></div><div id="versions" class="cards"></div></section>
 <section id="Compute" class="page" hidden><h2>Local compute preview</h2><p>Inspect actual target capabilities and recipe requirements. Remote spending is disabled. No remote budget enforcement is claimed.</p><div class="toolbar" id="compute-actions"></div><pre id="compute-info"></pre></section>
 <section id="operation-panel" hidden><div class="toolbar"><h2 id="operation-title"></h2><button id="close-operation">Close form</button></div><p id="operation-description"></p><form id="operation-form"></form></section>
@@ -45,9 +69,14 @@ app.innerHTML=`
 bindRecipeSourcePane($('recipe-editor'), $('recipe-source-pane'), $<HTMLButtonElement>('toggle-source'));
 let catalog:OperationSpec[]=[];
 let snapshot:RecordValue={};
+let research:ResearchCollections={};
+let datasets:RecordValue[]=[];
+let datasetSchema:RecordValue={};
 let recipe:Recipe|undefined;
 let selectedNode:string|undefined;
 let nodePanelDirty=false;
+let liveSettingsDirty=false;
+let liveSettingsBaseline='';
 let nodePanelBaseline="";
 let activeRun:string|undefined;
 let section='Recipe';
@@ -56,12 +85,12 @@ let busy=false;
 let pan={x:0,y:0,scale:1};
 let selectedOperation:OperationSpec|undefined;
 const layouts=new Map<string,{x:number;y:number}>();
-const kinds=['dataset.import','dataset.synthetic','dataset.validate','model.initialize','model.train','model.evaluate','model.compare','model.checkpoint','model.export','training.kl_anchor','code.python'];
+let kinds=executableKindChoices();
 function node<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string,className?:string):HTMLElementTagNameMap[K] {const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(className)el.className=className;return el;}
 function button(label:string,action:()=>void):HTMLButtonElement {const el=node('button',label);el.addEventListener('click',action);return el;}
 function options(select:HTMLSelectElement,values:{value:string;label:string}[],current?:string) {select.replaceChildren(...values.map(value=>{const option=node('option',value.label);option.value=value.value;return option;}));if(current!==undefined)select.value=current;}
 function report(message:string) {$('error').textContent=message;$('error').hidden=false;}
-function markDirty(value:boolean) {dirty=value;$('dirty').textContent=value?'Unsaved draft':'Saved';$('dirty').className=`pill ${value?'unsaved':''}`;send('dirty',{dirty:value});if(value&&recipe)send('draftState',{recipeId:recipe.recipe_id,state:{source:$<HTMLTextAreaElement>('source').value,selectedNode,nodePanelDirty,nodePanelBaseline,nodeFields:Object.fromEntries(['node-implementation','node-inputs','node-outputs','node-parameters'].map(id=>[id,$<HTMLTextAreaElement>(id).value]))}});}
+function markDirty(value:boolean) {dirty=value;$('dirty').textContent=value?'Unsaved draft':'Saved';$('dirty').className=`pill ${value?'unsaved':''}`;send('dirty',{dirty:value});if(value&&recipe)send('draftState',{recipeId:recipe.recipe_id,state:{source:$<HTMLTextAreaElement>('source').value,selectedNode,nodePanelDirty,nodePanelBaseline,liveSettingsDirty,liveSettingsBaseline,liveFields:liveFormValues(),nodeFields:Object.fromEntries(['node-implementation','node-inputs','node-outputs','node-parameters'].map(id=>[id,$<HTMLTextAreaElement>(id).value]))}});}
 function showSection(value:string) {section=value;for(const name of ['Research','Code','Data','Recipe','Runs','Versions','Compute']){$(name).hidden=name!==value;document.querySelector(`[data-section="${name}"]`)?.classList.toggle('active',name===value);}vscode.setState({section,projectId:snapshot.project?.project_id,recipeId:recipe?.recipe_id});}
 for(const name of ['Research','Code','Data','Recipe','Runs','Versions','Compute']){const tab=button(name,()=>showSection(name));tab.dataset.section=name;$('tabs').append(tab);}
 showSection(section);
@@ -72,23 +101,23 @@ $('validate').onclick=()=>send('validateRecipe',{source:$<HTMLTextAreaElement>('
 $('diff').onclick=()=>send('diffRecipe',{source:$<HTMLTextAreaElement>('source').value});
 $('save').onclick=()=>send('saveRecipe',{source:$<HTMLTextAreaElement>('source').value});
 $('reload').onclick=$('discard-conflict').onclick=()=>send('reloadRecipe');
-$('open-code').onclick=()=>send('openCode');
+$('open-code').onclick=()=>send('openCode');$('setup-assistant').onclick=()=>send('setupAssistant');
 $('close-operation').onclick=()=>{$('operation-panel').hidden=true;};$('close-result').onclick=()=>{$('result-panel').hidden=true;};
 document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key==='s'&&section==='Recipe'){event.preventDefault();if(!busy&&recipe)send('saveRecipe',{source:$<HTMLTextAreaElement>('source').value});}});
 $<HTMLTextAreaElement>('source').addEventListener('input',()=>{
   markDirty(true);
-  try{const value=JSON.parse($<HTMLTextAreaElement>('source').value);if(!Array.isArray(value.nodes)||!Array.isArray(value.edges))throw new Error('Graph requires nodes and edges arrays.');recipe=value;$('parse-error').textContent='';renderGraph();if(selectedNode&&!nodePanelDirty)fillNodePanel(selectedNode);}
+  try{const value=JSON.parse($<HTMLTextAreaElement>('source').value);if(!Array.isArray(value.nodes)||!Array.isArray(value.edges))throw new Error('Graph requires nodes and edges arrays.');recipe=value;$('parse-error').textContent='';renderGraph();renderReferences();if(selectedNode&&!nodePanelDirty)fillNodePanel(selectedNode);}
   catch(error){$('parse-error').textContent=`Source parse: ${(error as Error).message}`;}
 });
 function updateDraft(value:Recipe):boolean {try{readVisualSource($<HTMLTextAreaElement>('source').value);}catch(error){report((error as Error).message);return false;}recipe=value;$<HTMLTextAreaElement>('source').value=pretty(value);markDirty(true);renderGraph();renderReferences();return true;}
-function renderRecipe(value:Recipe|undefined) {$('error').hidden=true;$('error').textContent='';$('notice').hidden=true;recipe=value;selectedNode=undefined;nodePanelDirty=false;layouts.clear();markDirty(false);$('conflict').hidden=true;$('remote').hidden=true;$('parse-error').textContent='';$<HTMLTextAreaElement>('source').value=value?pretty(value):'';$('identity').textContent=value?`${value.name}  ·  ${value.recipe_id}  ·  revision ${value.revision}\nSHA256 ${value.digest}`:'Loading the model recipe…';renderGraph();renderReferences();}
-function renderReferences() {$('code-info').textContent=pretty({project:snapshot.project?.project_id,source:recipe?.source,python_nodes:recipe?.nodes.filter(n=>n.kind==='code.python')});$('data-info').textContent=pretty({external_dependencies:recipe?.external_dependencies,dataset_nodes:recipe?.nodes.filter(n=>n.kind.startsWith('dataset.'))});$('compute-info').textContent=pretty({resources:recipe?.resources,environment:recipe?.environment,remote_spending:'disabled'});}
+function renderRecipe(value:Recipe|undefined) {$('error').hidden=true;$('error').textContent='';$('notice').hidden=true;recipe=value;selectedNode=undefined;nodePanelDirty=false;liveSettingsDirty=false;layouts.clear();markDirty(false);$('conflict').hidden=true;$('remote').hidden=true;$('parse-error').textContent='';$<HTMLTextAreaElement>('source').value=value?pretty(value):'';$('identity').textContent=value?`${value.name}  ·  ${value.recipe_id}  ·  revision ${value.revision}\nSHA256 ${value.digest}`:'Loading the model recipe…';renderGraph();renderReferences();}
+function renderReferences() {renderLiveRecipeSettings();$('code-info').textContent=pretty({project:snapshot.project?.project_id,source:recipe?.source,python_nodes:recipe?.nodes.filter(n=>n.kind==='code.python')});$('data-info').textContent=pretty({external_dependencies:recipe?.external_dependencies,dataset_nodes:recipe?.nodes.filter(n=>n.kind.startsWith('dataset.'))});$('compute-info').textContent=pretty({resources:recipe?.resources,environment:recipe?.environment,remote_spending:'disabled'});}
 function renderProjects(projects:RecordValue[]) {
   const list=$('project-list');list.replaceChildren();
   for(const project of projects){const card=node('article',undefined,'project-card');card.append(node('h3',project.model_name));if(project.description)card.append(node('p',project.description,'muted'));card.append(node('p',`Project ${project.slug??project.project_id}`,'muted'));const open=button('Open model project',()=>send('selectProject',{projectId:project.project_id}));open.dataset.projectId=project.project_id;card.append(open);list.append(card);}
   if(!projects.length)list.append(node('p','No model projects yet. Create one to begin.','muted'));
 }
-function showLanding(){snapshot={};activeRun=undefined;renderRecipe(undefined);$('workspace').hidden=true;$('landing').hidden=false;$('workbench-heading').textContent='Model projects';$('operation-panel').hidden=true;$('result-panel').hidden=true;vscode.setState({});}
+function showLanding(){datasets=[];renderDatasetRecords();$('dataset-error').hidden=true;$('dataset-error').textContent='';$('dataset-preview').hidden=true;$('dataset-preview').replaceChildren();research={};renderResearch();trackingDirty=false;$('run-admission').replaceChildren();$('run-admission').hidden=true;snapshot={};activeRun=undefined;resetRun();renderRecipe(undefined);$('workspace').hidden=true;$('landing').hidden=false;$('workbench-heading').textContent='Model projects';$('operation-panel').hidden=true;$('result-panel').hidden=true;vscode.setState({});}
 function renderSnapshot() {
   const project=snapshot.project;if(!project)return;
   $('landing').hidden=true;$('workspace').hidden=false;$('workbench-heading').textContent=project.model_name;
@@ -96,7 +125,8 @@ function renderSnapshot() {
   $('migration').hidden=!project.recipe_migration?.review_required;$('migration').textContent=project.recipe_migration?.review_required?'This project was migrated from multiple recipe identities. Review the current recipe and save a revision before execution; previous recipe manifests and run references remain preserved.':'';
   const records=$('research-records');records.replaceChildren();
   for(const [key,label] of [['evidence','Evidence'],['claims','Claims'],['hypotheses','Hypotheses'],['decisions','Decisions']]){const group=node('section');group.append(node('h3',label));for(const record of snapshot[key]??[]){const details=node('details');details.append(node('summary',record.title??record.proposition??record.proposed_change??`${record.outcome}: ${record.rationale}`));details.append(node('pre',pretty(record)));group.append(details);}if(!(snapshot[key]??[]).length)group.append(node('p','No records yet.','muted'));records.append(group);}
-  const runs=$('run-list');runs.replaceChildren();for(const run of snapshot.runs??[]){const card=button(`${run.status??'unknown'} · ${run.operation_id}`,()=>{activeRun=run.operation_id;send('selectRun',{operationId:run.operation_id});});card.className='run-card';card.append(node('small',`Backend: ${run.backend_run_id??'Not yet assigned'}`));runs.append(card);}if(!(snapshot.runs??[]).length)runs.append(node('p','No runs yet. Preview an execution plan first.','muted'));
+  renderTrackingDefaults();
+  const runs=$('run-list');runs.replaceChildren();for(const run of snapshot.runs??[]){const card=button(`${run.status??'unknown'} · ${run.operation_id}`,()=>{activeRun=run.operation_id;resetRun();send('selectRun',{operationId:run.operation_id});});card.className='run-card';card.append(node('small',`Backend: ${run.backend_run_id??'Not yet assigned'}`));runs.append(card);}if(!(snapshot.runs??[]).length)runs.append(node('p','No runs yet. Preview an execution plan first.','muted'));
   renderReferences();
 }
 const svgNamespace='http://www.w3.org/2000/svg';
@@ -131,53 +161,124 @@ graph.addEventListener('pointerdown',event=>{const e=event as PointerEvent;if((e
 graph.addEventListener('pointermove',event=>{if(!dragging)return;const e=event as PointerEvent;const factor=900/graph.getBoundingClientRect().width;pan.x+=(e.clientX-dragging.x)*factor;pan.y+=(e.clientY-dragging.y)*factor;dragging={x:e.clientX,y:e.clientY};renderGraph();});
 graph.addEventListener('pointerup',()=>{dragging=undefined;});graph.addEventListener('pointercancel',()=>{dragging=undefined;});
 
-function operationDefaults():RecordValue{return {recipe_id:recipe?.recipe_id,expected_revision:recipe?.revision,recipe_revision:recipe?.revision,operation_id:activeRun,target:'local-cpu',trusted:true,mode:'exact_state',acceptance_metric:{metric:'validation_loss',direction:'minimize'},selection_rule:{metric:'validation_loss',direction:'minimize'},outcome:'inconclusive',evidence_ids:[],claim_ids:[],run_ids:activeRun?[activeRun]:[],changes:{}};}
-function openOperation(name:string){
+function renderDatasetRecords(){renderDatasets($('dataset-records'),datasets,openOperation,dataset=>send('prepareDatasetVersion',{datasetId:dataset.dataset_id,revision:dataset.revision}));}
+function renderResearch(){renderResearchWorkflow($('research-workflow'),research,new Set(catalog.map(item=>item.name)),openOperation);}
+function renderLiveRecipeSettings(){
+  if(liveSettingsDirty)return;
+  liveSettingsBaseline=liveSettingsIdentity(recipe);
+  const settings=liveEvaluationSettings(recipe);$<HTMLInputElement>('live-enabled').checked=settings.enabled;$<HTMLInputElement>('live-concurrency').value=String(settings.max_concurrency);$<HTMLInputElement>('live-timeout').value=String(settings.timeout_seconds);
+  const cadences=$('live-cadences');cadences.replaceChildren();
+  for(const item of recipe?.nodes??[]){if(item.kind!=='model.train'||item.implementation_ref!=='builtin:model.train')continue;const label=node('label',`${item.id}: checkpoint every (steps)`);const input=node('input');input.type='number';input.min='1';input.max='100000';input.required=true;input.value=String(item.parameters.checkpoint_interval_steps??1);input.dataset.cadenceNode=item.id;label.append(input);cadences.append(label);}
+  $('live-cadence-help').textContent='Fixture cadence is configurable above. Other training harnesses control checkpoint timing in their own component parameters; live evaluation starts when the harness reports a complete checkpoint.';
+}
+function liveFormValues(){return {enabled:$<HTMLInputElement>('live-enabled').checked,concurrency:$<HTMLInputElement>('live-concurrency').value,timeout:$<HTMLInputElement>('live-timeout').value,cadences:Object.fromEntries(Array.from(document.querySelectorAll<HTMLInputElement>('[data-cadence-node]')).map(input=>[input.dataset.cadenceNode!,input.value]))};}
+$('live-recipe-form').addEventListener('input',()=>{liveSettingsDirty=true;markDirty(true);});
+$('reset-live-settings').onclick=()=>{try{recipe=readVisualSource($<HTMLTextAreaElement>('source').value);liveSettingsDirty=false;renderLiveRecipeSettings();markDirty(true);}catch(error){report((error as Error).message);}};
+$('live-recipe-form').onsubmit=event=>{event.preventDefault();if(!recipe)return;if(nodePanelDirty){report('Apply or discard node panel changes before changing live evaluation settings.');return;}try{const current=readVisualSource($<HTMLTextAreaElement>('source').value);assertLiveSettingsCurrent(current,liveSettingsBaseline);const cadences:Record<string,number>={};for(const input of document.querySelectorAll<HTMLInputElement>('[data-cadence-node]'))cadences[input.dataset.cadenceNode!]=Number(input.value);const updated=withLiveEvaluationSettings(current,{enabled:$<HTMLInputElement>('live-enabled').checked,max_concurrency:Number($<HTMLInputElement>('live-concurrency').value),timeout_seconds:Number($<HTMLInputElement>('live-timeout').value)},cadences);liveSettingsDirty=false;updateDraft(updated);}catch(error){report((error as Error).message);}};
+function renderAdmission(plan:RecordValue){
+  const container=$('run-admission');const messages=admissionMessages(plan);container.replaceChildren();container.hidden=!messages.length&&plan.executable!==false;
+  if(!container.hidden){container.append(node('h3',plan.executable===false?'Execution plan blocked':'Local execution capabilities'));for(const message of messages)container.append(node('p',message));}
+}
+function resetRun(){
+  $('run-summary').replaceChildren();$('run-logs').textContent='Select a run.';$('run-artifacts').textContent='No run selected.';$('tracking-status').textContent='';renderLiveEvaluations($('live-evaluations'),undefined);
+}
+function renderNotificationPreferences(raw:unknown){
+  const prefs=notificationPreferences(raw??DEFAULT_NOTIFICATION_PREFERENCES);
+  for(const key of NOTIFICATION_BOOLEAN_KEYS)$<HTMLInputElement>(`notify-${key}`).checked=prefs[key];
+  $<HTMLInputElement>('notify-metric').value=prefs.metric;$<HTMLInputElement>('notify-delta').value=String(prefs.minimumDelta);$<HTMLInputElement>('notify-interval').value=String(prefs.minimumIntervalSeconds);
+}
+$('notification-form').onsubmit=event=>{event.preventDefault();const preferences:RecordValue={metric:$<HTMLInputElement>('notify-metric').value,minimumDelta:Number($<HTMLInputElement>('notify-delta').value),minimumIntervalSeconds:Number($<HTMLInputElement>('notify-interval').value)};for(const key of NOTIFICATION_BOOLEAN_KEYS)preferences[key]=$<HTMLInputElement>(`notify-${key}`).checked;send('notificationPreferences',{preferences});};
+let trackingDirty=false;
+$('tracking-form').addEventListener('input',()=>{trackingDirty=true;$('tracking-saved').textContent='Unsaved tracking preferences';});
+function renderTrackingDefaults(){
+  if(trackingDirty)return;
+  const config=snapshot.project?.tracking??{};
+  $<HTMLSelectElement>('tracking-mode').value=config.mode??'disabled';$<HTMLInputElement>('tracking-entity').value=config.entity??'';$<HTMLInputElement>('tracking-project').value=config.project??'';
+  $<HTMLInputElement>('tracking-metrics').value=(config.metric_names??[]).join(', ');$<HTMLSelectElement>('tracking-artifacts').value=config.artifact_policy??'none';
+}
+$('tracking-form').onsubmit=event=>{event.preventDefault();const mode=$<HTMLSelectElement>('tracking-mode').value;const entity=$<HTMLInputElement>('tracking-entity').value.trim(),project=$<HTMLInputElement>('tracking-project').value.trim();if(mode!=='disabled'&&(!entity||!project)){report('Choose an explicit W&B entity and project for enabled tracking.');return;}send('operation',{operation:'project.update',payload:{expected_revision:snapshot.project.revision,changes:{tracking:{mode,entity:entity||null,project:project||null,credential_env:'MODELBUILDER_WANDB_API_KEY',metric_names:$<HTMLInputElement>('tracking-metrics').value.split(',').map(item=>item.trim()).filter(Boolean),artifact_policy:$<HTMLSelectElement>('tracking-artifacts').value}}}});};
+function renderTrackingStatus(tracking:RecordValue|undefined){$('tracking-status').textContent=tracking?`W&B: ${tracking.mode??'disabled'} · ${tracking.status??'unknown'}${tracking.url?` · ${tracking.url}`:''}${tracking.error_code?` · ${tracking.error_code}`:''}${tracking.remote_may_be_partial?' · Remote upload may be partial.':''}`:'W&B: disabled unless explicitly configured for this run.';}
+function openOperation(name:string,overrides:RecordValue={}){
+  if(name==='research.proposal.create'&&(nodePanelDirty||liveSettingsDirty)){report('Apply or discard recipe panel changes before staging a recipe proposal.');return;}
   const spec=catalog.find(o=>o.name===name);if(!spec){report(`Operation unavailable: ${name}`);return;}selectedOperation=spec;
   $('operation-panel').hidden=false;$('operation-title').textContent=name;$('operation-description').textContent=`${spec.description} Required scope: ${spec.scope}.`;
-  const form=$<HTMLFormElement>('operation-form');form.replaceChildren();const defaults=operationDefaults();if(!(name.startsWith('recipe.')||['run.plan','run.submit','run.resume'].includes(name)))delete defaults.expected_revision;
+  const form=$<HTMLFormElement>('operation-form');form.replaceChildren();const defaults=operationDefaults(recipe,activeRun);if(!(name.startsWith('recipe.')||['run.plan','run.submit','run.resume'].includes(name)))delete defaults.expected_revision;
+  if(name==='research.watch.create')Object.assign(defaults,{provider:'openalex',enabled:true,limit:5,interval_seconds:86400});
+  if(name==='dataset.preview')Object.assign(defaults,{offset:0,limit:20});
+  if(name==='dataset.register'||(name==='dataset.validate'&&!overrides.dataset_id))defaults.manifest={name:'',benchmark:'',license:'',provenance:{source:''},sources:[{id:'',root_id:'',path:'',format:'jsonl',sha256:''}],id_column:'id',row_schema:{type:'object',properties:{id:{type:'string'}},required:['id']},splits:[],transformations:[]};
+  if(name==='research.proposal.create'){try{defaults.recipe=readVisualSource($<HTMLTextAreaElement>('source').value);}catch(error){report((error as Error).message);return;}defaults.citations=[];}
+  Object.assign(defaults,overrides);
   for(const [key,schema]of Object.entries(spec.input_schema.properties)){
-    if(['project_id','idempotency_key','request_id'].includes(key)||((name.startsWith('recipe.')||['run.plan','run.submit','run.resume'].includes(name))&&['recipe_id','expected_revision','expected_recipe_revision'].includes(key))||(name==='run.submit'&&['trusted','target'].includes(key)))continue;
+    if(['project_id','idempotency_key','request_id'].includes(key)||((name.startsWith('recipe.')||['run.plan','run.submit','run.resume'].includes(name))&&['recipe_id','expected_revision','expected_recipe_revision'].includes(key))||(name==='run.submit'&&['trusted','target'].includes(key))||(['research.proposal.create','research.proposal.apply'].includes(name)&&['expected_recipe_revision','confirm_apply'].includes(key)))continue;
+    if(name==='dataset.validate'&&((overrides.dataset_id&&key==='manifest')||(!overrides.dataset_id&&['dataset_id','revision'].includes(key))))continue;
+    if(key==='manifest'&&name.startsWith('dataset.')){form.append(createDatasetManifestEditor(document,datasetSchema,defaults.manifest??{},report));continue;}
     const required=spec.input_schema.required.includes(key);const label=node('label',`${key.replaceAll('_',' ')}${required?' *':''}`);let input:HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement;
-    const types=Array.isArray(schema.type)?schema.type:[schema.type];
-    if(schema.enum){input=node('select');options(input,schema.enum.map((value:string)=>({value,label:value})));}
+    const types=Array.isArray(schema.type)?schema.type:[schema.type,...(schema.anyOf??[]).map((option:RecordValue)=>option.type),...(schema.const===undefined?[]:[typeof schema.const])];
+    if(key==='hypothesis_id'&&(snapshot.hypotheses??[]).length){input=node('select');options(input,[{value:'',label:'Choose a saved hypothesis'},...snapshot.hypotheses.map((item:RecordValue)=>({value:item.hypothesis_id,label:item.proposed_change??item.hypothesis_id}))]);}
+    else if(key==='evidence_id'&&(snapshot.evidence??[]).length){input=node('select');options(input,[{value:'',label:'Choose a saved citation'},...snapshot.evidence.map((item:RecordValue)=>({value:item.evidence_id,label:item.title??item.evidence_id}))]);}
+    else if(schema.enum){input=node('select');options(input,schema.enum.map((value:string)=>({value,label:value})));}
     else if(types.includes('object')||types.includes('array')){input=node('textarea');input.rows=3;input.spellcheck=false;input.dataset.json='true';}
     else{input=node('input');input.type=types.includes('boolean')?'checkbox':types.includes('integer')||types.includes('number')?'number':'text';}
     input.name=key;input.id=`op-${key}`;input.required=required;
+    if(input instanceof HTMLInputElement&&input.type==='number'){if(schema.minimum!==undefined)input.min=String(schema.minimum);if(schema.maximum!==undefined)input.max=String(schema.maximum);input.step=types.includes('integer')?'1':'any';}
+    if(schema.maxLength!==undefined&&(input instanceof HTMLInputElement||input instanceof HTMLTextAreaElement))input.maxLength=schema.maxLength;
+    if(key==='text'&&input instanceof HTMLInputElement){const textarea=node('textarea');textarea.rows=8;textarea.name=input.name;textarea.id=input.id;textarea.required=input.required;input=textarea;}
+    if(defaults[key]===undefined&&schema.default!==undefined)defaults[key]=schema.default;
     if(defaults[key]!==undefined){if(input instanceof HTMLInputElement&&input.type==='checkbox')input.checked=defaults[key];else input.value=input.dataset.json?pretty(defaults[key]):String(defaults[key]);}
-    label.append(input);form.append(label);
+    label.append(input);
+    if(key==='citations'&&input instanceof HTMLTextAreaElement){
+      const source=input,picker=node('select');picker.id='citation-picker';picker.multiple=true;picker.size=Math.min(6,Math.max(2,(snapshot.evidence??[]).length));picker.setAttribute('aria-label','Choose saved citations');
+      options(picker,(snapshot.evidence??[]).map((item:RecordValue)=>({value:item.evidence_id,label:item.title??item.evidence_id})));
+      const syncSelection=()=>{try{const references=JSON.parse(source.value||'[]');if(Array.isArray(references))for(const option of picker.options)option.selected=references.some(item=>item.evidence_id===option.value);}catch{}};
+      source.addEventListener('input',syncSelection);syncSelection();
+      picker.onchange=()=>{try{source.value=pretty(selectedCitations(source.value,Array.from(picker.selectedOptions).map(option=>option.value)));}catch(error){syncSelection();report((error as Error).message);}};
+      label.insertBefore(picker,input);label.append(node('small','Choose citations above. Advanced JSON below supports exact imported-text IDs, quotes and offsets; the service verifies those passages.','muted'));
+    }
+    form.append(label);
   }
-  const submit=node('button',spec.mutating?'Submit operation':'Read / preview','primary');submit.type='submit';form.append(submit);
-  form.onsubmit=event=>{event.preventDefault();const payload:RecordValue={};try{for(const input of Array.from(form.elements)){if(!(input instanceof HTMLInputElement||input instanceof HTMLTextAreaElement||input instanceof HTMLSelectElement)||!input.name)continue;if(input instanceof HTMLInputElement&&input.type==='checkbox')payload[input.name]=input.checked;else if(input.value!=='')payload[input.name]=input.dataset.json?JSON.parse(input.value):(input instanceof HTMLInputElement&&input.type==='number'?Number(input.value):input.value);}send('operation',{operation:name,payload});}catch(error){report(`Form JSON: ${(error as Error).message}`);}};
+  const evidencePicker=$<HTMLSelectElement>('op-evidence_id');if(evidencePicker instanceof HTMLSelectElement)evidencePicker.addEventListener('change',()=>{const current=(snapshot.evidence??[]).find((item:RecordValue)=>item.evidence_id===evidencePicker.value);const revision=$<HTMLInputElement>('op-expected_evidence_revision');if(revision&&current)revision.value=String(current.revision);});
+  const submit=node('button',name==='research.proposal.apply'?'Review and apply approved proposal':name==='research.proposal.create'?'Stage proposal for review':name==='research.proposal.review'?'Record explicit review':spec.mutating?'Submit operation':'Read / preview','primary');submit.type='submit';form.append(submit);
+  form.onsubmit=event=>{event.preventDefault();const payload:RecordValue={};try{if(form.querySelector('[data-manifest-dirty="true"]'))throw new Error('Apply the manifest fields to JSON before submitting, so the service uses your visible changes.');for(const input of Array.from(form.elements)){if(!(input instanceof HTMLInputElement||input instanceof HTMLTextAreaElement||input instanceof HTMLSelectElement)||!input.name)continue;if(input instanceof HTMLInputElement&&input.type==='checkbox')payload[input.name]=input.checked;else if(input.value!=='')payload[input.name]=input.dataset.json?JSON.parse(input.value):(input instanceof HTMLInputElement&&input.type==='number'?Number(input.value):input.value);}send('operation',{operation:name,payload});}catch(error){report(`Form JSON: ${(error as Error).message}`);}};
   $('operation-panel').scrollIntoView({block:'nearest'});
 }
 function buildActions(){
   const groups:Record<string,[string,string][]>={
     'research-actions':[['evidence.add','Add evidence'],['evidence.search','Search saved evidence'],['claim.create','Add claim'],['claim.update','Edit claim'],['hypothesis.create','New hypothesis'],['hypothesis.update','Edit hypothesis'],['decision.record','Record decision']],
+    'dataset-actions':[['dataset.register','Register dataset version'],['dataset.validate','Validate a manifest'],['dataset.get','Inspect historical revision']],
+    'research-workflow-actions':[['research.watch.create','New research watch'],['research.watch.refresh_due','Refresh due watches now'],['research.text.import','Import licensed source text'],['research.proposal.create','Stage recipe proposal']],
     'run-actions':[['run.plan','Preview run'],['run.submit','Run recipe'],['run.cancel','Request stop'],['run.resume','Resume checkpoint'],['run.compare','Compare runs']],
     'version-actions':[['model.version.list','Load versions'],['model.version.get','Version details'],['model.version.lineage','Inspect lineage'],['model.version.promote','Promote by decision'],['model.checkpoint.get','Inspect checkpoint']],
     'compute-actions':[['execution.targets','Inspect targets'],['run.plan','Preview recipe requirements'],['policy.get','Read policy'],['cost.estimate','Inspect cost availability']]
   };
   for(const [id,actions]of Object.entries(groups)){$(id).replaceChildren(...actions.filter(([name])=>catalog.some(o=>o.name===name)).map(([name,label])=>button(label,()=>openOperation(name))));}
+  $('dataset-actions').append(button('Reload datasets',()=>send('refreshDatasets')));
+  $('research-workflow-actions').append(button('Reload saved research',()=>send('refreshResearch')));
   const recipeActions=$('recipe-extra-actions');recipeActions.replaceChildren();for(const [name,label]of [['recipe.resolve_dependencies','Inspect dependencies']])if(catalog.some(o=>o.name===name)){const action=button(label,()=>openOperation(name));action.dataset.operation=name;recipeActions.append(action);}
 }
 window.addEventListener('message',event=>{
   const message=event.data;if(!message||typeof message.type!=='string')return;
   switch(message.type){
-    case 'init':catalog=message.catalog;renderProjects(message.projects);$('connection').textContent=message.trusted?'Service connected':'Read/author mode · Workspace untrusted';buildActions();break;
+    case 'init':datasetSchema=message.datasetSchema??{};catalog=message.catalog;renderNotificationPreferences(message.notificationPreferences);renderProjects(message.projects);$('connection').textContent=message.trusted?'Service connected':'Read/author mode · Workspace untrusted';buildActions();break;
     case 'landing':showLanding();renderProjects(message.projects??[]);break;
-    case 'project':snapshot=message.snapshot;renderSnapshot();showSection(message.section??'Recipe');if(message.runId)activeRun=message.runId;break;
-    case 'snapshot':snapshot=message.snapshot;renderSnapshot();break;
+    case 'project':if(snapshot.project?.project_id!==message.snapshot?.project?.project_id){trackingDirty=false;research={};renderResearch();datasets=[];renderDatasetRecords();$('dataset-error').hidden=true;$('dataset-error').textContent='';$('dataset-preview').hidden=true;$('dataset-preview').replaceChildren();}snapshot=message.snapshot;activeRun=message.runId;resetRun();renderSnapshot();renderNotificationPreferences(message.notificationPreferences);showSection(message.section??'Recipe');break;
+    case 'snapshot':if(message.snapshot?.project?.project_id!==snapshot.project?.project_id)break;snapshot=message.snapshot;renderSnapshot();break;
+    case 'datasets':if(message.projectId===snapshot.project?.project_id){datasets=message.datasets;renderDatasetRecords();$('dataset-error').hidden=!message.error;$('dataset-error').textContent=message.error??'';}break;
+    case 'datasetVersion':if(message.projectId===snapshot.project?.project_id)openOperation('dataset.version',{dataset_id:message.dataset.dataset_id,expected_revision:message.dataset.revision,manifest:message.dataset.manifest});break;
+    case 'research':if(message.projectId===snapshot.project?.project_id){research=message.research;renderResearch();}break;
+    case 'capabilities':if(message.projectId===snapshot.project?.project_id){kinds=executableKindChoices(message.result?.capabilities);options($<HTMLSelectElement>('node-kind'),kinds.map(kind=>({value:kind,label:kind})),$<HTMLSelectElement>('node-kind').value);renderAdmission(message.result);}break;
+    case 'runList':if(message.projectId===snapshot.project?.project_id){snapshot.runs=message.runs;renderSnapshot();}break;
+    case 'notificationPreferences':renderNotificationPreferences(message.preferences);$('notification-saved').textContent='Saved in this IDE workspace.';break;
     case 'recipe':renderRecipe(message.recipe??undefined);break;
     case 'savedRetained':$('identity').textContent=`${message.recipe.name} · ${message.recipe.recipe_id} · saved revision ${message.recipe.revision}\nSHA256 ${message.recipe.digest}`;$('notice').hidden=false;$('notice').textContent='Saved the submitted revision. Your newer edits are still unsaved and have been preserved.';markDirty(true);break;
-    case 'restoreDraft':{const state=message.state;$<HTMLTextAreaElement>('source').value=state.source;try{recipe=readVisualSource(state.source);$('parse-error').textContent='';}catch(error){$('parse-error').textContent=(error as Error).message;}selectedNode=state.selectedNode;nodePanelDirty=Boolean(state.nodePanelDirty);nodePanelBaseline=state.nodePanelBaseline??'';renderGraph();if(selectedNode){fillNodePanel(selectedNode);nodePanelDirty=Boolean(state.nodePanelDirty);if(nodePanelDirty){nodePanelBaseline=state.nodePanelBaseline??nodePanelBaseline;for(const [id,value]of Object.entries(state.nodeFields??{}))if(['node-implementation','node-inputs','node-outputs','node-parameters'].includes(id))$<HTMLTextAreaElement>(id).value=String(value);}}markDirty(true);$('notice').hidden=false;$('notice').textContent='Recovered your unsaved recipe draft. The original base revision is retained for conflict checking.';break;}
-    case 'busy':busy=message.busy;for(const control of document.querySelectorAll<HTMLButtonElement|HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('button,input,textarea,select'))control.disabled=busy;break;
+    case 'restoreDraft':{const state=message.state;$<HTMLTextAreaElement>('source').value=state.source;try{recipe=readVisualSource(state.source);$('parse-error').textContent='';}catch(error){$('parse-error').textContent=(error as Error).message;}selectedNode=state.selectedNode;nodePanelDirty=Boolean(state.nodePanelDirty);nodePanelBaseline=state.nodePanelBaseline??'';renderGraph();if(selectedNode){fillNodePanel(selectedNode);nodePanelDirty=Boolean(state.nodePanelDirty);if(nodePanelDirty){nodePanelBaseline=state.nodePanelBaseline??nodePanelBaseline;for(const [id,value]of Object.entries(state.nodeFields??{}))if(['node-implementation','node-inputs','node-outputs','node-parameters'].includes(id))$<HTMLTextAreaElement>(id).value=String(value);}}liveSettingsDirty=false;renderLiveRecipeSettings();if(state.liveSettingsDirty){liveSettingsDirty=true;liveSettingsBaseline=state.liveSettingsBaseline??liveSettingsBaseline;const fields=state.liveFields??{};$<HTMLInputElement>('live-enabled').checked=fields.enabled===true;$<HTMLInputElement>('live-concurrency').value=String(fields.concurrency??1);$<HTMLInputElement>('live-timeout').value=String(fields.timeout??300);for(const input of document.querySelectorAll<HTMLInputElement>('[data-cadence-node]'))if(fields.cadences?.[input.dataset.cadenceNode!]!==undefined)input.value=String(fields.cadences[input.dataset.cadenceNode!]);}markDirty(true);$('notice').hidden=false;$('notice').textContent='Recovered your unsaved recipe draft. The original base revision is retained for conflict checking.';break;}
+    case 'busy':busy=message.busy;busyControls.set(busy);break;
     case 'error':report(`${message.code?message.code+': ':''}${message.message}${message.details?'\n'+pretty(message.details):''}`);break;
     case 'connection':$('connection').textContent=message.message;break;
     case 'remoteChanged':$('remote').hidden=false;$('remote').textContent=`Another client saved revision ${message.revision}. Your unsaved draft is preserved. Use Diff, then Reload to discard or Save to inspect the conflict.`;break;
     case 'conflict':$('conflict').hidden=false;$('conflict-diff').textContent=pretty(message.diff);$('server-json').textContent=pretty(message.server);$('local-json').textContent=pretty(message.local);$('conflict').scrollIntoView({block:'nearest'});break;
-    case 'result':$('result-panel').hidden=false;$('result-title').textContent=message.operation;$('result').textContent=pretty(message.result);if(message.operation==='model.version.list'){$('versions').replaceChildren(node('pre',pretty(message.result)));}if(['execution.targets','cost.estimate','run.plan','policy.get'].includes(message.operation))$('compute-info').textContent=pretty(message.result);break;
-    case 'run':activeRun=message.run.operation_id;$('run-summary').replaceChildren(node('h3',`Operation ${activeRun}`),node('pre',pretty(message.run.status)));$('run-logs').textContent=pretty(message.run.logs);$('run-artifacts').textContent=pretty(message.run.artifacts);break;
+    case 'result':if(message.operation==='dataset.preview'){renderDatasetPreview($('dataset-preview'),message.result,message.request??{},payload=>send('operation',{operation:'dataset.preview',payload}));$('dataset-preview').hidden=false;}if(message.operation==='project.update'){trackingDirty=false;$('tracking-saved').textContent='Project tracking defaults saved.';}if(['run.submit','run.resume'].includes(message.operation)&&message.result.operation_id){activeRun=message.result.operation_id;resetRun();} $('result-panel').hidden=false;$('result-title').textContent=message.operation;$('result').textContent=pretty(message.result);if(message.operation==='model.version.list'){$('versions').replaceChildren(node('pre',pretty(message.result)));}if(['execution.targets','cost.estimate','run.plan','policy.get'].includes(message.operation))$('compute-info').textContent=pretty(message.result);if(['run.plan','execution.targets'].includes(message.operation))renderAdmission(message.result);break;
+    case 'run':if(activeRun&&activeRun!==message.run.operation_id)break;activeRun=message.run.operation_id;renderLiveEvaluations($('live-evaluations'),message.run.evaluations,message.run.status?.status);renderTrackingStatus(message.run.status?.tracking);$('run-summary').replaceChildren(node('h3',`Operation ${activeRun}`),node('pre',pretty(message.run.status)));$('run-logs').textContent=pretty(message.run.logs);$('run-artifacts').textContent=pretty(message.run.artifacts);break;
   }
+  busyControls.refresh();
 });
 send('ready');

@@ -61,6 +61,10 @@
         "command": "modelbuilder.exportRecipeBundle",
         "title": "ModelBuilder: Export Recipe\u2026",
         "enablement": "modelbuilder.projectOpen"
+      },
+      {
+        "command": "modelbuilder.setupAssistant",
+        "title": "ModelBuilder: Set Up Optional Coding Tool"
       }
     ],
     "viewsContainers": {
@@ -124,7 +128,8 @@
     "test": "npm run compile && node --test test/*.test.cjs",
     "package": "npm run compile && vsce package --no-dependencies --allow-missing-repository --out modelbuilder-workbench-0.1.0.vsix",
     "vscode:prepublish": "npm run compile",
-    "test:service": "npm run compile && node test/serviceParity.cjs"
+    "test:service": "npm run compile && node test/serviceParity.cjs",
+    "test:browser": "npm run compile && node test/liveDom.cjs"
   },
   "devDependencies": {
     "@types/node": "22.10.2",

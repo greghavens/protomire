@@ -51,7 +51,12 @@ def load_callable(reference: dict, source_root: str, trusted_roots: list[str], s
                    and not any(Path(entry).resolve().is_relative_to(old) for old in prior_snapshots)]
     for module_name, existing in list(sys.modules.items()):
         filename = getattr(existing, "__file__", None)
-        if (filename and not (module_name == "modelbuilder" or module_name.startswith("modelbuilder."))
+        # The worker may live inside the configured source checkout. Its main
+        # module is platform process identity, which ZenML needs to resolve the
+        # next start/end hook; evicting it silently drops deadline hooks.
+        platform_main = (filename and module_name in {"__main__", "__mp_main__"}
+                         and Path(filename).resolve() == Path(__file__).resolve().parents[1] / "worker.py")
+        if (filename and not platform_main and not (module_name == "modelbuilder" or module_name.startswith("modelbuilder."))
                 and (Path(filename).resolve().is_relative_to(root) or any(Path(filename).resolve().is_relative_to(old) for old in prior_snapshots))
                 and "site-packages" not in Path(filename).parts):
             sys.modules.pop(module_name, None)

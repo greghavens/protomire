@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24.19.0'
-      - run: bash scripts/bootstrap.sh --backend
+      - run: bash scripts/bootstrap.sh --backend --tracking
       - run: MODELBUILDER_RUN_INTEGRATION=1 bash scripts/test_all.sh
       - uses: actions/upload-artifact@v4
         if: always()

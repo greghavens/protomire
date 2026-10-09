@@ -34,6 +34,9 @@ def snapshot(tmp_path):
     files = {
         "src/modelbuilder/__init__.py": b'__version__ = "0.1.0"\n',
         "src/modelbuilder/backend/__init__.py": b"",
+        "src/modelbuilder/evaluation.py": b"SCHEMA = 'test'\n",
+        "src/modelbuilder/tracking.py": b"ENABLED = False\n",
+        "src/modelbuilder/recipe.py": b"VERSION = 0\n",
         "src/modelbuilder/backend/adapter.py": b'raise RuntimeError("must not execute during import or wheel build")\n',
         "src/modelbuilder/service.py": b'raise RuntimeError("must not execute")\n',
         "pyproject.toml": b'[project]\nversion = "0.1.0"\ndependencies = ["jsonschema==4.23.0"]\n',
@@ -69,6 +72,8 @@ def test_runtime_wheel_separates_dependency_metadata(snapshot, tmp_path):
     result = replay.build_wheel(snapshot, tmp_path / "wheels", "backend")
     with zipfile.ZipFile(result["wheel"]) as wheel:
         assert "modelbuilder/service.py" not in wheel.namelist()
+        for dependency in ["evaluation.py", "tracking.py", "recipe.py"]:
+            assert "modelbuilder/" + dependency in wheel.namelist()
         assert "modelbuilder/backend/adapter.py" in wheel.namelist()
         metadata = wheel.read("modelbuilder_runtime-0.1.0.dist-info/METADATA").decode()
         assert "Requires-Dist: zenml[server]==0.97.0" in metadata

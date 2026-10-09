@@ -48,7 +48,7 @@ class ZenMLBackend:
         env = {key: value for key, value in os.environ.items() if key in allowed}
         env["HOME"] = str(self.root / "home")
         Path(env["HOME"]).mkdir(parents=True, exist_ok=True)
-        env.update(PYTHONPATH=str(self.package_root),
+        env.update(PYTHONPATH=str(self.package_root), PYTHONSAFEPATH="1",
                    MODELBUILDER_PRETRAINED_PATH=str(self.pretrained_path),
                    ZENML_CONFIG_PATH=str(self.root / "zenml-config"), ZENML_LOCAL_STORES_PATH=str(self.root / "zenml-stores"),
                    ZENML_ANALYTICS_OPT_IN="false", ZENML_ENABLE_REPO_INIT_WARNINGS="false", ZENML_LOGGING_VERBOSITY="ERROR",
@@ -84,8 +84,8 @@ class ZenMLBackend:
         write_json(path, {"operation": operation, "payload": payload, "root": str(self.root), "result": str(result)})
         with path.with_suffix(".log").open("w") as log:
             try:
-                completed = subprocess.run([self.python, "-m", "modelbuilder.backend.sdk", str(path)], env=self._env(),
-                                           cwd=self.repository, stdout=log, stderr=subprocess.STDOUT, timeout=90)
+                completed = subprocess.run([self.python, "-P", "-m", "modelbuilder.backend.sdk", str(path)], env=self._env(),
+                                           cwd=self.root, stdout=log, stderr=subprocess.STDOUT, timeout=90)
             except subprocess.TimeoutExpired as error:
                 raise BackendError("backend_timeout", "ZenML read did not complete", {"request_id": request_id}) from error
         response = read_json(result)
@@ -210,8 +210,8 @@ class ZenMLBackend:
             write_json(job / "state.json", {"supervisor_state": "starting", "submitted_at": request["submitted_at"]})
             try:
                 with (job / "supervisor.log").open("a") as log:
-                    process = subprocess.Popen([self.python, "-m", "modelbuilder.backend.supervisor", str(job), str(lease.fileno())],
-                                               cwd=self.repository, env=supervisor_env, stdout=log, stderr=subprocess.STDOUT,
+                    process = subprocess.Popen([self.python, "-P", "-m", "modelbuilder.backend.supervisor", str(job), str(lease.fileno())],
+                                               cwd=self.root, env=supervisor_env, stdout=log, stderr=subprocess.STDOUT,
                                                start_new_session=True, stdin=subprocess.DEVNULL, pass_fds=(lease.fileno(),))
             except OSError as error:
                 write_json(job / "state.json", {"supervisor_state": "submission_failed", "submission_error": str(error),

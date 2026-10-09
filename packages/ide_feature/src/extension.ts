@@ -1,9 +1,13 @@
 import * as vscode from 'vscode';
 import { randomBytes, randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { OperationClient, OperationError } from './client';
 import { RecipeDocument, editableRecipeSource, currentProjectRecipe } from './document';
 import { checkMessage, escapeHtml, serviceUrl, UI_OPERATIONS } from './security';
 import { OperationSpec, Project, Recipe, RecordValue } from './types';
+import { EvaluationNotifications } from './notifications';
+import { configureOptionalAssistant } from './assistantSetup';
 
 const TOKEN_KEY = 'modelbuilder.serviceToken';
 const SECTIONS = ['Research', 'Code', 'Data', 'Recipe', 'Runs', 'Versions'] as const;
@@ -99,13 +103,17 @@ export class Workbench implements vscode.Disposable {
   private runId?:string;
   private timer:NodeJS.Timeout;
   private generation=0;
+  private disposed=false;
+  private readonly notifications:EvaluationNotifications;
+  private watchedRuns=new Set<string>();
   private drafts:Record<string,{base:Recipe;state:RecordValue}>={};
   constructor(private context:vscode.ExtensionContext,private client:OperationClient,private explorer:ModelExplorer,private files:RecipeFileSystem) {
     this.document=new RecipeDocument(client);
+    this.notifications=new EvaluationNotifications(context.workspaceState?.get('modelbuilder.evaluationNotificationState'),context.workspaceState?.get('modelbuilder.evaluationNotificationPreferences'));
     this.drafts=context.workspaceState?.get('modelbuilder.unsavedDrafts',{})??{};
     this.timer=setInterval(()=>void this.poll(),4000);
   }
-  dispose() { clearInterval(this.timer); this.panel?.dispose(); }
+  dispose() { this.disposed=true;this.generation++;clearInterval(this.timer);this.panel?.dispose();this.panel=undefined;this.watchedRuns.clear(); }
   private post(type:string,body:RecordValue={}) { return this.panel?.webview.postMessage({type,...body}); }
   async open(nav:Navigation={}) {
     if (!this.panel) {
@@ -120,7 +128,8 @@ export class Workbench implements vscode.Disposable {
   private async ready() {
     this.catalog=await this.client.catalog();
     const {projects}=await this.client.invoke('project.list',{});
-    await this.post('init',{catalog:this.catalog,projects,trusted:vscode.workspace.isTrusted});
+    const datasetSchema=JSON.parse(await readFile(join(this.context.extensionUri.fsPath,'schemas','dataset.v1.schema.json'),'utf8'));
+    await this.post('init',{catalog:this.catalog,projects,trusted:vscode.workspace.isTrusted,notificationPreferences:this.notifications.preferences,datasetSchema});
     if (this.project) {await this.navigate({projectId:this.project.project_id});if(this.document.current){await this.post('recipe',{recipe:this.document.current});const backup=this.drafts[this.document.current.recipe_id];if(backup){this.dirty=true;await this.post('restoreDraft',{state:backup.state});}}}
   }
   private async navigate(nav:Navigation) {
@@ -130,9 +139,15 @@ export class Workbench implements vscode.Disposable {
     const snapshot=await this.client.invoke('project.open',{project_id:nav.projectId});
     if (generation!==this.generation) return;
     const current=currentProjectRecipe(snapshot);
-    this.project=snapshot.project; this.runId=nav.runId;this.explorer.setProject?.(this.project);await vscode.commands.executeCommand('setContext','modelbuilder.projectOpen',true);if(this.panel)this.panel.title=this.project!.model_name;
-    await this.post('project',{snapshot,section:nav.section === 'Recipes' ? 'Recipe' : nav.section ?? 'Recipe',runId:nav.runId});
+    const changedProject=this.project?.project_id!==snapshot.project.project_id;
+    this.project=snapshot.project; if(changedProject){this.watchedRuns.clear();if(this.notifications.state.pending?.projectId!==this.project!.project_id)this.notifications.state.pending=undefined;}
+    this.runId=nav.runId??(snapshot.runs??[]).find((run:RecordValue)=>['pending','submitted','queued','running','cancel_requested','cancel_pending'].includes(run.status))?.operation_id??(snapshot.runs??[])[0]?.operation_id;this.explorer.setProject?.(this.project);await vscode.commands.executeCommand('setContext','modelbuilder.projectOpen',true);if(this.panel)this.panel.title=this.project!.model_name;
+    await this.post('project',{snapshot,section:nav.section === 'Recipes' ? 'Recipe' : nav.section ?? 'Recipe',runId:this.runId,notificationPreferences:this.notifications.preferences});
     if(this.document.current?.recipe_id!==current.recipe_id || !this.dirty)await this.loadRecipe(current.recipe_id);
+    await this.refreshRun();
+    await this.refreshCapabilities();
+    await this.refreshResearch();
+    await this.refreshDatasets();
   }
   async closeProject():Promise<boolean> {
     if(this.project){
@@ -140,7 +155,7 @@ export class Workbench implements vscode.Disposable {
       if(tabs.length&&!await vscode.window.tabGroups.close(tabs,true))return false;
       if(this.dirty&&!await this.confirmDiscard())return false;
     }
-    const generation=++this.generation;this.project=undefined;this.runId=undefined;this.document=new RecipeDocument(this.client);this.dirty=false;this.explorer.setProject?.();if(this.panel)this.panel.title='Model projects';
+    const generation=++this.generation;this.project=undefined;this.runId=undefined;this.watchedRuns.clear();this.notifications.state.pending=undefined;this.document=new RecipeDocument(this.client);this.dirty=false;this.explorer.setProject?.();if(this.panel)this.panel.title='Model projects';
     await vscode.commands.executeCommand('setContext','modelbuilder.projectOpen',false);await this.post('landing',{projects:[]});
     const {projects}=await this.client.invoke('project.list',{});if(generation===this.generation&&!this.project)await this.post('landing',{projects});return true;
   }
@@ -215,6 +230,18 @@ export class Workbench implements vscode.Disposable {
         case 'reloadRecipe': if(this.document.current) await this.loadRecipe(this.document.current.recipe_id);break;
         case 'operation': await this.operation(String(message.operation),message.payload ?? {});break;
         case 'selectRun': this.runId=String(message.operationId);await this.refreshRun();break;
+        case 'notificationPreferences':
+          this.requireProject();this.notifications.updatePreferences(message.preferences);
+          await this.context.workspaceState?.update('modelbuilder.evaluationNotificationPreferences',this.notifications.preferences);
+          await this.post('notificationPreferences',{preferences:this.notifications.preferences});break;
+        case 'refreshDatasets': await this.refreshDatasets();break;
+        case 'prepareDatasetVersion': {
+          this.requireProject();const generation=this.generation,projectId=this.project!.project_id;
+          const dataset=await this.client.invoke('dataset.get',{project_id:projectId,dataset_id:String(message.datasetId),revision:message.revision});
+          if(generation===this.generation&&projectId===this.project?.project_id)await this.post('datasetVersion',{projectId,dataset});break;
+        }
+        case 'refreshResearch': await this.refreshSnapshot();await this.refreshResearch();break;
+        case 'setupAssistant': await vscode.commands.executeCommand('modelbuilder.setupAssistant');break;
         case 'openCode': await vscode.commands.executeCommand('workbench.view.explorer');break;
         default: throw new Error('Unknown workbench action.');
       }
@@ -229,51 +256,127 @@ export class Workbench implements vscode.Disposable {
     const spec=this.catalog.find(item=>item.name===name);if(!spec) throw new Error('Operation is not available on this service.');
     const payload:RecordValue={...raw as RecordValue,project_id:this.project!.project_id};
     delete payload.idempotency_key;delete payload.request_id;
+    if(['run.submit','run.resume'].includes(name)&&(this.dirty||vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='modelrecipe'&&doc.uri.path.startsWith(`/${this.project!.project_id}/`))))throw new Error('Save the recipe draft before starting or resuming a run, so the run uses your visible training and evaluation settings.');
     if(spec.scope==='execute') {
       if(!vscode.workspace.isTrusted) throw new Error('Execution requires a trusted workspace.');
-      if(await vscode.window.showWarningMessage(name==='run.cancel'?'Request cancellation? The run remains active until the backend confirms termination.':'Run trusted local code? Only repository-owned fixture execution is supported; remote spending is disabled.',{modal:true},'Continue')!=='Continue') return;
+      const tracking=payload.tracking??this.project!.tracking;
+      const online=['run.submit','run.resume'].includes(name)&&tracking?.mode==='online';
+      delete payload.tracking_online_consent;
+      const disclosure=online?` This run also sends allowlisted metrics (${(tracking.metric_names??[]).join(', ')||'none'}), sanitized run identity${tracking.artifact_policy==='metrics_snapshot'?' and a metrics JSON snapshot':''} to Weights & Biases at ${tracking.entity}/${tracking.project}. Source code, datasets and checkpoints are not uploaded.`:'';
+      if(await vscode.window.showWarningMessage((name==='run.cancel'?'Request cancellation? The run remains active until the backend confirms termination.':'Run trusted local code? Remote spending is disabled.')+disclosure,{modal:true},'Continue')!=='Continue') return;
+      if(online){payload.tracking=structuredClone(tracking);payload.tracking_online_consent=true;}
     }
     if(spec.mutating) payload.idempotency_key=randomUUID();
     for(const key of ['recipe_id','expected_revision','expected_recipe_revision'])if((name.startsWith('recipe.')||['run.plan','run.submit','run.resume'].includes(name))&&key in spec.input_schema.properties){if(!this.document.current)throw new Error('This project has no current recipe.');payload[key]=key==='recipe_id'?this.document.current.recipe_id:fromFile&&name==='recipe.import'&&key==='expected_revision'?(raw as RecordValue).expected_revision:this.document.current.revision;}
     if(name==='recipe.import'){if(this.dirty)throw new Error('Save your current draft or explicitly reload it before importing a recipe. Your draft is preserved.');if(await vscode.window.showWarningMessage('Open this recipe bundle into the current model project? Its contents become a new revision of this model’s recipe. Previous revisions and runs remain available.',{modal:true},'Open bundle')!=='Open bundle')return;}
+    if(['research.proposal.create','research.proposal.apply'].includes(name)){
+      if(!this.document.current)throw new Error('Open the current recipe before staging or applying a proposal.');
+      payload.expected_recipe_revision=this.document.current.revision;
+    }
+    if(name==='research.proposal.apply'){
+      if(this.dirty||vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='modelrecipe'&&doc.uri.path.startsWith(`/${this.project!.project_id}/`)))throw new Error('Save or explicitly reload your current recipe draft before applying a proposal. Your draft is preserved.');
+      delete payload.confirm_apply;
+      const proposal=await this.client.invoke('research.proposal.get',{project_id:this.project!.project_id,proposal_id:payload.proposal_id});
+      if(generation!==this.generation)throw new Error('The model project changed before proposal review.');
+      if(proposal.status!=='approved')throw new Error('Explicitly approve this proposal before applying it.');
+      await this.post('result',{operation:'research.proposal.get',result:proposal});
+      if(await vscode.window.showWarningMessage(`Apply approved proposal “${proposal.title??payload.proposal_id}” to recipe revision ${payload.expected_recipe_revision}? Review its exact staged diff and citations. This creates the next recipe revision; it does not execute training or verify scientific claims.`,{modal:true},'Apply approved proposal')!=='Apply approved proposal')return;
+      payload.confirm_apply=true;
+      if(this.dirty||vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='modelrecipe'&&doc.uri.path.startsWith(`/${this.project!.project_id}/`)))throw new Error('The recipe draft changed during proposal review. Your draft is preserved.');
+    }
     if(name==='run.submit') {if(!this.document.current)throw new Error('Open a recipe first.');payload.recipe_id=this.document.current.recipe_id;payload.expected_revision=this.document.current.revision;payload.trusted=true;payload.target='local-cpu';}
     if(fromFile&&(this.dirty||vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='modelrecipe'&&doc.uri.path===`/${this.project!.project_id}/${this.document.current!.recipe_id}.modelrecipe.json`)))throw new Error('Unsaved recipe source appeared while the dialog was open. Your draft is preserved.');
     if(generation!==this.generation)throw new Error('The model project changed before the operation was submitted.');
     const result=await this.client.invoke(name,payload);
     if(generation!==this.generation){this.explorer.refresh();return;}
-    if(!['recipe.import','recipe.export'].includes(name))await this.post('result',{operation:name,result});
-    if(result.operation_id && ['run.submit','run.resume'].includes(name)) this.runId=result.operation_id;
+    if(!['recipe.import','recipe.export'].includes(name))await this.post('result',{operation:name,result,request:name==='dataset.preview'?payload:undefined});
+    if(result.operation_id && ['run.submit','run.resume'].includes(name)) {
+      this.runId=result.operation_id;this.watchedRuns.add(result.operation_id);
+      this.notifications.startRun(this.project!.project_id,result.operation_id);await this.persistNotificationState();
+    }
     if(name.startsWith('run.') && this.runId) await this.refreshRun();
     if(name==='recipe.import'&&this.document.current){if(this.dirty)await this.post('remoteChanged',{revision:result.revision,digest:result.digest});else await this.loadRecipe(this.document.current.recipe_id);void vscode.window.showInformationMessage(`Recipe imported as revision ${result.revision}. No code was executed.`);}
+    if(name==='research.proposal.apply'&&result.recipe){if(this.dirty||vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='modelrecipe'&&doc.uri.path.startsWith(`/${this.project!.project_id}/`))){await this.post('remoteChanged',{revision:result.recipe.revision,digest:result.recipe.digest});}else{this.document.current=result.recipe;this.files.acceptRemote?.(result.recipe);await this.post('recipe',{recipe:result.recipe});}}
     if(spec.mutating) {this.explorer.refresh();await this.refreshSnapshot();}
+    if(name.startsWith('research.'))await this.refreshResearch();
+    if(['dataset.register','dataset.version'].includes(name))await this.refreshDatasets();
   }
-  private async refreshSnapshot() {if(!this.project)return;const generation=this.generation;const projectId=this.project.project_id;const snapshot=await this.client.invoke('project.open',{project_id:projectId});if(generation===this.generation&&projectId===this.project?.project_id)await this.post('snapshot',{snapshot});}
+  private async refreshDatasets(){
+    if(!this.project||!this.catalog.some(item=>item.name==='dataset.list'))return;
+    const generation=this.generation,projectId=this.project.project_id;
+    try{const result=await this.client.invoke('dataset.list',{project_id:projectId});if(generation===this.generation&&projectId===this.project?.project_id)await this.post('datasets',{projectId,datasets:result.datasets??[]});}
+    catch(error){if(generation===this.generation&&projectId===this.project?.project_id)await this.post('datasets',{projectId,datasets:[],error:error instanceof Error?error.message:String(error)});}
+  }
+  private async refreshResearch(){
+    if(!this.project)return;
+    const generation=this.generation,projectId=this.project.project_id;
+    const requests=[['watches','research.watch.list'],['findings','research.finding.list'],['proposals','research.proposal.list']].filter(([,operation])=>this.catalog.some(item=>item.name===operation));
+    if(!requests.length)return;
+    const values=await Promise.allSettled(requests.map(([,operation])=>this.client.invoke(operation,{project_id:projectId})));
+    if(generation!==this.generation||projectId!==this.project?.project_id)return;
+    const research:RecordValue={errors:{}};
+    requests.forEach(([key],index)=>{const value=values[index];if(value.status==='fulfilled')research[key]=value.value[key]??[];else research.errors[key]=value.reason instanceof Error?value.reason.message:String(value.reason);});
+    await this.post('research',{projectId,research});
+  }
+  private async refreshCapabilities(){
+    if(!this.project||!this.catalog.some(item=>item.name==='execution.targets'))return;
+    const generation=this.generation,projectId=this.project.project_id;
+    try{const result=await this.client.invoke('execution.targets',{project_id:projectId});if(generation===this.generation&&projectId===this.project?.project_id)await this.post('capabilities',{projectId,result});}
+    catch(error){if(generation===this.generation)await this.post('connection',{message:error instanceof Error?error.message:String(error)});}
+  }
+  private async refreshSnapshot() {if(!this.project)return;const generation=this.generation;const projectId=this.project.project_id;const snapshot=await this.client.invoke('project.open',{project_id:projectId});if(generation===this.generation&&projectId===this.project?.project_id){this.project=snapshot.project;await this.post('snapshot',{snapshot});}}
   private async refreshRun() {
     if(!this.project || !this.runId)return;
     const generation=this.generation;const runId=this.runId;const projectId=this.project.project_id;
     const payload={project_id:projectId,operation_id:runId};
-    const values=await Promise.allSettled(['run.status','run.logs','run.artifacts'].map(operation=>this.client.invoke(operation,payload)));
+    const operations=['run.status','run.logs','run.artifacts'];
+    if(this.catalog.some(item=>item.name==='run.evaluations.list'))operations.push('run.evaluations.list');
+    const values=await Promise.allSettled(operations.map(operation=>this.client.invoke(operation,payload)));
     if(generation!==this.generation||runId!==this.runId||projectId!==this.project?.project_id)return;
     const result:RecordValue={operation_id:runId};
-    ['status','logs','artifacts'].forEach((key,index)=>{const value=values[index];result[key]=value.status==='fulfilled'?value.value:{unavailable:value.reason instanceof Error?value.reason.message:String(value.reason)};});
+    ['status','logs','artifacts','evaluations'].slice(0,values.length).forEach((key,index)=>{const value=values[index];result[key]=value.status==='fulfilled'?value.value:{unavailable:value.reason instanceof Error?value.reason.message:String(value.reason)};});
+    if(!result.evaluations)result.evaluations={unavailable:'This service does not expose live checkpoint evaluations.'};
     await this.post('run',{run:result});
   }
+  private async persistNotificationState(){await this.context.workspaceState?.update('modelbuilder.evaluationNotificationState',this.notifications.state);}
+  private async refreshNotifications() {
+    if(!this.project||this.disposed||!this.catalog.some(item=>item.name==='run.events.list'))return;
+    const generation=this.generation,projectId=this.project.project_id;
+    const current=()=>!this.disposed&&generation===this.generation&&projectId===this.project?.project_id;
+    const response=await this.client.invoke('run.list',{project_id:projectId});if(!current())return;
+    const runs:RecordValue[]=response.runs??[];
+    const active=(status:string)=>['pending','submitted','queued','running','cancel_requested','cancel_pending'].includes(status);
+    for(const run of runs)if(active(run.status))this.watchedRuns.add(run.operation_id);
+    if(this.runId)this.watchedRuns.add(this.runId);
+    await this.post('runList',{projectId,runs});
+    for(const runId of [...this.watchedRuns]){
+      const page=await this.client.invoke('run.events.list',{project_id:projectId,operation_id:runId,after:this.notifications.cursor(projectId,runId),limit:200});
+      if(!current())return;
+      this.notifications.consume(projectId,runId,page.events??[],page.next_cursor,page.has_more===true);
+      if(!page.has_more&&this.notifications.hasTerminal(projectId,runId)&&runId!==this.runId&&!active(runs.find(run=>run.operation_id===runId)?.status))this.watchedRuns.delete(runId);
+    }
+    // Save cursor and cooldown before showing a toast, so reconnect/restart cannot replay it.
+    const notice=this.notifications.takeNotice(Date.now(),projectId);await this.persistNotificationState();if(!current()||!notice)return;
+    const text=`${this.project!.model_name}: ${notice.message}${notice.count>1?` (${notice.count} new evaluation updates.)`:''}`;
+    if(notice.kind==='failure'||notice.kind==='regression')void vscode.window.showWarningMessage(text);
+    else void vscode.window.showInformationMessage(text);
+  }
   private async poll() {
-    if(!this.panel?.visible || this.busy || this.polling || !this.project)return;
-    this.polling=true;
+    if(this.disposed||this.busy||this.polling||!this.project)return;
+    this.polling=true;const generation=this.generation;
     try {
-      const generation=this.generation;
       const polledDocument=this.document;
       const current=polledDocument.current;
-      if(current) {
+      if(this.panel?.visible&&current) {
         const next=await this.client.invoke<Recipe>('recipe.get',{project_id:current.project_id,recipe_id:current.recipe_id});
         if(generation===this.generation && this.document===polledDocument && polledDocument.current===current && next.revision!==current.revision) {
           if(this.dirty) await this.post('remoteChanged',{revision:next.revision,digest:next.digest});
           else {this.document.current=next;this.files.acceptRemote?.(next);await this.post('recipe',{recipe:next});}
         }
       }
-      if(generation===this.generation) await this.refreshRun();
-    } catch(error) {await this.post('connection',{message:error instanceof Error?error.message:String(error)});}
+      if(generation===this.generation&&this.panel?.visible)await this.refreshRun();
+      if(generation===this.generation)await this.refreshNotifications();
+    } catch(error) {if(generation===this.generation&&!this.disposed)await this.post('connection',{message:error instanceof Error?error.message:String(error)});}
     finally {this.polling=false;}
   }
   private html(webview:vscode.Webview):string {
@@ -294,6 +397,7 @@ export function activate(context:vscode.ExtensionContext) {
   const workbench=new Workbench(context,client,explorer,files);
   context.subscriptions.push(workbench,vscode.workspace.registerFileSystemProvider('modelrecipe',files,{isCaseSensitive:true}),vscode.window.registerTreeDataProvider('modelbuilder.explorer',explorer));
   const register=(name:string,fn:(...args:any[])=>any)=>context.subscriptions.push(vscode.commands.registerCommand(name,async(...args:any[])=>{try{return await fn(...args);}catch(error){void vscode.window.showErrorMessage(error instanceof Error?error.message:String(error));}}));
+  register('modelbuilder.setupAssistant',()=>configureOptionalAssistant(context));
   register('modelbuilder.openWorkbench',(nav:Navigation={})=>workbench.open(nav));
   register('modelbuilder.importRecipeBundle',()=>workbench.recipeBundleFile('import'));
   register('modelbuilder.exportRecipeBundle',()=>workbench.recipeBundleFile('export'));

@@ -40,7 +40,7 @@ def test_shared_service_native_execution_resume_research_and_scope(tmp_path):
         if node["kind"] == "model.train":
             node["parameters"]["steps"] = 4
     recipe = invoke("recipe.create", {"project_id": project_id, "recipe": manifest, "expected_revision": 1, "idempotency_key": "recipe"})
-    plan = invoke("run.plan", {"project_id": project_id, "recipe_id": recipe["recipe_id"]})
+    plan = invoke("run.plan", {"project_id": project_id, "recipe_id": recipe["recipe_id"], "trusted": True})
     assert plan["executable"] is True
     payload = {"project_id": project_id, "recipe_id": recipe["recipe_id"], "expected_revision": recipe["revision"],
                "trusted": True, "idempotency_key": "run-1"}

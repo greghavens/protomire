@@ -2,23 +2,33 @@
 
 > Owner-requested corrections are verified below: one fixed model project and one recipe identity with immutable revisions; recipe transfer belongs only in the native File menu. Original design inputs are unchanged. Earlier selector and workspace-transfer screenshots are historical, not accepted UI. This is technical verification, not a claim of owner acceptance or full-product completion.
 
-Last updated 2026-10-09. Development branch, Linux x64 CPU only. Status names are
+Last updated 2026-10-09. Direct-main development, Linux x64 CPU execution evidence only. Status names are
 literal: PASS is demonstrated, FAIL is a tested unmet requirement, BLOCKED needs
 an external prerequisite/authorization, UNVERIFIED has not finished testing.
 No aggregate below is a full-product completion claim.
 
-## Tested versions
+## Current integration checkpoint
+
+Runtime source: `76c0c288b0b5ae9f5273c61244d2c59df7e1f967` (46-file source/lock closure). Work is directly on `main`; no new pull request is required.
+
+Implemented since the earlier fixture snapshot: generic source-bound framework/harness components, immutable dataset versions and consumption lineage, scientifically compatible evaluation/promotion, live checkpoint evaluation and durable events, configurable IDE notifications, opt-in isolated W&B tracking, optional assistant setup, research watches and reviewed proposals, and native-target build/bootstrap selection.
+
+Focused real tests establish independent image/forecast training, exact continuation state equality, export reload parity, checkpoint evaluation before training completion, offline W&B delivery, native MCP dataset/research operations and Codex CLI tool discovery. These do not establish native GUI acceptance, Claude authentication, online W&B transmission or remote billing enforcement. Current independent installed-wheel replay passed for both fixtures: four real runs, four independent environments/stores, 31/31 comparison checks per fixture and exact hashes for six custom/ten pretrained outputs. See `evidence/portability/current-runtime/summary.json`. The aggregate suite is recorded separately under `evidence/tests/`; historical evidence below is not automatically inherited by this checkpoint.
+
+Fresh native IDE compilation initially failed with signal 9 while build caches occupied a RAM-backed temporary filesystem. The cache was moved to disk; the serial upstream client and extension compilation then completed with zero errors. Final Electron assembly subsequently passed, and the generated launcher reports the pinned version/commit/architecture. See `evidence/gui/current-build/`. Fresh native GUI acceptance remains a separate gate. Browser automation was separately blocked before page creation by Chromium socket restrictions. Neither is recorded as a GUI pass. Native macOS/Windows/ARM acceptance remains unverified.
+
+## Historical tested snapshot (086908e)
 
 Code - OSS1.105.0 /03c265b1adee71ac88f833e065f7bb956b60550a; Electron37.6.0;
 Python3.12.14; native MCP SDK1.30.0; ZenML0.97.0; Torch2.9.0+cpu;
 Transformers4.57.1. Extension versions and checksums are in the distribution lock.
 Published runtime source checkpoint `086908e3eb20ff025bbd50108e6b6563855b7512`
-pins the complete 20-file source closure in both shipping examples. Corrected
+pinned the prior 20-file source closure in the earlier examples. Corrected
 clean replay and native File-menu GUI validation are tracked separately below.
 
 | ID | Status | Test and evidence |
 |---|---|---|
-| T01 | PASS (development rebuild) | Current source-built branded IDE launches with one documented File-menu composition import and one static menu module. Rebuild reported zero errors; exact-boundary/symlink tests pass. `evidence/gui/file-menu/build-manifest.json`, source integrity and compile log. Initial zero-patch proof remains historical. Pristine unattended bootstrap is still unverified because upstream dependency retrieval needed a documented workaround. |
+| T01 | PASS development build; zero-patch exception remains | Current source-built branded IDE launches with one documented File-menu composition import and one static menu module. Rebuild reported zero errors; exact-boundary/symlink tests pass. `evidence/gui/file-menu/build-manifest.json`, source integrity and compile log. Initial zero-patch proof remains historical. Pristine unattended bootstrap is still unverified because upstream dependency retrieval needed a documented workaround. |
 | T02 | PASS | Actual IDE Python/basedpyright diagnostics, debugpy program, Jupyter output42, terminal and Git. `tests/gui/smoke.cjs`, `scripts/smoke_ide.sh`; `evidence/gui/file-menu-smoke/smoke-results.json` and fresh screenshots on the current rebuilt binary. The debugger stopped at a real breakpoint and evaluated answer=42 before continuing. |
 | T03 | PASS | One model project owns one canonical recipe ID with immutable revisions; create/import/restore update the same identity. Legacy histories remain readable; cross-project access denied. `tests/domain/test_single_recipe.py`, final service contracts and actual backend integration. Six simultaneous migration opens repeated 100 times passed; startup BUSY retry tests include real processes. |
 | T04 | PASS | Canonical recipe roundtrip/schema-version rejection/typed DAG/source and dependency validation. `tests/recipe/`; schema generated from same runtime contract. |

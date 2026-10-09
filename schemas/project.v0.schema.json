@@ -1,4 +1,74 @@
 {
+  "$defs": {
+    "TrackingConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_policy": {
+          "default": "none",
+          "enum": [
+            "none",
+            "metrics_snapshot"
+          ],
+          "title": "Artifact Policy",
+          "type": "string"
+        },
+        "credential_env": {
+          "const": "MODELBUILDER_WANDB_API_KEY",
+          "default": "MODELBUILDER_WANDB_API_KEY",
+          "title": "Credential Env",
+          "type": "string"
+        },
+        "entity": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entity"
+        },
+        "metric_names": {
+          "items": {
+            "pattern": "^[A-Za-z][A-Za-z0-9_./-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Metric Names",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "mode": {
+          "default": "disabled",
+          "enum": [
+            "disabled",
+            "offline",
+            "online"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "project": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project"
+        }
+      },
+      "title": "TrackingConfig",
+      "type": "object"
+    }
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
@@ -111,6 +181,9 @@
       ],
       "title": "Status",
       "type": "string"
+    },
+    "tracking": {
+      "$ref": "#/$defs/TrackingConfig"
     },
     "updated_at": {
       "title": "Updated At",

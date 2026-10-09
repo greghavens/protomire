@@ -1,0 +1,101 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "mode": {
+      "default": "disabled",
+      "enum": [
+        "disabled",
+        "offline",
+        "online"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "entity": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Entity"
+    },
+    "project": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project"
+    },
+    "credential_env": {
+      "const": "MODELBUILDER_WANDB_API_KEY",
+      "default": "MODELBUILDER_WANDB_API_KEY",
+      "title": "Credential Env",
+      "type": "string"
+    },
+    "metric_names": {
+      "items": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_./-]{0,127}$",
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Metric Names",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "artifact_policy": {
+      "default": "none",
+      "enum": [
+        "none",
+        "metrics_snapshot"
+      ],
+      "title": "Artifact Policy",
+      "type": "string"
+    }
+  },
+  "title": "TrackingConfig",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://modelbuilder.local/schemas/tracking.v0.schema.json",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "enum": [
+              "offline",
+              "online"
+            ]
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "required": [
+          "entity",
+          "project"
+        ],
+        "properties": {
+          "entity": {
+            "type": "string"
+          },
+          "project": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

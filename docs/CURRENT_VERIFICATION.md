@@ -9,9 +9,9 @@ Runtime source checkpoint: `da9b67c361088aa49fefb7dcea1ab53efa805ce8`. This is a
 - The final source service test selection passed 771 tests, with eight skips and 15 deselected integration tests.
 - Independent source-bound image and forecasting models train, evaluate, export and reload; exact continuation preserves model, optimizer, scheduler and random state.
 - An official MCP client starts real native ZenML training. Twelve checkpoint evaluations complete, with early results and actual offline W&B acknowledgement occurring before later checkpoints are saved. HTTP and MCP expose matching results and provenance.
-- At the preceding runtime checkpoint, each of the two shipping fixtures passed 31 independent installed-wheel replay comparisons, including exact output hashes and separate environments/stores.
+- At the final da9b67c runtime checkpoint, each of the two shipping fixtures passed 31 independent installed-wheel replay comparisons, including exact output hashes and separate environments/stores.
 - Final-source service/native integration passed nine tests; the separate CPU/component/evaluation/tracking selection passed 89 tests.
-- Three cancellation/trust fixture regressions found by the aggregate run were repaired. A focused two-file rerun passed eight tests; final-source integration verification is in progress. The original failing aggregate is not presented as a pass.
+- Three cancellation/trust fixture regressions found by the aggregate run were repaired. The final-source two-file rerun passed all eight tests, including no leftover node deadline and no native hook warning. The original failing aggregate is not presented as a pass.
 
 ## Current limits
 
@@ -19,6 +19,6 @@ Runtime source checkpoint: `da9b67c361088aa49fefb7dcea1ab53efa805ce8`. This is a
 - macOS, Windows and ARM native runtime acceptance has not been performed here. Integration-specific platform restrictions are documented separately.
 - Online W&B, authenticated Claude/Codex inference, remote-provider execution/billing enforcement, and cloud spending have not been authorized or claimed as passed.
 - New raw diagnostic evidence is retained locally but omitted from this publication pending approval to share its environment metadata. Paths cited in other documents may therefore refer to locally retained evidence rather than committed files. Historical committed evidence is explicitly historical.
-- CI for the final published commit must be checked separately. Local tests do not establish remote CI success.
+- The first remote contracts job exposed unit tests that accidentally required the optional backend environment. Those pure admission tests now use their own service interpreter and pass with the backend path explicitly unavailable. Replacement CI remains a separate gate; local tests do not establish remote CI success.
 
 The checkpoint evaluation design and API are documented in `design/LIVE_CHECKPOINT_EVALUATION.md`; all current tests are provided as reproducible source.

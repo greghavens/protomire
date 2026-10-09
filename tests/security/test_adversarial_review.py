@@ -196,7 +196,7 @@ def test_foreign_operation_ids_rejected_before_backend(service, operation):
 
 
 def test_plan_requires_no_execution_consent_or_process(tmp_path, monkeypatch):
-    backend = ZenMLBackend(tmp_path)
+    backend = ZenMLBackend(tmp_path, python_executable=sys.executable)
     body = source_bound_recipe(backend, tmp_path)
     def forbidden(*args, **kwargs):
         raise AssertionError("Planning must never launch a process")
@@ -218,7 +218,7 @@ def test_worker_environment_excludes_control_plane_and_provider_tokens(tmp_path,
 
 
 def test_untrusted_python_blocked_without_import_or_process(tmp_path, monkeypatch):
-    backend = ZenMLBackend(tmp_path)
+    backend = ZenMLBackend(tmp_path, python_executable=sys.executable)
     body = source_bound_recipe(backend, tmp_path)
     body["nodes"][0].update(kind="code.python", implementation_ref={
         "module": "audit_fixture", "entrypoint": "main", "commit": "a" * 40,
@@ -233,7 +233,7 @@ def test_untrusted_python_blocked_without_import_or_process(tmp_path, monkeypatc
 
 @pytest.mark.parametrize("mutation", ["missing_source", "private_dependency", "gpu_requirement"])
 def test_unavailable_requirements_rejected_before_execution(tmp_path, mutation):
-    backend = ZenMLBackend(tmp_path)
+    backend = ZenMLBackend(tmp_path, python_executable=sys.executable)
     body = source_bound_recipe(backend, tmp_path)
     if mutation == "missing_source":
         body["source"]["files"] = [{"path": "definitely-missing-audit-source.py", "sha256": "b" * 64}]
@@ -250,7 +250,7 @@ def test_unavailable_requirements_rejected_before_execution(tmp_path, mutation):
 @pytest.mark.parametrize("kl_change", [{"reference_model_ref": "unconnected-initial"},
                                       {"applies_to": "hidden_features"}])
 def test_unimplemented_kl_reference_or_scope_cannot_be_silently_ignored(tmp_path, kl_change):
-    backend = ZenMLBackend(tmp_path)
+    backend = ZenMLBackend(tmp_path, python_executable=sys.executable)
     body = source_bound_recipe(backend, tmp_path)
     initial = deepcopy(body["nodes"][0])
     initial.update(id="initial", kind="model.initialize", implementation_ref="builtin:model.initialize",

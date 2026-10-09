@@ -17,26 +17,29 @@ exports.run=async function(){
  const token=crypto.randomBytes(32).toString('hex');
  const server=net.createServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const port=server.address().port;await new Promise(resolve=>server.close(resolve));
  const url=`http://127.0.0.1:${port}`;
- const env={...process.env,PYTHONPATH:path.join(root,'src'),MODELBUILDER_DB_PATH:path.join(tmp,'model.sqlite3'),MODELBUILDER_PORT:String(port),MODELBUILDER_HOST:'127.0.0.1',MODELBUILDER_BACKEND:'none',MODELBUILDER_TOKEN:token,MODELBUILDER_API_URL:url,MODELBUILDER_GUI_PYTHON:python,MODELBUILDER_GUI_EVIDENCE:evidence};
+ const env={...process.env,MODELBUILDER_GUI_IMPORT_BUNDLE:path.join(tmp,'shipping-import-bundle.json'),PYTHONPATH:path.join(root,'src'),MODELBUILDER_DB_PATH:path.join(tmp,'model.sqlite3'),MODELBUILDER_PORT:String(port),MODELBUILDER_HOST:'127.0.0.1',MODELBUILDER_BACKEND:'none',MODELBUILDER_TOKEN:token,MODELBUILDER_API_URL:url,MODELBUILDER_GUI_PYTHON:python,MODELBUILDER_GUI_EVIDENCE:evidence};
  delete env.MODELBUILDER_TOKENS_JSON;
  const api=cp.spawn(python,['-m','modelbuilder.api'],{cwd:root,env,stdio:['ignore','pipe','pipe']});let apiLog='';api.stdout.on('data',b=>apiLog+=b);api.stderr.on('data',b=>apiLog+=b);
  let exported;
  const dialogConfig=vscode.workspace.getConfiguration('window');const previousDialogStyle=dialogConfig.inspect('dialogStyle')?.globalValue;
+ const fileConfig=vscode.workspace.getConfiguration('files');const previousSimpleDialog=fileConfig.inspect('simpleDialog.enable')?.globalValue;
  const report={app:vscode.env.appName,editor:vscode.version,status:'RUNNING',tests:[]};
  const save=()=>fs.writeFile(path.join(evidence,'workbench-host-results.json'),JSON.stringify(report,null,2));
  const wait=async(fn,timeout=30000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await fn())return;await new Promise(r=>setTimeout(r,150));}throw Error('Timed out waiting for real runtime state');};
  const check=async(name,fn)=>{const result=await fn();report.tests.push({name,status:'PASS',evidence:result});await save();};
  try{
   await wait(async()=>fetch(url+'/health').then(r=>r.ok).catch(()=>false));
+  const preparation=await promisify(cp.execFile)(python,[path.join(__dirname,'prepareGuiBundle.py'),root,path.join(root,'examples/custom-pytorch/recipe.json'),env.MODELBUILDER_GUI_IMPORT_BUNDLE],{cwd:root,env});await fs.writeFile(path.join(evidence,'import-fixture.json'),preparation.stdout);
   assert(vscode.workspace.isTrusted,'Test workspace must be trusted through normal Code - OSS workspace trust UI.');
   await dialogConfig.update('dialogStyle','custom',vscode.ConfigurationTarget.Global);
+  await fileConfig.update('simpleDialog.enable',true,vscode.ConfigurationTarget.Global);
   await vscode.commands.executeCommand('workbench.action.closeAllEditors');
   await vscode.commands.executeCommand('workbench.action.joinAllGroups');
   const extension=vscode.extensions.getExtension('modelbuilder.modelbuilder-workbench');assert(extension,'Built-in workbench missing');
   exported=await extension.activate();
   await vscode.commands.executeCommand('modelbuilder.configureConnection',{url,token});
   const project=await exported.client.invoke('project.create',{model_name:'GUI parity model',slug:'gui-'+crypto.randomUUID().slice(0,8),idempotency_key:crypto.randomUUID()});
-  let recipe=await exported.client.invoke('recipe.create',{project_id:project.project_id,name:'GUI recipe',idempotency_key:crypto.randomUUID()});
+  let recipe=(await exported.client.invoke('project.open',{project_id:project.project_id})).recipe;assert(recipe,'Project creation must provide exactly one current recipe');
   await check('native-monaco-source-save',async()=>{
    const uri=await exported.files.open(project.project_id,recipe.recipe_id);
    const doc=await vscode.workspace.openTextDocument(uri);const editor=await vscode.window.showTextDocument(doc);
@@ -48,9 +51,10 @@ exports.run=async function(){
   });
   await vscode.commands.executeCommand('workbench.action.closePanel');
   await vscode.commands.executeCommand('workbench.action.closeSidebar');
-  await vscode.commands.executeCommand('modelbuilder.openWorkbench',{projectId:project.project_id,recipeId:recipe.recipe_id,section:'Recipes'});
+  await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  await vscode.commands.executeCommand('modelbuilder.openWorkbench');
   await new Promise(resolve=>setTimeout(resolve,2500));await vscode.commands.executeCommand('notifications.clearAll');
-  const fixture={project_id:project.project_id,recipe_id:recipe.recipe_id,initial_revision:recipe.revision};
+  const fixture={project_id:project.project_id,model_name:project.model_name,recipe_id:recipe.recipe_id,initial_revision:recipe.revision};
   await fs.writeFile(path.join(evidence,'fixture-identities.json'),JSON.stringify(fixture,null,2));
   await check('real-webview-graph-mcp-parity',async()=>{
    const result=await promisify(cp.execFile)(process.env.MODELBUILDER_GUI_NODE||'node',[path.join(__dirname,'guiDom.cjs'),JSON.stringify(fixture)],{cwd:root,env,timeout:180000,maxBuffer:8*1024*1024});
@@ -59,5 +63,5 @@ exports.run=async function(){
   });
   report.status='PASS';await save();
  }catch(error){report.status='FAIL';report.error=String(error.stack||error);await save();throw error;}
- finally{await dialogConfig.update('dialogStyle',previousDialogStyle,vscode.ConfigurationTarget.Global);await exported?.clearConnection();api.kill('SIGTERM');await fs.writeFile(path.join(evidence,'operation-service.log'),apiLog);await fs.rm(tmp,{recursive:true,force:true});}
+ finally{await fileConfig.update('simpleDialog.enable',previousSimpleDialog,vscode.ConfigurationTarget.Global);await dialogConfig.update('dialogStyle',previousDialogStyle,vscode.ConfigurationTarget.Global);await exported?.clearConnection();api.kill('SIGTERM');await fs.writeFile(path.join(evidence,'operation-service.log'),apiLog);await fs.rm(tmp,{recursive:true,force:true});}
 };

@@ -6,11 +6,12 @@ built-in feature, not a chatbot or a replacement training framework.
 
 ## Implemented vertical slice
 
-- Model-scoped projects, research evidence/claims/hypotheses/decisions, recipes,
-  runs and native model-version lineage.
+- One model project per workspace, with its research, data, training/evaluation
+  recipe, runs, exports and native model-version lineage. Build the recipe or
+  import an existing one; saved revisions retain one recipe identity.
 - Typed DAG recipe editor plus JSON/native Monaco editing, revision history and
   explicit stale-write conflicts.
-- One authenticated service dispatch for 48 operations used by both the IDE and
+- One authenticated service dispatch for 49 operations used by both the IDE and
   the independent official-SDK MCP server. SQLite stores application/control
   records; ZenML owns execution, artifacts and model versions.
 - Real custom PyTorch and pinned small pretrained-model CPU workloads, explicit

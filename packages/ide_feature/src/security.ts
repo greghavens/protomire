@@ -7,7 +7,7 @@ export function serviceUrl(raw: string): string {
 }
 export function escapeHtml(value: string): string { return value.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!)); }
 export const UI_OPERATIONS = new Set([
-  'project.history', 'project.update', 'recipe.clone', 'recipe.export', 'recipe.import', 'recipe.resolve_dependencies',
+  'project.history', 'project.update', 'recipe.resolve_dependencies',
   'evidence.add', 'evidence.get', 'evidence.search', 'claim.create', 'claim.get', 'claim.list', 'claim.update',
   'hypothesis.create', 'hypothesis.get', 'hypothesis.list', 'hypothesis.update', 'decision.record', 'decision.list',
   'execution.targets', 'policy.get', 'cost.estimate', 'run.plan', 'run.submit', 'run.status', 'run.logs', 'run.cancel',

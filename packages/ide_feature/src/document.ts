@@ -43,15 +43,11 @@ export function editableRecipeSource(recipe: Recipe): string {
   const body:RecordValue={...recipe};delete body.digest;
   return JSON.stringify(body,null,2)+'\n';
 }
-/** Render cached choices with the freshest service-read record, never a local draft. */
-export function recipeChoiceRecords(projectId: string | undefined, recipes: Recipe[], loaded?: Recipe): Recipe[] {
-  if (!loaded || loaded.project_id !== projectId) return recipes;
-  let found=false;
-  const choices=recipes.map(record=>{
-    if(record.recipe_id!==loaded.recipe_id)return record;
-    found=true;
-    return loaded.revision>=record.revision?loaded:record;
-  });
-  if(!found)choices.push(loaded);
-  return choices;
+/** Resolve only the model's one current recipe, never choose among unrelated recipes. */
+export function currentProjectRecipe(snapshot: RecordValue): Recipe {
+  const current = snapshot.recipe ?? (snapshot.recipes?.length === 1 ? snapshot.recipes[0] : undefined);
+  if (!current || current.project_id !== snapshot.project?.project_id || (snapshot.project.active_recipe_id && current.recipe_id !== snapshot.project.active_recipe_id)) {
+    throw new Error('The service must provide the one current recipe for this model project.');
+  }
+  return current;
 }

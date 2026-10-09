@@ -403,3 +403,25 @@ def test_silent_execution_parameter_overrides_are_rejected(service, operation):
     with pytest.raises(ServiceError) as error:
         service.invoke(operation, payload, OWNER)
     assert error.value.code == "validation_error"
+
+
+def test_execute_only_cannot_resume_and_modify_canonical_recipe(service):
+    backend = ContractBackend()
+    service.backend = backend
+    p = project(service)
+    current = recipe(service, p)
+    run = service.invoke("run.submit", {"project_id": p["project_id"], "recipe_id": current["recipe_id"],
+                         "expected_revision": current["revision"], "trusted": True, "idempotency_key": "submit"}, OWNER)
+    backend.calls.clear()
+    executor = Actor("executor", {"read", "execute"})
+    with pytest.raises(ServiceError) as error:
+        service.invoke("run.resume", {"project_id": p["project_id"], "operation_id": run["operation_id"],
+                       "expected_recipe_revision": current["revision"], "mode": "exact_state", "steps": 6,
+                       "trusted": True, "idempotency_key": "resume"}, executor)
+    assert error.value.status_code == 403
+    assert error.value.details["missing_scopes"] == ["modify"]
+    assert service.invoke("recipe.get", {"project_id": p["project_id"], "recipe_id": current["recipe_id"]}, OWNER) == current
+    assert backend.calls == []
+    entry = next(item for item in service.catalog(OWNER) if item["name"] == "run.resume")
+    assert entry["required_scopes"] == ["execute", "modify"]
+    assert create_app(service, {}).openapi()["paths"]["/v1/operations/run.resume"]["post"]["x-required-scopes"] == ["execute", "modify"]

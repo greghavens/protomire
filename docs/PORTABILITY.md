@@ -8,6 +8,12 @@
 
 The archive includes the full application Python source, both independent dependency locks, `pyproject.toml`, and the replay command. No original absolute paths, datasets, model weights, secrets, installed environments, or `.pth` path-sharing files are included. Git revision plus per-file SHA256 identify the source; a bundle hash alone does not authenticate its publisher.
 
+## One model project, one recipe identity
+
+The replay creates a model project, reads its already-owned recipe, and imports the portable training/evaluation pipeline as the next immutable revision of that same recipe. It sends `bundle_json` through the strict raw-JSON operation contract with `expected_revision`. Import remains inert; the explicit run action executes the imported revision.
+
+The harness verifies that the project retains its recipe ID, exactly one recipe remains listed, the original revision is unchanged, and execution provenance identifies the exact imported recipe ID, revision and digest. Origin and replay have different project IDs because their application/native stores are independent; each project has one stable recipe identity throughout its own lifecycle. The `model.initialize` node explicitly selects the custom or pretrained fixture. Dataset compatibility is validated separately.
+
 ## Why there are two environments per execution
 
 The service and ZenML have independently pinned dependency graphs. In the measured locks, FastAPI, Pydantic and JSONSchema versions differ. Combining these locks or ignoring a failed dependency check would not be a reproducible deployment.
@@ -74,11 +80,11 @@ Directories must be new; import and run intentionally refuse to overwrite them. 
 
 ## Evidence and limits
 
-The comparison requires exact deterministic metrics, dataset SHA256 and every output-file SHA256; distinct backend run IDs; different service/runtime environment prefixes; own installed module paths; no original source/environment imports; no shared `.pth` paths; identical Python/package versions; and independent ZenML stack, artifact-store and metadata-store identities. Raw run evidence records actual `sys.path`, module files, installed distributions, native artifact UUIDs and source hashes.
+The comparison requires exact deterministic metrics, dataset SHA256 and every output-file SHA256; distinct backend run IDs; different service/runtime environment prefixes; own installed module paths; no original source/environment imports; no shared `.pth` paths; identical Python/package versions; independent ZenML stack, artifact-store and metadata-store identities; and preservation of each project's single recipe identity and immutable revision provenance. Raw run evidence records actual `sys.path`, module files, installed distributions, native artifact UUIDs, recipe identity history and source hashes.
 
 `tests/portability/test_replay_bundle.py` verifies inert deterministic packaging, tamper rejection, separate dependency metadata, explicit trust, timeout cancellation through the real operation schema, retained failure evidence, shipping manifests' complete source closure, and rejection of contaminated or drifting replay evidence. Those unit tests alone do not establish T19. A successful comparison JSON plus its origin/replay records establishes the real CPU replay result.
 
-The shipping manifests pin the published source revision `4d545df2b111de7f2365e8121a65717b37713054`, including the early-cancellation fix, timeout cancellation's mandatory idempotency key, and the clean-bootstrap dependency correction. `evidence/portability/summary.json` records the final measured custom and pretrained results; `bundles.json` inventories the portable archives. Each recipe includes 20 verified source/lock files. Both archives remain inert, and their transport digest is retained separately from the application-assigned project/recipe identities created on import.
+The shipping manifests pin the published source revision `086908e3eb20ff025bbd50108e6b6563855b7512`, including the single-owned-recipe domain, lossless raw-JSON bundle transport, and bounded concurrent SQLite startup correction. `evidence/portability/summary.json` records the final measured custom and pretrained results; `bundles.json` inventories the portable archives. Each recipe includes 20 verified source/lock files. Both archives remain inert. The transport digest is retained separately from the project-owned recipe identity allocated at project creation and the exact immutable revision created by import. Superseded results under `evidence/portability/historical/` are historical observations, not acceptance evidence for this shipping source.
 
 This matches the evaluated Kubeflow portability scope: independent Python environments and metadata/artifact stores on the same CPU host. It does not establish another operating system, another machine, GPUs, remote execution, per-stage container isolation, or untrusted recipe execution. Source license `NOASSERTION` remains a visible unresolved redistribution issue; local operator trust does not confer redistribution rights. External pretrained resources, if used, must remain immutable references and be separately resolved and SHA256-verified rather than embedded in the recipe archive.
 

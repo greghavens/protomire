@@ -30,7 +30,7 @@ The application can restart without killing a detached supervisor. A launch leas
 
 Training saves model/reference tensors, optimizer, scheduler, Torch RNG, Python RNG, minibatch permutation, cursor and epoch after each update. Exact continuation checks architecture, consumed dataset identity and the entire training contract before restoring them. The exponential schedule is horizon-independent. A requested learning-rate/batch/KL change must use the separate warm-start mode.
 
-A killed or cancelled training step cannot return its normal output. After verified termination, the supervisor registers its atomic recovery checkpoint with native `save_artifact`, associates it with the native model version, and records its UUID on the native parent run. A continuation records the actual parent run UUID and checkpoint artifact UUID; a new canonical recipe/digest identifies the changed final step count.
+A killed or cancelled training step cannot return its normal output. After verified termination, the supervisor registers its atomic recovery checkpoint with native `save_artifact`, associates it with the native model version, and records its UUID on the native parent run. A continuation records the actual parent run UUID and checkpoint artifact UUID; a new immutable revision/digest of the same project recipe identifies the changed final step count.
 
 Selection compares actual validation artifacts from completed native runs and verifies that the promoted model version wins the declared metric/direction. Held-out metrics are not used implicitly. Parent links and the selection decision are stored on the native model version.
 

@@ -8,6 +8,7 @@ from copy import deepcopy
 import hashlib
 import json
 import sqlite3
+from threading import Barrier
 from uuid import uuid4
 
 import pytest
@@ -329,6 +330,40 @@ def test_legacy_migration_preserves_every_historical_revision_and_operation(tmp_
             assert service.backend.calls == []
         finally:
             service.store.close()
+
+
+def test_concurrent_restarts_migrate_legacy_history_once_without_duplicate_revisions(tmp_path):
+    path = tmp_path / "concurrent-legacy.sqlite3"
+    pid, versions, operation = legacy_database(path)
+    barrier = Barrier(6)
+
+    def reopen(_):
+        barrier.wait()
+        service = OperationService(path)
+        try:
+            current = canonical(service, pid)
+            for old in versions:
+                assert historical(service, pid, old["recipe_id"], old["revision"]) == old
+            assert service.invoke("operation.get", {"project_id": pid,
+                "operation_id": operation["operation_id"]}, OWNER) == operation
+            return current
+        finally:
+            service.store.close()
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        results = list(pool.map(reopen, range(6)))
+    assert all(result == versions[2] for result in results)
+    service = OperationService(path)
+    try:
+        assert len(service.store.resource_versions("project", pid)) == 2
+        assert len(service.store.resource_versions("recipe", "legacy-a")) == 2
+        assert len(service.store.resource_versions("recipe", "legacy-b")) == 1
+        migrations = [item for item in service.store.history(pid)
+                      if item["operation"] == "project.recipe_migrate"]
+        assert len(migrations) == 1
+        assert service.store.connection.execute("SELECT COUNT(*) FROM project_recipes").fetchone()[0] == 1
+    finally:
+        service.store.close()
 
 
 def test_ambiguous_migration_requires_explicit_review_before_execution(tmp_path):

@@ -16,7 +16,8 @@ exports.run=async function(){
   const extension=vscode.extensions.getExtension('modelbuilder.modelbuilder-workbench');assert(extension);exported=await extension.activate();await vscode.commands.executeCommand('modelbuilder.configureConnection',{url,token});
   project=await exported.client.invoke('project.create',{slug:'gui-run-'+crypto.randomUUID().slice(0,8),model_name:'GUI real ZenML CPU run',idempotency_key:crypto.randomUUID()});
   const manifest=JSON.parse(await fs.readFile(path.join(root,'examples/custom-pytorch/recipe.json'),'utf8'));
-  const recipe=await exported.client.invoke('recipe.create',{project_id:project.project_id,recipe:manifest,idempotency_key:crypto.randomUUID()});
+  const initial=(await exported.client.invoke('project.open',{project_id:project.project_id})).recipe;
+  const recipe=await exported.client.invoke('recipe.update',{project_id:project.project_id,recipe_id:initial.recipe_id,expected_revision:initial.revision,recipe:{...manifest,project_id:project.project_id,recipe_id:initial.recipe_id},idempotency_key:crypto.randomUUID()});
   const fixture={project_id:project.project_id,recipe_id:recipe.recipe_id,recipe_revision:recipe.revision,recipe_digest:recipe.digest,source_commit:recipe.source.commit};await fs.writeFile(path.join(evidence,'execution-fixture.json'),JSON.stringify(fixture,null,2));
   await vscode.commands.executeCommand('modelbuilder.openWorkbench',{projectId:project.project_id,recipeId:recipe.recipe_id,section:'Runs'});await new Promise(r=>setTimeout(r,2000));await vscode.commands.executeCommand('notifications.clearAll');
   const result=await promisify(cp.execFile)(process.env.MODELBUILDER_GUI_NODE||'node',[path.join(__dirname,'guiRunDom.cjs'),JSON.stringify(fixture)],{cwd:root,env,timeout:300000,maxBuffer:8*1024*1024});await fs.writeFile(path.join(evidence,'execution-dom-driver.log'),result.stdout+result.stderr);

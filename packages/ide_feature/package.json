@@ -47,6 +47,20 @@
       {
         "command": "modelbuilder.openRecipeSource",
         "title": "ModelBuilder: Open Recipe JSON Source"
+      },
+      {
+        "command": "modelbuilder.closeProject",
+        "title": "ModelBuilder: Close Model Project"
+      },
+      {
+        "command": "modelbuilder.importRecipeBundle",
+        "title": "ModelBuilder: Import Recipe\u2026",
+        "enablement": "modelbuilder.projectOpen"
+      },
+      {
+        "command": "modelbuilder.exportRecipeBundle",
+        "title": "ModelBuilder: Export Recipe\u2026",
+        "enablement": "modelbuilder.projectOpen"
       }
     ],
     "viewsContainers": {
@@ -69,7 +83,7 @@
     "viewsWelcome": [
       {
         "view": "modelbuilder.explorer",
-        "contents": "Develop one model through research, recipes, runs and versions.\n[Connect to service](command:modelbuilder.configureConnection)\n[Create model project](command:modelbuilder.createProject)\n[Open workbench](command:modelbuilder.openWorkbench)"
+        "contents": "One model project, one model, one evolving recipe.\n[Open or create model project](command:modelbuilder.openWorkbench)\n[Connect to service](command:modelbuilder.configureConnection)"
       }
     ],
     "menus": {

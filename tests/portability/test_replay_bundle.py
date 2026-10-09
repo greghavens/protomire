@@ -124,6 +124,11 @@ def result(root):
     return {"status": "PASS", "source_commit": "a" * 40, "transport_recipe_digest": "b" * 64,
             "source_root": root + "/source", "data_dir": root + "/data", "service_identity": copy.deepcopy(identity),
             "backend_identity": copy.deepcopy(identity), "output_sha256": {"train/checkpoint.pt": "c" * 64},
+            "recipe_identity": {"project_recipe_id": "owned", "imported_recipe_id": "owned", "listed_recipe_ids": ["owned"],
+                                "initial_revision": 1, "imported_revision": 2, "run_recipe_revision": 2,
+                                "original_revision_unchanged": True, "run_recipe_id": "owned",
+                                "imported_recipe_digest": "digest", "run_recipe_digest": "digest",
+                                "native_executed_recipe_digest": "digest"},
             "run": {"metrics": {"dataset_sha256": "d" * 64, "validation_loss": 0.2}, "backend_run_id": root}}
 
 
@@ -136,6 +141,19 @@ def test_same_environment_is_not_clean_replay():
     comparison = replay.compare_results(same, same)
     assert comparison["status"] == "FAIL"
     assert comparison["checks"]["backend_identity_independent_prefix"] is False
+
+
+@pytest.mark.parametrize("field,value", [("imported_recipe_id", "new-independent-recipe"),
+                                       ("listed_recipe_ids", ["owned", "another"]),
+                                       ("original_revision_unchanged", False), ("imported_revision", 1),
+                                       ("run_recipe_id", "another"), ("run_recipe_revision", 1),
+                                       ("native_executed_recipe_digest", "different")])
+def test_replay_rejects_recipe_identity_or_revision_drift(field, value):
+    origin, repeated = result("/origin"), result("/replay")
+    repeated["recipe_identity"][field] = value
+    comparison = replay.compare_results(origin, repeated)
+    assert comparison["status"] == "FAIL"
+    assert comparison["checks"]["replay_single_owned_recipe_identity"] is False
 
 
 @pytest.mark.parametrize("defect", ["source_path", "shared_pth", "module_path", "pythonpath", "metrics", "hashes", "store"])

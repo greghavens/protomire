@@ -70,6 +70,9 @@
       "mutating": true,
       "name": "claim.create",
       "operation": "claim.create",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -99,6 +102,9 @@
       "mutating": false,
       "name": "claim.get",
       "operation": "claim.get",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -123,6 +129,9 @@
       "mutating": false,
       "name": "claim.list",
       "operation": "claim.list",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -167,6 +176,9 @@
       "mutating": true,
       "name": "claim.update",
       "operation": "claim.update",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -199,6 +211,9 @@
       "mutating": false,
       "name": "cost.estimate",
       "operation": "cost.estimate",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -223,6 +238,9 @@
       "mutating": false,
       "name": "decision.list",
       "operation": "decision.list",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -294,6 +312,9 @@
       "mutating": true,
       "name": "decision.record",
       "operation": "decision.record",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -369,6 +390,9 @@
       "mutating": true,
       "name": "evidence.add",
       "operation": "evidence.add",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -398,6 +422,9 @@
       "mutating": false,
       "name": "evidence.get",
       "operation": "evidence.get",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -436,6 +463,9 @@
       "mutating": false,
       "name": "evidence.search",
       "operation": "evidence.search",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -460,6 +490,9 @@
       "mutating": false,
       "name": "execution.targets",
       "operation": "execution.targets",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -525,6 +558,9 @@
       "mutating": true,
       "name": "hypothesis.create",
       "operation": "hypothesis.create",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -554,6 +590,9 @@
       "mutating": false,
       "name": "hypothesis.get",
       "operation": "hypothesis.get",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -578,6 +617,9 @@
       "mutating": false,
       "name": "hypothesis.list",
       "operation": "hypothesis.list",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -622,6 +664,9 @@
       "mutating": true,
       "name": "hypothesis.update",
       "operation": "hypothesis.update",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -668,6 +713,9 @@
       "mutating": false,
       "name": "model.checkpoint.get",
       "operation": "model.checkpoint.get",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -700,6 +748,9 @@
       "mutating": false,
       "name": "model.version.get",
       "operation": "model.version.get",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -732,6 +783,9 @@
       "mutating": false,
       "name": "model.version.lineage",
       "operation": "model.version.lineage",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -756,6 +810,9 @@
       "mutating": false,
       "name": "model.version.list",
       "operation": "model.version.list",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -808,6 +865,9 @@
       "mutating": true,
       "name": "model.version.promote",
       "operation": "model.version.promote",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -837,6 +897,9 @@
       "mutating": false,
       "name": "operation.get",
       "operation": "operation.get",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -861,6 +924,9 @@
       "mutating": false,
       "name": "policy.get",
       "operation": "policy.get",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -900,6 +966,9 @@
       "mutating": true,
       "name": "policy.update",
       "operation": "policy.update",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -975,6 +1044,9 @@
       "mutating": true,
       "name": "project.create",
       "operation": "project.create",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -999,6 +1071,9 @@
       "mutating": false,
       "name": "project.get",
       "operation": "project.get",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1028,6 +1103,9 @@
       "mutating": false,
       "name": "project.history",
       "operation": "project.history",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1046,6 +1124,9 @@
       "mutating": false,
       "name": "project.list",
       "operation": "project.list",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1070,6 +1151,9 @@
       "mutating": false,
       "name": "project.open",
       "operation": "project.open",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1109,6 +1193,9 @@
       "mutating": true,
       "name": "project.update",
       "operation": "project.update",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -1157,6 +1244,9 @@
       "mutating": true,
       "name": "recipe.clone",
       "operation": "recipe.clone",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -1199,6 +1289,9 @@
       "mutating": true,
       "name": "recipe.create",
       "operation": "recipe.create",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -1239,13 +1332,22 @@
       "mutating": false,
       "name": "recipe.diff",
       "operation": "recipe.diff",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
-      "description": "Export a portable, secret-checked bundle without execution.",
+      "description": "Export a portable bundle without execution; format=json returns lossless bundle_json for browser round trips.",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
+          "format": {
+            "enum": [
+              "object",
+              "json"
+            ]
+          },
           "project_id": {
             "minLength": 1,
             "type": "string"
@@ -1268,6 +1370,9 @@
       "mutating": false,
       "name": "recipe.export",
       "operation": "recipe.export",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1301,6 +1406,9 @@
       "mutating": false,
       "name": "recipe.get",
       "operation": "recipe.get",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1325,15 +1433,46 @@
       "mutating": false,
       "name": "recipe.history",
       "operation": "recipe.history",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
       "description": "Open a verified bundle as the next untrusted revision of this model's single recipe.",
       "input_schema": {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "required": [
+                "bundle_json"
+              ]
+            },
+            "required": [
+              "bundle"
+            ]
+          },
+          {
+            "not": {
+              "required": [
+                "bundle"
+              ]
+            },
+            "required": [
+              "bundle_json"
+            ]
+          }
+        ],
         "properties": {
           "bundle": {
             "type": "object"
+          },
+          "bundle_json": {
+            "description": "Exact exported JSON text; do not parse and reserialize in JavaScript. Maximum 8 MiB UTF-8.",
+            "maxLength": 8388608,
+            "minLength": 1,
+            "type": "string"
           },
           "expected_revision": {
             "minimum": 1,
@@ -1359,7 +1498,6 @@
         },
         "required": [
           "project_id",
-          "bundle",
           "expected_revision",
           "idempotency_key"
         ],
@@ -1368,6 +1506,9 @@
       "mutating": true,
       "name": "recipe.import",
       "operation": "recipe.import",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -1392,6 +1533,9 @@
       "mutating": false,
       "name": "recipe.list",
       "operation": "recipe.list",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1421,6 +1565,9 @@
       "mutating": false,
       "name": "recipe.resolve_dependencies",
       "operation": "recipe.resolve_dependencies",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1465,6 +1612,9 @@
       "mutating": true,
       "name": "recipe.update",
       "operation": "recipe.update",
+      "required_scopes": [
+        "modify"
+      ],
       "scope": "modify"
     },
     {
@@ -1496,6 +1646,9 @@
       "mutating": false,
       "name": "recipe.validate",
       "operation": "recipe.validate",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1528,6 +1681,9 @@
       "mutating": false,
       "name": "run.artifacts",
       "operation": "run.artifacts",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1566,6 +1722,9 @@
       "mutating": true,
       "name": "run.cancel",
       "operation": "run.cancel",
+      "required_scopes": [
+        "execute"
+      ],
       "scope": "execute"
     },
     {
@@ -1611,6 +1770,9 @@
       "mutating": false,
       "name": "run.compare",
       "operation": "run.compare",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1635,6 +1797,9 @@
       "mutating": false,
       "name": "run.list",
       "operation": "run.list",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1673,6 +1838,9 @@
       "mutating": false,
       "name": "run.logs",
       "operation": "run.logs",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1711,10 +1879,13 @@
       "mutating": false,
       "name": "run.plan",
       "operation": "run.plan",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
-      "description": "Resume an actual checkpoint; distinguish exact state and warm start.",
+      "description": "Resume an actual checkpoint and advance this recipe revision; requires execute and modify. Exact state differs from warm start.",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
@@ -1792,6 +1963,10 @@
       "mutating": true,
       "name": "run.resume",
       "operation": "run.resume",
+      "required_scopes": [
+        "execute",
+        "modify"
+      ],
       "scope": "execute"
     },
     {
@@ -1824,6 +1999,9 @@
       "mutating": false,
       "name": "run.status",
       "operation": "run.status",
+      "required_scopes": [
+        "read"
+      ],
       "scope": "read"
     },
     {
@@ -1876,6 +2054,9 @@
       "mutating": true,
       "name": "run.submit",
       "operation": "run.submit",
+      "required_scopes": [
+        "execute"
+      ],
       "scope": "execute"
     }
   ],

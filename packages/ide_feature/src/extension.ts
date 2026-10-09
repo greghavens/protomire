@@ -1,41 +1,43 @@
 import * as vscode from 'vscode';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { OperationClient, OperationError } from './client';
-import { RecipeDocument, editableRecipeSource } from './document';
+import { RecipeDocument, editableRecipeSource, currentProjectRecipe } from './document';
 import { checkMessage, escapeHtml, serviceUrl, UI_OPERATIONS } from './security';
 import { OperationSpec, Project, Recipe, RecordValue } from './types';
 
 const TOKEN_KEY = 'modelbuilder.serviceToken';
-const SECTIONS = ['Research', 'Code', 'Data', 'Recipes', 'Runs', 'Versions'] as const;
+const SECTIONS = ['Research', 'Code', 'Data', 'Recipe', 'Runs', 'Versions'] as const;
 type Navigation = {projectId?:string; section?:string; recipeId?:string; runId?:string};
 class ExplorerItem extends vscode.TreeItem {
   constructor(label:string, readonly kind:string, readonly project?:Project, readonly record?:RecordValue) {
-    super(label, kind === 'project' || kind === 'section' ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
+    super(label, kind === 'project' || (kind === 'section' && ['Research','Runs','Versions'].includes(label)) ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
     this.contextValue = `modelbuilder.${kind}`;
     if (project) {
-      this.command = {command:'modelbuilder.openWorkbench',title:'Open',arguments:[{projectId:project.project_id,section:kind === 'section' ? label : kind,recipeId:record?.recipe_id,runId:record?.operation_id}]};
+      this.command = {command:'modelbuilder.openWorkbench',title:'Open',arguments:[{projectId:project.project_id,section:kind === 'project' ? 'Recipe' : kind === 'section' ? label : kind,recipeId:record?.recipe_id,runId:record?.operation_id}]};
       this.tooltip = record ? JSON.stringify(record,null,2) : `${project.model_name}\nProject ${project.project_id}\nRevision ${project.revision}`;
     }
-    this.iconPath = new vscode.ThemeIcon(({project:'project',Research:'book',Code:'code',Data:'database',Recipes:'type-hierarchy',Runs:'play-circle',Versions:'versions'} as Record<string,string>)[kind === 'section' ? label : kind] ?? 'circle-outline');
+    this.iconPath = new vscode.ThemeIcon(({project:'project',Research:'book',Code:'code',Data:'database',Recipe:'type-hierarchy',Runs:'play-circle',Versions:'versions'} as Record<string,string>)[kind === 'section' ? label : kind] ?? 'circle-outline');
     if (record) this.description = String(record.status ?? (record.revision ? `r${record.revision}` : record.backend_run_id ?? ''));
   }
 }
-class ModelExplorer implements vscode.TreeDataProvider<ExplorerItem> {
+export class ModelExplorer implements vscode.TreeDataProvider<ExplorerItem> {
   private changed = new vscode.EventEmitter<ExplorerItem | undefined>();
   readonly onDidChangeTreeData = this.changed.event;
+  private project?:Project;
   constructor(private client:OperationClient) {}
+  setProject(project?:Project){this.project=project;this.refresh();}
   refresh() { this.changed.fire(undefined); }
   getTreeItem(item:ExplorerItem) { return item; }
   async getChildren(item?:ExplorerItem):Promise<ExplorerItem[]> {
     try {
-      if (!item) return (await this.client.invoke<{projects:Project[]}>('project.list',{})).projects.map(project => new ExplorerItem(project.model_name,'project',project));
+      if (!item) {if(this.project){const root=new ExplorerItem(this.project.model_name,'project',this.project);root.collapsibleState=vscode.TreeItemCollapsibleState.Expanded;return [root];}const landing=new ExplorerItem('Open a model project','landing');landing.command={command:'modelbuilder.openWorkbench',title:'Choose or create a model project'};return [landing];}
       if (item.kind === 'project') return SECTIONS.map(section=>new ExplorerItem(section,'section',item.project));
       if (item.kind !== 'section' || !item.project) return [];
       const project = item.project;
       const payload = {project_id:project.project_id};
-      const operations:Record<string,[string,string,string]> = {Research:['hypothesis.list','hypotheses','proposed_change'],Recipes:['recipe.list','recipes','name'],Runs:['run.list','runs','operation_id'],Versions:['model.version.list','versions','name']};
+      const operations:Record<string,[string,string,string]> = {Research:['hypothesis.list','hypotheses','proposed_change'],Runs:['run.list','runs','operation_id'],Versions:['model.version.list','versions','name']};
       const config = operations[String(item.label)];
-      if (!config) return [new ExplorerItem(item.label === 'Code' ? 'Open model code and Git references' : 'Inspect recipe data references',String(item.label),project)];
+      if (!config) return [];
       const result = await this.client.invoke(config[0],payload);
       return (result[config[1]] ?? []).map((record:RecordValue)=>new ExplorerItem(String(record[config[2]] ?? record.model_version_id ?? record.id),String(item.label),project,record));
     } catch (error) { const leaf = new ExplorerItem(error instanceof Error ? error.message : String(error),'error'); leaf.command={command:'modelbuilder.configureConnection',title:'Configure connection'}; return [leaf]; }
@@ -123,14 +125,57 @@ export class Workbench implements vscode.Disposable {
   }
   private async navigate(nav:Navigation) {
     if (!nav.projectId) return;
-    if (this.dirty && nav.projectId !== this.project?.project_id && !await this.confirmDiscard()) return;
+    if(this.project && nav.projectId!==this.project.project_id){await this.closeProject();return;}
     const generation=++this.generation;
     const snapshot=await this.client.invoke('project.open',{project_id:nav.projectId});
     if (generation!==this.generation) return;
-    this.project=snapshot.project; this.runId=nav.runId;
-    await this.post('project',{snapshot,section:nav.section ?? 'Recipes',runId:nav.runId});
-    if (nav.recipeId || (!this.document.current && snapshot.recipes?.length)) await this.loadRecipe(nav.recipeId ?? snapshot.recipes[0].recipe_id);
-    else if (this.document.current?.project_id!==nav.projectId) { this.document=new RecipeDocument(this.client); this.dirty=false; await this.post('recipe',{recipe:null}); }
+    const current=currentProjectRecipe(snapshot);
+    this.project=snapshot.project; this.runId=nav.runId;this.explorer.setProject?.(this.project);await vscode.commands.executeCommand('setContext','modelbuilder.projectOpen',true);if(this.panel)this.panel.title=this.project!.model_name;
+    await this.post('project',{snapshot,section:nav.section === 'Recipes' ? 'Recipe' : nav.section ?? 'Recipe',runId:nav.runId});
+    if(this.document.current?.recipe_id!==current.recipe_id || !this.dirty)await this.loadRecipe(current.recipe_id);
+  }
+  async closeProject():Promise<boolean> {
+    if(this.project){
+      const tabs=vscode.window.tabGroups?.all.flatMap(group=>group.tabs).filter(tab=>{const input=tab.input as {uri?:vscode.Uri;modified?:vscode.Uri};const uri=input.uri??input.modified;return uri?.scheme==='modelrecipe'&&uri.path.startsWith(`/${this.project!.project_id}/`);})??[];
+      if(tabs.length&&!await vscode.window.tabGroups.close(tabs,true))return false;
+      if(this.dirty&&!await this.confirmDiscard())return false;
+    }
+    const generation=++this.generation;this.project=undefined;this.runId=undefined;this.document=new RecipeDocument(this.client);this.dirty=false;this.explorer.setProject?.();if(this.panel)this.panel.title='Model projects';
+    await vscode.commands.executeCommand('setContext','modelbuilder.projectOpen',false);await this.post('landing',{projects:[]});
+    const {projects}=await this.client.invoke('project.list',{});if(generation===this.generation&&!this.project)await this.post('landing',{projects});return true;
+  }
+  /** Native File commands use editor dialogs and the same service, never webview I/O. */
+  async recipeBundleFile(action:'import'|'export'):Promise<void> {
+    this.requireProject();if(!this.document.current)throw new Error('Open the model recipe first.');
+    if(this.busy)throw new Error('Wait for the current operation to finish.');
+    if(this.dirty)throw new Error('Save your current draft or explicitly reload it before importing or exporting a recipe. Your draft is preserved.');
+    const generation=this.generation, projectId=this.project!.project_id, recipeId=this.document.current.recipe_id, baseRevision=this.document.current.revision;
+    const requireSaved=()=>{if(this.dirty||vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='modelrecipe'&&doc.uri.path===`/${projectId}/${recipeId}.modelrecipe.json`))throw new Error('Save or explicitly discard the unsaved recipe source before this File action. All drafts have been preserved.');};
+    requireSaved();
+    const unchanged=()=>{requireSaved();if(generation!==this.generation||projectId!==this.project?.project_id||recipeId!==this.document.current?.recipe_id)throw new Error('The model project changed while the file dialog was open. No file operation was completed.');};
+    this.busy=true;await this.post('busy',{busy:true});
+    try {
+      if(action==='import'){
+        const selected=await vscode.window.showOpenDialog({title:'Import Recipe',openLabel:'Import Recipe',canSelectMany:false,canSelectFiles:true,canSelectFolders:false,filters:{'Recipe JSON bundles':['json']}});
+        if(!selected?.[0])return;unchanged();
+        const stat=await vscode.workspace.fs.stat(selected[0]);unchanged();if(stat.size>8*1024*1024)throw new Error('Recipe bundle exceeds the 8 MiB limit.');
+        const bytes=await vscode.workspace.fs.readFile(selected[0]);if(bytes.byteLength>8*1024*1024)throw new Error('Recipe bundle exceeds the 8 MiB limit.');
+        const bundle_json=new TextDecoder('utf-8',{fatal:true}).decode(bytes);unchanged();
+        await this.operation('recipe.import',{bundle_json,expected_revision:baseRevision},true);
+      }else{
+        // Capture exact server bytes before the dialog; later MCP edits cannot alter this file.
+        const result=await this.client.invoke('recipe.export',{project_id:projectId,recipe_id:recipeId,format:'json'});unchanged();
+        if(typeof result.bundle_json!=='string')throw new Error('Service did not return a lossless recipe bundle.');
+        const bytes=new TextEncoder().encode(result.bundle_json);if(bytes.byteLength>8*1024*1024)throw new Error('Recipe bundle exceeds the 8 MiB limit.');
+        const capturedRevision=JSON.parse(result.bundle_json).recipe.revision;
+        const folder=vscode.workspace.workspaceFolders?.[0]?.uri;
+        const destination=await vscode.window.showSaveDialog({title:`Export Recipe (revision ${capturedRevision})`,saveLabel:'Export Recipe',defaultUri:folder?vscode.Uri.joinPath(folder,'model.recipe.json'):undefined,filters:{'Recipe JSON bundles':['json']}});
+        if(!destination)return;unchanged();
+        await vscode.workspace.fs.writeFile(destination,bytes);
+        void vscode.window.showInformationMessage(`Recipe revision ${capturedRevision} exported to ${destination.fsPath}.`);
+      }
+    }catch(error){await this.post('error',{message:error instanceof Error?error.message:String(error),code:error instanceof OperationError?error.code:undefined});throw error;}
+    finally{this.busy=false;await this.post('busy',{busy:false});}
   }
   private async confirmDiscard():Promise<boolean> {const confirmed=await vscode.window.showWarningMessage('Discard unsaved recipe changes?',{modal:true},'Discard')==='Discard';if(confirmed)this.dirty=false;if(confirmed&&this.document.current){delete this.drafts[this.document.current.recipe_id];await this.persistDrafts();}return confirmed;}
   private async persistDrafts(){await this.context.workspaceState?.update('modelbuilder.unsavedDrafts',this.drafts);}
@@ -153,16 +198,10 @@ export class Workbench implements vscode.Disposable {
       switch(message.type) {
         case 'ready': await this.ready();break;
         case 'configure': await vscode.commands.executeCommand('modelbuilder.configureConnection');await this.ready();break;
-        case 'createProject': await vscode.commands.executeCommand('modelbuilder.createProject');await this.ready();break;
-        case 'selectProject': await this.navigate({projectId:String(message.projectId)});break;
+        case 'createProject': if(this.project)throw new Error('Close this model project before creating another.');await vscode.commands.executeCommand('modelbuilder.createProject');await this.ready();break;
+        case 'selectProject': if(this.project)throw new Error('Close this model project before opening another.');await this.navigate({projectId:String(message.projectId)});break;
+        case 'closeProject': await this.closeProject();break;
         case 'refresh': if(this.project) await this.navigate({projectId:this.project.project_id});else await this.ready();break;
-        case 'openRecipe': await this.loadRecipe(String(message.recipeId));break;
-        case 'newRecipe': {
-          this.requireProject();
-          const name=await vscode.window.showInputBox({title:'New recipe',prompt:'Recipe name',value:'Model recipe'});
-          if(name) {const recipe=await this.client.invoke<Recipe>('recipe.create',{project_id:this.project!.project_id,name,idempotency_key:randomUUID()});await this.loadRecipe(recipe.recipe_id);await this.refreshSnapshot();this.explorer.refresh();}
-          break;
-        }
         case 'nativeSource': if(this.document.current) await vscode.window.showTextDocument(await this.files.open(this.document.current.project_id,this.document.current.recipe_id),{viewColumn:vscode.ViewColumn.Beside});break;
         case 'saveRecipe': {
           const draft=JSON.parse(String(message.source));
@@ -183,9 +222,9 @@ export class Workbench implements vscode.Disposable {
     finally {this.busy=false;await this.post('busy',{busy:false});}
   }
   private requireProject() {if(!this.project) throw new Error('Select a model project first.');}
-  private async operation(name:string,raw:unknown) {
+  private async operation(name:string,raw:unknown,fromFile=false) {
     this.requireProject();
-    if(!UI_OPERATIONS.has(name) || !raw || typeof raw!=='object' || Array.isArray(raw)) throw new Error('Unsupported workbench operation.');
+    if((!UI_OPERATIONS.has(name)&&!(fromFile&&name==='recipe.import')) || !raw || typeof raw!=='object' || Array.isArray(raw)) throw new Error('Unsupported workbench operation.');
     const generation=this.generation;
     const spec=this.catalog.find(item=>item.name===name);if(!spec) throw new Error('Operation is not available on this service.');
     const payload:RecordValue={...raw as RecordValue,project_id:this.project!.project_id};
@@ -195,12 +234,17 @@ export class Workbench implements vscode.Disposable {
       if(await vscode.window.showWarningMessage(name==='run.cancel'?'Request cancellation? The run remains active until the backend confirms termination.':'Run trusted local code? Only repository-owned fixture execution is supported; remote spending is disabled.',{modal:true},'Continue')!=='Continue') return;
     }
     if(spec.mutating) payload.idempotency_key=randomUUID();
+    for(const key of ['recipe_id','expected_revision','expected_recipe_revision'])if((name.startsWith('recipe.')||['run.plan','run.submit','run.resume'].includes(name))&&key in spec.input_schema.properties){if(!this.document.current)throw new Error('This project has no current recipe.');payload[key]=key==='recipe_id'?this.document.current.recipe_id:fromFile&&name==='recipe.import'&&key==='expected_revision'?(raw as RecordValue).expected_revision:this.document.current.revision;}
+    if(name==='recipe.import'){if(this.dirty)throw new Error('Save your current draft or explicitly reload it before importing a recipe. Your draft is preserved.');if(await vscode.window.showWarningMessage('Open this recipe bundle into the current model project? Its contents become a new revision of this model’s recipe. Previous revisions and runs remain available.',{modal:true},'Open bundle')!=='Open bundle')return;}
     if(name==='run.submit') {if(!this.document.current)throw new Error('Open a recipe first.');payload.recipe_id=this.document.current.recipe_id;payload.expected_revision=this.document.current.revision;payload.trusted=true;payload.target='local-cpu';}
+    if(fromFile&&(this.dirty||vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='modelrecipe'&&doc.uri.path===`/${this.project!.project_id}/${this.document.current!.recipe_id}.modelrecipe.json`)))throw new Error('Unsaved recipe source appeared while the dialog was open. Your draft is preserved.');
+    if(generation!==this.generation)throw new Error('The model project changed before the operation was submitted.');
     const result=await this.client.invoke(name,payload);
     if(generation!==this.generation){this.explorer.refresh();return;}
-    await this.post('result',{operation:name,result});
+    if(!['recipe.import','recipe.export'].includes(name))await this.post('result',{operation:name,result});
     if(result.operation_id && ['run.submit','run.resume'].includes(name)) this.runId=result.operation_id;
     if(name.startsWith('run.') && this.runId) await this.refreshRun();
+    if(name==='recipe.import'&&this.document.current){if(this.dirty)await this.post('remoteChanged',{revision:result.revision,digest:result.digest});else await this.loadRecipe(this.document.current.recipe_id);void vscode.window.showInformationMessage(`Recipe imported as revision ${result.revision}. No code was executed.`);}
     if(spec.mutating) {this.explorer.refresh();await this.refreshSnapshot();}
   }
   private async refreshSnapshot() {if(!this.project)return;const generation=this.generation;const projectId=this.project.project_id;const snapshot=await this.client.invoke('project.open',{project_id:projectId});if(generation===this.generation&&projectId===this.project?.project_id)await this.post('snapshot',{snapshot});}
@@ -241,6 +285,7 @@ export class Workbench implements vscode.Disposable {
 }
 
 export function activate(context:vscode.ExtensionContext) {
+  void vscode.commands.executeCommand('setContext','modelbuilder.projectOpen',false);
   // Supported workbench commands only: hide stock assistant chrome without a core fork.
   if(vscode.workspace.getConfiguration('chat').get('disableAIFeatures',true))void vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar');
   const client=new OperationClient(()=>vscode.workspace.getConfiguration('modelbuilder').get('serviceUrl','http://127.0.0.1:8765'),async(base)=>{const stored=await context.secrets.get(TOKEN_KEY);if(!stored)return undefined;try{const credential=JSON.parse(stored);return credential.url===base && typeof credential.token==='string'?credential.token:undefined;}catch{return undefined;}});
@@ -250,6 +295,9 @@ export function activate(context:vscode.ExtensionContext) {
   context.subscriptions.push(workbench,vscode.workspace.registerFileSystemProvider('modelrecipe',files,{isCaseSensitive:true}),vscode.window.registerTreeDataProvider('modelbuilder.explorer',explorer));
   const register=(name:string,fn:(...args:any[])=>any)=>context.subscriptions.push(vscode.commands.registerCommand(name,async(...args:any[])=>{try{return await fn(...args);}catch(error){void vscode.window.showErrorMessage(error instanceof Error?error.message:String(error));}}));
   register('modelbuilder.openWorkbench',(nav:Navigation={})=>workbench.open(nav));
+  register('modelbuilder.importRecipeBundle',()=>workbench.recipeBundleFile('import'));
+  register('modelbuilder.exportRecipeBundle',()=>workbench.recipeBundleFile('export'));
+  register('modelbuilder.closeProject',()=>workbench.closeProject());
   register('modelbuilder.refresh',()=>explorer.refresh());
   register('modelbuilder.configureConnection',async(options?:{url?:string;token?:string})=>{
     if(!vscode.workspace.isTrusted) throw new Error('Trust this workspace before configuring a service credential.');
@@ -266,7 +314,7 @@ export function activate(context:vscode.ExtensionContext) {
     const project=await client.invoke<Project>('project.create',{model_name,slug,idempotency_key:randomUUID()});explorer.refresh();await workbench.open({projectId:project.project_id});
   });
   register('modelbuilder.openRecipeSource',async(projectId?:string,recipeId?:string)=>{
-    if(!projectId || !recipeId) throw new Error('Select a recipe and use Open native JSON in the workbench.');
+    if(!projectId || !recipeId) throw new Error('Open the model project and use Open native JSON in its Recipe editor.');
     return vscode.window.showTextDocument(await files.open(projectId,recipeId));
   });
   return {client,explorer,files,workbench,clearConnection:()=>context.secrets.delete(TOKEN_KEY)};

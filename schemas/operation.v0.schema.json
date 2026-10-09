@@ -1443,6 +1443,12 @@
         "payload": {
           "additionalProperties": false,
           "properties": {
+            "format": {
+              "enum": [
+                "object",
+                "json"
+              ]
+            },
             "project_id": {
               "minLength": 1,
               "type": "string"
@@ -1546,9 +1552,37 @@
         },
         "payload": {
           "additionalProperties": false,
+          "oneOf": [
+            {
+              "not": {
+                "required": [
+                  "bundle_json"
+                ]
+              },
+              "required": [
+                "bundle"
+              ]
+            },
+            {
+              "not": {
+                "required": [
+                  "bundle"
+                ]
+              },
+              "required": [
+                "bundle_json"
+              ]
+            }
+          ],
           "properties": {
             "bundle": {
               "type": "object"
+            },
+            "bundle_json": {
+              "description": "Exact exported JSON text; do not parse and reserialize in JavaScript. Maximum 8 MiB UTF-8.",
+              "maxLength": 8388608,
+              "minLength": 1,
+              "type": "string"
             },
             "expected_revision": {
               "minimum": 1,
@@ -1574,7 +1608,6 @@
           },
           "required": [
             "project_id",
-            "bundle",
             "expected_revision",
             "idempotency_key"
           ],

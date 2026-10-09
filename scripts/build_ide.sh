@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Source-based Linux x64 development distribution, no Code OSS core patches.
+# Linux x64 distribution; one documented native File-menu composition import.
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CACHE=${MODELBUILDER_BUILD_CACHE:-"$ROOT/.cache"}
 SOURCE="$CACHE/code-oss"
-LOG="$ROOT/evidence/gui/distribution"
+LOG=${MODELBUILDER_BUILD_EVIDENCE:-"$ROOT/evidence/gui/distribution"}
 MODE=${1:-build}
 mkdir -p "$CACHE" "$LOG"
 exec > >(tee "$LOG/build-ide.log") 2>&1

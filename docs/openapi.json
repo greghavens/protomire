@@ -810,7 +810,10 @@
           }
         ],
         "summary": "Create a proposition with evidence and contradiction links.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/claim.get": {
@@ -933,7 +936,10 @@
           }
         ],
         "summary": "Read a research claim.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/claim.list": {
@@ -1051,7 +1057,10 @@
           }
         ],
         "summary": "List project claims.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/claim.update": {
@@ -1189,7 +1198,10 @@
           }
         ],
         "summary": "Revise a claim and preserve review history.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/cost.estimate": {
@@ -1315,7 +1327,10 @@
           }
         ],
         "summary": "Inspect local cost limits; remote estimates unavailable without a provider.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/decision.list": {
@@ -1433,7 +1448,10 @@
           }
         ],
         "summary": "List positive, negative, and inconclusive research decisions.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/decision.record": {
@@ -1598,7 +1616,10 @@
           }
         ],
         "summary": "Record a decision tied to real runs and an immutable recipe revision.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/evidence.add": {
@@ -1767,7 +1788,10 @@
           }
         ],
         "summary": "Store a citation; a citation alone does not prove a claim.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/evidence.get": {
@@ -1890,7 +1914,10 @@
           }
         ],
         "summary": "Read a cited evidence record.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/evidence.search": {
@@ -2022,7 +2049,10 @@
           }
         ],
         "summary": "Search saved evidence or retrieve public OpenAlex metadata without persisting it.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/execution.targets": {
@@ -2140,7 +2170,10 @@
           }
         ],
         "summary": "List actual supported targets and capabilities.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/hypothesis.create": {
@@ -2299,7 +2332,10 @@
           }
         ],
         "summary": "Create an evidence-linked measurable hypothesis.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/hypothesis.get": {
@@ -2422,7 +2458,10 @@
           }
         ],
         "summary": "Read a hypothesis.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/hypothesis.list": {
@@ -2540,7 +2579,10 @@
           }
         ],
         "summary": "List hypotheses including negative and abandoned outcomes.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/hypothesis.update": {
@@ -2678,7 +2720,10 @@
           }
         ],
         "summary": "Revise a hypothesis without losing previous outcomes.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/model.checkpoint.get": {
@@ -2818,7 +2863,10 @@
           }
         ],
         "summary": "Read a checkpoint and its verified resume capabilities.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/model.version.get": {
@@ -2944,7 +2992,10 @@
           }
         ],
         "summary": "Read an authoritative model version.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/model.version.lineage": {
@@ -3070,7 +3121,10 @@
           }
         ],
         "summary": "Read actual model-version parents and artifacts.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/model.version.list": {
@@ -3188,7 +3242,10 @@
           }
         ],
         "summary": "List authoritative ZenML model versions.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/model.version.promote": {
@@ -3334,7 +3391,10 @@
           }
         ],
         "summary": "Promote a version using a recorded, measurable decision.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/operation.get": {
@@ -3457,7 +3517,10 @@
           }
         ],
         "summary": "Read a stored application-operation correlation.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/policy.get": {
@@ -3575,7 +3638,10 @@
           }
         ],
         "summary": "Read project permissions and fail-closed remote-execution policy.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/policy.update": {
@@ -3708,7 +3774,10 @@
           }
         ],
         "summary": "Update bounded local policy; remote spending remains disabled.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/project.create": {
@@ -3877,7 +3946,10 @@
           }
         ],
         "summary": "Create one model project with its one stable current recipe; optionally supply the initial recipe document.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/project.get": {
@@ -3995,7 +4067,10 @@
           }
         ],
         "summary": "Read a project.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/project.history": {
@@ -4118,7 +4193,10 @@
           }
         ],
         "summary": "Read append-only project audit history.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/project.list": {
@@ -4230,7 +4308,10 @@
           }
         ],
         "summary": "List authorized model projects.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/project.open": {
@@ -4348,7 +4429,10 @@
           }
         ],
         "summary": "Open a project and its lifecycle resources.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/project.update": {
@@ -4481,7 +4565,10 @@
           }
         ],
         "summary": "Update project with optimistic concurrency.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/recipe.clone": {
@@ -4623,7 +4710,10 @@
           }
         ],
         "summary": "Compatibility historical restore: copy a prior revision into the same stable recipe identity.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/recipe.create": {
@@ -4759,7 +4849,10 @@
           }
         ],
         "summary": "Author the project recipe at the expected revision; never create a second recipe identity.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/recipe.diff": {
@@ -4893,7 +4986,10 @@
           }
         ],
         "summary": "Compare revisions or a draft against the current recipe.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/recipe.export": {
@@ -4905,6 +5001,12 @@
               "schema": {
                 "additionalProperties": false,
                 "properties": {
+                  "format": {
+                    "enum": [
+                      "object",
+                      "json"
+                    ]
+                  },
                   "project_id": {
                     "minLength": 1,
                     "type": "string"
@@ -5015,8 +5117,11 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Export a portable, secret-checked bundle without execution.",
-        "x-required-scope": "read"
+        "summary": "Export a portable bundle without execution; format=json returns lossless bundle_json for browser round trips.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/recipe.get": {
@@ -5143,7 +5248,10 @@
           }
         ],
         "summary": "Read a recipe at its current or historical revision.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/recipe.history": {
@@ -5261,7 +5369,10 @@
           }
         ],
         "summary": "Read immutable recipe revisions and retained legacy provenance, not selectable current recipes.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/recipe.import": {
@@ -5272,9 +5383,37 @@
             "application/json": {
               "schema": {
                 "additionalProperties": false,
+                "oneOf": [
+                  {
+                    "not": {
+                      "required": [
+                        "bundle_json"
+                      ]
+                    },
+                    "required": [
+                      "bundle"
+                    ]
+                  },
+                  {
+                    "not": {
+                      "required": [
+                        "bundle"
+                      ]
+                    },
+                    "required": [
+                      "bundle_json"
+                    ]
+                  }
+                ],
                 "properties": {
                   "bundle": {
                     "type": "object"
+                  },
+                  "bundle_json": {
+                    "description": "Exact exported JSON text; do not parse and reserialize in JavaScript. Maximum 8 MiB UTF-8.",
+                    "maxLength": 8388608,
+                    "minLength": 1,
+                    "type": "string"
                   },
                   "expected_revision": {
                     "minimum": 1,
@@ -5300,7 +5439,6 @@
                 },
                 "required": [
                   "project_id",
-                  "bundle",
                   "expected_revision",
                   "idempotency_key"
                 ],
@@ -5398,7 +5536,10 @@
           }
         ],
         "summary": "Open a verified bundle as the next untrusted revision of this model's single recipe.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/recipe.list": {
@@ -5516,7 +5657,10 @@
           }
         ],
         "summary": "Compatibility list containing exactly the project current recipe.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/recipe.resolve_dependencies": {
@@ -5639,7 +5783,10 @@
           }
         ],
         "summary": "Inspect immutable dependency references and readiness.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/recipe.update": {
@@ -5777,7 +5924,10 @@
           }
         ],
         "summary": "Atomically replace the same recipe using its expected revision.",
-        "x-required-scope": "modify"
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
       }
     },
     "/v1/operations/recipe.validate": {
@@ -5902,7 +6052,10 @@
           }
         ],
         "summary": "Validate a recipe without executing any code.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/run.artifacts": {
@@ -6028,7 +6181,10 @@
           }
         ],
         "summary": "Read authoritative artifact identifiers and hashes.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/run.cancel": {
@@ -6160,7 +6316,10 @@
           }
         ],
         "summary": "Request real cancellation; requested is not confirmed termination.",
-        "x-required-scope": "execute"
+        "x-required-scope": "execute",
+        "x-required-scopes": [
+          "execute"
+        ]
       }
     },
     "/v1/operations/run.compare": {
@@ -6299,7 +6458,10 @@
           }
         ],
         "summary": "Compare metrics from actual backend runs by a declared criterion.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/run.list": {
@@ -6417,7 +6579,10 @@
           }
         ],
         "summary": "List and reconcile project operation correlations with the backend.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/run.logs": {
@@ -6549,7 +6714,10 @@
           }
         ],
         "summary": "Read actual backend logs.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/run.plan": {
@@ -6681,7 +6849,10 @@
           }
         ],
         "summary": "Validate an execution plan; never launch from this operation.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/run.resume": {
@@ -6855,8 +7026,12 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Resume an actual checkpoint; distinguish exact state and warm start.",
-        "x-required-scope": "execute"
+        "summary": "Resume an actual checkpoint and advance this recipe revision; requires execute and modify. Exact state differs from warm start.",
+        "x-required-scope": "execute",
+        "x-required-scopes": [
+          "execute",
+          "modify"
+        ]
       }
     },
     "/v1/operations/run.status": {
@@ -6982,7 +7157,10 @@
           }
         ],
         "summary": "Reconcile status with the authoritative backend.",
-        "x-required-scope": "read"
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
       }
     },
     "/v1/operations/run.submit": {
@@ -7128,7 +7306,10 @@
           }
         ],
         "summary": "Submit an explicitly permitted local fixture to the real backend.",
-        "x-required-scope": "execute"
+        "x-required-scope": "execute",
+        "x-required-scopes": [
+          "execute"
+        ]
       }
     },
     "/v1/operations/{operation_id}": {

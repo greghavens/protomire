@@ -13,6 +13,7 @@ function createFrame(cdp,context){
  const evaluate=(selector,body,args=[])=>cdp.evaluate(context,`(()=>{const doc=${findDocument};const el=doc?.querySelector(${JSON.stringify(selector)});if(!el)throw new Error('Missing real GUI element: '+${JSON.stringify(selector)});return (${body})(el,...${JSON.stringify(args)});})()`);
  const wait=async(fn,timeout=30000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await fn())return;await new Promise(r=>setTimeout(r,100));}throw Error('Real webview element did not reach expected state');};
  return {scrollTop:()=>cdp.evaluate(context,`(()=>{const doc=${findDocument};doc.defaultView.scrollTo(0,0);return true;})()`),locator(selector){return {
+  count:()=>cdp.evaluate(context,`(()=>{const doc=${findDocument};return doc?.querySelectorAll(${JSON.stringify(selector)}).length??0;})()`),
   inputValue:()=>evaluate(selector,'el=>el.value'),
   innerText:()=>evaluate(selector,'el=>el.innerText'),
   textContent:()=>evaluate(selector,'el=>el.textContent'),

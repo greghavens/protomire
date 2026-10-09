@@ -1,4 +1,4 @@
-import { newNode, removeNode, replaceNode, readVisualSource, assertNodePanelCurrent, recipeChoiceRecords } from './document';
+import { newNode, removeNode, replaceNode, readVisualSource, assertNodePanelCurrent } from './document';
 import { OperationSpec, Recipe, RecipeEdge, RecipeNode, RecordValue } from './types';
 declare function acquireVsCodeApi(): {postMessage(message:unknown):void;setState(value:unknown):void;getState():any};
 const vscode=acquireVsCodeApi();
@@ -7,14 +7,19 @@ const send=(type:string,body:RecordValue={})=>{if(type==='saveRecipe'&&nodePanel
 const pretty=(value:unknown)=>JSON.stringify(value,null,2);
 const app=$('app');
 app.innerHTML=`
-<header><div><span class="eyebrow">MODELBUILDER</span><h1>Model workbench</h1></div><div class="connection"><span id="connection" role="status">Connecting…</span><button id="connect">Connection</button></div></header>
-<div class="projectbar"><label for="project">Model project</label><select id="project"><option value="">Select project</option></select><button id="create-project">New project</button><button id="refresh">Refresh</button><span id="project-id" class="mono muted"></span></div>
-<nav aria-label="Model lifecycle" id="tabs"></nav>
+<header><div><span class="eyebrow">MODELBUILDER</span><h1 id="workbench-heading">Model projects</h1></div><div class="connection"><span id="connection" role="status">Connecting…</span><button id="connect">Connection</button></div></header>
 <div id="notice" role="status" hidden></div><div id="error" role="alert" hidden></div>
-<section id="Recipes" class="page">
-  <div class="toolbar"><label for="recipe-select">Recipe</label><select id="recipe-select"><option value="">Choose a recipe</option></select><button id="new-recipe">New recipe</button><button id="native-source">Open native JSON</button><button id="validate">Validate</button><button id="diff">Diff</button><button id="save" class="primary">Save revision</button><button id="reload">Reload</button></div>
-  <div id="identity" class="identity">Open or create a model project, then create a recipe.</div>
-  <div id="remote" class="warning" hidden></div>
+<section id="landing" aria-label="Choose a model project">
+  <div class="landing-intro"><span class="eyebrow">START WITH A MODEL</span><h2>What model are you building?</h2><p>Open a model project or create one. Each project develops one model through one evolving recipe, with its research, code, data, runs and versions together.</p><div class="toolbar"><button id="create-project" class="primary">Create model project</button><button id="refresh-projects">Refresh projects</button></div></div>
+  <h3>Your model projects</h3><div id="project-list" class="project-cards"></div>
+</section>
+<div id="workspace" class="model-workspace" hidden>
+<aside class="workspace-nav"><span class="eyebrow">MODEL PROJECT</span><h2 id="model-name"></h2><div id="project-id" class="mono muted"></div><nav aria-label="Model lifecycle" id="tabs"></nav><button id="close-project">Close project</button></aside>
+<main class="workspace-content">
+<section id="Recipe" class="page">
+  <div class="toolbar"><h2>Training &amp; evaluation recipe</h2><button id="native-source">Open native JSON</button><button id="validate">Validate</button><button id="diff">Diff</button><button id="save" class="primary">Save revision</button><button id="reload">Reload</button></div>
+  <p class="muted">Build the dataset, initialization, training, evaluation and model-export pipeline below. Saved revisions and runs stay with this model.</p><div id="recipe-extra-actions" class="toolbar"></div><div id="identity" class="identity">Loading the model recipe…</div>
+  <div id="migration" class="warning" hidden></div><div id="remote" class="warning" hidden></div>
   <div id="conflict" class="conflict" hidden><h2>Concurrent edit conflict</h2><p>Your draft is preserved. Compare it to the current server revision before resolving.</p><pre id="conflict-diff"></pre><div class="columns"><div><h3>Current server</h3><pre id="server-json"></pre></div><div><h3>Your draft</h3><pre id="local-json"></pre></div></div><button id="discard-conflict">Load server revision and discard draft</button></div>
   <div class="editor-grid">
     <div class="graph-pane"><div class="toolbar"><h2>Pipeline graph</h2><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit">Reset view</button><span class="muted">Drag to pan · Wheel to zoom</span></div><svg id="graph" role="img" aria-label="Editable typed pipeline graph" viewBox="0 0 900 440"><g id="graph-layer"></g></svg>
@@ -34,16 +39,16 @@ app.innerHTML=`
 <section id="Compute" class="page" hidden><h2>Local compute preview</h2><p>Inspect actual target capabilities and recipe requirements. Remote spending is disabled. No remote budget enforcement is claimed.</p><div class="toolbar" id="compute-actions"></div><pre id="compute-info"></pre></section>
 <section id="operation-panel" hidden><div class="toolbar"><h2 id="operation-title"></h2><button id="close-operation">Close form</button></div><p id="operation-description"></p><form id="operation-form"></form></section>
 <section id="result-panel" hidden><div class="toolbar"><h2 id="result-title">Service result</h2><button id="close-result">Close result</button></div><pre id="result"></pre></section>
+</main></div>
 <footer>Shared operation service · Native MCP parity · No assistant required</footer>`;
 let catalog:OperationSpec[]=[];
 let snapshot:RecordValue={};
 let recipe:Recipe|undefined;
-let loadedRecipe:Recipe|undefined;
 let selectedNode:string|undefined;
 let nodePanelDirty=false;
 let nodePanelBaseline="";
 let activeRun:string|undefined;
-let section='Recipes';
+let section='Recipe';
 let dirty=false;
 let busy=false;
 let pan={x:0,y:0,scale:1};
@@ -55,35 +60,38 @@ function button(label:string,action:()=>void):HTMLButtonElement {const el=node('
 function options(select:HTMLSelectElement,values:{value:string;label:string}[],current?:string) {select.replaceChildren(...values.map(value=>{const option=node('option',value.label);option.value=value.value;return option;}));if(current!==undefined)select.value=current;}
 function report(message:string) {$('error').textContent=message;$('error').hidden=false;}
 function markDirty(value:boolean) {dirty=value;$('dirty').textContent=value?'Unsaved draft':'Saved';$('dirty').className=`pill ${value?'unsaved':''}`;send('dirty',{dirty:value});if(value&&recipe)send('draftState',{recipeId:recipe.recipe_id,state:{source:$<HTMLTextAreaElement>('source').value,selectedNode,nodePanelDirty,nodePanelBaseline,nodeFields:Object.fromEntries(['node-implementation','node-inputs','node-outputs','node-parameters'].map(id=>[id,$<HTMLTextAreaElement>(id).value]))}});}
-function showSection(value:string) {section=value;for(const name of ['Research','Code','Data','Recipes','Runs','Versions','Compute']){$(name).hidden=name!==value;document.querySelector(`[data-section="${name}"]`)?.classList.toggle('active',name===value);}vscode.setState({section,projectId:snapshot.project?.project_id,recipeId:recipe?.recipe_id});}
-for(const name of ['Research','Code','Data','Recipes','Runs','Versions','Compute']){const tab=button(name,()=>showSection(name));tab.dataset.section=name;$('tabs').append(tab);}
+function showSection(value:string) {section=value;for(const name of ['Research','Code','Data','Recipe','Runs','Versions','Compute']){$(name).hidden=name!==value;document.querySelector(`[data-section="${name}"]`)?.classList.toggle('active',name===value);}vscode.setState({section,projectId:snapshot.project?.project_id,recipeId:recipe?.recipe_id});}
+for(const name of ['Research','Code','Data','Recipe','Runs','Versions','Compute']){const tab=button(name,()=>showSection(name));tab.dataset.section=name;$('tabs').append(tab);}
 showSection(section);
 for(const kind of kinds){const option=node('option',kind);option.value=kind;$('node-kind').append(option);}
-$('connect').onclick=()=>send('configure');$('create-project').onclick=()=>send('createProject');$('refresh').onclick=()=>send('refresh');
-$('project').onchange=()=>send('selectProject',{projectId:$<HTMLSelectElement>('project').value});
-$('recipe-select').onchange=()=>send('openRecipe',{recipeId:$<HTMLSelectElement>('recipe-select').value});
-$('new-recipe').onclick=()=>send('newRecipe');$('native-source').onclick=()=>send('nativeSource');
+$('connect').onclick=()=>send('configure');$('create-project').onclick=()=>send('createProject');$('refresh-projects').onclick=()=>send('refresh');
+$('close-project').onclick=()=>send('closeProject');$('native-source').onclick=()=>send('nativeSource');
 $('validate').onclick=()=>send('validateRecipe',{source:$<HTMLTextAreaElement>('source').value});
 $('diff').onclick=()=>send('diffRecipe',{source:$<HTMLTextAreaElement>('source').value});
 $('save').onclick=()=>send('saveRecipe',{source:$<HTMLTextAreaElement>('source').value});
 $('reload').onclick=$('discard-conflict').onclick=()=>send('reloadRecipe');
 $('open-code').onclick=()=>send('openCode');
 $('close-operation').onclick=()=>{$('operation-panel').hidden=true;};$('close-result').onclick=()=>{$('result-panel').hidden=true;};
-document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key==='s'&&section==='Recipes'){event.preventDefault();if(!busy&&recipe)send('saveRecipe',{source:$<HTMLTextAreaElement>('source').value});}});
+document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key==='s'&&section==='Recipe'){event.preventDefault();if(!busy&&recipe)send('saveRecipe',{source:$<HTMLTextAreaElement>('source').value});}});
 $<HTMLTextAreaElement>('source').addEventListener('input',()=>{
   markDirty(true);
   try{const value=JSON.parse($<HTMLTextAreaElement>('source').value);if(!Array.isArray(value.nodes)||!Array.isArray(value.edges))throw new Error('Graph requires nodes and edges arrays.');recipe=value;$('parse-error').textContent='';renderGraph();if(selectedNode&&!nodePanelDirty)fillNodePanel(selectedNode);}
   catch(error){$('parse-error').textContent=`Source parse: ${(error as Error).message}`;}
 });
 function updateDraft(value:Recipe):boolean {try{readVisualSource($<HTMLTextAreaElement>('source').value);}catch(error){report((error as Error).message);return false;}recipe=value;$<HTMLTextAreaElement>('source').value=pretty(value);markDirty(true);renderGraph();renderReferences();return true;}
-function renderRecipe(value:Recipe|undefined) {$('error').hidden=true;$('error').textContent='';$('notice').hidden=true;loadedRecipe=value;recipe=value;selectedNode=undefined;nodePanelDirty=false;layouts.clear();markDirty(false);$('conflict').hidden=true;$('remote').hidden=true;$('parse-error').textContent='';$<HTMLTextAreaElement>('source').value=value?pretty(value):'';$('identity').textContent=value?`${value.name}  ·  ${value.recipe_id}  ·  revision ${value.revision}\nSHA256 ${value.digest}`:'Select or create a recipe.';renderRecipeChoices();renderGraph();renderReferences();}
+function renderRecipe(value:Recipe|undefined) {$('error').hidden=true;$('error').textContent='';$('notice').hidden=true;recipe=value;selectedNode=undefined;nodePanelDirty=false;layouts.clear();markDirty(false);$('conflict').hidden=true;$('remote').hidden=true;$('parse-error').textContent='';$<HTMLTextAreaElement>('source').value=value?pretty(value):'';$('identity').textContent=value?`${value.name}  ·  ${value.recipe_id}  ·  revision ${value.revision}\nSHA256 ${value.digest}`:'Loading the model recipe…';renderGraph();renderReferences();}
 function renderReferences() {$('code-info').textContent=pretty({project:snapshot.project?.project_id,source:recipe?.source,python_nodes:recipe?.nodes.filter(n=>n.kind==='code.python')});$('data-info').textContent=pretty({external_dependencies:recipe?.external_dependencies,dataset_nodes:recipe?.nodes.filter(n=>n.kind.startsWith('dataset.'))});$('compute-info').textContent=pretty({resources:recipe?.resources,environment:recipe?.environment,remote_spending:'disabled'});}
-function renderRecipeChoices(){const records=recipeChoiceRecords(snapshot.project?.project_id,snapshot.recipes??[],loadedRecipe);options($<HTMLSelectElement>('recipe-select'),[{value:'',label:'Choose a recipe'},...records.map(r=>({value:r.recipe_id,label:`${r.name} · r${r.revision}`}))],recipe?.recipe_id);}
+function renderProjects(projects:RecordValue[]) {
+  const list=$('project-list');list.replaceChildren();
+  for(const project of projects){const card=node('article',undefined,'project-card');card.append(node('h3',project.model_name));if(project.description)card.append(node('p',project.description,'muted'));card.append(node('p',`Project ${project.slug??project.project_id}`,'muted'));const open=button('Open model project',()=>send('selectProject',{projectId:project.project_id}));open.dataset.projectId=project.project_id;card.append(open);list.append(card);}
+  if(!projects.length)list.append(node('p','No model projects yet. Create one to begin.','muted'));
+}
+function showLanding(){snapshot={};activeRun=undefined;renderRecipe(undefined);$('workspace').hidden=true;$('landing').hidden=false;$('workbench-heading').textContent='Model projects';$('operation-panel').hidden=true;$('result-panel').hidden=true;vscode.setState({});}
 function renderSnapshot() {
   const project=snapshot.project;if(!project)return;
-  $('project-id').textContent=`${project.project_id} · r${project.revision}`;
-  const select=$<HTMLSelectElement>('project');if(![...select.options].some(o=>o.value===project.project_id)){const opt=node('option',project.model_name);opt.value=project.project_id;select.append(opt);}select.value=project.project_id;
-  renderRecipeChoices();
+  $('landing').hidden=true;$('workspace').hidden=false;$('workbench-heading').textContent=project.model_name;
+  $('model-name').textContent=project.model_name;$('project-id').textContent=project.project_id;
+  $('migration').hidden=!project.recipe_migration?.review_required;$('migration').textContent=project.recipe_migration?.review_required?'This project was migrated from multiple recipe identities. Review the current recipe and save a revision before execution; previous recipe manifests and run references remain preserved.':'';
   const records=$('research-records');records.replaceChildren();
   for(const [key,label] of [['evidence','Evidence'],['claims','Claims'],['hypotheses','Hypotheses'],['decisions','Decisions']]){const group=node('section');group.append(node('h3',label));for(const record of snapshot[key]??[]){const details=node('details');details.append(node('summary',record.title??record.proposition??record.proposed_change??`${record.outcome}: ${record.rationale}`));details.append(node('pre',pretty(record)));group.append(details);}if(!(snapshot[key]??[]).length)group.append(node('p','No records yet.','muted'));records.append(group);}
   const runs=$('run-list');runs.replaceChildren();for(const run of snapshot.runs??[]){const card=button(`${run.status??'unknown'} · ${run.operation_id}`,()=>{activeRun=run.operation_id;send('selectRun',{operationId:run.operation_id});});card.className='run-card';card.append(node('small',`Backend: ${run.backend_run_id??'Not yet assigned'}`));runs.append(card);}if(!(snapshot.runs??[]).length)runs.append(node('p','No runs yet. Preview an execution plan first.','muted'));
@@ -125,9 +133,9 @@ function operationDefaults():RecordValue{return {recipe_id:recipe?.recipe_id,exp
 function openOperation(name:string){
   const spec=catalog.find(o=>o.name===name);if(!spec){report(`Operation unavailable: ${name}`);return;}selectedOperation=spec;
   $('operation-panel').hidden=false;$('operation-title').textContent=name;$('operation-description').textContent=`${spec.description} Required scope: ${spec.scope}.`;
-  const form=$<HTMLFormElement>('operation-form');form.replaceChildren();const defaults=operationDefaults();
+  const form=$<HTMLFormElement>('operation-form');form.replaceChildren();const defaults=operationDefaults();if(!(name.startsWith('recipe.')||['run.plan','run.submit','run.resume'].includes(name)))delete defaults.expected_revision;
   for(const [key,schema]of Object.entries(spec.input_schema.properties)){
-    if(['project_id','idempotency_key','request_id'].includes(key)||(name==='run.submit'&&['recipe_id','expected_revision','trusted','target'].includes(key)))continue;
+    if(['project_id','idempotency_key','request_id'].includes(key)||((name.startsWith('recipe.')||['run.plan','run.submit','run.resume'].includes(name))&&['recipe_id','expected_revision','expected_recipe_revision'].includes(key))||(name==='run.submit'&&['trusted','target'].includes(key)))continue;
     const required=spec.input_schema.required.includes(key);const label=node('label',`${key.replaceAll('_',' ')}${required?' *':''}`);let input:HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement;
     const types=Array.isArray(schema.type)?schema.type:[schema.type];
     if(schema.enum){input=node('select');options(input,schema.enum.map((value:string)=>({value,label:value})));}
@@ -144,21 +152,22 @@ function openOperation(name:string){
 function buildActions(){
   const groups:Record<string,[string,string][]>={
     'research-actions':[['evidence.add','Add evidence'],['evidence.search','Search saved evidence'],['claim.create','Add claim'],['claim.update','Edit claim'],['hypothesis.create','New hypothesis'],['hypothesis.update','Edit hypothesis'],['decision.record','Record decision']],
-    'run-actions':[['run.plan','Preview run'],['run.submit','Start local fixture'],['run.cancel','Request stop'],['run.resume','Resume checkpoint'],['run.compare','Compare runs']],
+    'run-actions':[['run.plan','Preview run'],['run.submit','Run recipe'],['run.cancel','Request stop'],['run.resume','Resume checkpoint'],['run.compare','Compare runs']],
     'version-actions':[['model.version.list','Load versions'],['model.version.get','Version details'],['model.version.lineage','Inspect lineage'],['model.version.promote','Promote by decision'],['model.checkpoint.get','Inspect checkpoint']],
     'compute-actions':[['execution.targets','Inspect targets'],['run.plan','Preview recipe requirements'],['policy.get','Read policy'],['cost.estimate','Inspect cost availability']]
   };
   for(const [id,actions]of Object.entries(groups)){$(id).replaceChildren(...actions.filter(([name])=>catalog.some(o=>o.name===name)).map(([name,label])=>button(label,()=>openOperation(name))));}
-  const recipeActions=node('div',undefined,'toolbar');recipeActions.id='recipe-extra-actions';for(const [name,label]of [['recipe.clone','Clone recipe'],['recipe.export','Export bundle'],['recipe.import','Import bundle'],['recipe.resolve_dependencies','Inspect dependencies']])if(catalog.some(o=>o.name===name))recipeActions.append(button(label,()=>openOperation(name)));$('recipe-extra-actions')?.remove();$('Recipes').append(recipeActions);
+  const recipeActions=$('recipe-extra-actions');recipeActions.replaceChildren();for(const [name,label]of [['recipe.resolve_dependencies','Inspect dependencies']])if(catalog.some(o=>o.name===name)){const action=button(label,()=>openOperation(name));action.dataset.operation=name;recipeActions.append(action);}
 }
 window.addEventListener('message',event=>{
   const message=event.data;if(!message||typeof message.type!=='string')return;
   switch(message.type){
-    case 'init':catalog=message.catalog;options($<HTMLSelectElement>('project'),[{value:'',label:'Select project'},...message.projects.map((p:RecordValue)=>({value:p.project_id,label:p.model_name}))],snapshot.project?.project_id);$('connection').textContent=message.trusted?'Service connected':'Read/author mode · Workspace untrusted';buildActions();break;
-    case 'project':snapshot=message.snapshot;renderSnapshot();showSection(message.section??'Recipes');if(message.runId)activeRun=message.runId;break;
+    case 'init':catalog=message.catalog;renderProjects(message.projects);$('connection').textContent=message.trusted?'Service connected':'Read/author mode · Workspace untrusted';buildActions();break;
+    case 'landing':showLanding();renderProjects(message.projects??[]);break;
+    case 'project':snapshot=message.snapshot;renderSnapshot();showSection(message.section??'Recipe');if(message.runId)activeRun=message.runId;break;
     case 'snapshot':snapshot=message.snapshot;renderSnapshot();break;
     case 'recipe':renderRecipe(message.recipe??undefined);break;
-    case 'savedRetained':loadedRecipe=message.recipe;renderRecipeChoices();$('identity').textContent=`${message.recipe.name} · ${message.recipe.recipe_id} · saved revision ${message.recipe.revision}\nSHA256 ${message.recipe.digest}`;$('notice').hidden=false;$('notice').textContent='Saved the submitted revision. Your newer edits are still unsaved and have been preserved.';markDirty(true);break;
+    case 'savedRetained':$('identity').textContent=`${message.recipe.name} · ${message.recipe.recipe_id} · saved revision ${message.recipe.revision}\nSHA256 ${message.recipe.digest}`;$('notice').hidden=false;$('notice').textContent='Saved the submitted revision. Your newer edits are still unsaved and have been preserved.';markDirty(true);break;
     case 'restoreDraft':{const state=message.state;$<HTMLTextAreaElement>('source').value=state.source;try{recipe=readVisualSource(state.source);$('parse-error').textContent='';}catch(error){$('parse-error').textContent=(error as Error).message;}selectedNode=state.selectedNode;nodePanelDirty=Boolean(state.nodePanelDirty);nodePanelBaseline=state.nodePanelBaseline??'';renderGraph();if(selectedNode){fillNodePanel(selectedNode);nodePanelDirty=Boolean(state.nodePanelDirty);if(nodePanelDirty){nodePanelBaseline=state.nodePanelBaseline??nodePanelBaseline;for(const [id,value]of Object.entries(state.nodeFields??{}))if(['node-implementation','node-inputs','node-outputs','node-parameters'].includes(id))$<HTMLTextAreaElement>(id).value=String(value);}}markDirty(true);$('notice').hidden=false;$('notice').textContent='Recovered your unsaved recipe draft. The original base revision is retained for conflict checking.';break;}
     case 'busy':busy=message.busy;for(const control of document.querySelectorAll<HTMLButtonElement|HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>('button,input,textarea,select'))control.disabled=busy;break;
     case 'error':report(`${message.code?message.code+': ':''}${message.message}${message.details?'\n'+pretty(message.details):''}`);break;

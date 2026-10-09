@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Apply only distribution metadata and a compiled permanent built-in package.
+"""Apply metadata, a permanent feature, and the documented one-import exception.
 
-No editor source is patched. Refuse unexpected tracked modifications, wrong pins,
-proprietary Marketplace integration, or missing compiled feature artifacts.
+Refuse all source modifications outside the exact native File-menu composition,
+wrong pins, proprietary Marketplace integration, or missing feature artifacts.
 """
 
 import argparse
@@ -10,6 +10,8 @@ import json
 import pathlib
 import shutil
 import subprocess
+
+from overlay_policy import inspect_boundary, install_menu_composition
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -19,11 +21,8 @@ def apply(source: pathlib.Path, feature: pathlib.Path | None = None) -> dict:
     actual = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
     if actual != pin["commit"]:
         raise ValueError(f"Wrong Code OSS commit: {actual}")
-    changed = subprocess.check_output(
-        ["git", "-C", str(source), "diff", "HEAD", "--name-only"], text=True
-    ).splitlines()
-    if set(changed) - {"product.json"}:
-        raise ValueError(f"Refusing core/source modifications: {changed}")
+    inspect_boundary(source, allow_unpatched=True)
+    install_menu_composition(source)
     product = json.loads(
         subprocess.check_output(["git", "-C", str(source), "show", "HEAD:product.json"], text=True)
     )
@@ -51,8 +50,10 @@ def apply(source: pathlib.Path, feature: pathlib.Path | None = None) -> dict:
         )
     return {
         "commit": actual,
-        "core_patches": 0,
-        "tracked_overlay_files": ["product.json"],
+        "core_patches": 1,
+        "composition_imports": 1,
+        "added_product_workbench_modules": 1,
+        "tracked_overlay_files": inspect_boundary(source),
         "builtin_feature": feature is not None,
     }
 

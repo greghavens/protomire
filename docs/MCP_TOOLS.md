@@ -42,7 +42,7 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `recipe_clone` | `recipe.clone` | `modify` | Compatibility historical restore: copy a prior revision into the same stable recipe identity. |
 | `recipe_create` | `recipe.create` | `modify` | Author the project recipe at the expected revision; never create a second recipe identity. |
 | `recipe_diff` | `recipe.diff` | `read` | Compare revisions or a draft against the current recipe. |
-| `recipe_export` | `recipe.export` | `read` | Export a portable, secret-checked bundle without execution. |
+| `recipe_export` | `recipe.export` | `read` | Export a portable bundle without execution; format=json returns lossless bundle_json for browser round trips. |
 | `recipe_get` | `recipe.get` | `read` | Read a recipe at its current or historical revision. |
 | `recipe_history` | `recipe.history` | `read` | Read immutable recipe revisions and retained legacy provenance, not selectable current recipes. |
 | `recipe_import` | `recipe.import` | `modify` | Open a verified bundle as the next untrusted revision of this model's single recipe. |
@@ -56,7 +56,7 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `run_list` | `run.list` | `read` | List and reconcile project operation correlations with the backend. |
 | `run_logs` | `run.logs` | `read` | Read actual backend logs. |
 | `run_plan` | `run.plan` | `read` | Validate an execution plan; never launch from this operation. |
-| `run_resume` | `run.resume` | `execute` | Resume an actual checkpoint; distinguish exact state and warm start. |
+| `run_resume` | `run.resume` | `execute, modify` | Resume an actual checkpoint and advance this recipe revision; requires execute and modify. Exact state differs from warm start. |
 | `run_status` | `run.status` | `read` | Reconcile status with the authoritative backend. |
 | `run_submit` | `run.submit` | `execute` | Submit an explicitly permitted local fixture to the real backend. |
 

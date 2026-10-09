@@ -113,7 +113,7 @@ In the actual IDE:
 3. Ensure the desktop has a working OS keyring/secret service before storing a real credential. The test host reported an unavailable GNOME keyring; tests used disposable credentials and removed them, without enabling unencrypted/basic storage.
 4. Enter `http://127.0.0.1:8765` and the approved scoped token. The token is bound to that service URL in VS Code SecretStorage; it is not written into workspace settings or delivered to the webview. This configuration command intentionally stores the credential for future IDE use.
 5. Open the **ModelBuilder** activity bar and **ModelBuilder: Open Model Workbench**, or create a project using **ModelBuilder: Create Model Project**.
-6. Select a recipe to inspect its normalized JSON, visual nodes/edges, revision, and digest. **Open native JSON** opens the service-backed `modelrecipe:` document. Save with the revision you read; a conflicting GUI/MCP edit must produce an explicit conflict rather than overwrite it.
+6. Open the project's current recipe to inspect its normalized JSON, visual nodes/edges, revision, and digest. **Open native JSON** opens the service-backed `modelrecipe:` document. Save with the revision you read; a conflicting GUI/MCP edit must produce an explicit conflict rather than overwrite it.
 7. Use Research for evidence/hypotheses and Runs for actual IDs, metrics, artifacts, and cancellation status. Starting a run requires trusted workspace and explicit fixture execution consent.
 
 HTTP is accepted only for loopback service URLs; non-loopback clients require HTTPS. URL changes do not silently reuse a credential bound to a different service. The visual graph preserves explicit arbitrary-Python node references; it does not reverse engineer arbitrary Python source into a graph.
@@ -144,13 +144,13 @@ It starts disposable HTTP/MCP processes, uses temporary scoped test tokens, reco
 
 All calls use `POST /v1/operations/{operation}` with the catalog's payload. Common rules:
 
-- A project represents one model's lifecycle. Its recipes, research, native runs, and versions share its project identity.
+- A project represents one model's lifecycle and owns one canonical recipe for its dataset/training/evaluation/export pipeline. Recipe revisions, research, native runs, and model versions share that project identity.
 - Mutations require `idempotency_key`; editable resources also require `expected_revision`. Resource IDs and project membership cannot be changed by a body or URL mismatch.
 - `run.plan` is a read-only validation/preview. `run.submit` additionally requires `execute`, the current recipe revision, a permitted target, and explicit trust for verified repository-owned code.
 - Edit node parameters in the canonical recipe. Nonempty top-level execution `parameters` are rejected, so an ignored override cannot masquerade as an executed experiment.
 - `run.status` reconciles the authoritative backend; `run.logs` and `run.artifacts` return actual output. An application `operation_id` is a correlation, not a second native run ID.
 - `run.cancel` requires `execute` and a fresh mutation key. `cancel_requested` does not mean the worker or its descendants have stopped. Inspect the reconciled terminal state and termination evidence.
-- `run.resume` requires explicit `mode` (`exact_state` or `warm_start`), final total `steps`, trust consent, and a project-owned parent operation/run. It creates a new canonical continuation recipe and digest; the parent recipe remains unchanged. Exact-state claims require the deterministic tensor/optimizer/scheduler/RNG tests, not merely a successful resume request.
+- `run.resume` requires both `execute` and `modify` scopes because it advances the canonical recipe, explicit `mode` (`exact_state` or `warm_start`), final total `steps`, trust consent, and a project-owned parent operation/run. It requires `expected_recipe_revision` and advances the same canonical recipe ID to a new immutable revision and digest; the parent run's pinned historical revision remains unchanged. Exact-state claims require the deterministic tensor/optimizer/scheduler/RNG tests, not merely a successful resume request.
 - A recorded decision identifies actual native run IDs, an immutable recipe revision, measurable selection rule, outcome, and rationale. Promotion checks the declared measured winner before changing the native stage and active project version.
 
 Closing the IDE, stopping MCP, or stopping the HTTP service does **not** automatically cancel a detached training supervisor. Before planned shutdown, inspect active runs and explicitly cancel any that should stop. After restarting with the same database/backend directory, poll the same operation IDs to reconcile current state. Do not delete journals or relabel a locally unreachable process as cancelled.
@@ -183,7 +183,7 @@ bash scripts/validate_artifacts.sh
 
 `export_contracts.py` without `--check` regenerates OpenAPI, operation/MCP documentation, and domain schemas from the same implementation. Review and commit intentional generated-file changes together with the source change. Do not manually repair generated schemas to disguise a failing implementation.
 
-The CPU fixture suite verifies tensor-level exact continuation separately from warm start, KL execution semantics, negative/failed experiments, and consumed dataset identity. The service integration verifies shared-operation IDs, continuation manifest identity, evidence/hypothesis/decision linkage, native promotion, and cross-project isolation. Read exact current counts from the JUnit/log evidence rather than interpreting a focused pass as an aggregate pass.
+The CPU fixture suite verifies tensor-level exact continuation separately from warm start, KL execution semantics, negative/failed experiments, and consumed dataset identity. The service integration verifies shared-operation IDs, stable recipe identity across continuation revisions, evidence/hypothesis/decision linkage, native promotion, and cross-project isolation. Read exact current counts from the JUnit/log evidence rather than interpreting a focused pass as an aggregate pass.
 
 Real GUI verification is separate:
 
@@ -194,6 +194,12 @@ MODELBUILDER_GUI_PYTHON="$PWD/.venv/bin/python" bash scripts/smoke_ide.sh
 Run it from a supported Linux desktop session, or a supported Xvfb host with working Electron sandbox prerequisites, with the pinned `ipykernel==6.30.1` dependency supplied by the service lock. This script must use the real editor, Extension Host, notebook, LSP, and debugger. Missing display/sandbox prerequisites are blockers; never add `--no-sandbox`, disable workspace trust, or change OS security policy to manufacture a pass. GUI unit/packaging tests alone do not establish GUI acceptance.
 
 Recipe portability uses `scripts/replay_bundle.py` (`export`, `import`, `wheel`, `run`, `identity`, `compare`). Export requires a real Git commit whose inventoried source files exactly match the bytes being exported. Import and wheel assembly are inert; execution requires the explicit `--trust-repository-source` flag. Clean replay must use independently installed service/backend environments, source roots, metadata/artifact stores, and recorded module provenance. Another configuration pointing at the original editable installation is not a clean replay. See the portability evidence and acceptance matrix for the verified result and remaining platform limitations.
+
+### Existing database migration
+
+The service now enforces one editable recipe identity for each model project. A new project owns a non-executable draft immediately; `recipe.create` builds its next revision and `recipe.import` opens an existing bundle into that same identity. Both require `expected_revision`. The original `recipe.update`, `recipe.clone`, export, and historical-read contracts remain; clone restores content into a new revision rather than creating an independent recipe inside the project. No separate “apply recipe” workflow is introduced.
+
+Before upgrading an existing local installation, retain a backup of its application database and adjacent backend directory. On startup, migration preserves all original recipe/version rows and native-run references. It binds the existing active recipe when available; otherwise it selects the recipe referenced by the most recent run, then the most recently created recipe. Original independent IDs become read-only historical provenance. The explicit `recipe_migration` report records the selection reason and archived IDs. An ambiguous selection must be reviewed and saved before execution. No historical manifest is rehashed or native run silently reparented. Read a legacy manifest using `recipe.get` with its exact historical ID and revision.
 
 ## 8. Troubleshooting and safe boundaries
 

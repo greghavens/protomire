@@ -7,6 +7,8 @@ import pathlib
 import subprocess
 import sys
 
+from overlay_policy import COMPOSITION, IMPORT_LINE, MODULE, inspect_boundary
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
@@ -14,10 +16,7 @@ def verify(source: pathlib.Path) -> dict:
     pin = json.loads((ROOT / "distribution/code_oss_pin.json").read_text())
     sha = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
     assert sha == pin["commit"], "Upstream commit mismatch"
-    changed = subprocess.check_output(
-        ["git", "-C", str(source), "diff", "HEAD", "--name-only"], text=True
-    ).splitlines()
-    assert set(changed) <= {"product.json"}, f"Unexpected core changes: {changed}"
+    changed = inspect_boundary(source)
     product = json.loads((source / "product.json").read_text())
     assert product["nameShort"] == "Modelbuilder"
     assert not product.get("extensionsGallery"), "No Microsoft Marketplace integration is permitted"
@@ -34,14 +33,23 @@ def verify(source: pathlib.Path) -> dict:
         feature.parent / manifest["main"],
         source / "LICENSE.txt",
         source / "ThirdPartyNotices.txt",
+        source / COMPOSITION,
+        source / MODULE,
+        source / "out/vs/workbench/contrib/modelbuilder/browser/modelbuilderMenus.contribution.js",
+        source / "out/vs/workbench/workbench.common.main.js",
     ]
     for item in required:
         assert item.is_file(), f"Missing build artifact: {item.relative_to(source)}"
+    assert IMPORT_LINE.strip() in (source / "out/vs/workbench/workbench.common.main.js").read_text(), (
+        "Compiled workbench does not load the permanent native File-menu contribution"
+    )
     return {
         "source_commit": sha,
         "source_tag": pin["tag"],
         "node_version": pin["node_version"],
-        "core_patches": 0,
+        "core_patches": 1,
+        "composition_imports": 1,
+        "added_product_workbench_modules": 1,
         "tracked_overlay_files": changed,
         "artifacts": {
             str(p.relative_to(source)): hashlib.sha256(p.read_bytes()).hexdigest() for p in required

@@ -1,10 +1,13 @@
 # Modelbuilder Code OSS development distribution
 
 This is a source-built, branded **development distribution**, with the permanent
-model lifecycle feature installed as a built-in module. It is not a patched
-Microsoft Visual Studio Code binary, an installer for Microsoft's Marketplace,
+model lifecycle feature installed as a built-in module. It is not a Microsoft
+Visual Studio Code binary, an installer for Microsoft's Marketplace,
 or a published third-party extension product. Production signing, automatic
 updates, security maintenance and macOS/Windows packaging are not implemented.
+The current product has one documented composition import for its permanent
+native File-menu contribution; see [the exact exception](FILE_MENU_EXCEPTION.md).
+The original zero-core-patch build is historical evidence, not the current count.
 
 ## Reproduce (Linux x64)
 
@@ -52,9 +55,12 @@ repositories and is not an independently pinned portable OS image.
 
 - `code_oss_pin.json` fixes source, Node/npm and Electron versions. This is a
   known stable API baseline, not the latest Code OSS security release.
-- Only tracked `product.json` is changed. `apply_overlay.py` and
-  `verify_build.py` reject other tracked upstream differences. Source notices
-  remain intact. No core patches are allowed by this increment.
+- Tracked upstream changes are `product.json` plus exactly one import in
+  `workbench.common.main.ts`; one product File-menu module is added.
+  `apply_overlay.py` and `verify_build.py` enforce exact bytes against the pinned
+  upstream composition baseline and reject other source changes. Source notices
+  remain intact. This is the documented File-menu blocker exception, not a
+  general permission to modify editor internals.
 - No proprietary assistants, Pylance, Remote Development or downloaded upstream
   Marketplace built-ins are bundled. No Marketplace endpoint is configured.
 - The permanent built-in module contributes `chat.disableAIFeatures=true`,
@@ -98,8 +104,21 @@ Git, a debugpy breakpoint/variable evaluation (`answer=42`), and Jupyter executi
 (`42`). `evidence/gui/distribution/smoke-results.json` is authoritative; screenshots
 now capture the actual Electron workbench rather than an unrelated foreground
 terminal. Initial attempts and the interrupted repeat are retained separately.
-The actual workbench passed seven DOM checks plus native Monaco source saving;
-the additional GUI-submitted ZenML CPU execution passed three DOM checks. The
+The original workbench passed graph/MCP checks and GUI-submitted ZenML CPU
+execution, but its multi-model/recipe-selector UX was subsequently rejected.
+`evidence/gui/workbench`, `final-caption`, and `execution` are historical proof,
+not acceptance of the corrected one-project/one-model/one-recipe design.
+Corrected landing, fixed-workspace and execution results are recorded separately
+under `evidence/gui/single-model` and `evidence/gui/single-model-execution`.
+The later `evidence/gui/single-model-roundtrip` suite passes 17 actual DOM checks
+plus native Monaco saving, including the full five-node recipe import/export,
+fixed identity, raw bundle preservation and tamper rejection. The initial failed
+numeric round-trip probe remains recorded under `single-model-import`.
+Portable bundles must use `recipe.export` with `format=json` and pass its
+`bundle_json` string unchanged to import. The integrity algorithm is unchanged;
+parsing and reserializing bundle contents in JavaScript can alter number syntax.
+Corrected-domain training is a separate gate: consult the terminal status in
+`single-model-execution`, not historical execution screenshots. The
 manual `gui.yml` workflow reproduces these suites on a sandbox-capable Xvfb host;
 local success does not assert that the remote workflow has run.
 

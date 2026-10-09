@@ -12,7 +12,7 @@ const {OperationClient}=require('../out/client');const {RecipeDocument,newNode}=
   let ready=false;for(let i=0;i<150;i++){ready=await fetch(url+'/health').then(r=>r.ok).catch(()=>false);if(ready)break;await new Promise(r=>setTimeout(r,100));}assert(ready,log);
   const client=new OperationClient(()=>url,async()=>token);const catalog=await client.catalog();assert(catalog.some(o=>o.name==='recipe.update'));
   const project=await client.invoke('project.create',{slug:'typescript-parity',model_name:'TypeScript parity',idempotency_key:crypto.randomUUID()});
-  const recipe=await client.invoke('recipe.create',{project_id:project.project_id,name:'TS recipe',idempotency_key:crypto.randomUUID()});
+  const recipe=(await client.invoke('project.open',{project_id:project.project_id})).recipe;assert(recipe,'Project must own its one current recipe');
   const document=new RecipeDocument(client);await document.load(project.project_id,recipe.recipe_id);
   const data=newNode('data','dataset.synthetic',recipe.source.commit);data.outputs=[{name:'tensor',type:'tensor'}];
   const pythonNode=newNode('custom','code.python',recipe.source.commit);pythonNode.inputs=[{name:'data',type:'tensor'}];pythonNode.outputs=[{name:'checkpoint',type:'checkpoint'}];

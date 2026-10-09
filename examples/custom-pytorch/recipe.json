@@ -6,7 +6,7 @@
   "name": "Custom gated-residual CPU model",
   "source": {
     "repository": "https://github.com/greghavens/modelbuilder",
-    "commit": "4d545df2b111de7f2365e8121a65717b37713054",
+    "commit": "086908e3eb20ff025bbd50108e6b6563855b7512",
     "files": [
       {
         "path": "pyproject.toml",
@@ -22,7 +22,7 @@
       },
       {
         "path": "scripts/replay_bundle.py",
-        "sha256": "fc78e5814798da1bbe61111be3e0a74fbd98551e054ebe2d9251949a396c5af9"
+        "sha256": "dee53b8e50dfdea403b407ab12283d8021de1dbb972b6a5d575be69a19489bd0"
       },
       {
         "path": "src/modelbuilder/__init__.py",
@@ -30,7 +30,7 @@
       },
       {
         "path": "src/modelbuilder/api.py",
-        "sha256": "f2df4f30d1224e15a68e4df326557726199552ded7ca183e9f357e97cf13b3d7"
+        "sha256": "e2702afa96c989c61c746eac0b067dd13c1ef17a0d0d8e79421e8b717ef7c9df"
       },
       {
         "path": "src/modelbuilder/auth.py",
@@ -42,19 +42,19 @@
       },
       {
         "path": "src/modelbuilder/backend/adapter.py",
-        "sha256": "1698b3262079a99e1c5247ad84265f4967188c3ed697fa8c261f0ebdad2b89ff"
+        "sha256": "da4d4dd082434ec1d47365fd562da21ba3bb9d40fa424ba4ec3a59d8257be1b2"
       },
       {
         "path": "src/modelbuilder/backend/common.py",
-        "sha256": "b4351d47190617e23d749997d0368d564f68e8989c3398a3fcd31b7488086ffb"
+        "sha256": "258393173660f82b2554854713ee39e09b91f8492052b94b005116eaef6a36ab"
       },
       {
         "path": "src/modelbuilder/backend/fixtures.py",
-        "sha256": "35311a2be8ab43dfa1f66fc3f44379e7b4b7abe0a34575c08b831e0ada2707d9"
+        "sha256": "91f7354c70affe697aa6c998ba06418944799488b66f729cc4b04fa6a69fa90d"
       },
       {
         "path": "src/modelbuilder/backend/sdk.py",
-        "sha256": "194af7dc93af317f0e0385905e71e1694084e8e17450b3e5e8d494f5e6c7213d"
+        "sha256": "af194eb578b6efbdbd6bffaad77a88fa84a738b1f10a74c4c3ead4b2379b9bcb"
       },
       {
         "path": "src/modelbuilder/backend/supervisor.py",
@@ -62,7 +62,7 @@
       },
       {
         "path": "src/modelbuilder/backend/worker.py",
-        "sha256": "a3cadec185efabdec77a7523f4faebb65b92aa544de9cbe9adbad788dde2c099"
+        "sha256": "bf0d4f4359bdf3a06ed2324151a7164c5ca4f153e55175a098100a4eb37d7b20"
       },
       {
         "path": "src/modelbuilder/literature.py",
@@ -74,19 +74,19 @@
       },
       {
         "path": "src/modelbuilder/models.py",
-        "sha256": "f6596ef4395d2c1d990981dd004dc694af8482188a8a036035877c574c54f37f"
+        "sha256": "a98cd50574f2b3fdf98c18d16274f52cf32045729f871d8dc730ebd31cc1122a"
       },
       {
         "path": "src/modelbuilder/recipe.py",
-        "sha256": "1b5498b4378fc0e4ebf91c0594391773f93b4987d3c86a80c5d243de196b58c0"
+        "sha256": "4553c2aabcbc0205e026baba2fe875063fa17b9df150ed5a35a948698eb68cd2"
       },
       {
         "path": "src/modelbuilder/service.py",
-        "sha256": "1fc9d7d1ce519420a3ae50b42f93dd33fbb2026c909c8119bcf3bd82524e7cc3"
+        "sha256": "790f7e2441f45ae9ea9cad861a89cbd192614213a45fcb0b3f114364b8819fba"
       },
       {
         "path": "src/modelbuilder/store.py",
-        "sha256": "ef360987019db94be38c5f0d56e1a63d50d9cf26beff459ebfedccea5b8cce3b"
+        "sha256": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"
       }
     ]
   },
@@ -501,5 +501,5 @@
     "network": false,
     "execute_on_import": false
   },
-  "description": "Trusted repository-owned deterministic CPU smoke fixture. Metrics are not model-quality claims. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay."
+  "description": "Trusted repository-owned deterministic CPU pipeline for one model project. Import advances the project-owned recipe under revision checks; model.initialize explicitly selects custom or pretrained initialization. Complete application source and independent environment locks are pinned to a published Git revision for verified wheel replay. Metrics are not model-quality claims."
 }

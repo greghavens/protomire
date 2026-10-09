@@ -81,7 +81,8 @@ def build_wheel(root: Path, destination: Path, kind: str) -> dict:
             if (kind == "service" or path in {
                     "src/modelbuilder/__init__.py", "src/modelbuilder/recipe.py",
                     "src/modelbuilder/evaluation.py", "src/modelbuilder/tracking.py",
-                    "src/modelbuilder/dataset.py", "src/modelbuilder/models.py", "src/modelbuilder/store.py"}
+                    "src/modelbuilder/dataset.py", "src/modelbuilder/models.py", "src/modelbuilder/store.py",
+                    "src/modelbuilder/research_contract.py"}
                     or path.startswith("src/modelbuilder/backend/")):
                 files[path.removeprefix("src/")] = (root / path).read_bytes()
     if not files or "modelbuilder/backend/adapter.py" not in files:

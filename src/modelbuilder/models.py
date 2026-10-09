@@ -335,5 +335,9 @@ OPERATIONS = {s.name: s for s in [
 ]}
 
 
+from .research_contract import operation_specs as research_operation_specs  # noqa: E402
+OPERATIONS.update({spec.name: spec for spec in research_operation_specs(_spec)})
+
+
 def operation_catalog() -> list[dict]:
     return [OPERATIONS[name].as_dict() for name in sorted(OPERATIONS)]

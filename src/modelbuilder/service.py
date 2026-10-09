@@ -137,7 +137,7 @@ class OperationService:
                 if spec.mutating:
                     self.store.save_idempotent(actor.id, payload["idempotency_key"], operation, payload_hash, result)
                     result_project = project_id or result.get("project_id")
-                    target_id = next((result[k] for k in ("operation_id", "recipe_id", "evidence_id", "claim_id", "hypothesis_id", "decision_id", "dataset_id", "project_id") if k in result), None)
+                    target_id = next((result[k] for k in ("operation_id", "recipe_id", "evidence_id", "claim_id", "hypothesis_id", "decision_id", "dataset_id", "watch_id", "finding_id", "proposal_id", "text_id", "project_id") if k in result), None)
                     self.store.audit(actor_id=actor.id, operation=operation, request_id=request_id,
                                      outcome="succeeded", project_id=result_project, target_id=target_id,
                                      before_revision=payload.get("expected_revision"), after_revision=result.get("revision"))
@@ -216,6 +216,9 @@ class OperationService:
             json.dumps(after, indent=2, sort_keys=True).splitlines(), fromfile="client", tofile="server", lineterm=""))
 
     def _dispatch(self, op, p, actor):
+        if op.startswith("research."):
+            from .research import ResearchWorkflow
+            return ResearchWorkflow(self).dispatch(op, p, actor)
         if op.startswith("dataset."):
             return self._dataset(op, p)
         if op.startswith("component."):
@@ -310,7 +313,10 @@ class OperationService:
             return {"project": project, "recipe": current_recipe, "recipes": [current_recipe],
                     "evidence": self.store.list("evidence", project_id), "claims": self.store.list("claim", project_id),
                     "hypotheses": self.store.list("hypothesis", project_id), "decisions": self.store.list("decision", project_id),
-                    "runs": self.store.list("operation", project_id)}
+                    "runs": self.store.list("operation", project_id),
+                    "research_watches": self.store.list("research_watch", project_id),
+                    "research_findings": self.store.list("research_finding", project_id),
+                    "research_proposals": self.store.list("research_proposal", project_id)}
         self._revision(project, p["expected_revision"])
         changes = p["changes"]
         self._allowed_changes(changes, PROJECT_FIELDS)

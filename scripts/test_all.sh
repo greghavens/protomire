@@ -12,6 +12,6 @@ if [[ -f packages/ide_feature/package-lock.json ]]; then
 fi
 if [[ "${MODELBUILDER_RUN_INTEGRATION:-0}" == 1 ]]; then
   test -x "$ROOT/.venv-backend/bin/python"
-  MODELBUILDER_BACKEND_PYTHON="$ROOT/.venv-backend/bin/python" "$PYTHON" -m pytest tests/service/test_real_backend.py tests/integration/test_mcp_training.py -m integration -v --junitxml=evidence/tests/integration.xml | tee evidence/tests/integration.log
+  MODELBUILDER_BACKEND_PYTHON="$ROOT/.venv-backend/bin/python" "$PYTHON" -m pytest tests/service/test_real_backend.py tests/integration/test_mcp_training.py tests/security/test_adversarial_review.py -m integration -v --junitxml=evidence/tests/integration.xml | tee evidence/tests/integration.log
   PYTHONPATH="$ROOT/src" "$ROOT/.venv-backend/bin/python" -m pytest tests/integration/test_cpu_fixtures.py tests/integration/test_native_lifecycle.py -v --junitxml=evidence/tests/cpu-fixtures.xml | tee evidence/tests/cpu-fixtures.log
 fi

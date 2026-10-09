@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 export PIP_CACHE_DIR="$ROOT/.cache/pip"
 PYTHON="${PYTHON:-python3.12}"
-"$PYTHON" -c 'import sys; assert sys.version_info[:2] == (3,12), "Python 3.12 required"'
+"$PYTHON" -c 'import sys; assert sys.version_info[:3] == (3,12,14), "Pinned Python 3.12.14 required"'
 "$PYTHON" -m venv .venv
 .venv/bin/python -m pip install -r requirements/service.lock
 .venv/bin/python -m pip install --no-deps --no-build-isolation -e .

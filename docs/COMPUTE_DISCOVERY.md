@@ -53,14 +53,20 @@ There is no persistent polling service or background telemetry export.
 
 ## Observed versus executable versus enforced
 
-Only `local-cpu` remains an executable target, subject to the existing source,
-interpreter, platform and supervision checks. Native Windows remains unsupported
-by the pinned ZenML execution backend even if its hardware inventory succeeds.
-Observed GPUs have no execution-target ID and are not reservable. CUDA/ROCm/MPS
-visibility does not imply model compatibility, a working training backend, or a
-supported accelerator run.
+`local-cpu` retains the existing source, interpreter, platform and supervision
+checks. Explicit `local-mps` placement is available only with the reviewed macOS
+ARM64 profile, matching installed runtime, detected MPS support and project policy
+permission. CUDA placement remains unavailable without a reviewed hash-locked CUDA
+profile; observed NVIDIA hardware does not enable it. Native Windows remains
+unsupported by the pinned ZenML execution backend even if inventory succeeds.
 
-CPU/RAM reservations, GPU execution and GPU reservations remain unsupported.
+Hardware observations are not executable-target authorization. A target or tiny
+allocation probe does not prove that a trusted component honored its device
+context, that a full model fits, or that native accelerator training was verified.
+Linux CPU tests do not establish MPS/CUDA hardware acceptance. See
+[local device placement](LOCAL_DEVICE_PLACEMENT.md) for the exact contract.
+
+CPU/RAM and GPU reservations remain unsupported.
 Resource-request admission continues to reject unsupported CPU, memory and GPU
 requests. Host-visible counts and available RAM are not guaranteed free capacity;
 container quotas and other workloads can reduce usable resources. Unknown effective

@@ -407,7 +407,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "735d0f3e82b5a01ef41f322313c415415b9c7432",
+    "commit": "decf680d96ed92e28170580c09bf388c17a1ff22",
     "files": [
       {
         "path": "pyproject.toml",
@@ -511,11 +511,11 @@
       },
       {
         "path": "src/modelbuilder/backend/adapter.py",
-        "sha256": "a7294fc44cd280b4efbd47642b35025c02fd8d3b83bef8027e03b9769cf832fd"
+        "sha256": "0d06c83069d81978a4fbf99fafd28c55929658f4b3e71a2fc78716abfb7247fb"
       },
       {
         "path": "src/modelbuilder/backend/admission.py",
-        "sha256": "a8cdf5a8f9f3795d4920d8c659584be8eaee4ffe89b77cfe7fdca1aa502a5c5b"
+        "sha256": "1e54a36e83ec07025e7e13150e87f725bb16ae6d455ccef1d37dbacc26a654da"
       },
       {
         "path": "src/modelbuilder/backend/calibration.py",
@@ -527,7 +527,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/__init__.py",
-        "sha256": "6a64915d4fa1c8d2f03281f5773085af258da2d9df55b00580e8588a5776fed2"
+        "sha256": "428a82e1aaf0ff2eb8ab0fbdf3db39a63f717353e76182802b7c3d6fe30d4f88"
       },
       {
         "path": "src/modelbuilder/backend/components/local_inference.py",
@@ -535,7 +535,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/runtime.py",
-        "sha256": "9b19eae532d742ec3e5c487ef012b65f6946ad655f5998ac027fafb175f6e217"
+        "sha256": "e76abc8b2a982a38163ca4f6531d2cb50734aeac94716d81c12685d98c58aa9b"
       },
       {
         "path": "src/modelbuilder/backend/conditional_worker.py",
@@ -551,11 +551,11 @@
       },
       {
         "path": "src/modelbuilder/backend/fixtures.py",
-        "sha256": "9aa5a51bb15455808d7cb3f57ecd2a2b6e1fc2dae0da2444a0c4899dd00cbf50"
+        "sha256": "34254208a3f4e8bce02b9e6fe801ad8ef36747e88125fcc816dcfc561840979e"
       },
       {
         "path": "src/modelbuilder/backend/live_evaluation.py",
-        "sha256": "2950c91f09c6b3867c0d41409f33a68e12a14f6da05c0f0ff674ce9daefdab9c"
+        "sha256": "c68996f44f7a8a7fdafdad9526702e009fffe7f4794a915d65a70ac60ab99fba"
       },
       {
         "path": "src/modelbuilder/backend/native_cache.py",
@@ -574,16 +574,20 @@
         "sha256": "9e1228d03666125749772c3f3a1845a9c180bc49e7a551ab175d6c31d32f2dbd"
       },
       {
+        "path": "src/modelbuilder/backend/placement.py",
+        "sha256": "795a5df028d1db5ca43c2b5d2507e45b55b43c6ff01213af89090ae18dd3f846"
+      },
+      {
         "path": "src/modelbuilder/backend/promotion.py",
         "sha256": "063cfbbcba7a6ba3422e89b34f34423d8870f6621450f4eeb516cfe6a1b37aa5"
       },
       {
         "path": "src/modelbuilder/backend/sdk.py",
-        "sha256": "a4f88dbf9573fe1ea869886bb5b3ec6c917d4d7360dbcbde5de4eeab59c30361"
+        "sha256": "ca82dd87ca1a4e8adadfd7f43777fad47292805b429430d1fc5dedb741d9b767"
       },
       {
         "path": "src/modelbuilder/backend/supervisor.py",
-        "sha256": "5e944220f166f28d7034c97bf6f91df61ac30f46ffc84b67d38645a857a5617e"
+        "sha256": "c2e24e93abea6013deb8e8b19b297f6eb12e91b5c9237a064f0b74588b48b27b"
       },
       {
         "path": "src/modelbuilder/backend/tracking_bridge.py",
@@ -595,11 +599,11 @@
       },
       {
         "path": "src/modelbuilder/backend/worker.py",
-        "sha256": "3e33325a8bbd99436c6d4d248a974bd5e29de202102e98f0c9a560c776935195"
+        "sha256": "ba037b84921a237c7d9df48a5dcfa7dc0691a6e61ccf7accc5e1400882e18ead"
       },
       {
         "path": "src/modelbuilder/compute_discovery.py",
-        "sha256": "9b88c986fc71cc242247d858053cdfb3eb77e4e1604e78710724574e403432e0"
+        "sha256": "48f86b7ad605d8bde92bf8832f0cad9ffed2a1430bbbaac4f23013d837f30204"
       },
       {
         "path": "src/modelbuilder/conditions.py",
@@ -615,7 +619,7 @@
       },
       {
         "path": "src/modelbuilder/dataset_preparation.py",
-        "sha256": "3933f85098e4352b38410d273565aca517d424d1c26fe54d4692b7bca88fda9c"
+        "sha256": "bd239a7ed58cd4f1e483ec43a8e1077b203a5461a24e0a337eaafa4d5ad3c2a0"
       },
       {
         "path": "src/modelbuilder/evaluation.py",
@@ -659,7 +663,7 @@
       },
       {
         "path": "src/modelbuilder/recipe.py",
-        "sha256": "203a8bc379813e61b742caa73849c0963cb59fcad45b4a94a28e00530d27480c"
+        "sha256": "0620109a228c272635f0a96f6106d0eee102b486b2b0b5b96d2048c1d85c1f63"
       },
       {
         "path": "src/modelbuilder/recipe_registry.py",
@@ -718,8 +722,12 @@
         "sha256": "4187369daeb91a68aa242f9cfed4ff1f9be22c567b635ba0f597664cd7d0661c"
       },
       {
+        "path": "src/modelbuilder/run_preparation.py",
+        "sha256": "75d3525f07c3c09711c32852afd5efd0d9d7ac0c8e8e862dbd2380252088ec44"
+      },
+      {
         "path": "src/modelbuilder/service.py",
-        "sha256": "6147dfb835f3ff911373d9619cc1be66fa5fde32f09d3ce7ce59f16036d85166"
+        "sha256": "5a89975dacb8e364f77d6586d0d7281c3e9b54524808464eee6bde4d673127a8"
       },
       {
         "path": "src/modelbuilder/source_pinning.py",

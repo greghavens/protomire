@@ -24,7 +24,7 @@ The explicit local supervisor:
 
 A worker SIGKILL without a cancellation request is a failure, never cancellation. Termination is checked using PID birth identity, not a bare PID. If a supervisor dies while its original worker remains alive, a restarted service can regain control only after verifying the original worker identity. There is no claim that a malicious trusted program escaping into a new OS session is safely isolated; untrusted code remains disabled.
 
-The application can restart without killing a detached supervisor. A launch lease inherited by supervisor and worker prevents a retry from duplicating a partially launched operation. A failed process creation is recorded and can safely retry the same operation ID. Native store initialization is serialized before the first asynchronous launch to avoid the observed first-config race.
+The application can restart without killing a detached supervisor. A per-job launch lock inherited by supervisor and worker fences launch ownership. A durable spawn-attempt marker precedes process creation; matching retries reconcile the existing intent instead of relaunching it. Missing process/native metadata, including after an interrupted or failed creation attempt, does not prove that no training launched. Uncertain attempts remain inspectable and are never automatically respawned. Native store initialization is serialized with bounded lock acquisition outside the service writer transaction. See [run admission and dispatch](admission-dispatch.md) for the exact authorization, cancellation and restart boundaries; there is no cross-store exactly-once guarantee.
 
 ## Checkpoint and model lineage
 

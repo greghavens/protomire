@@ -46,6 +46,8 @@ policy unit test or earlier evaluation is counted as a GUI/backend acceptance pa
 - [Architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md), [backend decision](docs/BACKEND_DECISION.md)
 - [Native MCP tools](docs/MCP_TOOLS.md), [OpenAPI](docs/openapi.json)
 - [ZenML lifecycle and cancellation semantics](docs/ZENML_BACKEND.md)
+- [Local device placement and hardware-verification limits](docs/LOCAL_DEVICE_PLACEMENT.md)
+- [Run admission, durable dispatch and retry semantics](docs/admission-dispatch.md)
 - [Clean replay](docs/PORTABILITY.md)
 - [Dependencies and licensing](docs/DEPENDENCIES_AND_LICENSES.md)
 - [Acceptance matrix](docs/ACCEPTANCE_MATRIX.md)

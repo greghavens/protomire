@@ -35,10 +35,24 @@ const flatten=el=>[el,...el.children.flatMap(flatten)];
    let terminal;const deadline=Date.now()+180000;while(Date.now()<deadline){terminal=await client.invoke('run.status',{project_id:project.project_id,operation_id:run.operation_id});if(['succeeded','failed','cancelled'].includes(terminal.status))break;await new Promise(resolve=>setTimeout(resolve,500));}
    assert.equal(terminal.status,'succeeded',JSON.stringify(terminal));assert(terminal.backend_run_id);const output=JSON.parse(await fs.readFile(path.join(tmp,'backend/jobs',run.operation_id,'outputs/train/state.json'),'utf8'));assert.equal(output.step,100);assert(Math.abs(output.weight-3)<1e-9);assert(Math.abs(output.bias-1)<1e-9);report.backend_run_id=terminal.backend_run_id;report.model_state=output;report.checks.push('The saved newly authored component runs its isolated pinned source through native ZenML on CPU, succeeds under a real backend UUID, and produces learned affine state after 100 updates.');
   }else assert.equal((await client.invoke('run.list',{project_id:project.project_id})).runs.length,0);
-  report.status='PASS';
+  report.status='FUNCTIONAL_PASS';
  }catch(error){report.status='FAIL';report.error=String(error);throw error;}finally{
-  service.kill('SIGTERM');if(service.exitCode===null)await new Promise(resolve=>service.once('exit',resolve));
+  // Native success precedes supervisor SDK/config finalization. Stopping the
+  // HTTP service alone does not join its detached supervisor and worker.
+  try{
+   if(service.exitCode===null&&service.signalCode===null){const closed=new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Service did not close; cleanup refused')),30000);service.once('close',()=>{clearTimeout(timer);resolve();});});service.kill('SIGTERM');await closed;}
+   if(native){
+   const fence=cp.spawn(python,[path.join(__dirname,'waitNativeQuiescence.py'),path.join(tmp,'backend'),'90',...(report.operation_id?[report.operation_id]:[])],{stdio:['ignore','pipe','pipe'],timeout:100000,killSignal:'SIGKILL'});let fenceLog='';fence.stdout.on('data',data=>fenceLog+=data);fence.stderr.on('data',data=>fenceLog+=data);
+   const code=await new Promise((resolve,reject)=>{fence.once('error',reject);fence.once('close',resolve);});assert.equal(code,0,fenceLog);
+   }
+   report.cleanup=native?'native_owners_quiescent':'service_closed_no_native_jobs';
+   if(report.status==='FUNCTIONAL_PASS'){
+    if(process.env.MODELBUILDER_COMPONENT_KEEP==='1')report.retained_evidence=tmp;
+    else await fs.rm(tmp,{recursive:true,force:true});
+    report.status='PASS';
+   }else report.retained_evidence=tmp;
+  }catch(error){report.status='FAIL';report.cleanup_error=String(error);report.retained_evidence=tmp;process.exitCode=1;}
   if(process.env.MODELBUILDER_COMPONENT_REPORT){await fs.writeFile(process.env.MODELBUILDER_COMPONENT_REPORT,JSON.stringify(report,null,2));await fs.writeFile(process.env.MODELBUILDER_COMPONENT_REPORT+'.service.log',log);}
-  console.log(JSON.stringify(report,null,2));if(process.env.MODELBUILDER_COMPONENT_KEEP==='1')console.log('Retained isolated evidence: '+tmp);else await fs.rm(tmp,{recursive:true,force:true});
+  console.log(JSON.stringify(report,null,2));if(report.retained_evidence)console.log('Retained isolated evidence: '+tmp);
  }
 })().catch(error=>{console.error(error);process.exitCode=1;});

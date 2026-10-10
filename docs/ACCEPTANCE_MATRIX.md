@@ -9,7 +9,7 @@ No aggregate below is a full-product completion claim.
 
 ## Current integration checkpoint
 
-Runtime source: `735d0f3e82b5a01ef41f322313c415415b9c7432` (84-file source/lock closure). See [current verification and remaining gates](CURRENT_VERIFICATION.md) for this checkpoint's installed-wheel replay, optional-profile/native tests, build, platform, provider and CI status.
+Runtime source: `decf680d96ed92e28170580c09bf388c17a1ff22` (86-file source/lock closure), including bounded local placement and unlocked admission/durable dispatch. Complete local CI passed: 1,781 light tests, 319 frontend tests and all 309 native cases, with verified process cleanup. This does not establish native accelerator or GUI acceptance. See [current verification and remaining gates](CURRENT_VERIFICATION.md) for this checkpoint's installed-wheel replay, optional-profile/native tests, build, platform, provider and CI status.
 
 The acceptance rows and narratives below are **historical evidence at their named checkpoints**. Their words "current" and "final" refer to those earlier tests; they do not establish acceptance of this source. In particular, earlier GUI passes are not current native GUI acceptance. This pointer does not relabel any historical test result.
 

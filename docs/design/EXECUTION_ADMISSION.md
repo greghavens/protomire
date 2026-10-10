@@ -43,8 +43,16 @@ permission to execute: each run still needs explicit trust consent.
 - CPU/memory reservation fields are rejected, including former example defaults.
   Local process supervision cannot reserve or isolate these resources. Edit a
   new recipe revision to omit them; saved revisions are not silently changed.
-- GPU requests must be zero. Remote execution remains disabled.
-- Environment must be `default`, caching `disabled`. Alternatives fail admission.
+- GPU resource reservation requests must be zero. Explicit framework device
+  placement is separate: CPU is the legacy default, MPS is profile/hardware/policy
+  gated, and CUDA remains unavailable without a reviewed locked profile. Placement
+  is not resource isolation or proof of actual accelerator execution; see
+  [local device placement](../LOCAL_DEVICE_PLACEMENT.md). Remote execution remains disabled.
+- Per-node environment must be `default`; per-stage isolation is unsupported.
+  Caching defaults to `disabled`. Explicit `cache_policy: enabled` is accepted only
+  for the deterministic, side-effect-independent JSON-value stages described in
+  [bounded native reuse](../NATIVE_PIPELINE_CACHE.md). Training, evaluation, export,
+  model-role components, Path/checkpoint ports and fixture built-ins reject it.
 - Node timeout is supervised elapsed execution time. Expiry aborts the entire
   local process group; it is not a recoverable isolated step timeout. The
   supervisor's cancellation grace and escalation still apply.

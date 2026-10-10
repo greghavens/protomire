@@ -83,7 +83,7 @@ def test_existing_cpu_ci_requires_parquet_and_local_inference_in_separate_envs()
     workflow = (ROOT / ".github/workflows/ci.yml").read_text()
     cpu = workflow.split("  cpu-lifecycle:", 1)[1]
     assert "bash scripts/bootstrap.sh --backend --tracking --parquet" in cpu
-    assert "MODELBUILDER_REQUIRE_PARQUET=1 MODELBUILDER_RUN_INTEGRATION=1 bash scripts/test_all.sh" in cpu
+    assert "MODELBUILDER_REQUIRE_PARQUET=1 MODELBUILDER_RUN_INTEGRATION=1 MODELBUILDER_NATIVE_TEST_PROCESSES=2 bash scripts/test_all.sh" in cpu
     aggregate = (ROOT / "scripts/test_all.sh").read_text()
     backend_line = next(line for line in aggregate.splitlines() if "-m pytest tests/integration/test_cpu_fixtures.py" in line)
     assert 'MODELBUILDER_REQUIRE_LOCAL_INFERENCE=1 PYTHONPATH="$ROOT/src" "$ROOT/.venv-backend/bin/python"' in backend_line

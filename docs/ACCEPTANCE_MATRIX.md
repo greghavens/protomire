@@ -2,12 +2,18 @@
 
 > Owner-requested corrections are verified below: one fixed model project and one recipe identity with immutable revisions; recipe transfer belongs only in the native File menu. Original design inputs are unchanged. Earlier selector and workspace-transfer screenshots are historical, not accepted UI. This is technical verification, not a claim of owner acceptance or full-product completion.
 
-Last updated 2026-10-09. Direct-main development, Linux x64 CPU execution evidence only. Status names are
+Current-checkpoint pointer updated 2026-10-10. Direct-main development, Linux x64 CPU execution evidence only. Status names are
 literal: PASS is demonstrated, FAIL is a tested unmet requirement, BLOCKED needs
 an external prerequisite/authorization, UNVERIFIED has not finished testing.
 No aggregate below is a full-product completion claim.
 
 ## Current integration checkpoint
+
+Runtime source: `735d0f3e82b5a01ef41f322313c415415b9c7432` (84-file source/lock closure). See [current verification and remaining gates](CURRENT_VERIFICATION.md) for this checkpoint's installed-wheel replay, optional-profile/native tests, build, platform, provider and CI status.
+
+The acceptance rows and narratives below are **historical evidence at their named checkpoints**. Their words "current" and "final" refer to those earlier tests; they do not establish acceptance of this source. In particular, earlier GUI passes are not current native GUI acceptance. This pointer does not relabel any historical test result.
+
+## Historical 63-file integration checkpoint
 
 Runtime source: `dee51909ee7f0e98c798492e0a865e967d60e400` (63-file source/lock closure). The preceding broad replay gate used da9b67c; current source-bound authoring, dataset binding and model release verification is listed in `CURRENT_VERIFICATION.md`. Work is directly on `main`; no new pull request is required.
 

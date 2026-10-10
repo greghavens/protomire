@@ -89,7 +89,40 @@ HTTP authentication. Frontend tests cover selectors, readonly controls,
 comparison diagnostics, preserved drafts and native Save cancellation,
 project/destination changes and integrity failures.
 
-The export reader in this increment requires POSIX directory-relative, no-follow
-file opens. Linux is verified here; native macOS remains unverified, and Windows
-model-package retrieval needs a separate handle-based implementation. This
-restriction is separate from the dataset reader’s Windows implementation.
+## Portable export file reads
+
+The export/package reader now uses native secure file access on both OS families:
+
+- Linux/macOS keep directory-relative `os.open` with `O_NOFOLLOW`, regular-file
+  checks and pre-read size bounds.
+- Windows reuses `platform_file_access.py`: a drive/UNC anchor is identified by
+  a native HANDLE, every child is opened relative to its verified parent, and
+  reparse points, alternate data streams, device names and unsafe components
+  fail closed. All ancestors stay open with read-only sharing until the stream
+  closes. The file HANDLE is transferred to Python's CRT/FileIO exactly once,
+  never reopened by path. Streaming, hashing and random-access package chunks
+  therefore read the same verified file without buffering the entire export.
+- Windows metadata, identity and size are checked around native reads/seeks and
+  again at close. Reads are at most 64 KiB at the underlying file boundary;
+  transfer chunks remain at most 4 MiB. Unsupported filesystem identity queries
+  or sharing semantics fail closed; there is no ordinary-path fallback.
+
+This portable reader does not remove the pinned native ZenML execution backend's
+separate Windows limitation. Windows IDE clients can save from a supported
+service host. The portable package reader can also operate independently on a
+Windows host; no claim of native Windows ZenML training is made.
+
+Verification for this change: Linux tests exercise the real POSIX implementation
+and portable/mock Windows dispatch, ownership, streaming, bounds, seeks, cleanup,
+root replacement and reparse/metadata failures. These are not real Windows
+execution. The Windows-only tests in
+`tests/service/test_export_platform_access.py` cover actual HANDLE/CRT ownership,
+sharing enforcement, inspect/package/chunk round trips and exact hashes; they
+remain unrun/skipped here. Run them alongside
+`tests/datasets/test_platform_file_access.py` on each supported Windows runner
+before marking Windows accepted. Real macOS acceptance is also separate.
+
+The same-handle adoption follows Python's
+[`msvcrt.open_osfhandle` API](https://docs.python.org/3.12/library/msvcrt.html#msvcrt.open_osfhandle)
+and [Microsoft's CRT handle ownership contract](https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/open-osfhandle?view=msvc-170).
+No additional packages, security settings or OS privileges are installed or changed.

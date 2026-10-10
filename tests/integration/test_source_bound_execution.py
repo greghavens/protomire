@@ -120,20 +120,23 @@ from modelbuilder.backend import sdk
 from modelbuilder.backend.common import write_json
 import sys
 job=Path(sys.argv[1]);job.mkdir(exist_ok=True)
-write_json(job/'request.json', {'project_id':'project','recipe':{},'submitted_at':'now'})
+write_json(job/'request.json', {'project_id':'project','recipe':{'nodes':[]},'submitted_at':'now'})
 write_json(job/'state.json', {'worker_pid':123,'worker_identity':'test','termination':{'confirmed':True,'reason':'cancelled','process_group_terminated':True}})
 write_json(job/'cancel.json', {'reason':'node_timeout_exceeded'})
-run=NS(status=NS(value='failed'),config=NS(extra={}),id='native',snapshot=None,model_version=None,exception_info=None)
+run=NS(status=NS(value='failed'),config=NS(extra={}),id='native',snapshot=None,model_version=None,exception_info=None,steps={})
 sdk.reconcile=lambda job:run
 sdk.alive=lambda *args:False
 sdk.process_group_state=lambda *args:False
 sdk.termination_confirmed=lambda state:True
 sdk.metadata_values=lambda run:{}
-sdk.metrics_for=lambda run:{}
+sdk.metrics_for=lambda *args:{}
 sdk.artifacts_for=lambda *args:[]
 sdk.tracking_status=lambda *args:{}
 print(json.dumps(sdk.status(job)))
 '''
     result = subprocess.run([str(PYTHON), '-c', script, str(tmp_path/'race')], cwd=ROOT,
                             text=True,capture_output=True,check=True, env=ZenMLBackend(tmp_path)._env())
-    assert json.loads(result.stdout)['status'] == 'cancel_requested'
+    record = json.loads(result.stdout)
+    assert record['status'] == 'cancel_requested'
+    assert record['execution'] == {'node_ids': [], 'input_bindings': []}
+    assert record['evaluations'] == [] and record['executed_node_ids'] == []

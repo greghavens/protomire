@@ -1,4 +1,4 @@
-"""Windows handle-relative dataset reads without following reparse points.
+"""Windows handle-relative dataset/export reads without following reparse points.
 
 POSIX dataset reads stay in dataset.py. Windows has no Python ``dir_fd`` open;
 this adapter uses the documented native NtCreateFile directory-handle contract.
@@ -7,6 +7,7 @@ It is deliberately fail-closed on filesystems lacking handle identity queries.
 from __future__ import annotations
 
 import ctypes
+import io
 from dataclasses import dataclass
 import os
 from pathlib import PurePosixPath, PureWindowsPath
@@ -313,3 +314,169 @@ def read_windows_source(root: WindowsRoot, relative_path: str, max_bytes: int, *
                 error = error or exc
         if error is not None and not active_error:
             raise error
+
+
+class _WindowsFileReader(io.RawIOBase):
+    """Streaming view over one checked HANDLE, retaining its locked ancestors.
+
+    The final HANDLE is adopted by the CRT/FileIO rather than reopened by path.
+    This supplies Python's portable seek/fileno API without a second native path
+    lookup or loading an entire multi-gigabyte export into memory.
+    """
+
+    def __init__(self, source, api, handle, ancestors, before, max_bytes):
+        super().__init__()
+        self._source, self._api, self._handle = source, api, handle
+        self._ancestors, self._before, self._max_bytes = ancestors, before, max_bytes
+        self._position = 0
+
+    def _verify(self):
+        after = self._api.info(self._handle)
+        _check_kind(after, directory=False)
+        if after != self._before:
+            raise OSError("Windows source changed during a verified export read")
+
+    def readable(self):
+        return True
+
+    def seekable(self):
+        return True
+
+    def fileno(self):
+        self._checkClosed()
+        return self._source.fileno()
+
+    def tell(self):
+        self._checkClosed()
+        return self._position
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        self._checkClosed()
+        self._verify()
+        if type(offset) is not int or whence not in {os.SEEK_SET, os.SEEK_CUR, os.SEEK_END}:
+            raise ValueError("Invalid export seek")
+        position = offset + (self._position if whence == os.SEEK_CUR else
+                             self._before.size if whence == os.SEEK_END else 0)
+        if not 0 <= position <= self._before.size:
+            raise ValueError("Export seek exceeds the verified file bounds")
+        actual = self._source.seek(position, os.SEEK_SET)
+        if actual != position:
+            raise OSError("Windows export seek did not reach the requested offset")
+        self._verify()
+        self._position = position
+        return position
+
+    def readinto(self, buffer):
+        self._checkClosed()
+        if not len(buffer):
+            return 0
+        self._verify()
+        # Every OS read stays small even when BufferedReader assembles a 4 MiB
+        # transfer chunk. Read at most one extra byte to detect unexpected growth.
+        count = min(len(buffer), 65536, self._max_bytes + 1 - self._position)
+        if count <= 0:
+            raise OSError("Windows export exceeded its byte limit")
+        read = self._source.readinto(memoryview(buffer)[:count])
+        if read is None or not 0 <= read <= count:
+            raise OSError("Invalid Windows export read length")
+        self._position += read
+        if self._position > self._before.size or (read == 0 and self._position != self._before.size):
+            raise OSError("Windows export changed size during read")
+        self._verify()
+        return read
+
+    def close(self):
+        if self.closed:
+            return
+        active_error, failure = sys.exception() is not None, None
+        try:
+            self._verify()
+        except (OSError, ServiceError) as error:
+            failure = error
+        finally:
+            try:
+                # FileIO owns and closes the adopted file HANDLE exactly once.
+                self._source.close()
+            except OSError as error:
+                failure = failure or error
+            for handle in reversed(self._ancestors):
+                try:
+                    self._api.close(handle)
+                except OSError as error:
+                    failure = failure or error
+            super().close()
+        if failure is not None and not active_error:
+            raise failure
+
+
+def _adopt_windows_file(handle):
+    """Transfer ownership of the already checked native HANDLE to FileIO."""
+    import msvcrt  # Built in on Windows; never imported on POSIX.
+    descriptor = msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+    try:
+        return io.FileIO(descriptor, mode="rb", closefd=True)
+    except BaseException as error:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        # The CRT already took ownership. Tell the caller not to CloseHandle
+        # this value again (a recycled HANDLE could belong to another thread).
+        failure = OSError("Could not adopt the verified Windows file handle")
+        failure.handle_consumed = True
+        raise failure from error
+
+
+def open_windows_source(root: WindowsRoot, relative_path: str, max_bytes: int, *, _api=None, _adopt=None):
+    """Open a bounded, seekable stream with the dataset reader's native protections.
+
+    The caller owns the returned BinaryIO and must close it. All ancestor handles
+    are retained until close with read-only sharing. This API is intended for
+    multi-gigabyte exports; read_windows_source remains the bounded bytes API.
+    """
+    parts = _parts(relative_path)
+    if type(max_bytes) is not int or max_bytes < 0:
+        raise ValueError("File byte limit must be a nonnegative integer")
+    api, handles = _api if _api is not None else _WindowsAPI(), []
+    source = None
+    try:
+        parent = api.open_root(root.path)
+        handles.append(parent)
+        root_info = api.info(parent)
+        _check_kind(root_info, directory=True)
+        if root_info.identity != root.identity:
+            raise OSError("Windows export root changed before opening the file")
+        for part in parts[:-1]:
+            parent = api.open_child(parent, part, directory=True)
+            handles.append(parent)
+            _check_kind(api.info(parent), directory=True)
+        handle = api.open_child(parent, parts[-1], directory=False)
+        handles.append(handle)
+        before = api.info(handle)
+        _check_kind(before, directory=False)
+        if before.size > max_bytes:
+            raise OSError("Windows export exceeds its byte limit")
+        adopt = _adopt if _adopt is not None else _adopt_windows_file
+        try:
+            source = adopt(handle)
+        except BaseException as error:
+            if getattr(error, "handle_consumed", False):
+                handles.pop()
+            raise
+        handles.pop()  # FileIO now owns the final HANDLE; ancestors remain ours.
+        raw = _WindowsFileReader(source, api, handle, handles, before, max_bytes)
+        handles, source = [], None  # The raw reader now owns all resources.
+        try:
+            return io.BufferedReader(raw, buffer_size=65536)
+        except BaseException:
+            raw.close()
+            raise
+    except BaseException:
+        if source is not None:
+            source.close()
+        for handle in reversed(handles):
+            try:
+                api.close(handle)
+            except OSError:
+                pass
+        raise

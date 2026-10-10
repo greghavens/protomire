@@ -40,6 +40,14 @@ def validate_execution(backend, payload: dict) -> dict:
         raise BackendError("conflict", "Recipe and execution project identities differ")
     if recipe.get("digest") and recipe["digest"] != recipe_provenance(recipe)["recipe_digest"]:
         raise BackendError("dependency_mismatch", "Declared recipe digest differs from executed immutable revision")
+    from ..execution import selection, selected_recipe
+    from ..models import ServiceError
+    try:
+        execution = selection(recipe, payload.get("execution"))
+    except ServiceError as error:
+        raise BackendError(error.code, error.message, error.details) from error
+    recipe = selected_recipe(recipe, execution)
+    selected_payload = {**payload, "recipe": recipe}
     if any(node.get("kind") in {"code.python", "component.run"} for node in recipe.get("nodes", [])) and not backend.trusted_code_roots:
         raise BackendError("untrusted_execution_blocked", "Arbitrary Python requires an operator-configured trusted source root")
     from .components import validate_live_evaluation
@@ -129,7 +137,7 @@ def validate_execution(backend, payload: dict) -> dict:
         if kind == "dataset.import" and parameters.get("resource_id") not in backend.dependency_paths:
             raise BackendError("dependency_unavailable", "Dataset import requires an explicitly resolved content-addressed JSON dependency")
         if kind == "dataset.version.import":
-            validate_dataset_import(backend, payload, node)
+            validate_dataset_import(backend, selected_payload, node)
         if kind in {"code.python", "component.run"}:
             if isinstance(reference, dict) and reference.get("module") in {"__main__", "__mp_main__"}:
                 raise BackendError("validation_error", "Source implementations cannot replace reserved process module identities", {"node_id": node.get("id")})
@@ -146,7 +154,7 @@ def validate_execution(backend, payload: dict) -> dict:
         elif kind not in BUILTINS | PLATFORM_BUILTINS or reference != f"builtin:{kind}":
             raise BackendError("capability_unavailable", f"Executable node implementation is unsupported: {kind}")
     verify_environment(backend, recipe)
-    return recipe
+    return payload["recipe"]
 
 
 def validate_dataset_import(backend, payload: dict, node: dict) -> None:

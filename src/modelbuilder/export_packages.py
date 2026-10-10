@@ -21,6 +21,7 @@ from .backend.components import validate_export_manifest
 CHUNK_BYTES = 4 * 1024 * 1024
 MAX_EXPORT_BYTES = 16 * 1024**3
 MAX_DESCRIPTOR_BYTES = 4 * 1024 * 1024
+_WINDOWS = os.name == "nt"
 RESERVED = {"export.manifest.json", "modelbuilder.provenance.json"}
 
 
@@ -32,8 +33,16 @@ def digest(value):
     return hashlib.sha256(canonical(value)).hexdigest()
 
 
-def safe_file(path: Path):
-    """Reject symlink ancestors and nonregular files before bounded reads."""
+def safe_file(path: Path, *, max_bytes: int = MAX_EXPORT_BYTES + 16 * 1024**2):
+    """Open the same bounded file through no-follow native ancestor handles."""
+    if type(max_bytes) is not int or max_bytes < 0:
+        raise ValueError("Export byte limit must be a nonnegative integer")
+    if _WINDOWS:
+        from .platform_file_access import open_windows_source, snapshot_windows_root
+        absolute = path.absolute()
+        root = snapshot_windows_root(absolute.anchor)
+        relative = "/".join(absolute.parts[1:])
+        return open_windows_source(root, relative, max_bytes)
     absolute = path.absolute()
     parent = os.open(absolute.anchor, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
     try:
@@ -47,9 +56,10 @@ def safe_file(path: Path):
     finally:
         os.close(parent)
     stream = os.fdopen(fd, "rb")
-    if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+    info = os.fstat(stream.fileno())
+    if not stat.S_ISREG(info.st_mode) or info.st_size > max_bytes:
         stream.close()
-        raise ValueError("Export asset must be a regular file")
+        raise ValueError("Export asset must be a bounded regular file")
     return stream
 
 
@@ -58,7 +68,7 @@ def inspect_export(root: Path, provenance: dict):
     if root.is_symlink() or not root.is_dir():
         raise ValueError("Export root must be a regular directory")
     # Structural and content verification use only bounded, safely opened handles.
-    with safe_file(root / "export.manifest.json") as stream:
+    with safe_file(root / "export.manifest.json", max_bytes=MAX_DESCRIPTOR_BYTES) as stream:
         raw = stream.read(MAX_DESCRIPTOR_BYTES + 1)
     if len(raw) > MAX_DESCRIPTOR_BYTES:
         raise ValueError("Export manifest is oversized")
@@ -149,7 +159,7 @@ def read_package(cache: Path, payload: dict):
     if not re.fullmatch(r"[0-9a-f]{64}", identity):
         raise BackendError("validation_error", "Invalid package identity")
     try:
-        with safe_file(cache / f"{identity}.json") as source:
+        with safe_file(cache / f"{identity}.json", max_bytes=MAX_DESCRIPTOR_BYTES) as source:
             raw = source.read(MAX_DESCRIPTOR_BYTES + 1)
         if len(raw) > MAX_DESCRIPTOR_BYTES:
             raise ValueError("Oversized transfer descriptor")

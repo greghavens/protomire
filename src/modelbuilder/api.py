@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
+import asyncio
 from pathlib import Path
 
 from fastapi import Body, Depends, FastAPI, Header, Query
@@ -82,8 +84,21 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
         service = OperationService(db_path=db_path, backend=backend, dataset_roots=dataset_roots, source_roots=source_roots,
                                    source_root=str(backend.repository) if backend else os.environ.get("MODELBUILDER_SOURCE_ROOT"))
     auth = tokens if isinstance(tokens, TokenAuth) else (TokenAuth(tokens) if tokens is not None else TokenAuth.from_environment())
-    app = FastAPI(title="ModelBuilder shared operation service", version="0.1.0",
+    from .research_scheduler import ResearchScheduler
+    service.research_authorizer = auth.authorize_research
+    scheduler = ResearchScheduler(service)
+
+    @asynccontextmanager
+    async def lifespan(app):
+        scheduler.start()
+        try:
+            yield
+        finally:
+            await asyncio.to_thread(scheduler.stop)
+
+    app = FastAPI(title="ModelBuilder shared operation service", version="0.1.0", lifespan=lifespan,
                   description="GUI and native MCP use the same revisioned operation catalog.")
+    app.state.research_scheduler = scheduler
     app.state.service = service
     app.state.auth = auth
 

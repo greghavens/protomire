@@ -273,3 +273,41 @@ def test_reference_cache_symlink_is_refused_without_reading_its_target(bound, tm
     assert not failed["executable"]
     assert failed["blocked_reasons"][0]["code"] == "dataset_reference_unavailable"
     assert secret.read_text() == "not dataset metadata"
+
+
+def test_checkpoint_only_request_does_not_read_unselected_dataset_sources(bound):
+    from modelbuilder.dataset_binding import resolve_backend
+    service, project, _, payload, root, backend = bound
+    current = service.invoke('dataset.bind', payload, OWNER)['recipe']
+    current['nodes'].append({'id': 'evaluate_saved', 'kind': 'component.run'})
+    # A completed artifact-bound evaluation is independent of the old data root.
+    (root / 'weather.jsonl').unlink()
+    result = resolve_backend(service, backend, {'project_id': project['project_id'], 'recipe': current,
+        'execution': {'node_ids': ['evaluate_saved'], 'input_bindings': []}})
+    assert result is backend and backend.dependency_paths == {}
+    with pytest.raises(ServiceError):
+        resolve_backend(service, backend, {'project_id': project['project_id'], 'recipe': current,
+            'execution': {'node_ids': ['train_data'], 'input_bindings': []}})
+
+
+def test_public_cut_resume_ignores_missing_unselected_dataset_file(bound, monkeypatch):
+    service, project, _, payload, root, backend = bound
+    current = service.invoke("dataset.bind", payload, OWNER)["recipe"]
+    current["nodes"].append({"id": "saved_policy", "kind": "model.train", "implementation_ref": "builtin:model.train",
+        "inputs": [], "outputs": [], "parameters": {"steps": 4}, "environment_ref": "default", "resource_request": {},
+        "retry": {"max_attempts": 1, "backoff_seconds": 0}, "timeout": 30, "cache_policy": "disabled", "provenance": {}})
+    common = {"project_id": project["project_id"], "recipe_id": project["recipe_id"]}
+    current = service.invoke("recipe.update", {**common, "recipe": current, "expected_revision": 2, "idempotency_key": "add-policy"}, OWNER)
+    calls = []
+    def invoke(operation, request, actor):
+        calls.append((operation, copy.deepcopy(request)))
+        return {"operation_id": request.get("operation_id"), "backend_run_id": "native-" + request.get("operation_id", "plan"), "status": "submitted"}
+    monkeypatch.setattr(backend, "invoke", invoke)
+    parent = service.invoke("run.submit", {**common, "expected_revision": current["revision"], "trusted": True,
+        "execution": {"node_ids": ["saved_policy"], "input_bindings": []}, "idempotency_key": "policy"}, OWNER)
+    (root / "weather.jsonl").unlink()
+    assert not service.invoke("run.plan", common, OWNER)["executable"]
+    result = service.invoke("run.resume", {"project_id": project["project_id"], "operation_id": parent["operation_id"],
+        "expected_recipe_revision": current["revision"], "mode": "exact_state", "steps": 6, "trusted": True, "idempotency_key": "resume"}, OWNER)
+    assert result["status"] == "submitted"
+    assert calls[-1][0] == "run.resume" and calls[-1][1]["execution"] == {"node_ids": ["saved_policy"], "input_bindings": []}

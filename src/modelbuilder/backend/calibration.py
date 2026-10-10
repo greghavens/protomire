@@ -5,6 +5,7 @@ model state and cannot be silently reused with another checkpoint or fit split.
 """
 from __future__ import annotations
 from copy import deepcopy
+import math
 from ..evaluation import digest
 
 SCHEMA = "modelbuilder.calibration/temperature-v1"
@@ -54,6 +55,13 @@ def apply_temperature(logits, artifact: dict, *, model_identity: str, sample_ids
     import torch
     if artifact.get("schema") != SCHEMA or artifact.get("digest") != digest({k:v for k,v in artifact.items() if k != "digest"}):
         raise ValueError("Calibration artifact identity mismatch")
+    temperature = artifact.get("temperature")
+    try:
+        valid_temperature = type(temperature) in (int, float) and math.isfinite(temperature) and temperature > 0
+    except OverflowError:
+        valid_temperature = False
+    if not valid_temperature:
+        raise ValueError("Calibration temperature must be finite and positive")
     if model_identity != artifact["model_identity"]:
         raise ValueError("Calibration belongs to another model/checkpoint")
     if set(sample_ids) & set(artifact["fit_sample_ids"]):
@@ -61,4 +69,7 @@ def apply_temperature(logits, artifact: dict, *, model_identity: str, sample_ids
     values = torch.as_tensor(logits)
     if len(values) != len(sample_ids) or not torch.isfinite(values).all():
         raise ValueError("Calibration predictions do not match sample identities")
-    return values / artifact["temperature"]
+    result = values / temperature
+    if not torch.isfinite(result).all():
+        raise ValueError("Calibration produced nonfinite predictions")
+    return result

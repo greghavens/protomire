@@ -566,7 +566,7 @@ def test_research_native_mcp_catalog_keeps_shared_schemas_and_scopes(service):
     from modelbuilder.mcp_server import catalog_tools
     tools, aliases = catalog_tools({"operations": service.catalog(OWNER)})
     research = [item for item in tools if aliases[item.name].startswith("research.")]
-    assert len(research) == 15
+    assert len(research) == 17
     for tool in research:
         operation = OPERATIONS[aliases[tool.name]]
         assert tool.inputSchema == operation.input_schema
@@ -578,6 +578,8 @@ def test_periodic_due_refresh_uses_persisted_time_boundary(service, monkeypatch)
     from modelbuilder import research
     clock = ["2026-10-09T00:00:00+00:00"]
     monkeypatch.setattr(research, "utcnow", lambda: clock[0])
+    monkeypatch.setattr("modelbuilder.store.utcnow", lambda: clock[0])
+    monkeypatch.setattr("modelbuilder.research_scheduler.utcnow", lambda: clock[0])
     monkeypatch.setattr("modelbuilder.literature.search_openalex", lambda *args: [])
     p = project(service)
     w = watch(service, p["project_id"], interval_seconds=900)

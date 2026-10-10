@@ -74,6 +74,14 @@ class SQLiteStore:
             target_id TEXT, request_id TEXT NOT NULL, outcome TEXT NOT NULL,
             before_revision INTEGER, after_revision INTEGER, details TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS unique_slugs (slug TEXT PRIMARY KEY, project_id TEXT NOT NULL UNIQUE);
+        CREATE TABLE IF NOT EXISTS research_leases (
+            watch_id TEXT PRIMARY KEY, token TEXT NOT NULL, expires_at TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS research_requests (
+            actor_id TEXT NOT NULL, key TEXT NOT NULL, operation TEXT NOT NULL,
+            payload_hash TEXT NOT NULL, token TEXT NOT NULL, expires_at TEXT NOT NULL, body TEXT NOT NULL,
+            PRIMARY KEY(actor_id,key));
+        CREATE INDEX IF NOT EXISTS research_watch_due ON resources(
+            kind, json_extract(body,'$.next_due_at')) WHERE kind='research_watch';
         CREATE TABLE IF NOT EXISTS project_recipes (
             project_id TEXT PRIMARY KEY, recipe_id TEXT NOT NULL UNIQUE, migration TEXT NOT NULL);
         """)
@@ -170,10 +178,17 @@ class SQLiteStore:
         self.connection.execute("DELETE FROM unique_slugs WHERE slug=? AND project_id=?", (old_slug, project_id))
         self.reserve_slug(new_slug, project_id)
 
-    def idempotent_result(self, actor_id: str, key: str, operation: str, payload_hash: str) -> dict | None:
+    def idempotent_result(self, actor_id: str, key: str, operation: str, payload_hash: str, *, allow_pending=False) -> dict | None:
         row = self.connection.execute("SELECT operation,payload_hash,result FROM idempotency WHERE actor_id=? AND key=?",
                                       (actor_id, key)).fetchone()
         if row is None:
+            pending = self.connection.execute("SELECT operation,payload_hash FROM research_requests WHERE actor_id=? AND key=?",
+                                              (actor_id, key)).fetchone()
+            if pending:
+                if pending[0] != operation or pending[1] != payload_hash:
+                    raise ServiceError("idempotency_conflict", "Idempotency key belongs to another research request", status_code=409)
+                if not allow_pending:
+                    raise ServiceError("request_in_progress", "Research request is already running", status_code=409)
             return None
         if row[0] != operation or row[1] != payload_hash:
             raise ServiceError("idempotency_conflict", "Idempotency key was already used for a different request", status_code=409)
@@ -196,6 +211,39 @@ class SQLiteStore:
             rows = self.connection.execute("SELECT * FROM audit WHERE project_id=? ORDER BY sequence DESC LIMIT ?",
                                            (project_id, limit)).fetchall()
             return [{**dict(row), "details": json.loads(row["details"])} for row in rows]
+
+    def due_research_watches(self, *, project_id=None, limit=1, automatic=False):
+        if not 1 <= limit <= 5:
+            raise ValueError("Research batch size must be 1–5")
+        where = ["r.kind='research_watch'", "json_extract(r.body,'$.enabled')=1",
+                 "json_extract(r.body,'$.next_due_at')<=?", "(l.watch_id IS NULL OR l.expires_at<=?)"]
+        now = utcnow()
+        params = [now, now]
+        if project_id is not None:
+            where.append("r.project_id=?")
+            params.append(project_id)
+        if automatic:
+            where.append("json_extract(r.body,'$.schedule.enabled')=1")
+        with self._lock:
+            rows = self.connection.execute("SELECT r.body FROM resources r LEFT JOIN research_leases l ON l.watch_id=r.id WHERE "
+                + " AND ".join(where) + " ORDER BY json_extract(r.body,'$.next_due_at'),r.id LIMIT ?", (*params, limit)).fetchall()
+            return [json.loads(row[0]) for row in rows]
+
+    def count_due_research_watches(self, project_id):
+        return self.connection.execute("SELECT count(*) FROM resources WHERE kind='research_watch' AND project_id=? "
+            "AND json_extract(body,'$.enabled')=1 AND json_extract(body,'$.next_due_at')<=?", (project_id, utcnow())).fetchone()[0]
+
+    def claim_research_watch(self, watch_id, token, expires_at, maximum):
+        # Called inside BEGIN IMMEDIATE, so all service processes share this
+        # admission limit and no manual/scheduled pair can claim the same watch.
+        self.connection.execute("DELETE FROM research_leases WHERE expires_at<=?", (utcnow(),))
+        if self.connection.execute("SELECT count(*) FROM research_leases").fetchone()[0] >= maximum:
+            return False
+        try:
+            self.connection.execute("INSERT INTO research_leases VALUES(?,?,?)", (watch_id, token, expires_at))
+        except sqlite3.IntegrityError:
+            return False
+        return True
 
 
 Store = SQLiteStore

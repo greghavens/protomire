@@ -92,3 +92,31 @@ def test_fresh_fixture_provenance_uses_actual_metric_split(tmp_path):
     assert records["accuracy"]["split"]["sample_ids"] == [str(i) for i in data["heldout_ids"]]
     assert records["accuracy"]["treatment"]["model"]["training_reference_digest"]
     assert "best_validation_loss" not in records
+
+
+@pytest.mark.parametrize("temperature", [0.0, -1.0, True, "2", None, 10 ** 400])
+def test_rehashed_temperature_requires_positive_finite_number(temperature):
+    from modelbuilder.backend.calibration import SCHEMA, apply_temperature
+    artifact = {"schema": SCHEMA, "model_identity": "model", "fit_sample_ids": [],
+                "temperature": temperature}
+    artifact["digest"] = digest(artifact)
+    with pytest.raises(ValueError, match="finite and positive"):
+        apply_temperature(torch.ones(2, 3), artifact, model_identity="model", sample_ids=["a", "b"])
+
+
+def test_valid_temperature_cannot_overflow_predictions():
+    from modelbuilder.backend.calibration import SCHEMA, apply_temperature
+    artifact = {"schema": SCHEMA, "model_identity": "model", "fit_sample_ids": [],
+                "temperature": 1e-45}
+    artifact["digest"] = digest(artifact)
+    with pytest.raises(ValueError, match="nonfinite predictions"):
+        apply_temperature(torch.ones(2, 3), artifact, model_identity="model", sample_ids=["a", "b"])
+
+
+@pytest.mark.parametrize("temperature", [float("nan"), float("inf"), -float("inf")])
+def test_nonfinite_calibration_metadata_fails_before_inference(temperature):
+    from modelbuilder.backend.calibration import SCHEMA, apply_temperature
+    artifact = {"schema": SCHEMA, "model_identity": "model", "fit_sample_ids": [],
+                "temperature": temperature, "digest": "a" * 64}
+    with pytest.raises(ValueError):
+        apply_temperature(torch.ones(2, 3), artifact, model_identity="model", sample_ids=["a", "b"])

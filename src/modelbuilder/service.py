@@ -26,6 +26,8 @@ class OperationService:
                  db_path: str | Path | None = None, source_root: str | Path | None = None,
                  dataset_roots: dict | None = None, source_roots: dict | None = None):
         self.store = store if isinstance(store, SQLiteStore) else SQLiteStore(db_path or store or "modelbuilder.sqlite3")
+        self.research_authorizer = None
+        self.research_scheduler_running = False
         self.backend = backend
         self._remote_cost_operations = None
         self.dataset_roots = copy.deepcopy(dataset_roots or {})
@@ -140,6 +142,15 @@ class OperationService:
             if operation == "policy.update":
                 from .recipe_registry import authorize_publication_policy_change
                 authorize_publication_policy_change(payload, actor)
+            if operation == "evidence.search" and payload.get("provider") == "openalex":
+                # Metadata discovery is read-only. Do not hold SQLite's writer
+                # lock during the same bounded provider call used by watches.
+                with self.store.transaction():
+                    self._get("project", project_id, project_id)
+                return self._research(operation, payload, actor)
+            if operation in {"research.watch.refresh", "research.watch.refresh_due"}:
+                from .research_scheduler import ResearchRefresh
+                return ResearchRefresh(self).invoke(operation, payload, actor, payload_hash, request_id)
             with self.store.transaction():
                 if project_id:
                     self._get("project", project_id, project_id)
@@ -338,7 +349,7 @@ class OperationService:
             project_id, now = new_id(), utcnow()
             body = {key: value for key, value in p.items() if key in PROJECT_FIELDS}
             if body.get("research_watch_config"):
-                raise ServiceError("capability_unavailable", "Automated research monitoring is not implemented", status_code=422)
+                raise ServiceError("capability_unavailable", "Use research.watch.schedule_enable for an explicit, disclosed per-watch schedule", status_code=422)
             if body.get("active_recipe_id") or body.get("active_model_version_ref"):
                 raise ServiceError("validation_error", "Create the project before linking its resources")
             recipe_id = str(uuid5(NAMESPACE_URL, f"modelbuilder:project-recipe:{project_id}"))
@@ -388,7 +399,7 @@ class OperationService:
         if changes.get("active_model_version_ref"):
             raise ServiceError("validation_error", "Use model.version.promote to select an authoritative model version")
         if changes.get("research_watch_config"):
-            raise ServiceError("capability_unavailable", "Automated research monitoring is not implemented", status_code=422)
+            raise ServiceError("capability_unavailable", "Use research.watch.schedule_enable for an explicit, disclosed per-watch schedule", status_code=422)
         updated = ModelProject(**{**project, **changes, "updated_at": utcnow(), "revision": project["revision"] + 1}).model_dump()
         if project["slug"] != updated["slug"]:
             self.store.replace_slug(project["slug"], updated["slug"], project_id)
@@ -550,7 +561,8 @@ class OperationService:
             if body["selection_rule"].get("comparison_digest"):
                 comparison = self._execution("run.compare", {"project_id": project_id, "run_ids": body["run_ids"],
                     "metric": body["selection_rule"]["metric"], "direction": body["selection_rule"]["direction"],
-                    "comparison_contract": body["selection_rule"].get("comparison_contract", {})}, actor)
+                    "comparison_contract": body["selection_rule"].get("comparison_contract", {}),
+                    **({"evaluations": body["selection_rule"]["evaluations"]} if body["selection_rule"].get("evaluations") else {})}, actor)
                 if body["outcome"] == "accepted" and not comparison.get("compatible"):
                     raise ServiceError("incompatible_evaluation", "An accepted decision requires compatible evaluation evidence", comparison)
                 if comparison.get("comparison_digest") != body["selection_rule"]["comparison_digest"]:
@@ -699,6 +711,13 @@ class OperationService:
             recipe = self._current_recipe(project_id, p["recipe_id"])
             self._require_recipe_review(project_id)
             enriched["recipe"] = recipe
+            if "expected_revision" in p:
+                self._revision(recipe, p["expected_revision"])
+            if "execution" in p:
+                from .execution import selection
+                enriched["execution"] = selection(recipe, p["execution"])
+                for binding in enriched["execution"]["input_bindings"]:
+                    self._find_operation(project_id, backend_run_id=binding["backend_run_id"])
             target = p.get("target", "local-cpu")
             policy = self._policy("policy.get", p)
             if target != "local-cpu" or target not in policy["allowed_targets"]:
@@ -728,27 +747,34 @@ class OperationService:
                 mode = p.get("mode", p.get("resume_mode"))
                 if mode not in {"exact_state", "warm_start"}:
                     raise ServiceError("validation_error", "Resume must explicitly select exact_state or warm_start")
-                component_training = [node for node in parent_recipe["nodes"]
+                # Resolve the saved cut before trainer validation and dataset
+                # dependency admission. Native provenance may enrich bindings;
+                # only their original public pins survive into a fresh resolve.
+                from .execution import continuation_selection, selected_recipe
+                resumed_recipe = copy.deepcopy(current_recipe if mode == "warm_start" else parent_recipe)
+                parent_execution = continuation_selection(parent_recipe, parent_recipe, correlation.get("execution"), "exact_state")
+                enriched["execution"] = continuation_selection(parent_recipe, resumed_recipe, correlation.get("execution"), mode)
+                parent_nodes = selected_recipe(parent_recipe, parent_execution)["nodes"]
+                resumed_nodes = selected_recipe(resumed_recipe, enriched["execution"])["nodes"]
+                component_training = [node for node in parent_nodes
                     if node["kind"] == "component.run" and node.get("component", {}).get("role") == "training"]
                 if component_training:
                     if "steps" in p:
                         raise ServiceError("validation_error", "Component resume does not infer training parameter names; exact resume retains the parent budget, while warm start uses the edited current recipe")
-                    if len(component_training) != 1 or any(node["kind"] == "model.train" for node in parent_recipe["nodes"]):
+                    if len(component_training) != 1 or any(node["kind"] == "model.train" for node in parent_nodes):
                         raise ServiceError("capability_unavailable", "Resume requires one unambiguous training component")
-                    resumed_recipe = copy.deepcopy(current_recipe if mode == "warm_start" else parent_recipe)
-                    selected_trainers = [node for node in resumed_recipe["nodes"]
+                    selected_trainers = [node for node in resumed_nodes
                         if node["kind"] == "component.run" and node.get("component", {}).get("role") == "training"]
-                    if len(selected_trainers) != 1 or any(node["kind"] == "model.train" for node in resumed_recipe["nodes"]):
+                    if len(selected_trainers) != 1 or any(node["kind"] == "model.train" for node in resumed_nodes):
                         raise ServiceError("capability_unavailable", "Selected recipe must have exactly one checkpoint-consuming training component")
                 else:
-                    resumed_recipe = copy.deepcopy(current_recipe if mode == "warm_start" else parent_recipe)
-                    selected_trainers = [node for node in resumed_recipe["nodes"] if node["kind"] == "model.train"]
+                    selected_trainers = [node for node in resumed_nodes if node["kind"] == "model.train"]
                     if len(selected_trainers) != 1 or any(node["kind"] == "component.run" and
-                            node.get("component", {}).get("role") == "training" for node in resumed_recipe["nodes"]):
+                            node.get("component", {}).get("role") == "training" for node in resumed_nodes):
                         raise ServiceError("capability_unavailable", "Selected recipe must have exactly one checkpoint-consuming built-in training node")
                     if "steps" not in p:
                         raise ServiceError("validation_error", "Resume requires a declared final total step count")
-                    for node in resumed_recipe["nodes"]:
+                    for node in resumed_nodes:
                         if node["kind"] == "model.train":
                             node["parameters"]["steps"] = p["steps"]
                 if parent_recipe["recipe_id"] != current_recipe["recipe_id"]:
@@ -778,6 +804,8 @@ class OperationService:
             enriched["metric"] = decision["selection_rule"]["metric"]
             enriched["direction"] = decision["selection_rule"]["direction"]
             enriched["candidate_run_ids"] = decision["run_ids"]
+            if decision["selection_rule"].get("evaluations"):
+                enriched["evaluations"] = decision["selection_rule"]["evaluations"]
         result = self._call_backend(op, enriched, actor)
         if op == "run.compare":
             configurations = []
@@ -807,6 +835,7 @@ class OperationService:
                       "revision": 1, "tracking_config": enriched["tracking"],
                       "source_binding": copy.deepcopy(enriched.get("source_binding")),
                       "source_workspace": copy.deepcopy(enriched.get("source_workspace")),
+                      "execution": copy.deepcopy(result.get("execution", enriched.get("execution"))),
                       "status": result.get("status", "unknown"), "errors": result.get("errors") or ([result["error"]] if result.get("error") else [])}
             self.store.put("operation", operation_id, project_id, record)
             return {**result, **record}

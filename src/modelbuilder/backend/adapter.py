@@ -5,6 +5,7 @@ read is freshly reconciled against the native ZenML store.
 """
 from __future__ import annotations
 import copy
+import json
 import os
 import signal
 import subprocess
@@ -134,7 +135,38 @@ class ZenMLBackend:
         return path, request
 
     def _validate_execution(self, payload: dict) -> dict:
-        return validate_execution(self, payload)
+        recipe = validate_execution(self, payload)
+        from ..execution import selection
+        payload["execution"] = selection(payload["recipe"], payload.get("execution"))
+        if payload["execution"]["input_bindings"]:
+            jobs = sorted({str(self._job({"project_id": payload["project_id"], "backend_run_id": binding["backend_run_id"]})[0])
+                           for binding in payload["execution"]["input_bindings"]})
+            # A read-only subprocess avoids creating request/job records and never
+            # imports producer code or deserializes an artifact during planning.
+            if not (self.root / "zenml-config").exists():
+                raise BackendError("artifact_binding_denied", "No owned native artifact store exists")
+            code = """import json,sys
+from modelbuilder.backend.native_inputs import resolve_bindings
+body=json.load(sys.stdin)
+try:
+ result=resolve_bindings(body['payload'],body['jobs'])
+except Exception as error:
+ result={'error':{'code':getattr(error,'code','artifact_binding_denied'),'message':str(error),'details':getattr(error,'details',{})}}
+print(json.dumps(result))"""
+            completed = subprocess.run([self.python, "-P", "-c", code], input=json.dumps({"payload": payload, "jobs": jobs}),
+                text=True, capture_output=True, cwd=self.root, env=self._env(), timeout=90)
+            try:
+                result = json.loads(completed.stdout.strip().splitlines()[-1])
+            except (IndexError, ValueError) as error:
+                raise BackendError("artifact_binding_denied", "Native artifact ownership inspection failed") from error
+            if completed.returncode or "error" in result:
+                error = result.get("error", {})
+                raise BackendError(error.get("code", "artifact_binding_denied"), error.get("message", "Native input inspection failed"), error.get("details"))
+            payload["resolved_input_bindings"] = result["input_bindings"]
+            payload["input_binding_jobs"] = jobs
+        else:
+            payload["resolved_input_bindings"], payload["input_binding_jobs"] = [], []
+        return recipe
 
     def invoke(self, operation: str, payload: dict, actor=None) -> dict:
         if operation == "execution.targets":
@@ -151,7 +183,8 @@ class ZenMLBackend:
                 blocked.append({"code": error.code, "message": error.message, "details": error.details})
             from ..tracking import disclosure, tracking_readiness
             return {"project_id": payload["project_id"], "target": payload.get("target", "local-cpu"), "backend": "zenml", "backend_version": "0.97.0",
-                    "node_ids": [node["id"] for node in recipe.get("nodes", [])], "executable": not blocked,
+                    "node_ids": payload.get("execution", {}).get("node_ids", [node["id"] for node in recipe.get("nodes", [])]),
+                    "execution": {**payload.get("execution", {}), "input_bindings": payload.get("resolved_input_bindings", [])}, "executable": not blocked,
                     "blocked_reasons": blocked, "warnings": [item["message"] for item in blocked],
                     "dependency_verification": "verified_at_plan_and_rechecked_at_submission" if not blocked else "blocked",
                     "capabilities": capabilities(self), "tracking": disclosure(payload.get("tracking") or {"mode": "disabled"}),
@@ -195,9 +228,12 @@ class ZenMLBackend:
 
     def _check_submission_identity(self, request: dict, payload: dict) -> None:
         """A lost service transaction cannot relabel an already submitted native job."""
+        from ..execution import selection
         if (not request or request.get("project_id") != payload.get("project_id")
                 or request.get("idempotency_key") != payload.get("idempotency_key")
                 or request.get("recipe") != payload.get("recipe")
+                or selection(request["recipe"], request.get("execution")) != selection(payload["recipe"], payload.get("execution"))
+                or request.get("resolved_input_bindings", []) != payload.get("resolved_input_bindings", [])
                 or request.get("source_root") != str(self.repository)
                 or request.get("dependency_paths", {}) != self.dependency_paths
                 or request.get("dataset_source_guards", {}) != getattr(self, "dataset_source_guards", {})
@@ -260,7 +296,9 @@ class ZenMLBackend:
         return {"operation_id": operation_id, "backend_run_id": native.get("backend_run_id"), "status": "submitted",
                 "backend": "zenml", "backend_version": "0.97.0", "project_id": payload["project_id"],
                 "submitted_at": request["submitted_at"], "last_reconciled_at": now(), "supervisor_pid": process.pid,
-                **recipe_provenance(request["recipe"])}
+                **recipe_provenance(request["recipe"]),
+                "execution": {**(request.get("execution") or {"node_ids": [node["id"] for node in request["recipe"].get("nodes", [])]}), "input_bindings": request.get("resolved_input_bindings", [])},
+                "executed_node_ids": []}
 
     def cancel(self, job: Path, request: dict) -> dict:
         self._require_capability()
@@ -313,6 +351,18 @@ class ZenMLBackend:
                    "parent_run_id": checkpoint["backend_run_id"], "parent_checkpoint_ref": checkpoint["artifact_id"],
                    "resume_path": checkpoint["path"], "resume_mode": payload.get("mode", payload.get("resume_mode", "exact_state")),
                    "checkpoint_kind": payload.get("checkpoint_kind", "last")}
+        # A checkpoint cut is part of continuation identity. Never expand a
+        # policy-only run into its unselected reference/calibration ancestors.
+        # Resolve the original public pins again; cached host paths are not trust.
+        from ..execution import continuation_selection, selection
+        parent_execution = selection(parent["recipe"], parent.get("execution"))
+        requested_execution = (selection(request["recipe"], payload["execution"]) if "execution" in payload else
+            continuation_selection(parent["recipe"], request["recipe"], parent.get("execution"), request["resume_mode"]))
+        if request["resume_mode"] == "exact_state" and requested_execution != parent_execution:
+            raise BackendError("dependency_mismatch", "Exact continuation must retain its selected nodes and reference/input bindings; submit a new stage for changed inputs")
+        request["execution"] = requested_execution
+        for key in ("resolved_input_bindings", "input_binding_jobs"):
+            request.pop(key, None)
         parent_identity = recipe_provenance(parent["recipe"])
         current_identity = recipe_provenance(request["recipe"])
         canonical_id = payload.get("project_recipe_id") or parent_identity["recipe_id"]
@@ -325,8 +375,8 @@ class ZenMLBackend:
             old_revision, new_revision = parent_identity["recipe_revision"], current_identity["recipe_revision"]
             if type(old_revision) is not int or type(new_revision) is not int or new_revision <= old_revision:
                 raise BackendError("conflict", "Changed continuation settings require a new immutable revision of the same recipe")
-        for node in request["recipe"]["nodes"]:
-            if node["kind"] == "model.train":
+        for node in request["recipe"].get("nodes", []):
+            if node["id"] in request["execution"]["node_ids"] and node["kind"] == "model.train":
                 if "steps" not in payload:
                     raise BackendError("validation_error", "Resume requires final total steps")
                 if node["parameters"]["steps"] != int(payload["steps"]):

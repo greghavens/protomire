@@ -1,14 +1,43 @@
 """Bounded public OpenAlex discovery; retrieval is not scientific verification."""
 from __future__ import annotations
 
+import io
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.parse import parse_qs, urlencode, urlsplit
+from urllib.request import Request
 
 
 class LiteratureUnavailable(RuntimeError):
     """A public source could not be queried; no fabricated fallback records."""
+
+
+FETCH_TIMEOUT_SECONDS = 20
+
+
+def urlopen(request, timeout=FETCH_TIMEOUT_SECONDS):
+    """Return bounded bytes; a subprocess deadline includes DNS and slow reads.
+
+    The name stays injectable for controlled provider fixtures. Production
+    never runs provider I/O in a Python thread that cannot be cancelled.
+    """
+    query = parse_qs(urlsplit(request.full_url).query)
+    options = {"query": query["search"][0], "limit": int(query["per-page"][0])}
+    environment = {name: os.environ[name] for name in ("SYSTEMROOT", "WINDIR") if name in os.environ}
+    try:
+        result = subprocess.run([sys.executable, "-I", str(Path(__file__).with_name("literature_fetch.py"))],
+                                input=json.dumps(options).encode(), stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL, timeout=min(timeout, FETCH_TIMEOUT_SECONDS),
+                                env=environment, check=False)
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        raise LiteratureUnavailable("OpenAlex request exceeded its bounded fetch window or could not start") from exc
+    if result.returncode or len(result.stdout) > 2_000_000:
+        raise LiteratureUnavailable("OpenAlex metadata retrieval failed")
+    return io.BytesIO(result.stdout)
 
 
 def search_openalex(query: str, limit: int = 5) -> list[dict]:

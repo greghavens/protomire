@@ -187,7 +187,17 @@ def run(job: Path) -> None:
         **identity, "application_project_id": request["project_id"],
         "parent_recipe_id": request.get("parent_recipe_id"), "parent_recipe_revision": request.get("parent_recipe_revision"),
         "parent_recipe_digest": request.get("parent_recipe_digest")}.items() if value is not None}
-    ordered = topological_nodes(recipe)
+    from ..execution import selection, selected_recipe
+    from .native_inputs import resolve_bindings
+    execution = selection(recipe, request.get("execution"))
+    resolved, bound_inputs = (resolve_bindings(request, request.get("input_binding_jobs", []), native_objects=True)
+                              if execution["input_bindings"] else ([], {}))
+    if resolved != request.get("resolved_input_bindings", []):
+        raise ValueError("Native artifact binding provenance changed after admission")
+    execution_provenance = {**execution, "input_bindings": resolved}
+    provenance["execution"] = execution_provenance
+    active_recipe = selected_recipe(recipe, execution)
+    ordered = [node for node in topological_nodes(recipe) if node["id"] in execution["node_ids"]]
     functions = {n["id"]: (compile_python(n, job) if n["kind"] == "code.python" else compile_component(n, job) if n["kind"] == "component.run" else STEPS[n["kind"]]) for n in ordered}
 
     @pipeline(name="modelbuilder_recipe", enable_cache=False)
@@ -195,7 +205,8 @@ def run(job: Path) -> None:
         outputs = {}
         for node in ordered:
             kwargs = {e["target_port"]: outputs[(e["source_node"], e["source_port"])]
-                      for e in recipe["edges"] if e["target_node"] == node["id"]}
+                      for e in recipe["edges"] if e["target_node"] == node["id"] and e["source_node"] in execution["node_ids"]}
+            kwargs.update({port: artifact for (target, port), artifact in bound_inputs.items() if target == node["id"]})
             function = functions[node["id"]].with_options(
                 on_start=deadline_start, on_end=deadline_end,
                 environment={"MODELBUILDER_JOB_DIR": str(job)})
@@ -208,10 +219,10 @@ def run(job: Path) -> None:
             kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "parameters": node.get("parameters", {}),
                                   "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
                                   "dataset_source_guards": request.get("dataset_source_guards", {}),
-                                  "dependencies": recipe.get("resources", []) + recipe.get("external_dependencies", []),
-                                  "component_node": node, "source": recipe.get("source", {}), "environment": recipe.get("environment", {}),
+                                  "dependencies": active_recipe.get("resources", []) + active_recipe.get("external_dependencies", []),
+                                  "execution": execution_provenance, "component_node": node, "source": recipe.get("source", {}), "environment": recipe.get("environment", {}),
                                   "source_root": request["source_root"], "trusted_code_roots": request.get("trusted_code_roots", []), **{k: request[k] for k in ("resume_path", "resume_mode", "checkpoint_kind", "parent_run_id", "parent_checkpoint_ref") if k in request}}
-            kwargs["spec"]["live_evaluation"] = live_evaluator(node, recipe)
+            kwargs["spec"]["live_evaluation"] = live_evaluator(node, active_recipe)
             result = function(id=node["id"], **kwargs)
             declared = node["outputs"]
             values = result if isinstance(result, (tuple, list)) else (result,)

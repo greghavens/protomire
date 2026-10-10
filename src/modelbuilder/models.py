@@ -201,6 +201,8 @@ def _spec(name, scope, description, properties=None, required=(), mutating=False
     return OperationSpec(name, scope, description, properties or {}, tuple(required), mutating, tuple(additional_scopes))
 
 
+from .execution import EXECUTION_SCHEMA, EVALUATIONS_SCHEMA  # noqa: E402
+
 SOURCE_ALIAS = {"type": "string", "pattern": r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"}
 SOURCE_REPOSITORY_ID = {"type": "string", "pattern": r"^sha256:[0-9a-f]{64}$"}
 P = {"project_id": S}
@@ -326,9 +328,9 @@ OPERATIONS = {s.name: s for s in [
     _spec("cost.estimate", "read", "Inspect local cost limits; remote estimates unavailable without a provider.",
           {**R, "target": S}, ("project_id",)),
     _spec("run.plan", "read", "Validate an execution plan; never launch from this operation.",
-          {**R, "target": S, "parameters": NO_OVERRIDES, "trusted": B, **TRACKING_FIELDS}, ("project_id", "recipe_id")),
+          {**R, "target": S, "expected_revision": POSITIVE_INT, "execution": EXECUTION_SCHEMA, "parameters": NO_OVERRIDES, "trusted": B, **TRACKING_FIELDS}, ("project_id", "recipe_id")),
     _spec("run.submit", "execute", "Submit an explicitly permitted source-bound local pipeline to the real backend.",
-          {**R, "expected_revision": POSITIVE_INT, "target": S, "parameters": NO_OVERRIDES, "trusted": B, **TRACKING_FIELDS},
+          {**R, "expected_revision": POSITIVE_INT, "execution": EXECUTION_SCHEMA, "target": S, "parameters": NO_OVERRIDES, "trusted": B, **TRACKING_FIELDS},
           ("project_id", "recipe_id", "expected_revision"), True),
     _spec("run.status", "read", "Reconcile status with the authoritative backend.", RUN, ("project_id",)),
     _spec("run.list", "read", "List and reconcile project operation correlations with the backend.", P, ("project_id",)),
@@ -345,10 +347,10 @@ OPERATIONS = {s.name: s for s in [
            "resume_mode": {"enum": ["exact_state", "warm_start"]}, "parameters": NO_OVERRIDES, "steps": POSITIVE_INT,
            "checkpoint_kind": {"enum": ["last", "best"]}, "trusted": B, "expected_recipe_revision": POSITIVE_INT, **TRACKING_FIELDS},
           ("project_id", "expected_recipe_revision"), True, additional_scopes=("modify",)),
-    _spec("run.artifacts", "read", "Read authoritative artifact identifiers and hashes.", RUN, ("project_id",)),
+    _spec("run.artifacts", "read", "Read authoritative artifact identifiers and optional explicit binding content descriptors.", {**RUN, "include_binding_descriptors": B}, ("project_id",)),
     _spec("run.compare", "read", "Compare metrics from actual backend runs by a declared criterion.",
           {**P, "run_ids": {"type": "array", "items": S, "minItems": 2}, "metric": S,
-           "direction": {"enum": ["minimize", "maximize"]}, "comparison_contract": OBJECT}, ("project_id", "run_ids", "metric", "direction")),
+           "direction": {"enum": ["minimize", "maximize"]}, "comparison_contract": OBJECT, "evaluations": EVALUATIONS_SCHEMA}, ("project_id", "run_ids", "metric", "direction")),
     _spec("model.export.list", "read", "List verified existing native exports for one run or model version; never execute code.",
           {**P, "backend_run_id": S, "model_version_id": S}, ("project_id",)),
     _spec("model.export.inspect", "read", "Inspect a declared native export, checkpoint identity and provenance without running it.",

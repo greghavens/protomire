@@ -101,8 +101,10 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `research_watch_list` | `research.watch.list` | `read` | List project research watches; never fetch implicitly. |
 | `research_watch_refresh` | `research.watch.refresh` | `modify` | Explicitly fetch one configured watch, persisting citation snapshots and deduplicated findings. |
 | `research_watch_refresh_due` | `research.watch.refresh_due` | `modify` | Explicit bounded scheduler tick: refresh up to five enabled due watches; does not start a scheduler. |
+| `research_watch_schedule_disable` | `research.watch.schedule_disable` | `modify` | Stop automatic metadata requests and invalidate an in-flight response; manual refresh remains available. |
+| `research_watch_schedule_enable` | `research.watch.schedule_enable` | `modify` | Opt in to automatic OpenAlex metadata requests for this exact query, limit and frequency; no proposals are applied and no training starts. |
 | `research_watch_update` | `research.watch.update` | `modify` | Edit or disable a watch using optimistic concurrency. |
-| `run_artifacts` | `run.artifacts` | `read` | Read authoritative artifact identifiers and hashes. |
+| `run_artifacts` | `run.artifacts` | `read` | Read authoritative artifact identifiers and optional explicit binding content descriptors. |
 | `run_cancel` | `run.cancel` | `execute` | Request real cancellation; requested is not confirmed termination. |
 | `run_compare` | `run.compare` | `read` | Compare metrics from actual backend runs by a declared criterion. |
 | `run_evaluations_list` | `run.evaluations.list` | `read` | Read checkpoint evaluation results while training is running, including pending and failed evaluations. |

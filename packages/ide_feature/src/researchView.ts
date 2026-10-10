@@ -7,7 +7,7 @@ export function renderResearchWorkflow(container:HTMLElement,data:ResearchCollec
   container.replaceChildren();
   for(const [key,title]of [['watches','Research watches'],['findings','New and changed findings'],['proposals','Staged recipe proposals']] as const){
     const section=el('section',undefined,'research-workflow-section');section.append(el('h3',title));
-    if(key==='watches')section.append(el('p','Watches store bounded queries. Refresh is explicit; no background scheduler starts from this screen. Retrieved metadata is a citation, not proof of a claim.','muted'));
+    if(key==='watches')section.append(el('p','Watches start in manual mode. Enable an automatic schedule only after reviewing the provider, query and frequency. Metadata is a citation, not proof of a claim.','muted'));
     if(data.errors?.[key])section.append(el('p',`Unavailable: ${data.errors[key]}`,'warning'));
     const records=data[key]??[];
     if(!records.length)section.append(el('p',`No ${key} recorded.`, 'muted'));
@@ -17,6 +17,11 @@ export function renderResearchWorkflow(container:HTMLElement,data:ResearchCollec
       const controls=el('div',undefined,'toolbar');
       if(key==='watches'){
         card.append(el('p',record.query),el('p',`Next due: ${record.next_due_at??'unknown'} · ${record.refresh_count??0} refreshes · revision ${record.revision}`,'muted'));
+        const scheduled=record.schedule?.enabled===true;
+        card.append(el('p',`Provider: OpenAlex (api.openalex.org) · Query sent: ${record.query} · Up to ${record.limit??5} records every ${record.interval_seconds??86400} seconds.`,'muted'));
+        card.append(el('p',scheduled?`Automatic schedule enabled · ${record.scheduler_running?'service scheduler active':'waiting for an active service scheduler'} · Can run as soon as due.`:'Manual refresh only. No automatic provider requests.','muted'));
+        card.append(el('p','Automatic requests retrieve metadata into this project’s evidence inbox. They never apply proposals, start training or call an LLM. Editing the query, limit or frequency stops the schedule until you enable it again.','muted'));
+        controls.append(scheduled?action('Disable automatic schedule','research.watch.schedule_disable',{watch_id:record.watch_id,expected_revision:record.revision}):action('Enable automatic schedule','research.watch.schedule_enable',{watch_id:record.watch_id,expected_revision:record.revision,provider:record.provider??'openalex',query:record.query,limit:record.limit??5,interval_seconds:record.interval_seconds??86400}));
         controls.append(action('Refresh now','research.watch.refresh',{watch_id:record.watch_id,expected_revision:record.revision}),action('Edit watch','research.watch.update',{watch_id:record.watch_id,expected_revision:record.revision,changes:{enabled:record.enabled,name:record.name,query:record.query,interval_seconds:record.interval_seconds}}));
       }else if(key==='findings'){
         card.append(el('p',`${record.kind??'new'} citation · Evidence ${record.evidence_id}`,'mono'),el('p','Scientific claim not verified. Review the source and evaluation evidence separately.','muted'));

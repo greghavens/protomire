@@ -8,7 +8,7 @@ export function serviceUrl(raw: string): string {
 export function escapeHtml(value: string): string { return value.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!)); }
 export const UI_OPERATIONS = new Set([
   'dataset.register', 'dataset.version', 'dataset.bind', 'dataset.get', 'dataset.list', 'dataset.validate', 'dataset.preview',
-  'research.watch.create', 'research.watch.get', 'research.watch.list', 'research.watch.update', 'research.watch.refresh', 'research.watch.refresh_due',
+  'research.watch.create', 'research.watch.get', 'research.watch.list', 'research.watch.update', 'research.watch.refresh', 'research.watch.refresh_due', 'research.watch.schedule_enable', 'research.watch.schedule_disable',
   'research.finding.list', 'research.finding.review', 'research.text.import', 'research.text.get',
   'research.proposal.create', 'research.proposal.list', 'research.proposal.get', 'research.proposal.review', 'research.proposal.apply',
   'project.history', 'project.update', 'recipe.resolve_dependencies',

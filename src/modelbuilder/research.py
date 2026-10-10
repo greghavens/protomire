@@ -2,7 +2,7 @@
 
 The operation service owns authorization, transactions, audit and idempotency.
 This module stores citations, source text, watches and staged recipe changes. It
-never trains a model, executes imported text, schedules background work, verifies
+never trains a model, executes imported text, verifies
 paper conclusions or promotes model versions. Source matches mean only that the
 quoted characters occur in the exact user-supplied text snapshot.
 """
@@ -115,7 +115,9 @@ class ResearchWorkflow:
     def _watch(self, action, p, actor):
         project_id = p["project_id"]
         if action == "list":
-            return {"watches": self.store.list("research_watch", project_id), "scheduler_running": False}
+            return {"watches": [{**watch, "scheduler_running": self.service.research_scheduler_running}
+                                for watch in self.store.list("research_watch", project_id)],
+                    "scheduler_running": self.service.research_scheduler_running}
         if action == "create":
             now = utcnow()
             body = {"watch_id": new_id(), "project_id": project_id, "name": p["name"].strip(),
@@ -124,34 +126,40 @@ class ResearchWorkflow:
                     "interval_seconds": p.get("interval_seconds", 86400), "created_at": now,
                     "updated_at": now, "created_by": actor.id, "revision": 1,
                     "next_due_at": now, "last_refresh": None, "refresh_count": 0,
-                    "scheduler_running": False, "claim_verified": False}
+                    "scheduler_running": False, "schedule": {"enabled": False}, "claim_verified": False}
             self._validate_watch(body)
             return self._save("watch", body)
-        if action == "refresh_due":
-            now = _date(utcnow())
-            due = [watch for watch in self.store.list("research_watch", project_id)
-                   if watch["enabled"] and _date(watch["next_due_at"]) <= now]
-            due.sort(key=lambda watch: (watch["next_due_at"], watch["watch_id"]))
-            maximum = p.get("max_watches", 1)
-            results = [self._refresh(watch, actor) for watch in due[:maximum]]
-            return {"refreshes": results, "refreshed": len(results),
-                    "remaining_due": max(0, len(due) - maximum), "scheduler_running": False}
         original = self._get("watch", p["watch_id"], project_id)
         if action == "get":
             refreshes = [record for record in self.store.list("research_refresh", project_id)
                          if record["watch_id"] == original["watch_id"]]
-            return {**original, "refresh_history": refreshes[-20:]}
+            return {**original, "scheduler_running": self.service.research_scheduler_running, "refresh_history": refreshes[-20:]}
         self.service._revision(original, p["expected_revision"])
-        if action == "refresh":
-            if not original["enabled"]:
-                raise ServiceError("watch_disabled", "Enable the watch before refreshing it", status_code=409)
-            return self._refresh(original, actor)
+        if action in {"schedule_enable", "schedule_disable"}:
+            from .research_scheduler import authorized
+            if action == "schedule_enable":
+                if not self.service.research_authorizer or not authorized(self.service, actor, project_id):
+                    raise ServiceError("scheduler_authority_unavailable", "A current authenticated actor registry is required to enable automatic research", status_code=403)
+                if not original["enabled"] or self.service._get("project", project_id, project_id)["status"] != "active":
+                    raise ServiceError("watch_disabled", "Enable this watch in an active project before scheduling", status_code=409)
+                if any(p[field] != original[field] for field in ("provider", "query", "limit", "interval_seconds")):
+                    raise ServiceError("schedule_disclosure_changed", "Review the current provider, query, result limit and frequency before enabling", status_code=409)
+                schedule = {"enabled": True, "actor_id": actor.id, "enabled_at": utcnow(),
+                            "disclosure": {field: original[field] for field in ("provider", "query", "limit", "interval_seconds")}}
+            else:
+                schedule = {**original.get("schedule", {}), "enabled": False,
+                            "disabled_at": utcnow(), "disabled_by": actor.id, "reason": "explicit_disable"}
+            body = {**original, "schedule": schedule, "revision": original["revision"] + 1, "updated_at": utcnow()}
+            return self._save("watch", body, original)
         if action == "update":
             self.service._allowed_changes(p["changes"], WATCH_FIELDS)
             now = utcnow()
             body = {**original, **p["changes"], "revision": original["revision"] + 1, "updated_at": now}
             body["query"], body["name"] = body["query"].strip(), body["name"].strip()
             self._validate_watch(body)
+            if any(body[field] != original[field] for field in ("query", "provider", "limit", "interval_seconds", "enabled")):
+                body["schedule"] = {**original.get("schedule", {}), "enabled": False,
+                                    "disabled_at": now, "reason": "configuration_changed"}
             if any(field in p["changes"] for field in ("query", "provider", "limit", "enabled")):
                 body["next_due_at"] = now
             elif "interval_seconds" in p["changes"] and original["last_refresh"]:
@@ -192,7 +200,7 @@ class ResearchWorkflow:
             raise ValueError("Metadata record is too large")
         return body
 
-    def _refresh(self, watch, actor):
+    def _fetch(self, watch, actor):
         from .literature import LiteratureUnavailable, search_openalex
         project_id, started = watch["project_id"], utcnow()
         refresh = {"refresh_id": new_id(), "project_id": project_id, "watch_id": watch["watch_id"],
@@ -206,13 +214,17 @@ class ResearchWorkflow:
             if not isinstance(raw, list) or len(raw) > watch["limit"]:
                 raise ValueError("Unexpected metadata result count")
             records = [self._metadata(item) for item in raw]
-        except (LiteratureUnavailable, ValueError, TypeError, AttributeError, OSError, HTTPException, ServiceError):
+        except (LiteratureUnavailable, ValueError, TypeError, AttributeError, OSError, HTTPException, ServiceError, RuntimeError):
             # Return a persisted failed attempt, not an exception that the
             # enclosing service transaction would roll back. No upstream URL,
             # exception text, response body or potential credentials are saved.
             refresh.update(status="failed", error={"code": "source_unavailable",
                            "message": "Metadata retrieval or source validation failed; retry explicitly."})
             records = []
+        return refresh, records
+
+    def _commit_refresh(self, watch, refresh, records):
+        project_id, started = watch["project_id"], refresh["started_at"]
         evidence_cache = {(_identity(item), item.get("content_hash")): item
                           for item in self.store.list("evidence", project_id)}
         existing = [finding for finding in self.store.list("research_finding", project_id)

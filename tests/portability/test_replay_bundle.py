@@ -185,7 +185,8 @@ def test_replay_evidence_rejects_contamination_or_drift(defect):
     assert replay.compare_results(origin, repeated)["status"] == "FAIL"
 
 
-def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_source_checkout(tmp_path):
+@pytest.mark.parametrize("kind", ["backend", "service"])
+def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_source_checkout(tmp_path, kind):
     source = tmp_path / "snapshot"
     source.mkdir()
     shutil.copytree(ROOT / "src/modelbuilder", source / "src/modelbuilder", ignore=shutil.ignore_patterns("__pycache__"))
@@ -199,14 +200,16 @@ def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_so
         "sha256": hashlib.sha256((source / "pyproject.toml").read_bytes()).hexdigest()}]
     recipe["environment"]["requirements"] = ["zenml[server]==0.97.0"]
     (source / "recipe.json").write_text(json.dumps(recipe))
-    wheel = replay.build_wheel(source, tmp_path / "wheels", "backend")
+    wheel = replay.build_wheel(source, tmp_path / "wheels", kind)
     installed = tmp_path / "installed"
     with zipfile.ZipFile(wheel["wheel"]) as archive:
         for path in ["platform_file_access.py", "source_workspace.py", "recipe_registry_contract.py",
                      "remote/__init__.py", "remote/contracts.py", "remote/operation_contract.py",
-                     "source_pinning_contract.py", "export_packages.py", "backend/native_exports.py"]:
+                     "source_pinning_contract.py", "export_packages.py", "backend/native_exports.py",
+                     "execution.py", "backend/native_inputs.py"]:
             assert "modelbuilder/" + path in archive.namelist()
-        assert "modelbuilder/service.py" not in archive.namelist()
+        for path in ("service.py", "research_scheduler.py", "literature_fetch.py"):
+            assert ("modelbuilder/" + path in archive.namelist()) == (kind == "service")
         archive.extractall(installed)
     probe = """
 import importlib, importlib.util, pathlib, sys
@@ -215,16 +218,28 @@ sys.path.insert(0, str(root))
 for name in ('modelbuilder.dataset', 'modelbuilder.models', 'modelbuilder.source_workspace',
              'modelbuilder.backend.admission', 'modelbuilder.backend.operator_config',
              'modelbuilder.export_packages', 'modelbuilder.backend.native_exports',
+             'modelbuilder.execution', 'modelbuilder.backend.native_inputs',
              'modelbuilder.remote.operation_contract', 'modelbuilder.remote.provider'):
     module = importlib.import_module(name)
     assert pathlib.Path(module.__file__).resolve().is_relative_to(root), name
-assert importlib.util.find_spec('modelbuilder.service') is None
+if sys.argv[2] == 'service':
+    import json, subprocess
+    for name in ('modelbuilder.service', 'modelbuilder.api', 'modelbuilder.research_scheduler', 'modelbuilder.literature_fetch'):
+        module = importlib.import_module(name)
+        assert pathlib.Path(module.__file__).resolve().is_relative_to(root), name
+    helper = root / 'modelbuilder/literature_fetch.py'
+    # Invalid input proves the standalone installed helper launches without network.
+    child = subprocess.run([sys.executable, '-I', str(helper)], input=json.dumps({'query':'','limit':1}),
+                           text=True, capture_output=True, timeout=5)
+    assert child.returncode == 1 and child.stdout == ''
+else:
+    assert importlib.util.find_spec('modelbuilder.service') is None
 from modelbuilder.remote.provider import diagnostics
 assert diagnostics()['remote_execution_enabled'] is False
 print('Isolated runtime wheel import closure passed')
 """
     # Import closure is service-safe and must not require the optional native runtime.
-    result = subprocess.run([sys.executable, "-I", "-c", probe, str(installed)], cwd=tmp_path,
+    result = subprocess.run([sys.executable, "-I", "-c", probe, str(installed), kind], cwd=tmp_path,
                             capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "Isolated runtime wheel import closure passed" in result.stdout

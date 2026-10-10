@@ -404,7 +404,7 @@ def test_secret_bearing_metadata_is_never_persisted(service):
     'api_key="synthetic_test_value_not_a_real_key"',
     "-----BEGIN " + "PRIVATE KEY-----\nsynthetic\n-----END PRIVATE KEY-----",
     "/home/private/research", "C:\\private\\research",
-])
+], ids=["credential_field", "synthetic_key_header", "posix_private_path", "windows_private_path"])
 def test_catalog_text_uses_existing_recipe_secret_and_host_path_scan(service, description):
     fields = publish_fields(service)
     fields["metadata"]["description"] = description

@@ -85,7 +85,7 @@ def runtime_source_identity(package_root: Path | None = None) -> str:
     """Hash installed execution code, independent of checkout/installation paths."""
     root = package_root or Path(__file__).resolve().parents[2]
     files = list((root / "backend").rglob("*.py"))
-    files += [root / name for name in ("__init__.py", "recipe.py", "evaluation.py", "tracking.py", "dataset.py", "models.py", "store.py", "research_contract.py") if (root / name).is_file()]
+    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "evaluation.py", "tracking.py", "dataset.py", "models.py", "store.py", "research_contract.py") if (root / name).is_file()]
     return identity({str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in sorted(files)})
 

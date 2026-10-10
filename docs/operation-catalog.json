@@ -4387,6 +4387,118 @@
       "scope": "modify"
     },
     {
+      "description": "Stop automatic metadata requests and invalidate an in-flight response; manual refresh remains available.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "watch_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "watch_id",
+          "expected_revision",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "research.watch.schedule_disable",
+      "operation": "research.watch.schedule_disable",
+      "required_scopes": [
+        "modify"
+      ],
+      "scope": "modify"
+    },
+    {
+      "description": "Opt in to automatic OpenAlex metadata requests for this exact query, limit and frequency; no proposals are applied and no training starts.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm_schedule": {
+            "const": true
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "interval_seconds": {
+            "maximum": 2592000,
+            "minimum": 900,
+            "type": "integer"
+          },
+          "limit": {
+            "maximum": 10,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "provider": {
+            "const": "openalex"
+          },
+          "query": {
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "watch_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "watch_id",
+          "expected_revision",
+          "provider",
+          "query",
+          "limit",
+          "interval_seconds",
+          "confirm_schedule",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "research.watch.schedule_enable",
+      "operation": "research.watch.schedule_enable",
+      "required_scopes": [
+        "modify"
+      ],
+      "scope": "modify"
+    },
+    {
       "description": "Edit or disable a watch using optimistic concurrency.",
       "input_schema": {
         "additionalProperties": false,
@@ -4464,13 +4576,16 @@
       "scope": "modify"
     },
     {
-      "description": "Read authoritative artifact identifiers and hashes.",
+      "description": "Read authoritative artifact identifiers and optional explicit binding content descriptors.",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
           "backend_run_id": {
             "minLength": 1,
             "type": "string"
+          },
+          "include_binding_descriptors": {
+            "type": "boolean"
           },
           "operation_id": {
             "minLength": 1,
@@ -4552,6 +4667,44 @@
               "minimize",
               "maximize"
             ]
+          },
+          "evaluations": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "artifact_id": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "backend_run_id": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "metric": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "node_id": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "output_port": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "backend_run_id",
+                "node_id",
+                "output_port",
+                "artifact_id",
+                "metric"
+              ],
+              "type": "object"
+            },
+            "maxItems": 1000,
+            "minItems": 2,
+            "type": "array"
           },
           "metric": {
             "minLength": 1,
@@ -4742,6 +4895,77 @@
       "input_schema": {
         "additionalProperties": false,
         "properties": {
+          "execution": {
+            "additionalProperties": false,
+            "properties": {
+              "input_bindings": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "artifact_id": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "backend_run_id": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "content_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    "input_port": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "node_id": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "source_node_id": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "source_port": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "node_id",
+                    "input_port",
+                    "backend_run_id",
+                    "source_node_id",
+                    "source_port",
+                    "artifact_id",
+                    "content_sha256"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 10000,
+                "type": "array"
+              },
+              "node_ids": {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 1000,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "node_ids",
+              "input_bindings"
+            ],
+            "type": "object"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
           "parameters": {
             "description": "Edit canonical recipe node parameters instead of execution-time overrides.",
             "maxProperties": 0,
@@ -5048,6 +5272,73 @@
       "input_schema": {
         "additionalProperties": false,
         "properties": {
+          "execution": {
+            "additionalProperties": false,
+            "properties": {
+              "input_bindings": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "artifact_id": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "backend_run_id": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "content_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    "input_port": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "node_id": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "source_node_id": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "source_port": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "node_id",
+                    "input_port",
+                    "backend_run_id",
+                    "source_node_id",
+                    "source_port",
+                    "artifact_id",
+                    "content_sha256"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 10000,
+                "type": "array"
+              },
+              "node_ids": {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 1000,
+                "minItems": 1,
+                "type": "array",
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "node_ids",
+              "input_bindings"
+            ],
+            "type": "object"
+          },
           "expected_revision": {
             "minimum": 1,
             "type": "integer"

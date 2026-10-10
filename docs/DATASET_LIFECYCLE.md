@@ -58,9 +58,12 @@ reading for concurrent changes. SHA256 is checked on the exact bounded bytes
 that are parsed. Limits are 16 MiB per source, 32 MiB total source bytes, 100,000
 rows, 64 sources, and 32 declared transformations.
 
-Secure dataset reads are currently unavailable on native Windows because the
-equivalent native handle checks have not been implemented. This is an explicit
-capability error, not an unsafe fallback. Windows metadata operations still work.
+The Windows reader is implemented in `platform_file_access.py`: it traverses
+with native no-reparse handles, checks file identity and metadata, and retains
+ancestor handles while reading bounded bytes. Unsupported secure handle or
+filesystem capabilities fail closed. Linux-hosted contract tests cover Windows
+dispatch and failure paths, but real native Windows execution remains unverified.
+This reader does not add native Windows ZenML training support.
 
 ## Manifest contract
 
@@ -222,6 +225,7 @@ historical reads, stale writes, preview, checksum failure, and read-only denial.
 These are separate gates; they are not authenticated Claude/Codex acceptance.
 
 HF retrieval, remote/paid generation, synthetic-generator lifecycle, fuzzy
-decontamination, large streaming datasets, and native Windows file handles
-remain additional work. No remote costs, uploads, Biff mutation, or private
+decontamination and large streaming datasets remain additional implementation
+work. Native Windows file access is implemented but still needs real Windows
+acceptance. No remote costs, uploads, Biff mutation, or private
 code copies are involved in this implementation.

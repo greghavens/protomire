@@ -34,6 +34,16 @@ class TokenAuth:
                              "scopes": ["read", "modify", "execute"]}
         return cls(tokens)
 
+    def authorize_research(self, actor_id: str, project_id: str) -> bool:
+        """Resolve current grants each time; never persist or replay bearer tokens.
+
+        Schedules belong to the actor, not one token. Removing all of an actor's
+        modifying grants (or project access) revokes its scheduled work.
+        """
+        return any(actor.id == actor_id and "modify" in actor.scopes
+                   and (actor.project_ids is None or project_id in actor.project_ids)
+                   for actor in tuple(self._tokens.values()))
+
     @property
     def configured(self) -> bool:
         return bool(self._tokens)

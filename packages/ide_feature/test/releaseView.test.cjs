@@ -9,4 +9,33 @@ test('incompatible evidence never offers accepted decision or winner',()=>{const
 test('readonly token retains export read controls and disables record/promotion',()=>{const h=harness(true);h.select();h.view.result('run.compare',compared,request);assert(button(h.compare,'Record decision').disabled);h.snapshot.decisions=[{decision_id:'d',outcome:'accepted',rationale:'Measured',selection_rule:{metric:'loss',direction:'minimize'}}];h.view.update(h.snapshot,h.catalog);h.view.result('model.version.list',{versions:[{model_version_id:'v'}]});assert(button(h.versions,'Promote by selected decision').disabled);assert(!button(h.versions,'Save model package…').disabled);});
 test('version decisions and native Save preserve exact selected version and expected project revision',()=>{const h=harness();h.snapshot.decisions=[{decision_id:'d',outcome:'accepted',rationale:'Measured',selection_rule:{metric:'loss',direction:'minimize'}}];h.view.update(h.snapshot,h.catalog);h.view.result('model.version.list',{versions:[{model_version_id:'v'}]});button(h.versions,'Promote by selected decision').onclick();assert.deepEqual(h.sent.at(-1).payload,{model_version_id:'v',decision_id:'d',stage:'staging',expected_revision:4});button(h.versions,'Save model package…').onclick();assert.deepEqual(h.sent.at(-1),{type:'nativeSaveModel',modelVersionId:'v'});});
 test('changed selection invalidates a previous comparison and late response',()=>{const h=harness();h.select();const el=input(h.compare,'b');el.checked=false;el.onchange();h.view.result('run.compare',compared,request);assert.doesNotMatch(h.compare.textContent,/Compatible evidence/);});
+test('ambiguous evaluation requires an explicit selector for every metric before comparing',()=>{const h=harness();h.select();const entry=(id,node)=>({backend_run_id:id,node_id:node,output_port:'metrics',artifact_id:id+node,metric:'validation_loss',value:.4});h.view.result('run.status',{backend_run_id:'a',metrics:{evaluation_catalog:[entry('a','first'),entry('a','second')]}});h.view.result('run.status',{backend_run_id:'b',metrics:{evaluation_catalog:[entry('b','only')]}});button(h.compare,'Compare selected runs').onclick();assert.match(h.errors.at(-1),/explicit evaluation/);const picker=all(h.compare).find(n=>n.tagName==='select'&&n.children.some(c=>c.value==='first:metrics:afirst'));picker.value='first:metrics:afirst';picker.onchange();button(h.compare,'Compare selected runs').onclick();assert.deepEqual(h.sent.at(-1).payload.evaluations,[Object.fromEntries(Object.entries(entry('a','first')).filter(([k])=>k!=='value')),Object.fromEntries(Object.entries(entry('b','only')).filter(([k])=>k!=='value'))]);});
 test('changing project clears version/comparison selection without creating navigation or registry',()=>{const h=harness();h.select();h.view.result('model.version.list',{versions:[{model_version_id:'old'}]});h.view.update({project:{project_id:'other',revision:1},runs:[]},h.catalog);assert(!all(h.versions).some(n=>n.dataset.versionId));assert(!all(h.compare).some(n=>n.checked));assert.equal(h.exports.children.length,0);});
+
+test('changing only the native evaluation selector rejects a late comparison response',()=>{
+ const h=harness();h.select();const entry=(id,node)=>({backend_run_id:id,node_id:node,output_port:'metrics',artifact_id:id+node,metric:'validation_loss',value:.4});
+ h.view.result('run.status',{backend_run_id:'a',metrics:{evaluation_catalog:[entry('a','first'),entry('a','second')]}});
+ h.view.result('run.status',{backend_run_id:'b',metrics:{evaluation_catalog:[entry('b','only')]}});
+ const choose=value=>{const picker=all(h.compare).find(n=>n.tagName==='select'&&n.children.some(c=>c.value==='first:metrics:afirst'));picker.value=value;picker.onchange();};
+ choose('first:metrics:afirst');button(h.compare,'Compare selected runs').onclick();const oldRequest=h.sent.at(-1).payload;
+ choose('second:metrics:asecond');h.view.result('run.compare',{...compared,evaluations:oldRequest.evaluations},oldRequest);
+ assert.doesNotMatch(h.compare.textContent,/Compatible evidence/);assert(!button(h.compare,'Record decision'));
+ button(h.compare,'Compare selected runs').onclick();const newRequest=h.sent.at(-1).payload;
+ h.view.result('run.compare',{...compared,evaluations:newRequest.evaluations},newRequest);assert.match(h.compare.textContent,/Compatible evidence/);
+ const rationale=all(h.compare).find(n=>n.tagName==='textarea');rationale.value='Exact selected evaluation';rationale.oninput();all(h.compare).find(n=>n.tagName==='form').onsubmit({preventDefault(){}});
+ assert.deepEqual(h.sent.at(-1).payload.selection_rule.evaluations,newRequest.evaluations);
+});
+test('a stale ambiguous or missing selector is never accepted after catalog refresh',()=>{
+ const h=harness();h.select();button(h.compare,'Compare selected runs').onclick();
+ const entry=node=>({backend_run_id:'a',node_id:node,output_port:'metrics',artifact_id:node,metric:'validation_loss',value:.4});
+ h.view.result('run.status',{backend_run_id:'a',metrics:{evaluation_catalog:[entry('first'),entry('second')]}});
+ h.view.result('run.compare',compared,request);assert.doesNotMatch(h.compare.textContent,/Compatible evidence/);
+ assert(!button(h.compare,'Record decision'));
+});
+
+test('a changed evaluator catalog invalidates an already displayed comparison',()=>{
+ const h=harness();h.select();h.view.result('run.compare',compared,request);assert.match(h.compare.textContent,/Compatible evidence/);
+ const entry=node=>({backend_run_id:'a',node_id:node,output_port:'metrics',artifact_id:node,metric:'validation_loss',value:.4});
+ h.view.result('run.status',{backend_run_id:'a',metrics:{evaluation_catalog:[entry('first'),entry('second')]}});
+ assert.doesNotMatch(h.compare.textContent,/Compatible evidence/);assert(!button(h.compare,'Record decision'));
+});

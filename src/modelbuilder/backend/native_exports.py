@@ -122,6 +122,9 @@ def _invoke(operation: str, payload: dict, root: Path, stack: ExitStack):
                           **recipe_provenance(request["recipe"]), "source": request["recipe"]["source"],
                           "environment": request["recipe"]["environment"],
                           "selection": {key: val for key, val in metadata.items() if key.startswith("selection_")}}
+            native_execution = getattr(getattr(run, "config", None), "extra", {}).get("execution")
+            if native_execution is not None:
+                provenance["execution"] = native_execution
             descriptor = inspect_export(path, provenance)
             # Reverify the exact checkpoint declared by the export against connected
             # native inputs. Never silently substitute 'last' for selected/best.

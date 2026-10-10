@@ -25,7 +25,7 @@ from modelbuilder.backend.admission import BackendError
 from modelbuilder.backend.components import identity, read_checkpoint, read_export
 from modelbuilder.backend.common import read_json
 from modelbuilder.evaluation import compare_records
-from modelbuilder.models import Actor
+from modelbuilder.models import Actor, ServiceError
 from modelbuilder.service import OperationService
 
 pytestmark = pytest.mark.integration
@@ -229,11 +229,40 @@ def test_native_calibrated_reference_resume_and_selected_export(tmp_path):
         for mode in ("raw", "calibrated"):
             node = "evaluate_" + mode
             run, job = submit(mode + "-evaluation", [node], [binding(selected, node, "checkpoint"), binding(calibration_artifact, node, "calibration")])
+            evaluation_record = run["evaluations"][0]["record"]
+            assert evaluation_record["treatment"]["reference"]["checkpoint"] == full_report["reference_checkpoint"]
+            assert evaluation_record["treatment"]["reference"]["calibration"] == full_report["calibration_identity"]
+            assert evaluation_record["treatment"]["objective"] == full_report["objective"]
             evaluations.append(run)
         compared = call("run.compare", project_id=common["project_id"], run_ids=[run["backend_run_id"] for run in evaluations],
             metric="nll", direction="minimize", comparison_contract={"allowed_variations": ["calibration"], "paired": True})
         assert compared["compatible"], compared
+        assert compared["selected_model_version_ref"] == uninterrupted["model_version_ref"]
         assert not compare_records(evaluations, "nll", "minimize")["compatible"]
+        # A calibrated auxiliary Path must not be misclassified as a model
+        # checkpoint, and evaluation-run ownership cannot replace its producer.
+        hypothesis = call("hypothesis.create", project_id=common["project_id"],
+            proposed_change="Compare calibrated and raw predictions of the same selected policy",
+            expected_outcome="Permit declared calibration while retaining the verified selected checkpoint owner",
+            acceptance_metric={"name": "nll", "direction": "minimize"}, idempotency_key="calibration-hypothesis")
+        decision = call("decision.record", **common, recipe_revision=evaluations[0]["recipe_revision"],
+            hypothesis_id=hypothesis["hypothesis_id"], run_ids=[run["backend_run_id"] for run in evaluations],
+            selection_rule={"metric": "nll", "direction": "minimize", "comparison_contract": compared["comparison_contract"],
+                "comparison_digest": compared["comparison_digest"]}, outcome="accepted",
+            rationale="The measured calibration intervention retains the original native policy checkpoint",
+            idempotency_key="calibration-decision")
+        project_before_promotion = call("project.get", project_id=common["project_id"])
+        with pytest.raises(ServiceError) as wrong_owner:
+            call("model.version.promote", project_id=common["project_id"], model_version_id=evaluations[1]["model_version_ref"],
+                decision_id=decision["decision_id"], expected_revision=project_before_promotion["revision"],
+                stage="staging", idempotency_key="refuse-evaluator-version")
+        assert wrong_owner.value.code == "validation_error"
+        assert call("project.get", project_id=common["project_id"]) == project_before_promotion
+        promoted = call("model.version.promote", project_id=common["project_id"], model_version_id=uninterrupted["model_version_ref"],
+            decision_id=decision["decision_id"], expected_revision=project_before_promotion["revision"],
+            stage="staging", idempotency_key="promote-selected-policy")
+        assert promoted["model_version_id"] == uninterrupted["model_version_ref"]
+        assert promoted["selected_run_id"] == compared["selected_run_id"]
         measures = evaluations[0]["metrics"]["measurements"]
         assert measures["raw"]["accuracy"] == measures["calibrated"]["accuracy"]
         assert measures["calibrated"]["ece_configuration"]["bins"] == 5
@@ -252,6 +281,9 @@ def test_native_calibrated_reference_resume_and_selected_export(tmp_path):
         assert manifest["selected_checkpoint"] == identity(read_checkpoint(full_job / "outputs/policy"))
         assert manifest["selected_checkpoint"] != identity(read_checkpoint(later_job / "outputs/policy"))
         assert manifest["calibration"]["identity"] == calibration["digest"]
+        assert manifest["training_reference"]["checkpoint"] == full_report["reference_checkpoint"]
+        assert manifest["training_reference"]["calibration"] == full_report["calibration_identity"]
+        assert manifest["objective"] == full_report["objective"]
         assert manifest["verification"]["fresh_process"] and manifest["verification"]["max_abs_difference"] == 0.
         releases = call("model.export.list", project_id=common["project_id"], backend_run_id=exported["backend_run_id"])
         assert len(releases["exports"]) == 1 and not releases["diagnostics"]
@@ -307,6 +339,8 @@ def test_native_calibrated_reference_resume_and_selected_export(tmp_path):
             "selected_reference": ref_a["binding_descriptor"], "fixed_temperature": 1.7,
             "objective_forward": full_report, "objective_reverse": reverse_report,
             "calibration": calibration, "untouched_evaluation": measures, "comparison_digest": compared["comparison_digest"],
+            "calibration_decision_id": decision["decision_id"], "promoted_selected_model_version": promoted["model_version_id"],
+            "evaluator_owned_version_promotion_rejected": True,
             "same_reference_resume_state_equal": True, "warm_start_uses_current_objective_and_preserved_cut": True, "replaced_reference_and_calibration_exact_resume_rejected": True,
             "new_stage_calibrated_reference": later_report, "selected_export": native_export, "package_sha256": package["sha256"], "package_fresh_reload": json.loads(loaded.stdout),
             "missing_tampered_calibration_rejected": True, "native_fit_eval_leakage_rejected": True, "reference_artifacts_unchanged": True}

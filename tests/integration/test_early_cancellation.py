@@ -131,12 +131,13 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
     copied_fixture.parent.mkdir(parents=True)
     copied_fixture.write_bytes((ROOT / fixture_path).read_bytes())
     pause = source / "pause.py"
-    pause.write_text('import json\nimport os\nimport signal\nimport time\nfrom pathlib import Path\n'
+    pause.write_text('import json\nimport os\nimport signal\nimport time\nimport torch\nfrom pathlib import Path\n'
                      'def pause(checkpoint: Path) -> str:\n'
                      '    signal.signal(signal.SIGTERM, signal.SIG_IGN)\n'
                      '    marker = Path(os.environ["MODELBUILDER_JOB_DIR"]) / "pause-started.json"\n'
                      '    marker.write_text(json.dumps({"source_file": __file__, "checkpoint": str(checkpoint)}))\n'
-                     '    time.sleep(60)\n'
+                     '    if torch.load(checkpoint / "checkpoint.pt", map_location="cpu", weights_only=False)["step"] == 3:\n'
+                     '        time.sleep(60)\n'
                      '    return str(checkpoint)\n')
     subprocess.run(["git", "init", "-q", str(source)], check=True)
     subprocess.run(["git", "add", "."], cwd=source, check=True)
@@ -186,8 +187,8 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
     assert any(a["port"] == "checkpoint" for a in before["artifacts"])
     continued = copy.deepcopy(recipe)
     continued["revision"] = recipe["revision"] + 1
-    continued["nodes"] = [n for n in continued["nodes"] if n["id"] != "pause"]
-    continued["edges"] = [e for e in continued["edges"] if e["target_node"] != "pause"]
+    # Exact continuation retains the complete graph. The immutable pause source
+    # only waits at the original checkpoint, so the resumed stage can finish.
     next(n for n in continued["nodes"] if n["kind"] == "model.train")["parameters"]["steps"] = 5
     resume = {**request, "parent_operation_id": request["operation_id"], "operation_id": str(uuid.uuid4()),
               "idempotency_key": str(uuid.uuid4()), "recipe": continued, "mode": "exact_state", "steps": 5}
@@ -213,6 +214,8 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
         time.sleep(0.1)
     assert child["status"] == "succeeded", child
     assert child["parent_run_id"] == cancelled["backend_run_id"]
+    assert child["execution"]["node_ids"] == before["execution"]["node_ids"]
+    assert "pause" in child["executed_node_ids"]
     (ROOT / "evidence/backend/pending-cancel-resume.json").write_text(json.dumps({
         "source_snapshot": {**paused, "outside_owned_checkout": True,
                             "sha256": hashlib.sha256(pause.read_bytes()).hexdigest()},

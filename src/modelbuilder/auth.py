@@ -6,7 +6,7 @@ import json
 import os
 from collections.abc import Mapping
 
-from .models import Actor, ServiceError
+from .models import Actor, OPERATIONS, ServiceError
 
 
 class TokenAuth:
@@ -16,7 +16,9 @@ class TokenAuth:
             if not token:
                 raise ValueError("Empty bearer tokens are forbidden")
             if isinstance(identity, Actor):
-                actor = identity
+                # Each token has its own immutable grant identity, even when a
+                # caller reuses the same Actor value for several token entries.
+                actor = Actor(id=identity.id, scopes=identity.scopes, project_ids=identity.project_ids)
             else:
                 actor = Actor(id=identity.get("id", identity.get("actor_id", "")),
                               scopes=frozenset(identity.get("scopes", [])),
@@ -43,6 +45,16 @@ class TokenAuth:
         return any(actor.id == actor_id and "modify" in actor.scopes
                    and (actor.project_ids is None or project_id in actor.project_ids)
                    for actor in tuple(self._tokens.values()))
+
+    def authorize_operation(self, operation: str, actor: Actor, project_id: str) -> bool:
+        """Recheck the original authenticated grant after unlocked evidence I/O.
+
+        A different token for the same actor cannot revive a revoked request.
+        No bearer token is retained in service requests or evidence handles.
+        """
+        return any(current is actor and set(OPERATIONS[operation].required_scopes).issubset(current.scopes)
+                   and (current.project_ids is None or project_id in current.project_ids)
+                   for current in tuple(self._tokens.values()))
 
     @property
     def configured(self) -> bool:

@@ -10,7 +10,7 @@ from test_identity import evidence, run  # noqa: E402
 
 
 def test_native_compare_returns_unknown_without_winner(monkeypatch, tmp_path):
-    monkeypatch.setattr(sdk, "status", lambda job: {"status":"succeeded", "backend_run_id":job.name, "metrics":{"rmse":.01}})
+    monkeypatch.setattr(sdk, "status", lambda job, **kwargs: {"status":"succeeded", "backend_run_id":job.name, "metrics":{"rmse":.01}})
     result = sdk.invoke("run.compare", {"job_dirs":["old-a","old-b"], "metric":"rmse", "direction":"minimize"}, tmp_path)
     assert not result["compatible"] and result["selected_run_id"] is None
 
@@ -30,7 +30,8 @@ def test_promotion_refuses_changed_sample_identity_and_preserves_version(monkeyp
     monkeypatch.setattr(sdk,"metrics_for",lambda candidate:evaluations[candidate.id])
     monkeypatch.setattr(sdk,"log_metadata",lambda *args,**kwargs:mutations.append(args))
     with pytest.raises(BackendError) as error:
-        sdk.invoke("model.version.promote", {"project_id":"project", "metric":"rmse", "direction":"minimize", "candidate_run_ids":["a","b"]},tmp_path)
+        sdk.promotion_comparison(client, project, version,
+            {"project_id":"project", "metric":"rmse", "direction":"minimize", "candidate_run_ids":["a","b"]}, tmp_path)
     assert error.value.code == "incompatible_evaluation"
     assert error.value.details["selected_run_id"] is None
     assert not mutations

@@ -144,6 +144,140 @@ def test_independent_identical_replay_passes():
     assert replay.compare_results(result("/origin"), result("/replay"))["status"] == "PASS"
 
 
+def catalog_result(root):
+    record = result(root)
+    row = {"artifact_id": root + "/artifact", "backend_run_id": root,
+           "model_version_ref": root + "/version", "node_id": "evaluate",
+           "output_port": "metrics", "metric": "validation_loss",
+           "evaluation_digest": "e" * 64, "value": 0.2}
+    record["run"]["metrics"]["evaluation_catalog"] = [copy.deepcopy(row)]
+    record["run"]["evaluations"] = [{**row, "record": {"digest": "e" * 64}}]
+    record["run"]["model_version_ref"] = row["model_version_ref"]
+    record["run"]["artifacts"] = [{"artifact_id": row["artifact_id"], "backend_run_id": root,
+                                  "node_id": "evaluate", "port": "metrics"}]
+    return record
+
+
+def test_replay_catalog_compares_measurements_with_independent_native_references():
+    origin, repeated = catalog_result("/origin"), catalog_result("/replay")
+    before = copy.deepcopy((origin, repeated))
+    comparison = replay.compare_results(origin, repeated)
+    assert comparison["status"] == "PASS"
+    assert comparison["checks"]["metrics_equal"]
+    assert comparison["checks"]["origin_evaluation_catalog_owned"]
+    assert comparison["checks"]["replay_evaluation_catalog_owned"]
+    assert (origin, repeated) == before
+
+
+def pending_catalog_result(root):
+    record = catalog_result(root)
+    for row in (record["run"]["metrics"]["evaluation_catalog"][0], record["run"]["evaluations"][0]):
+        row["model_version_ref"] = None
+        row["checkpoint_verification"] = {"verified": False, "code": "checkpoint_verification_pending",
+            "message": "Checkpoint identity and ownership are verified on explicit comparison or promotion"}
+    return record
+
+
+def test_replay_pending_checkpoint_attribution_is_preserved_without_inventing_a_version():
+    origin, repeated = pending_catalog_result("/origin"), pending_catalog_result("/replay")
+    assert replay.compare_results(origin, repeated)["status"] == "PASS"
+    repeated["run"]["metrics"]["evaluation_catalog"][0]["model_version_ref"] = "/replay/version"
+    repeated["run"]["evaluations"][0]["model_version_ref"] = "/replay/version"
+    assert replay.compare_results(origin, repeated)["status"] == "FAIL"
+
+
+def test_replay_checkpoint_verification_diagnostics_remain_meaningful():
+    origin, repeated = pending_catalog_result("/origin"), pending_catalog_result("/replay")
+    for row in (repeated["run"]["metrics"]["evaluation_catalog"][0], repeated["run"]["evaluations"][0]):
+        row["checkpoint_verification"]["code"] = "checkpoint_identity_mismatch"
+    comparison = replay.compare_results(origin, repeated)
+    assert comparison["checks"]["metrics_equal"] is False
+    assert comparison["status"] == "FAIL"
+
+
+def test_replay_unexplained_null_model_version_is_rejected():
+    origin, repeated = catalog_result("/origin"), catalog_result("/replay")
+    for row in (repeated["run"]["metrics"]["evaluation_catalog"][0], repeated["run"]["evaluations"][0]):
+        row["model_version_ref"] = None
+    assert replay.compare_results(origin, repeated)["status"] == "FAIL"
+
+
+@pytest.mark.parametrize("field,value", [("evaluation_digest", "f" * 64), ("value", 0.3),
+                                       ("metric", "other"), ("node_id", "other"),
+                                       ("output_port", "other"), ("future_semantic_field", "changed")])
+def test_replay_catalog_still_rejects_semantic_drift(field, value):
+    origin, repeated = catalog_result("/origin"), catalog_result("/replay")
+    repeated["run"]["metrics"]["evaluation_catalog"][0][field] = value
+    comparison = replay.compare_results(origin, repeated)
+    assert comparison["status"] == "FAIL"
+    assert comparison["checks"]["metrics_equal"] is False
+
+
+@pytest.mark.parametrize("field", ["artifact_id", "backend_run_id", "model_version_ref"])
+def test_replay_catalog_rejects_unowned_native_reference(field):
+    origin, repeated = catalog_result("/origin"), catalog_result("/replay")
+    repeated["run"]["metrics"]["evaluation_catalog"][0][field] = origin["run"]["metrics"]["evaluation_catalog"][0][field]
+    comparison = replay.compare_results(origin, repeated)
+    assert comparison["status"] == "FAIL"
+    assert comparison["checks"]["metrics_equal"] is True
+    assert comparison["checks"]["replay_evaluation_catalog_owned"] is False
+
+
+@pytest.mark.parametrize("catalog", [None, {}, [None], [{}]])
+def test_replay_catalog_rejects_malformed_evidence(catalog):
+    origin, repeated = catalog_result("/origin"), catalog_result("/replay")
+    repeated["run"]["metrics"]["evaluation_catalog"] = catalog
+    assert replay.compare_results(origin, repeated)["status"] == "FAIL"
+
+
+def test_replay_catalog_rejects_duplicate_or_missing_native_artifact():
+    origin, repeated = catalog_result("/origin"), catalog_result("/replay")
+    repeated["run"]["artifacts"].append(copy.deepcopy(repeated["run"]["artifacts"][0]))
+    assert replay.compare_results(origin, repeated)["status"] == "FAIL"
+    repeated["run"]["artifacts"] = []
+    assert replay.compare_results(origin, repeated)["status"] == "FAIL"
+    repeated = catalog_result("/replay")
+    repeated["run"]["metrics"]["evaluation_catalog"] *= 2
+    assert replay.compare_results(origin, repeated)["status"] == "FAIL"
+
+
+@pytest.mark.parametrize("field", ["artifact_id", "model_version_ref"])
+def test_replay_catalog_rejects_shared_native_ids_even_with_matching_local_evidence(field):
+    origin, repeated = catalog_result("/origin"), catalog_result("/replay")
+    value = origin["run"]["metrics"]["evaluation_catalog"][0][field]
+    repeated["run"]["metrics"]["evaluation_catalog"][0][field] = value
+    repeated["run"]["evaluations"][0][field] = value
+    if field == "artifact_id":
+        repeated["run"]["artifacts"][0][field] = value
+    else:
+        repeated["run"][field] = value
+    comparison = replay.compare_results(origin, repeated)
+    assert comparison["checks"]["replay_evaluation_catalog_owned"] is True
+    assert comparison["checks"]["independent_catalog_references"] is False
+    assert comparison["status"] == "FAIL"
+
+
+def test_replay_catalog_rejects_model_version_not_owned_by_run_or_checkpoint():
+    origin, repeated = catalog_result("/origin"), catalog_result("/replay")
+    repeated["run"]["model_version_ref"] = "another-version"
+    assert replay.compare_results(origin, repeated)["status"] == "FAIL"
+
+
+@pytest.mark.parametrize("section", ["record", "checkpoint_bindings"])
+def test_replay_catalog_keeps_complete_record_and_checkpoint_binding_semantics(section):
+    origin, repeated = catalog_result("/origin"), catalog_result("/replay")
+    if section == "record":
+        repeated["run"]["evaluations"][0][section]["treatment"] = {"checkpoint": "changed"}
+    else:
+        repeated["run"]["evaluations"][0][section] = [{
+            "producer_model_version_ref": repeated["run"]["model_version_ref"],
+            "content_sha256": "changed", "source_port": "checkpoint", "input_port": "candidate"}]
+    comparison = replay.compare_results(origin, repeated)
+    assert comparison["checks"]["metrics_equal"] is True
+    assert comparison["checks"]["evaluation_records_equal"] is False
+    assert comparison["status"] == "FAIL"
+
+
 def test_same_environment_is_not_clean_replay():
     same = result("/origin")
     comparison = replay.compare_results(same, same)
@@ -206,7 +340,7 @@ def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_so
         for path in ["platform_file_access.py", "source_workspace.py", "recipe_registry_contract.py",
                      "remote/__init__.py", "remote/contracts.py", "remote/operation_contract.py",
                      "source_pinning_contract.py", "export_packages.py", "backend/native_exports.py",
-                     "execution.py", "backend/native_inputs.py"]:
+                     "execution.py", "backend/native_inputs.py", "backend/evaluation_binding.py", "backend/promotion.py"]:
             assert "modelbuilder/" + path in archive.namelist()
         for path in ("service.py", "research_scheduler.py", "literature_fetch.py"):
             assert ("modelbuilder/" + path in archive.namelist()) == (kind == "service")
@@ -219,6 +353,7 @@ for name in ('modelbuilder.dataset', 'modelbuilder.models', 'modelbuilder.source
              'modelbuilder.backend.admission', 'modelbuilder.backend.operator_config',
              'modelbuilder.export_packages', 'modelbuilder.backend.native_exports',
              'modelbuilder.execution', 'modelbuilder.backend.native_inputs',
+             'modelbuilder.backend.evaluation_binding', 'modelbuilder.backend.promotion',
              'modelbuilder.remote.operation_contract', 'modelbuilder.remote.provider'):
     module = importlib.import_module(name)
     assert pathlib.Path(module.__file__).resolve().is_relative_to(root), name

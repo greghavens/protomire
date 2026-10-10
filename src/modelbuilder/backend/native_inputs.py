@@ -51,6 +51,19 @@ def _hash_regular_file(fd, before, remaining):
 
 
 def storage_identity(artifact, root: Path) -> str:
+    return _storage_identity(artifact, root, metadata_only=False)
+
+
+def storage_fingerprint(artifact, root: Path) -> str:
+    """Secure bounded inode/ctime witness for already content-verified evidence.
+
+    Not a content digest and never a substitute for initial byte verification.
+    Used only to reject changes between prepared verification and native commit.
+    """
+    return _storage_identity(artifact, root, metadata_only=True)
+
+
+def _storage_identity(artifact, root: Path, *, metadata_only: bool) -> str:
     """Hash a bounded snapshot through nofollow, descriptor-relative POSIX reads.
 
     The lexical store boundary is checked before opening any artifact content.
@@ -71,6 +84,8 @@ def storage_identity(artifact, root: Path) -> str:
     def walk(parent, parts=()):
         nonlocal count, total
         before = os.fstat(parent)
+        if metadata_only:
+            entries.append({"path": str(Path(*parts)), "stat": _signature(before)})
         names = []
         # Do not materialize an unbounded rglob/listdir result before enforcing
         # the count limit. scandir(fd) does not reopen a raced directory path.
@@ -97,9 +112,15 @@ def storage_identity(artifact, root: Path) -> str:
                         _denied("Native artifact exceeds its directory-depth limit")
                     walk(child, relative)
                 else:
-                    digest, size = _hash_regular_file(child, info, MAX_NATIVE_TOTAL_BYTES - total)
+                    if metadata_only:
+                        size = info.st_size
+                        if size < 0 or size > min(MAX_NATIVE_FILE_BYTES, MAX_NATIVE_TOTAL_BYTES - total):
+                            _denied("Native artifact exceeds its byte limit")
+                        entries.append({"path": str(Path(*relative)), "stat": _signature(info)})
+                    else:
+                        digest, size = _hash_regular_file(child, info, MAX_NATIVE_TOTAL_BYTES - total)
+                        entries.append({"path": str(Path(*relative)), "sha256": digest})
                     total += size
-                    entries.append({"path": str(Path(*relative)), "sha256": digest})
                 if _signature(os.stat(name, dir_fd=parent, follow_symlinks=False)) != _signature(info):
                     _denied("Native artifact entry changed while being read")
             finally:
@@ -137,6 +158,8 @@ def storage_identity(artifact, root: Path) -> str:
     # Preserve the original Path-based ordering, including directory/file prefix
     # cases such as a/weights and a.json; joined-string ordering is different.
     entries.sort(key=lambda entry: Path(entry["path"]).parts)
+    if metadata_only:
+        return identity({"entries": entries, "ancestors": [(name, expected) for _, name, expected in ancestors]})
     return identity(entries)
 
 

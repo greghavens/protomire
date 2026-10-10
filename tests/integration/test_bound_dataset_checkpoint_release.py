@@ -5,6 +5,8 @@ ZenML steps. The authored model and its portable loader are independent of the
 repository's classifier fixtures.
 """
 import base64
+from concurrent.futures import ThreadPoolExecutor
+import threading
 from copy import deepcopy
 import hashlib
 import json
@@ -102,7 +104,7 @@ def evaluate(*, inputs, parameters, context):
                   'preprocessing': {'text_length_divisor': 10, 'label_divisor': 10}, 'seed': 41},
         metric={'name': 'mse', 'implementation': 'torch.squared_error', 'version': '1',
                 'parameters': {}, 'aggregation': 'mean', 'direction': 'minimize'},
-        treatment={'model': 'authored-affine', 'checkpoint': identity(read_checkpoint(checkpoint)),
+        treatment={'model': 'authored-affine', 'checkpoint': parameters.get('claimed_checkpoint', identity(read_checkpoint(checkpoint))),
                    'calibration': None, 'reference': None}, value=measured,
         predictions=[{'item_id': row['id'], 'value': error} for row, error in zip(data['rows'], errors)])
     return {'metrics': {'mse': measured, 'predictions': predictions.tolist(),
@@ -205,9 +207,14 @@ def tree_bytes(root):
     return {str(path.relative_to(root)): path.read_bytes() for path in root.rglob("*") if path.is_file()}
 
 
-def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_path):
+@pytest.mark.parametrize("stale_evidence", [False, True])
+def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_path, stale_evidence):
     source, data_root = tmp_path / "authored-model", tmp_path / "external-data"
     body, manifest = authored_recipe(source), dataset_manifest(data_root)
+    if stale_evidence:
+        for node in body["nodes"]:
+            if node.get("component", {}).get("role") == "evaluation":
+                node["parameters"]["claimed_checkpoint"] = "stale-unrelated-checkpoint-B"
     roots = {"authored": {"path": str(source), "trusted": True}}
     backend = ZenMLBackend(tmp_path / "native", python_executable=str(PYTHON))
     service = OperationService(tmp_path / "service.sqlite", backend, source_roots=roots)
@@ -307,7 +314,8 @@ def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_pat
                 [binding(checkpoint, node, "checkpoint") for node in ("dev_eval", "heldout_eval")])
             assert not (job / "outputs/train").exists()
             assert "mse" not in run["metrics"] and len(run["evaluations"]) == 2
-            assert {item["model_version_ref"] for item in run["evaluations"]} == {trained["model_version_ref"]}
+            assert {item["model_version_ref"] for item in run["evaluations"]} == {None}
+            assert all(item["checkpoint_verification"]["code"] == "checkpoint_verification_pending" for item in run["evaluations"])
             assert {item["record"]["split"]["role"] for item in run["evaluations"]} == {"validation", "test"}
             assert all(item["record"]["dataset"]["revision"] == "1" for item in run["evaluations"])
             assert all(item["checkpoint_bindings"][0]["artifact_id"] == checkpoint["artifact_id"] for item in run["evaluations"])
@@ -318,6 +326,25 @@ def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_pat
         assert not call("run.compare", **common)["compatible"]
         explicit = [selector(run, "dev_eval") for run in evaluations]
         compared = call("run.compare", **common, evaluations=explicit)
+        if stale_evidence:
+            assert not compared["compatible"] and compared["selected_model_version_ref"] is None
+            assert any(item["code"] == "evaluation_checkpoint_unverified" for item in compared["diagnostics"])
+            hypothesis = call("hypothesis.create", project_id=pid, proposed_change="Reject stale checkpoint evidence",
+                expected_outcome="No unrelated model can be promoted", acceptance_metric={"name": "mse", "direction": "minimize"},
+                idempotency_key="stale-hypothesis")
+            # Even an old accepted decision without a comparison digest must be
+            # freshly checked against actual native inputs at promotion time.
+            decision = call("decision.record", **request, recipe_revision=current["revision"],
+                hypothesis_id=hypothesis["hypothesis_id"], run_ids=run_ids,
+                selection_rule={"metric": "mse", "direction": "minimize", "evaluations": explicit},
+                outcome="accepted", rationale="Legacy decision must not bypass native attribution", idempotency_key="stale-decision")
+            with pytest.raises(ServiceError) as error:
+                call("model.version.promote", project_id=pid, model_version_id=trained["model_version_ref"],
+                    decision_id=decision["decision_id"], expected_revision=project["revision"], stage="staging", idempotency_key="stale-promote")
+            assert error.value.code == "incompatible_evaluation"
+            assert call("model.version.get", project_id=pid, model_version_id=trained["model_version_ref"]) == original_version
+            assert tree_bytes(training_job / "outputs/train") == original_outputs
+            return
         assert compared["compatible"] and compared["selected_model_version_ref"] == trained["model_version_ref"]
         assert compared["selected_evaluation"] in explicit
         incompatible = call("run.compare", **common, evaluations=[explicit[0], selector(evaluations[1], "heldout_eval")])
@@ -331,8 +358,35 @@ def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_pat
                 "comparison_contract": compared["comparison_contract"], "comparison_digest": compared["comparison_digest"]},
             outcome="accepted", rationale="Explicit native validation artifacts agree on one immutable checkpoint",
             idempotency_key="decision")
-        promoted = call("model.version.promote", project_id=pid, model_version_id=trained["model_version_ref"],
-            decision_id=decision["decision_id"], expected_revision=project["revision"], stage="staging", idempotency_key="promote")
+        # Hold the real backend preparation before its expensive native reads.
+        # Live journal polls and an independent SQLite writer must still finish.
+        entered, release = threading.Event(), threading.Event()
+        original_prepare = backend.prepare_promotion
+        def held_prepare(payload, actor=None):
+            entered.set()
+            assert release.wait(20), "Preparation release timed out"
+            return original_prepare(payload, actor)
+        backend.prepare_promotion = held_prepare
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            future = pool.submit(call, "model.version.promote", project_id=pid,
+                model_version_id=trained["model_version_ref"], decision_id=decision["decision_id"],
+                expected_revision=project["revision"], stage="staging", idempotency_key="promote")
+            try:
+                assert entered.wait(10)
+                call("run.events.list", project_id=pid, operation_id=trained["operation_id"])
+                call("run.evaluations.list", project_id=pid, operation_id=trained["operation_id"])
+                independent = OperationService(tmp_path / "service.sqlite", backend, source_roots=roots)
+                try:
+                    independent.invoke("hypothesis.create", {"project_id": pid, "proposed_change": "Independent writer",
+                        "expected_outcome": "No database lock during native preparation", "acceptance_metric": {"name": "mse"},
+                        "idempotency_key": "concurrent-writer"}, OWNER)
+                finally:
+                    independent.store.close()
+                assert not future.done()
+            finally:
+                release.set()
+            promoted = future.result(timeout=90)
+        backend.prepare_promotion = original_prepare
         assert promoted["model_version_id"] == trained["model_version_ref"]
         assert promoted["selected_run_id"] == compared["selected_run_id"]
         assert promoted["metadata"]["selection_decision"]["selection_rule"]["evaluations"] == explicit

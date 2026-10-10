@@ -27,6 +27,7 @@ class OperationService:
                  dataset_roots: dict | None = None, source_roots: dict | None = None):
         self.store = store if isinstance(store, SQLiteStore) else SQLiteStore(db_path or store or "modelbuilder.sqlite3")
         self.research_authorizer = None
+        self.operation_authorizer = None
         self.research_scheduler_running = False
         self.backend = backend
         self._remote_cost_operations = None
@@ -151,7 +152,30 @@ class OperationService:
             if operation in {"research.watch.refresh", "research.watch.refresh_due"}:
                 from .research_scheduler import ResearchRefresh
                 return ResearchRefresh(self).invoke(operation, payload, actor, payload_hash, request_id)
+            if operation == "run.compare":
+                return self._compare_unlocked(payload, actor)
+            prepared = None
+            if operation == "model.version.promote" or (
+                operation == "decision.record" and payload["selection_rule"].get("comparison_digest")
+            ):
+                with self.store.transaction():
+                    self._require_current_authority(operation, actor, project_id)
+                    self._get("project", project_id, project_id)
+                    previous = self.store.idempotent_result(actor.id, payload["idempotency_key"], operation, payload_hash)
+                    if previous is not None:
+                        return previous
+                    snapshot = self._evidence_snapshot(operation, payload)
+                if operation == "model.version.promote":
+                    evidence = self._call_backend(operation, copy.deepcopy(snapshot["enriched"]), actor,
+                                                  prepare_promotion=True)
+                    if evidence is None:
+                        raise ServiceError("backend_contract_error", "Promotion preparation returned no evidence handle", status_code=502)
+                else:
+                    evidence = self._call_backend("run.compare", copy.deepcopy(snapshot["comparison_payload"]), actor)
+                prepared = (snapshot, evidence)
             with self.store.transaction():
+                if prepared is not None:
+                    self._require_current_authority(operation, actor, project_id)
                 if project_id:
                     self._get("project", project_id, project_id)
                 if spec.mutating:
@@ -168,7 +192,10 @@ class OperationService:
                             RecipeRegistry(self).authorize_cached_result(operation, payload, actor, previous)
                         self._check_idempotent_recipe_identity(operation, previous)
                         return previous
-                result = self._dispatch(operation, payload, actor)
+                if prepared is not None and self._evidence_snapshot(operation, payload) != prepared[0]:
+                    raise ServiceError("comparison_changed", "Decision or execution evidence changed; prepare again", status_code=409)
+                result = self._dispatch(operation, payload, actor,
+                                        prepared_evidence=prepared[1] if prepared is not None else None)
                 if spec.mutating:
                     self.store.save_idempotent(actor.id, payload["idempotency_key"], operation, payload_hash, result)
                     result_project = project_id or result.get("project_id")
@@ -255,7 +282,7 @@ class OperationService:
             json.dumps(before, indent=2, sort_keys=True).splitlines(),
             json.dumps(after, indent=2, sort_keys=True).splitlines(), fromfile="client", tofile="server", lineterm=""))
 
-    def _dispatch(self, op, p, actor):
+    def _dispatch(self, op, p, actor, *, prepared_evidence=None):
         if op in {"recipe.source.pin.preview", "recipe.source.pin"}:
             from .source_pinning import dispatch
             return dispatch(self, op, p)
@@ -286,12 +313,12 @@ class OperationService:
         if op.startswith("recipe."):
             return self._recipe(op[7:], p)
         if op.startswith(("evidence.", "claim.", "hypothesis.", "decision.")):
-            return self._research(op, p, actor)
+            return self._research(op, p, actor, prepared_comparison=prepared_evidence)
         if op.startswith("policy.") or op == "cost.estimate":
             return self._policy(op, p)
         if op == "operation.get":
             return self._get("operation", p["operation_id"], p["project_id"])
-        return self._execution(op, p, actor)
+        return self._execution(op, p, actor, prepared_promotion=prepared_evidence)
 
     def _dataset(self, op, p):
         registry = self._dataset_registry
@@ -505,7 +532,7 @@ class OperationService:
             for resource_id in body.get(field, []):
                 self._get(kind, resource_id, project_id)
 
-    def _research(self, op, p, actor):
+    def _research(self, op, p, actor, *, prepared_comparison=None):
         kind, action = op.split(".")
         project_id = p["project_id"]
         if kind == "evidence" and action == "search" and p.get("provider") == "openalex":
@@ -559,10 +586,9 @@ class OperationService:
             if not any(item["recipe_id"] == body["recipe_id"] and item["recipe_revision"] == body["recipe_revision"] for item in provenance):
                 raise ServiceError("validation_error", "Decision recipe revision was not executed by any linked run")
             if body["selection_rule"].get("comparison_digest"):
-                comparison = self._execution("run.compare", {"project_id": project_id, "run_ids": body["run_ids"],
-                    "metric": body["selection_rule"]["metric"], "direction": body["selection_rule"]["direction"],
-                    "comparison_contract": body["selection_rule"].get("comparison_contract", {}),
-                    **({"evaluations": body["selection_rule"]["evaluations"]} if body["selection_rule"].get("evaluations") else {})}, actor)
+                if prepared_comparison is None:
+                    raise ServiceError("backend_contract_error", "Decision comparison requires an unlocked preparation phase", status_code=502)
+                comparison = prepared_comparison
                 if body["outcome"] == "accepted" and not comparison.get("compatible"):
                     raise ServiceError("incompatible_evaluation", "An accepted decision requires compatible evaluation evidence", comparison)
                 if comparison.get("comparison_digest") != body["selection_rule"]["comparison_digest"]:
@@ -626,6 +652,85 @@ class OperationService:
                     return record
         raise ServiceError("not_found", "No matching run in this project", status_code=404)
 
+    def _comparison_snapshot(self, payload):
+        """Capture ownership and immutable execution provenance, not poll revisions."""
+        project_id = payload["project_id"]
+        project = self._get("project", project_id, project_id)
+        configurations = []
+        for run_id in payload["run_ids"]:
+            executed = self._find_operation(project_id, backend_run_id=run_id)
+            manifest = self._get("recipe", executed["recipe_id"], project_id, executed["recipe_revision"])
+            configurations.append({"backend_run_id": run_id, "operation_id": executed["operation_id"],
+                "recipe_id": executed["recipe_id"], "recipe_revision": executed["recipe_revision"],
+                "recipe_digest": executed["recipe_digest"],
+                "operation_identity": {key: value for key, value in executed.items()
+                                       if key not in {"revision", "status", "last_reconciled_at", "errors"}},
+                "configuration": {key: manifest.get(key) for key in
+                    ("nodes", "edges", "source", "environment", "external_dependencies", "evaluation")}})
+        enriched = {**payload, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"]}
+        return enriched, configurations
+
+    def _require_current_authority(self, operation, actor, project_id):
+        if (not set(OPERATIONS[operation].required_scopes).issubset(actor.scopes)
+                or (actor.project_ids is not None and project_id not in actor.project_ids)
+                or (self.operation_authorizer is not None
+                    and not self.operation_authorizer(operation, actor, project_id))):
+            raise ServiceError("forbidden", "Operation authority changed during evidence preparation", status_code=403)
+
+    def _evidence_snapshot(self, operation, payload):
+        """Only stable project/research inputs and immutable run provenance cross I/O."""
+        project_id = payload["project_id"]
+        project = self._get("project", project_id, project_id)
+        if operation == "model.version.promote":
+            self._revision(project, payload["expected_revision"])
+            decision = self._get("decision", payload["decision_id"], project_id)
+            if decision["outcome"] != "accepted":
+                raise ServiceError("validation_error", "Only an accepted decision can promote a model version")
+            enriched = {**payload, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"],
+                        "decision": decision, "metric": decision["selection_rule"]["metric"],
+                        "direction": decision["selection_rule"]["direction"], "candidate_run_ids": decision["run_ids"]}
+            if decision["selection_rule"].get("evaluations"):
+                enriched["evaluations"] = decision["selection_rule"]["evaluations"]
+            _, provenance = self._comparison_snapshot({"project_id": project_id, "run_ids": decision["run_ids"]})
+            return {"project": project, "decision": decision, "enriched": enriched, "provenance": provenance}
+        hypothesis = self._get("hypothesis", payload["hypothesis_id"], project_id)
+        recipe = self._get("recipe", payload["recipe_id"], project_id, payload["recipe_revision"])
+        rule = payload["selection_rule"]
+        if not rule.get("metric") or rule.get("direction") not in {"minimize", "maximize"}:
+            raise ServiceError("validation_error", "Selection rule requires metric and direction minimize/maximize")
+        if len(set(payload["run_ids"])) != len(payload["run_ids"]):
+            raise ServiceError("validation_error", "Decision run identifiers must be distinct")
+        comparison_payload, provenance = self._comparison_snapshot({"project_id": project_id,
+            "run_ids": payload["run_ids"], "metric": rule["metric"], "direction": rule["direction"],
+            "comparison_contract": rule.get("comparison_contract", {}),
+            **({"evaluations": rule["evaluations"]} if rule.get("evaluations") else {})})
+        if not any(item["recipe_id"] == payload["recipe_id"] and item["recipe_revision"] == payload["recipe_revision"]
+                   for item in provenance):
+            raise ServiceError("validation_error", "Decision recipe revision was not executed by any linked run")
+        return {"project": project, "hypothesis": hypothesis, "recipe": recipe,
+                "comparison_payload": comparison_payload, "provenance": provenance}
+
+    def _compare_unlocked(self, payload, actor):
+        """Native verification must not hold the service lock while polls arrive."""
+        with self.store.transaction():
+            self._require_current_authority("run.compare", actor, payload["project_id"])
+            enriched, configurations = self._comparison_snapshot(payload)
+        result = self._call_backend("run.compare", copy.deepcopy(enriched), actor)
+        with self.store.transaction():
+            self._require_current_authority("run.compare", actor, payload["project_id"])
+            current, current_configurations = self._comparison_snapshot(payload)
+            if current != enriched or current_configurations != configurations:
+                raise ServiceError("comparison_changed", "Run ownership or execution provenance changed; compare again",
+                                   status_code=409)
+        result["configuration_diffs"] = [{"baseline_run_id": configurations[0]["backend_run_id"],
+            "backend_run_id": item["backend_run_id"], "recipe_revision": item["recipe_revision"],
+            "diff": self._diff(configurations[0]["configuration"], item["configuration"])}
+            for item in configurations[1:]]
+        result["run_provenance"] = [{key: value for key, value in item.items()
+                                  if key not in {"configuration", "operation_id", "operation_identity"}}
+                                  for item in configurations]
+        return result
+
     def _project_source_root(self, project_id):
         project = self._get("project", project_id, project_id)
         if not project.get("source_binding") and not self.require_source_binding:
@@ -660,7 +765,7 @@ class OperationService:
         return self.backend.with_source_workspace(source["workspace_path"], trusted=settings["trusted"],
                                                   dependency_paths=settings["dependency_paths"])
 
-    def _call_backend(self, operation, payload, actor):
+    def _call_backend(self, operation, payload, actor, *, prepare_promotion=False, prepared_promotion=None):
         if self.backend is None:
             raise ServiceError("capability_unavailable", "No execution backend has been configured", status_code=503)
         try:
@@ -680,7 +785,15 @@ class OperationService:
                     raise
                 return {"project_id": payload["project_id"], "executable": False, "blocked_reasons": [
                     {"code": error.code, "message": error.message, "details": error.details}], "warnings": [error.message]}
-            result = backend.invoke(operation, payload, actor)
+            if prepare_promotion:
+                prepare = getattr(backend, "prepare_promotion", None)
+                if not callable(prepare):
+                    raise ServiceError("capability_unavailable", "Backend does not support unlocked promotion preparation", status_code=503)
+                result = prepare(payload, actor)
+            elif prepared_promotion is not None:
+                result = backend.invoke(operation, payload, actor, prepared_promotion=prepared_promotion)
+            else:
+                result = backend.invoke(operation, payload, actor)
             if operation in {"execution.targets", "run.plan"} and payload.get("source_workspace"):
                 result["source_workspace"] = copy.deepcopy(payload["source_workspace"])
         except ServiceError:
@@ -690,11 +803,11 @@ class OperationService:
                 raise ServiceError(exc.code, str(exc), getattr(exc, "details", {}),
                                    {"capability_unavailable": 503, "not_found": 404, "forbidden": 403, "conflict": 409}.get(exc.code, 422)) from exc
             raise ServiceError("backend_error", "Execution backend could not complete the operation", {"exception": type(exc).__name__}, 502) from exc
-        if not isinstance(result, dict):
+        if not prepare_promotion and not isinstance(result, dict):
             raise ServiceError("backend_contract_error", "Backend did not return a structured response", status_code=502)
         return result
 
-    def _execution(self, op, p, actor):
+    def _execution(self, op, p, actor, *, prepared_promotion=None):
         project_id = p["project_id"]
         project = self._get("project", project_id, project_id)
         enriched = {**p, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"]}
@@ -796,6 +909,8 @@ class OperationService:
             for run_id in p["run_ids"]:
                 self._find_operation(project_id, backend_run_id=run_id)
         if op == "model.version.promote":
+            if prepared_promotion is None:
+                raise ServiceError("backend_contract_error", "Promotion requires an unlocked preparation phase", status_code=502)
             self._revision(project, p["expected_revision"])
             decision = self._get("decision", p["decision_id"], project_id)
             if decision["outcome"] != "accepted":
@@ -806,7 +921,7 @@ class OperationService:
             enriched["candidate_run_ids"] = decision["run_ids"]
             if decision["selection_rule"].get("evaluations"):
                 enriched["evaluations"] = decision["selection_rule"]["evaluations"]
-        result = self._call_backend(op, enriched, actor)
+        result = self._call_backend(op, enriched, actor, prepared_promotion=prepared_promotion)
         if op == "run.compare":
             configurations = []
             for run_id in p["run_ids"]:

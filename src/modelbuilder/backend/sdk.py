@@ -152,31 +152,25 @@ def artifacts_for(job: Path, run) -> list[dict]:
     return artifacts
 
 
-def evaluation_outputs(run, request=None) -> list[dict]:
+def evaluation_outputs(run, request=None, *, verify_checkpoints=True) -> list[dict]:
     """Keep each native evaluation output distinct, even with duplicate names."""
     if not run:
         return []
     from ..evaluation import evaluation_for
     from .native_inputs import validate_native_type
     request = request or {}
-    bindings = request.get("resolved_input_bindings", [])
+    from .evaluation_binding import checkpoint_candidates, pending_verification, verify_checkpoint
     declared = {node["id"]: node for node in request.get("recipe", {}).get("nodes", [])}
-    def checkpoint_sources(node_id, visited=None):
-        visited = set() if visited is None else visited
-        if node_id in visited:
-            return []
-        visited.add(node_id)
-        found = [binding for binding in bindings if binding["node_id"] == node_id and
-                 binding.get("producer_role") in {"training", "model.checkpoint"} and
-                 binding.get("declared_type") in {"Path", "CheckpointArtifact", "checkpoint"}]
-        for edge in request.get("recipe", {}).get("edges", []):
-            if edge["target_node"] == node_id and declared.get(edge["source_node"], {}).get("kind") == "model.checkpoint":
-                found.extend(checkpoint_sources(edge["source_node"], visited))
-        return found
     rows = []
     for node_id, step_run in run.steps.items():
         node = declared.get(node_id, {})
         evaluation_node = node.get("kind") == "model.evaluate" or node.get("component", {}).get("role") == "evaluation"
+        candidates, errors = [], []
+        if verify_checkpoints:
+            try:
+                candidates, errors = checkpoint_candidates(run, request, node_id)
+            except (BackendError, OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+                errors = [str(error)]
         for output_port, versions in step_run.outputs.items():
             if output_port != "metrics" and not evaluation_node:
                 continue
@@ -191,16 +185,17 @@ def evaluation_outputs(run, request=None) -> list[dict]:
                 single = measured.get("evaluation_record")
                 if isinstance(single, dict) and isinstance(single.get("metric"), dict):
                     names.add(single["metric"].get("name"))
-                checkpoint_bindings = checkpoint_sources(node_id)
-                versions = {binding.get("producer_model_version_ref") for binding in checkpoint_bindings} - {None}
-                model_version = next(iter(versions)) if len(versions) == 1 else (str(run.model_version.id) if run.model_version and not checkpoint_bindings else None)
                 for metric in sorted(name for name in names if isinstance(name, str)):
                     record = evaluation_for(measured, metric)
                     if record:
+                        verification, model_version, checkpoint_bindings = (verify_checkpoint(record, candidates, errors)
+                            if verify_checkpoints else (pending_verification(), None,
+                                [binding for binding in request.get("resolved_input_bindings", []) if binding["node_id"] == node_id]))
                         rows.append({"backend_run_id": str(run.id), "node_id": node_id, "output_port": output_port,
                             "artifact_id": str(artifact.id), "metric": metric, "value": measured.get(metric, record.get("value")),
                             "evaluation_digest": record.get("digest"), "record": record,
-                            "checkpoint_bindings": checkpoint_bindings, "model_version_ref": model_version})
+                            "checkpoint_bindings": checkpoint_bindings, "model_version_ref": model_version,
+                            "checkpoint_verification": verification})
     return rows
 
 
@@ -241,7 +236,8 @@ def select_evaluations(records, selectors, metric):
         result = []
         for record in records:
             matching = [entry for entry in record.get("evaluations", []) if entry["metric"] == metric]
-            result.append({**record, "model_version_ref": matching[0].get("model_version_ref")} if len(matching) == 1 else record)
+            result.append({**record, "model_version_ref": matching[0].get("model_version_ref"),
+                           "checkpoint_verification": matching[0].get("checkpoint_verification")} if len(matching) == 1 else record)
         return result
     from jsonschema import Draft202012Validator
     from ..execution import EVALUATIONS_SCHEMA
@@ -261,7 +257,7 @@ def select_evaluations(records, selectors, metric):
         entry = matched[0]
         result.append({**record, "model_version_ref": entry.get("model_version_ref"),
                        "metrics": {metric: entry["value"], "evaluation_records": {metric: entry["record"]}},
-                       "selected_evaluation": wanted})
+                       "selected_evaluation": wanted, "checkpoint_verification": entry.get("checkpoint_verification")})
     return result
 
 
@@ -269,6 +265,17 @@ def compare_evaluations(records, payload):
     metric, direction = payload.get("metric", "validation_loss"), payload.get("direction", "minimize")
     chosen = select_evaluations(records, payload.get("evaluations"), metric)
     result = compare_records(chosen, metric, direction, payload.get("comparison_contract"))
+    for record in chosen:
+        verification = record.get("checkpoint_verification") or {}
+        if verification.get("verified") is not True:
+            result["diagnostics"].append({"code": "evaluation_checkpoint_unverified", "field": "treatment.checkpoint",
+                "message": verification.get("message", "Native checkpoint identity and ownership are unverified; reevaluate or select verified evidence"),
+                "backend_run_id": record["backend_run_id"]})
+    if result["diagnostics"]:
+        result.update(compatible=False, selected_run_id=None, selected_model_version_ref=None)
+        result.pop("comparison_digest", None)
+        for row in result["runs"]:
+            row.pop("delta_from_selected", None)
     if payload.get("evaluations") is not None:
         result["evaluations"] = [record["selected_evaluation"] for record in chosen]
         result["selected_evaluation"] = next((record["selected_evaluation"] for record in chosen if record["backend_run_id"] == result.get("selected_run_id")), None)
@@ -278,7 +285,7 @@ def compare_evaluations(records, payload):
     return result
 
 
-def status(job: Path) -> dict:
+def status(job: Path, *, verify_evaluations=False) -> dict:
     request, state = read_json(job / "request.json"), read_json(job / "state.json")
     run = reconcile(job)
     state = read_json(job / "state.json")
@@ -311,7 +318,7 @@ def status(job: Path) -> dict:
         current = "failed" if not run else "unknown"
     else:
         current = "submitted"
-    evaluations = evaluation_outputs(run, request)
+    evaluations = evaluation_outputs(run, request, verify_checkpoints=verify_evaluations)
     execution = request.get("execution") or {"node_ids": [node["id"] for node in request["recipe"]["nodes"]], "input_bindings": []}
     # Never report cancellation while the actual worker remains alive.
     if current == "cancelled" and worker_alive:
@@ -400,6 +407,42 @@ def find_version(client, project, payload):
     return version
 
 
+def promotion_comparison(client, project, version, payload, root):
+    decision = payload.get("decision", {})
+    rule = decision.get("selection_rule", {})
+    metric = payload.get("metric", rule.get("metric", "validation_loss"))
+    direction = payload.get("direction", rule.get("direction", "minimize"))
+    run_ids = payload.get("candidate_run_ids", decision.get("run_ids", []))
+    records = []
+    for identity in run_ids:
+        candidate = client.get_pipeline_run(identity, project=project.id)
+        if str(candidate.project.id) != str(project.id) or candidate.status != ExecutionStatus.COMPLETED:
+            raise BackendError("validation_error", "Selection candidates must be completed runs in this project")
+        job = next((job for job in (root / "jobs").glob("*") if
+                    read_json(job / "request.json").get("project_id") == payload["project_id"] and
+                    read_json(job / "native.json").get("backend_run_id") == str(candidate.id)), None)
+        request = read_json(job / "request.json") if job else {}
+        evaluations = evaluation_outputs(candidate, request) if request else []
+        measured = metrics_for(candidate, evaluations) if request else metrics_for(candidate)
+        if metric not in measured and not payload.get("evaluations", rule.get("evaluations")):
+            raise BackendError("validation_error", "Declared validation metric is absent")
+        records.append({"backend_run_id": str(candidate.id),
+                        "model_version_ref": str(candidate.model_version.id) if candidate.model_version else None,
+                        "status": "succeeded", "metrics": measured, "evaluations": evaluations})
+    if not records:
+        raise BackendError("validation_error", "Promotion requires the actual candidate run IDs and a measured selection rule")
+    comparison = compare_evaluations(records, {"metric": metric, "direction": direction,
+        "comparison_contract": payload.get("comparison_contract", rule.get("comparison_contract")),
+        "evaluations": payload.get("evaluations", rule.get("evaluations"))})
+    if not comparison["compatible"]:
+        raise BackendError("incompatible_evaluation", "Promotion requires scientifically comparable evaluation evidence", comparison)
+    if rule.get("comparison_digest") and rule["comparison_digest"] != comparison["comparison_digest"]:
+        raise BackendError("comparison_changed", "Decision evaluation evidence changed; record a fresh decision")
+    if comparison["selected_model_version_ref"] != str(version.id):
+        raise BackendError("validation_error", "Requested model version does not win the declared measured validation criterion")
+    return comparison
+
+
 def invoke(operation: str, payload: dict, root: Path) -> dict:
     if operation == "backend.validate":
         import importlib.metadata
@@ -426,6 +469,9 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
         client = Client()
         active_stack = client.active_stack
         return {"python": platform.python_version(), "packages": resolved, "verified": True, "stack_id": str(active_stack.id)}
+    if operation == "model.version.promotion.prepare":
+        from .promotion import prepare
+        return prepare(payload, root)
     if operation.startswith("model.export."):
         from .native_exports import invoke as export_operation
         return export_operation(operation, payload, root)
@@ -443,7 +489,7 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
                     item["binding_descriptor"] = descriptor
         return {"backend_run_id": str(run.id) if run else None, "artifacts": artifacts}
     if operation == "run.compare":
-        records = [status(Path(job)) for job in payload["job_dirs"]]
+        records = [status(Path(job), verify_evaluations=True) for job in payload["job_dirs"]]
         return compare_evaluations(records, payload)
     if operation == "model.checkpoint.get":
         if payload.get("job_dir"):
@@ -482,47 +528,14 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
         return {**version_record(version), "pipeline_run_links": [x.model_dump(mode="json") for x in links],
                 "artifact_links": [x.model_dump(mode="json") for x in artifact_links]}
     if operation == "model.version.promote":
-        decision = payload.get("decision", {})
-        rule = decision.get("selection_rule", {})
-        metric = payload.get("metric", rule.get("metric", "validation_loss"))
-        direction = payload.get("direction", rule.get("direction", "minimize"))
-        run_ids = payload.get("candidate_run_ids", decision.get("run_ids", []))
-        records = []
-        for identity in run_ids:
-            candidate = client.get_pipeline_run(identity, project=project.id)
-            if str(candidate.project.id) != str(project.id) or candidate.status != ExecutionStatus.COMPLETED:
-                raise BackendError("validation_error", "Selection candidates must be completed runs in this project")
-            job = next((job for job in (root / "jobs").glob("*") if
-                        read_json(job / "request.json").get("project_id") == payload["project_id"] and
-                        read_json(job / "native.json").get("backend_run_id") == str(candidate.id)), None)
-            request = read_json(job / "request.json") if job else {}
-            evaluations = evaluation_outputs(candidate, request) if request else []
-            measured = metrics_for(candidate, evaluations) if request else metrics_for(candidate)
-            if metric not in measured and not payload.get("evaluations", rule.get("evaluations")):
-                raise BackendError("validation_error", "Declared validation metric is absent")
-            records.append({"backend_run_id": str(candidate.id),
-                            "model_version_ref": str(candidate.model_version.id) if candidate.model_version else None,
-                            "status": "succeeded", "metrics": measured, "evaluations": evaluations})
-        if not records:
-            raise BackendError("validation_error", "Promotion requires the actual candidate run IDs and a measured selection rule")
-        comparison = compare_evaluations(records, {"metric": metric, "direction": direction,
-            "comparison_contract": payload.get("comparison_contract", rule.get("comparison_contract")),
-            "evaluations": payload.get("evaluations", rule.get("evaluations"))})
-        if not comparison["compatible"]:
-            raise BackendError("incompatible_evaluation", "Promotion requires scientifically comparable evaluation evidence", comparison)
-        if rule.get("comparison_digest") and rule["comparison_digest"] != comparison["comparison_digest"]:
-            raise BackendError("comparison_changed", "Decision evaluation evidence changed; record a fresh decision")
-        if comparison["selected_model_version_ref"] != str(version.id):
-            raise BackendError("validation_error", "Requested model version does not win the declared measured validation criterion")
-        selected = client.get_pipeline_run(comparison["selected_run_id"], project=project.id)
-        selected_value = next(row["value"] for row in comparison["runs"] if row["backend_run_id"] == comparison["selected_run_id"])
-        log_metadata({"selection_rule": {"metric": metric, "direction": direction,
-                                         "comparison_contract": comparison["comparison_contract"]},
-                      "selection_value": selected_value, "selection_comparison_digest": comparison["comparison_digest"],
-                      "selection_evaluation_digests": comparison["evaluation_digests"],
-                      "selection_candidate_run_ids": run_ids, "selection_decision": decision}, model_version_id=version.id)
-        updated = client.update_model_version(version.model.id, version.id, stage=payload.get("stage", "staging"), force=True, project=project.id)
-        return {**version_record(updated), "selected_run_id": str(selected.id), "selection_value": selected_value}
+        from .promotion import prepared_comparison, prepare
+        handle = payload.get("_prepared_promotion")
+        clean = {key: value for key, value in payload.items() if key != "_prepared_promotion"}
+        if handle is None:
+            handle = prepare(clean, root)
+        comparison = prepared_comparison(clean, root, handle)
+        from .promotion import apply_promotion
+        return apply_promotion(client, project, version, clean, comparison, root)
     raise BackendError("capability_unavailable", f"Unsupported native operation {operation}")
 
 

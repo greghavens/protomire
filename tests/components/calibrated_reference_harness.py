@@ -163,6 +163,9 @@ def evaluate(*, inputs, parameters, context):
     checkpoint, calibration_root = inputs["checkpoint"], inputs["calibration"]
     calibration = json.loads((calibration_root / "calibration.json").read_text())
     value = load(checkpoint).eval()
+    training_report = json.loads((checkpoint / "training-report.json").read_text())
+    training_reference = {"checkpoint": training_report["reference_checkpoint"],
+        "model_identity": training_report["reference_identity"], "calibration": training_report["calibration_identity"]}
     x, y, ids = samples("eval")
     with torch.no_grad():
         raw = value(x)
@@ -188,7 +191,8 @@ def evaluate(*, inputs, parameters, context):
             metric={"name": "nll", "implementation": "torch.nn.functional.cross_entropy", "version": torch.__version__,
                 "parameters": {}, "aggregation": "mean", "direction": "minimize"},
             treatment={"model": "independent-three-class", "checkpoint": identity(read_checkpoint(checkpoint)),
-                "reference": None, "calibration": calibration["digest"] if label == "calibrated" else None},
+                "reference": training_reference, "objective": training_report["objective"],
+                "calibration": calibration["digest"] if label == "calibrated" else None},
             value=float(nll.mean()), predictions=[{"item_id": key, "value": float(loss)} for key, loss in zip(ids, nll)])
         records[label] = record
     (Path(context["output_dir"]) / "measurements.json").write_text(json.dumps(measurements))
@@ -207,7 +211,11 @@ def export(*, inputs, parameters, context):
     with torch.no_grad():
         expected = apply_temperature(load(checkpoint)(x), calibration, model_identity=weight_identity(checkpoint), sample_ids=ids)
     (root / "parity.json").write_text(json.dumps({"inputs": x.tolist(), "predictions": expected.tolist(), "sample_ids": ids}))
+    training_report = json.loads((checkpoint / "training-report.json").read_text())
     manifest = {"schema_version": "modelbuilder.export/v1", "selected_checkpoint": identity(read_checkpoint(checkpoint)),
+        "training_reference": {"checkpoint": training_report["reference_checkpoint"],
+            "model_identity": training_report["reference_identity"], "calibration": training_report["calibration_identity"]},
+        "objective": training_report["objective"],
         "loader": {"path": "loader.py", "entrypoint": "load"},
         "signature": {"input": "float64[N,3]", "output": "calibrated float64[N,3] logits"},
         "dependencies": {"torch": torch.__version__}, "source": context["source"],

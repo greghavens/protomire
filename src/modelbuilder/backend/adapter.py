@@ -168,7 +168,15 @@ print(json.dumps(result))"""
             payload["resolved_input_bindings"], payload["input_binding_jobs"] = [], []
         return recipe
 
-    def invoke(self, operation: str, payload: dict, actor=None) -> dict:
+    def prepare_promotion(self, payload: dict, actor=None):
+        return self._rpc("model.version.promotion.prepare", payload)
+
+    def invoke(self, operation: str, payload: dict, actor=None, *, prepared_promotion=None) -> dict:
+        if "_prepared_promotion" in payload:
+            raise BackendError("validation_error", "Promotion evidence is an internal backend argument")
+        if operation == "model.version.promote":
+            handle = prepared_promotion if prepared_promotion is not None else self.prepare_promotion(payload, actor)
+            return self._rpc(operation, {**payload, "_prepared_promotion": handle})
         if operation == "execution.targets":
             return {"targets": [{"id": "local-cpu", "available": self._capability_reason() is None, "unavailable_reason": self._capability_reason(), "backend": "zenml", "version": "0.97.0",
                                  "cancel": "supervised_process_termination", "exact_resume": True, "untrusted_isolation": False}],

@@ -86,6 +86,7 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
     auth = tokens if isinstance(tokens, TokenAuth) else (TokenAuth(tokens) if tokens is not None else TokenAuth.from_environment())
     from .research_scheduler import ResearchScheduler
     service.research_authorizer = auth.authorize_research
+    service.operation_authorizer = auth.authorize_operation
     scheduler = ResearchScheduler(service)
 
     @asynccontextmanager

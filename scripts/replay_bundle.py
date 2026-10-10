@@ -278,12 +278,89 @@ def valid_recipe_identity(identity: dict) -> bool:
                 and identity.get("native_executed_recipe_digest") == identity["imported_recipe_digest"])
 
 
+def comparable_metrics(record: dict) -> dict:
+    """Keep all measurement fields, separating only native store identifiers."""
+    metrics = dict(record["run"]["metrics"])
+    catalog = metrics.get("evaluation_catalog")
+    if isinstance(catalog, list) and all(isinstance(row, dict) for row in catalog):
+        metrics["evaluation_catalog"] = [
+            {key: value for key, value in row.items()
+             if key not in {"artifact_id", "backend_run_id", "model_version_ref"}}
+            for row in catalog]
+    return metrics
+
+
+def valid_evaluation_catalog(record: dict) -> bool:
+    """Require catalog references to resolve inside this run's native evidence."""
+    run = record["run"]
+    if "evaluation_catalog" not in run["metrics"]:
+        return True  # Historical evidence predating the catalog remains readable.
+    catalog = run["metrics"]["evaluation_catalog"]
+    if not isinstance(catalog, list) or not isinstance(run.get("evaluations"), list) or len(catalog) != len(run["evaluations"]):
+        return False
+    seen = set()
+    for row in catalog:
+        if not isinstance(row, dict) or any(not isinstance(row.get(key), str) or not row[key]
+                                           for key in ("artifact_id", "backend_run_id",
+                                                       "node_id", "output_port", "metric", "evaluation_digest")):
+            return False
+        identity = (row["node_id"], row["output_port"], row["metric"], row["evaluation_digest"])
+        if identity in seen or row["backend_run_id"] != run.get("backend_run_id"):
+            return False
+        seen.add(identity)
+        artifacts = [item for item in run.get("artifacts", [])
+                     if item.get("artifact_id") == row["artifact_id"]
+                     and item.get("backend_run_id") == row["backend_run_id"]
+                     and item.get("node_id") == row["node_id"]
+                     and item.get("port") == row["output_port"]]
+        evaluations = [item for item in run.get("evaluations", [])
+                       if all(item.get(key) == value for key, value in row.items())]
+        if len(artifacts) != 1 or len(evaluations) != 1:
+            return False
+        version = row.get("model_version_ref")
+        verification = row.get("checkpoint_verification")
+        if version is None:
+            # Status may truthfully defer checkpoint attribution to comparison.
+            # Native evaluation-artifact ownership above must still be proven.
+            if ("model_version_ref" not in row or not isinstance(verification, dict)
+                    or verification.get("verified") is not False):
+                return False
+            continue
+        if not isinstance(version, str) or not version or (isinstance(verification, dict) and verification.get("verified") is False):
+            return False
+        bindings = evaluations[0].get("checkpoint_bindings", [])
+        if not isinstance(bindings, list) or not all(isinstance(item, dict) for item in bindings):
+            return False
+        owners = ({item.get("producer_model_version_ref") for item in bindings}
+                  if bindings else {run.get("model_version_ref")})
+        if owners != {version}:
+            return False
+    return True
+
+
+def comparable_evaluations(record: dict) -> list:
+    # Keep complete records and checkpoint bindings. Only these top-level native
+    # IDs may differ in fresh independent stores; unknown future fields stay strict.
+    return [{key: value for key, value in row.items()
+             if key not in {"artifact_id", "backend_run_id", "model_version_ref"}}
+            for row in record["run"].get("evaluations", [])]
+
+
+def independent_catalog_references(origin: dict, replay: dict) -> bool:
+    for field in ("artifact_id", "model_version_ref"):
+        left = {row[field] for row in origin["run"]["metrics"].get("evaluation_catalog", []) if row[field] is not None}
+        right = {row[field] for row in replay["run"]["metrics"].get("evaluation_catalog", []) if row[field] is not None}
+        if left & right:
+            return False
+    return True
+
+
 def compare_results(origin: dict, replay: dict) -> dict:
     """Fail closed on same-environment, shared stores, dependency or output drift."""
     checks = {"both_succeeded": origin["status"] == replay["status"] == "PASS",
               "source_commit_equal": origin["source_commit"] == replay["source_commit"],
               "transport_recipe_digest_equal": origin["transport_recipe_digest"] == replay["transport_recipe_digest"],
-              "metrics_equal": origin["run"]["metrics"] == replay["run"]["metrics"],
+              "metrics_equal": comparable_metrics(origin) == comparable_metrics(replay),
               "dataset_sha256_equal": origin["run"]["metrics"]["dataset_sha256"] == replay["run"]["metrics"]["dataset_sha256"],
               "output_hashes_equal": bool(origin["output_sha256"]) and origin["output_sha256"] == replay["output_sha256"],
               "external_resource_hashes_equal": origin.get("external_resource_sha256", {}) == replay.get("external_resource_sha256", {}),
@@ -292,6 +369,10 @@ def compare_results(origin: dict, replay: dict) -> dict:
               "independent_source_roots": origin["source_root"] != replay["source_root"]}
     for role, record in (("origin", origin), ("replay", replay)):
         checks[role + "_single_owned_recipe_identity"] = valid_recipe_identity(record.get("recipe_identity", {}))
+        checks[role + "_evaluation_catalog_owned"] = valid_evaluation_catalog(record)
+    catalogs_valid = checks["origin_evaluation_catalog_owned"] and checks["replay_evaluation_catalog_owned"]
+    checks["evaluation_records_equal"] = catalogs_valid and comparable_evaluations(origin) == comparable_evaluations(replay)
+    checks["independent_catalog_references"] = catalogs_valid and independent_catalog_references(origin, replay)
     for role in ("service_identity", "backend_identity"):
         left, right = origin[role], replay[role]
         checks[role + "_independent_prefix"] = left["prefix"] != right["prefix"]

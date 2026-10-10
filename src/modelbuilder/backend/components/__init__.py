@@ -28,6 +28,7 @@ COMPONENT_SCHEMA = {
         "capabilities": {"type": "object", "additionalProperties": False,
             "required": ["resume_modes", "export_formats", "frameworks"], "properties": {
                 "checkpoint_events": {"type": "boolean"},
+                "devices": {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"enum": ["cpu", "cuda", "mps"]}},
                 "resume_modes": {"type": "array", "uniqueItems": True, "items": {"enum": ["exact_state", "warm_start"]}},
                 "export_formats": {"type": "array", "items": {"type": "string"}},
                 "frameworks": {"type": "array", "items": {"type": "string"}}}}

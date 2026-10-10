@@ -216,6 +216,14 @@ class ContractBackend:
     """Mock only for service boundary tests. No real execution is asserted here."""
     def __init__(self):
         self.calls = []
+    def prepare_execution(self, operation, payload):
+        return operation, payload
+
+    def launch_prepared(self, prepared, authorize=None):
+        if authorize:
+            authorize()
+        return self.invoke(*prepared, None)
+
     def invoke(self, operation, payload, actor):
         self.calls.append((operation, deepcopy(payload), actor))
         if operation in {"run.submit", "run.resume"}:

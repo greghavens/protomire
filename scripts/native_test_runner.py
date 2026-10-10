@@ -29,7 +29,7 @@ SERVICE_TESTS = (
     "tests/integration/test_bound_dataset_checkpoint_release.py", "tests/integration/test_source_deadline_hooks.py",
     "tests/integration/test_live_mcp_tracking.py", "tests/datasets/test_mcp_dataset.py",
     "tests/datasets/test_native_dataset.py", "tests/native_cache/test_native_reuse.py",
-    "tests/conditions/test_native_conditions.py", *SERVICE_ONLY_TESTS,
+    "tests/conditions/test_native_conditions.py", "tests/integration/test_admission_live_native.py", *SERVICE_ONLY_TESTS,
 )
 LIFECYCLE_TESTS = (
     "tests/integration/test_cpu_fixtures.py", "tests/integration/test_native_lifecycle.py",
@@ -41,6 +41,7 @@ LIFECYCLE_TESTS = (
 COMPONENT_TESTS = (
     "tests/components", "tests/evaluation", "tests/live_evaluation",
     "tests/datasets/test_reference_atomic_read.py", "tests/tracking/test_cpu_live_tracking.py",
+    "tests/placement/test_placement.py", "tests/placement/test_checkpoint_capabilities.py",
 )
 MAX_SECONDS = 2100
 

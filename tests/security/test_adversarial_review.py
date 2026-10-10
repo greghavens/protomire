@@ -67,6 +67,14 @@ class BoundaryBackend:
         self.status = "running"
         self.run_id = "native-audit-run"
 
+    def prepare_execution(self, operation, payload):
+        return operation, payload
+
+    def launch_prepared(self, prepared, authorize=None):
+        if authorize:
+            authorize()
+        return self.invoke(*prepared, None)
+
     def invoke(self, operation, payload, actor):
         self.calls.append((operation, deepcopy(payload)))
         return {"operation_id": payload.get("operation_id"),
@@ -141,7 +149,10 @@ def test_submit_retry_after_reconciliation_still_starts_once(service):
     project, _, run, payload = create_run(service)
     service.invoke("run.status", {"project_id": project["project_id"],
                    "operation_id": run["operation_id"]}, OWNER)
-    assert service.invoke("run.submit", {**payload, "request_id": "retry-request"}, OWNER) == run
+    replayed = service.invoke("run.submit", {**payload, "request_id": "retry-request"}, OWNER)
+    assert replayed["operation_id"] == run["operation_id"]
+    assert replayed["backend_run_id"] == run["backend_run_id"]
+    assert replayed["status"] == "running"  # Reconcile receipt, never resurrect stale submitted state.
     assert sum(operation == "run.submit" for operation, _ in service.backend.calls) == 1
 
 
@@ -334,7 +345,7 @@ def test_failed_process_start_cannot_leave_permanently_submitted_journal(tmp_pat
             raise OSError("Synthetic launch failure before creating a process")
         return SimpleNamespace(pid=999999999)
     monkeypatch.setattr(subprocess, "Popen", launch)
-    monkeypatch.setattr(backend, "_rpc", lambda operation, request: {"status": "submitted"})
+    monkeypatch.setattr(backend, "_rpc", lambda operation, request, **kwargs: {"status": "submitted"})
     with pytest.raises((OSError, BackendError)):
         backend.submit(payload)
     try:

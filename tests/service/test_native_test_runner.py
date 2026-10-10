@@ -26,7 +26,8 @@ def serial_paths(fragment):
 
 def test_hosted_workflows_are_manual_only():
     # Owner runs CI locally; publishing source must not spend hosted minutes.
-    workflows = list((ROOT / ".github/workflows").glob("*.yml"))
+    workflows = [path for path in (ROOT / ".github/workflows").iterdir()
+                 if path.suffix in {".yml", ".yaml"}]
     assert workflows
     for workflow in workflows:
         lines = workflow.read_text().splitlines()
@@ -41,6 +42,19 @@ def test_hosted_workflows_are_manual_only():
         assert triggers == ["  workflow_dispatch:"], workflow.name
 
 
+@pytest.mark.parametrize("suffix", [".yml", ".yaml"])
+def test_manual_workflow_guard_covers_both_yaml_extensions(tmp_path, monkeypatch, suffix):
+    directory = tmp_path / ".github/workflows"
+    directory.mkdir(parents=True)
+    workflow = directory / f"ci{suffix}"
+    monkeypatch.setattr(sys.modules[__name__], "ROOT", tmp_path)
+    workflow.write_text("name: test\non:\n  push:\njobs: {}\n")
+    with pytest.raises(AssertionError):
+        test_hosted_workflows_are_manual_only()
+    workflow.write_text("name: test\non:\n  workflow_dispatch:\njobs: {}\n")
+    test_hosted_workflows_are_manual_only()
+
+
 def test_collection_selectors_are_complete_disjoint_union_of_serial_commands():
     assert runner.SERVICE_TESTS == serial_paths("-m pytest tests/service/test_real_backend.py")
     serial = serial_paths("-m pytest tests/integration/test_cpu_fixtures.py")
@@ -53,6 +67,10 @@ def test_collection_selectors_are_complete_disjoint_union_of_serial_commands():
         assert len(files) == len(set(files))
         expanded.extend(files)
     assert all(count == 1 for count in Counter(expanded).values())
+    assert "tests/integration/test_admission_live_native.py" in runner.SERVICE_TESTS
+    assert expanded.count("tests/integration/test_admission_live_native.py") == 1
+    assert "tests/placement/test_placement.py" in runner.COMPONENT_TESTS
+    assert "tests/placement/test_unlocked_probes.py" not in expanded  # Normal service unit phase; imports TestClient.
     script = (ROOT / "scripts/test_all.sh").read_text()
     assert '${MODELBUILDER_NATIVE_TEST_PROCESSES:-1}' in script
     assert script.index('npm run test:component-http') < script.index('scripts/native_test_runner.py')
@@ -248,3 +266,25 @@ def test_incomplete_cleanup_preserves_live_temporary_state_in_local_receipt(tmp_
     assert runner.main(["--root", str(tmp_path)]) == 1
     receipt = json.loads((tmp_path / "evidence/tests/native-runner.json").read_text())
     assert state.is_dir() and receipt["retained_temporary_directory"] == str(state)
+
+
+def test_native_admission_harness_preserves_venv_invocation_path(tmp_path, monkeypatch):
+    """Resolving the executable symlink discards Python's virtualenv selection."""
+    spec = importlib.util.spec_from_file_location("native_admission_acceptance", ROOT / "tests/integration/test_admission_live_native.py")
+    acceptance = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(acceptance)
+    invoked = tmp_path / "approved-venv" / "bin" / "python"
+    invoked.parent.mkdir(parents=True)
+    invoked.symlink_to(sys.executable)
+    monkeypatch.setattr(acceptance, "PYTHON", invoked)
+
+    class CapturedBackend(Exception):
+        pass
+
+    def capture(*args, python_executable, **kwargs):
+        assert python_executable == str(invoked), "The venv invocation path must retain its symlink"
+        raise CapturedBackend()
+
+    monkeypatch.setattr(acceptance, "ZenMLBackend", capture)
+    with pytest.raises(CapturedBackend):
+        acceptance.test_native_checkpoint_ingestion_during_held_admission(tmp_path / "fixture", monkeypatch)

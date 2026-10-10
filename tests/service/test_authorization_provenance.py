@@ -16,6 +16,14 @@ class NonexecutingBackend:
     def __init__(self):
         self.calls = []
 
+    def prepare_execution(self, operation, payload):
+        return operation, payload
+
+    def launch_prepared(self, prepared, authorize=None):
+        if authorize:
+            authorize()
+        return self.invoke(*prepared, None)
+
     def invoke(self, operation, payload, actor):
         self.calls.append((operation, deepcopy(payload)))
         return {"operation_id": payload.get("operation_id"), "project_id": payload["project_id"],

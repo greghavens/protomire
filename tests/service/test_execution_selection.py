@@ -60,6 +60,14 @@ def test_public_api_mcp_contract_share_exact_selection_schema():
 class Backend:
     def __init__(self):
         self.calls = []
+    def prepare_execution(self, operation, payload):
+        return operation, payload
+
+    def launch_prepared(self, prepared, authorize=None):
+        if authorize:
+            authorize()
+        return self.invoke(*prepared, None)
+
     def invoke(self, operation, payload, actor):
         self.calls.append((operation, copy.deepcopy(payload)))
         return {"operation_id": payload.get("operation_id"), "project_id": payload["project_id"],

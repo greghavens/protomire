@@ -250,7 +250,7 @@ def _inventory(root: Path, names: list[str]) -> list[dict]:
     return assets
 
 
-def _snapshot(job: Path, node_id: str, source: Path, step: int | None, purpose: str, evaluator_kind: str) -> dict:
+def _snapshot(job: Path, node_id: str, source: Path, step: int | None, purpose: str, evaluator_kind: str, *, device: str = "cpu") -> dict:
     source = Path(source)
     if source.is_symlink() or not source.is_dir():
         raise ValueError("Checkpoint-ready requires a complete checkpoint directory")
@@ -264,6 +264,8 @@ def _snapshot(job: Path, node_id: str, source: Path, step: int | None, purpose: 
     else:
         from .components import read_checkpoint
         descriptor = read_checkpoint(source)
+        if device != "cpu" and "exact_state" in descriptor["resume_modes"]:
+            raise ValueError("Accelerator checkpoint cannot advertise unverified exact_state continuation")
         names = [asset["path"] for asset in descriptor["assets"]] + ["checkpoint.manifest.json"]
         if step is None:
             step = descriptor["step"]
@@ -440,7 +442,11 @@ class LiveEvaluationCoordinator:
             raise RuntimeError("Live evaluation coordinator is closing")
         if self.failure:
             raise RuntimeError("Live evaluation coordinator failed: " + str(self.failure))
-        checkpoint = _snapshot(self.job, self.node_id, Path(path), step, purpose, _decode(self.evaluator)["kind"])
+        from .placement import synchronize
+        evaluator = _decode(self.evaluator)
+        device = evaluator.get("spec", {}).get("placement", {}).get("device", os.environ.get("MODELBUILDER_EXECUTION_DEVICE", "cpu"))
+        synchronize(device)
+        checkpoint = _snapshot(self.job, self.node_id, Path(path), step, purpose, evaluator["kind"], device=device)
         evaluation_id = _digest([checkpoint["checkpoint_id"], self.evaluator_digest])
         record = {"schema": SCHEMA, "evaluation_id": evaluation_id, "checkpoint_id": checkpoint["checkpoint_id"],
                   "checkpoint_digest": checkpoint["checkpoint_digest"], "node_id": self.node_id, "step": checkpoint["step"],
@@ -489,8 +495,10 @@ class LiveEvaluationCoordinator:
         output.mkdir(parents=True, exist_ok=True)
         log = (output / "evaluator.log").open("a")
         try:
+            from .placement import placement_environment
             child = subprocess.Popen([sys.executable, "-m", "modelbuilder.backend.live_evaluation", str(self.job), evaluation_id],
-                                     stdout=log, stderr=subprocess.STDOUT, start_new_session=False)
+                                     stdout=log, stderr=subprocess.STDOUT, start_new_session=False,
+                                     env=placement_environment("cpu", os.environ))
         except Exception as error:
             log.close()
             _finish(self.job, evaluation_id, "failed", error={"code": "evaluator_start_failed", "message": str(error)})
@@ -610,6 +618,7 @@ def _evaluate(job: Path, evaluation_id: str) -> None:
                       "data": identity({k: v for k, v in inputs.items() if isinstance(v, dict)})}
         context = {"protocol": node["component"]["protocol"], "job_dir": str(job), "node_id": node["id"],
                    "output_dir": str(output), "source_root": function.__source_snapshot_root__, "source": spec["source"],
+                   "device": "cpu", "placement": {"device": "cpu", "policy": "live_evaluation_cpu_only"},
                    "identities": identities,
                    "dependencies": spec.get("dependency_paths", {}), "cancel_file": str(job / "cancel.json"),
                    "checkpoint_id": request["checkpoint"]["checkpoint_id"],

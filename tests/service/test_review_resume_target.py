@@ -12,6 +12,14 @@ class RecordingBackend:
     def __init__(self):
         self.calls = []
 
+    def prepare_execution(self, operation, payload):
+        return operation, payload
+
+    def launch_prepared(self, prepared, authorize=None):
+        if authorize:
+            authorize()
+        return self.invoke(*prepared, None)
+
     def invoke(self, operation, payload, actor):
         self.calls.append((operation, deepcopy(payload)))
         return {"operation_id": payload["operation_id"], "backend_run_id": "native-test-run", "status": "submitted"}

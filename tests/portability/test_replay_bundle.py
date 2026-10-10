@@ -38,6 +38,7 @@ def snapshot(tmp_path):
     files = {
         "src/modelbuilder/__init__.py": b'__version__ = "0.1.0"\n',
         "src/modelbuilder/backend/__init__.py": b"",
+        "src/modelbuilder/backend/placement.py": b"DEVICE = 'cpu'\n",
         "src/modelbuilder/evaluation.py": b"SCHEMA = 'test'\n",
         "src/modelbuilder/tracking.py": b"ENABLED = False\n",
         "src/modelbuilder/recipe.py": b"VERSION = 0\n",
@@ -66,6 +67,7 @@ def test_service_wheel_is_deterministic_inert_and_complete(snapshot, tmp_path):
     with zipfile.ZipFile(first["wheel"]) as wheel:
         assert "modelbuilder/service.py" in wheel.namelist()
         assert "modelbuilder/backend/adapter.py" in wheel.namelist()
+        assert wheel.read("modelbuilder/backend/placement.py") == b"DEVICE = 'cpu'\n"
         metadata = wheel.read("modelbuilder-0.1.0.dist-info/METADATA").decode()
         assert "Requires-Dist: jsonschema==4.23.0" in metadata
         assert "zenml" not in metadata
@@ -79,6 +81,7 @@ def test_runtime_wheel_separates_dependency_metadata(snapshot, tmp_path):
         for dependency in ["evaluation.py", "tracking.py", "recipe.py"]:
             assert "modelbuilder/" + dependency in wheel.namelist()
         assert "modelbuilder/backend/adapter.py" in wheel.namelist()
+        assert wheel.read("modelbuilder/backend/placement.py") == b"DEVICE = 'cpu'\n"
         metadata = wheel.read("modelbuilder_runtime-0.1.0.dist-info/METADATA").decode()
         assert "Requires-Dist: zenml[server]==0.97.0" in metadata
         assert "jsonschema" not in metadata
@@ -103,6 +106,14 @@ def test_timeout_uses_valid_cancel_contract_and_always_records_evidence(snapshot
     calls = []
 
     class BoundaryBackend:
+        def prepare_execution(self, operation, payload):
+            return operation, payload
+
+        def launch_prepared(self, prepared, authorize=None):
+            if authorize:
+                authorize()
+            return self.invoke(*prepared, None)
+
         def invoke(self, operation, payload, actor):
             calls.append((operation, payload))
             if operation == "run.cancel" and cancel_fails:

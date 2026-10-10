@@ -24,10 +24,12 @@ class BackendError(RuntimeError):
 
 def validate_execution(backend, payload: dict) -> dict:
     backend._require_capability()
-    if payload.get("target", "local-cpu") != "local-cpu":
+    from .placement import is_local_target, validate_placement
+    if not is_local_target(payload.get("target", "local-cpu")):
         raise BackendError("capability_unavailable", "Remote execution and spend are disabled")
     if payload.get("trusted") is not True:
         raise BackendError("untrusted_execution_blocked", "Explicit trust consent is required for local source execution; untrusted code has no verified isolation boundary")
+    placement = validate_placement(backend, payload)
     from ..tracking import resolve_tracking, TrackingPolicyError
     try:
         resolve_tracking(run_override=payload.get("tracking"), online_consent=payload.get("tracking_online_consent") is True)
@@ -53,6 +55,15 @@ def validate_execution(backend, payload: dict) -> dict:
     if any(node.get("kind") in {"code.python", "component.run"} for node in recipe.get("nodes", [])) and not backend.trusted_code_roots:
         raise BackendError("untrusted_execution_blocked", "Arbitrary Python requires an operator-configured trusted source root")
     from .components import validate_live_evaluation
+    device_kind = placement["device"].split(":")[0]
+    for node in recipe.get("nodes", []):
+        if device_kind != "cpu" and node.get("kind") == "code.python":
+            raise BackendError("capability_unavailable", "Accelerator placement requires a device-aware component contract; plain code.python has no device context")
+        if node.get("kind") == "component.run":
+            component = node.get("component", {})
+            selected_device = device_kind if component.get("role") == "training" else "cpu"
+            if selected_device not in component.get("capabilities", {}).get("devices", ["cpu"]):
+                raise BackendError("capability_unavailable", "Component does not declare support for the selected execution device", {"node_id": node["id"], "device": selected_device})
     try:
         validate_live_evaluation(recipe, input_bindings=execution["input_bindings"])
     except ValueError as error:
@@ -123,7 +134,7 @@ def validate_execution(backend, payload: dict) -> dict:
                 raise BackendError("validation_error", str(error), {"node_id": node.get("id")}) from error
         kind, reference = node["kind"], node.get("implementation_ref")
         if node.get("resource_request", {}).get("gpu", 0):
-            raise BackendError("capability_unavailable", "local-cpu cannot satisfy a GPU resource request")
+            raise BackendError("capability_unavailable", "Local placement does not reserve GPU resources; omit GPU reservations")
         parameters = node.get("parameters", {})
         if kind == "model.train" and "steps" in parameters and (type(parameters["steps"]) is not int or not 1 <= parameters["steps"] <= 100000):
             raise BackendError("validation_error", "Fixture steps must be an integer between 1 and 100000")
@@ -312,6 +323,9 @@ def capabilities(backend) -> dict:
             "control_flow": {"conditions": "explicit bool gates on terminal stages; gate must be selected; sequential native dynamic pipeline",
                              "loops": False, "independent_stage_concurrency": False, "conditional_live_evaluation": False},
             "environment": {"requirements": "exact installed versions with target markers", "oci": False},
+            "placement": {"recipe_field": "environment.device", "reservations": False, "live_evaluation_device": "cpu",
+                          "non_training_builtins_device": "cpu", "component_enforcement": "trusted component must honor declared device context",
+                          "accelerator_exact_resume": False, "cuda_profile": "unavailable"},
             "dependency_resolution": "operator configured SHA256 verified local files; no automatic download"}
 
 
@@ -327,6 +341,7 @@ def environment_profiles(backend) -> list[dict]:
         path = backend.repository / relative
         if path.is_file():
             profiles.append({"target_platform": target, "requires_recipe_revision": True,
+                             "devices": ["cpu", "mps"] if target == "darwin-arm64" else ["cpu"],
                              "environment": {"python": "3.12.14", "requirements": ["numpy==2.2.6", f"torch=={torch_pin}", "transformers==4.57.1", "zenml[server]==0.97.0"],
                                              "lock_file": {"path": relative, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}}})
     return profiles

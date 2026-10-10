@@ -10,12 +10,22 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from .adapter import _durable_launch_record
 from .execution_limits import node_timeout
 from .common import now, process_identity, process_group_state, runtime_identity, read_json, write_json
 
 
 def main(job: Path, lease_fd: int | None = None) -> None:
+    # Acknowledge before optional imports or worker creation. The inherited lease
+    # spans this window; the durable attempt remains authoritative if we die here.
+    attempt = read_json(job / "spawn_attempt.json")
+    acknowledged = {"attempt_id": attempt.get("attempt_id"), "supervisor_pid": os.getpid(),
+                    "supervisor_identity": process_identity(os.getpid()), "runtime_identity": runtime_identity(),
+                    "acknowledged_at": now()}
+    _durable_launch_record(job / "supervisor_ack.json", acknowledged)
     request = read_json(job / "request.json")
+    write_json(job / "state.json", {**acknowledged, "supervisor_state": "starting",
+                                   "submitted_at": request.get("submitted_at")})
     from .tracking_bridge import training_environment, LiveTracking
     live_tracking = LiveTracking(job)
     with (job / "worker.log").open("a") as log:

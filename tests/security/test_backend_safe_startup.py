@@ -29,7 +29,7 @@ def test_sdk_rpc_uses_safe_path_and_neutral_cwd_after_source_disappears(tmp_path
 def test_supervisor_launch_inherits_safe_startup_before_user_import(tmp_path, monkeypatch):
     backend = ZenMLBackend(tmp_path / "state", python_executable=sys.executable, source_root=tmp_path)
     monkeypatch.setattr(backend, "_validate_execution", lambda payload: None)
-    monkeypatch.setattr(backend, "_rpc", lambda operation, payload: {})
+    monkeypatch.setattr(backend, "_rpc", lambda operation, payload, **kwargs: {})
     calls = []
     def launch(command, **kwargs):
         assert command[1:4] == ["-P", "-m", "modelbuilder.backend.supervisor"]

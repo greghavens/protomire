@@ -135,6 +135,11 @@ def dispatch(inputs: dict, spec: dict):
         if not path or hashlib.sha256(Path(path).read_bytes()).hexdigest() != dependency["sha256"]:
             raise ValueError("Component dependency changed after admission: " + dependency["id"])
     actual_environment = runtime_environment()
+    from ..placement import runtime_device_identity, effective_resume_modes
+    selected_device = spec.get("placement", {}).get("device", "cpu") if component["role"] == "training" else "cpu"
+    selected_placement = runtime_device_identity(selected_device)
+    resume_modes = effective_resume_modes(selected_device, component["capabilities"]["resume_modes"])
+    actual_environment["placement"] = selected_placement
     identities = {
         "architecture": identity(parameters.get("architecture", parameters)),
         "source": identity(spec["source"]), "dependencies": identity(spec.get("dependencies", [])),
@@ -143,13 +148,15 @@ def dispatch(inputs: dict, spec: dict):
         "data": identity({k: input_identity(v) for k, v in inputs.items()})}
     run_context = {"protocol": component["protocol"], "output_dir": str(output),
                    "job_dir": spec["job_dir"], "node_id": spec["node_id"], "identities": identities, "environment": actual_environment,
+                   "device": selected_device, "placement": selected_placement, "resume_modes": resume_modes,
                    "source_root": spec["source_root"], "source": spec["source"],
                    "dependencies": spec.get("dependency_paths", {}),
                    "cancel_file": str(Path(spec["job_dir"]) / "cancel.json"),
                    "resume": None, "resume_mode": None}
     if component["role"] == "training" and spec.get("resume_path"):
         mode = spec.get("resume_mode", "exact_state")
-        descriptor = validate_resume(Path(spec["resume_path"]), mode, identities, component["capabilities"])
+        descriptor = validate_resume(Path(spec["resume_path"]), mode, identities,
+                                     {**component["capabilities"], "resume_modes": resume_modes})
         run_context.update(resume={"path": spec["resume_path"], "descriptor": descriptor}, resume_mode=mode)
     function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
     run_context["source_root"] = function.__source_snapshot_root__
@@ -193,8 +200,8 @@ def dispatch(inputs: dict, spec: dict):
                 ck = read_checkpoint(value)
                 if ck["identities"] != identities:
                     raise ValueError("Checkpoint identities differ from actual component execution")
-                if not set(ck["resume_modes"]).issubset(component["capabilities"]["resume_modes"]):
-                    raise ValueError("Checkpoint claims unsupported component resume capability")
+                if not set(ck["resume_modes"]).issubset(resume_modes):
+                    raise ValueError("Checkpoint claims unsupported device/component resume capability; accelerator exact_state is unverified")
             if component["role"] == "export":
                 manifest = read_export(value)
                 selected = [identity(read_checkpoint(path)) for path in inputs.values()

@@ -46,5 +46,6 @@ export function renderComputeDiagnostics(container:HTMLElement,result:RecordValu
   add('h4','Executable targets and resource controls');
   for(const target of result.targets??[])add('p',`${target.id}: ${target.available===true?'available':'unavailable'}${target.unavailable_reason?` · ${target.unavailable_reason}`:''}`);
   add('p',hardware.resource_control?.note??'Hardware discovery does not establish executable targets or enforce reservations.','warning');
-  add('p','CPU reservations: unsupported · RAM reservations: unsupported · GPU reservations: unsupported · GPU execution: disabled','warning');
+  const accelerators=(result.targets??[]).filter((target:RecordValue)=>target.available===true&&target.device&&target.device!=='cpu');
+  add('p',`CPU reservations: unsupported · RAM reservations: unsupported · GPU reservations: unsupported · GPU placement: ${accelerators.length?'available for explicitly selected targets; native acceptance may remain unverified':'unavailable in the configured runtime/profiles'}`,'warning');
 }

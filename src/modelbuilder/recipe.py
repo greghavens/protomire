@@ -182,6 +182,7 @@ RECIPE_SCHEMA = {
         "environment": _object({"python": {"type": "string", "pattern": r"^3\.\d{1,2}(\.\d{1,2})?$"},
                                 "requirements": {"type": "array", "items": {"type": "string"}, "uniqueItems": True},
                                 "lock_file": FILE_REF_SCHEMA,
+                                "device": {"type": "string", "pattern": r"^(cpu|mps|cuda:(0|[1-9][0-9]{0,2}))$"},
                                 "oci_digest": {"type": "string", "pattern": r"^sha256:[0-9a-f]{64}$"}},
                                ["python", "requirements"]),
         "evaluation": {"type": "object"},

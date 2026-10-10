@@ -354,7 +354,7 @@ def collect_inventory(backend_python=None):
                        "note": "Host-visible counts and available memory are observations, not guaranteed capacity. Container quotas and other workloads may reduce usable resources."},
             "resource_control": {"cpu_reservation": False, "ram_reservation": False,
                                  "gpu_reservation": False, "gpu_execution": False,
-                                 "note": "This backend executes CPU workloads only. CPU/RAM reservations and GPU execution are unsupported; discovered GPUs are not execution targets."}}
+                                 "note": "Inventory does not enable execution or reserve CPU/RAM/GPU resources. Consult executable targets for separately validated device placement; discovered GPUs do not become targets automatically."}}
 
 
 class HardwareDiscovery:

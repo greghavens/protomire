@@ -437,7 +437,23 @@ export class Workbench implements vscode.Disposable {
       payload.confirm_apply=true;
       if(this.dirty||vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='modelrecipe'&&doc.uri.path.startsWith(`/${this.project!.project_id}/`)))throw new Error('The recipe draft changed during proposal review. Your draft is preserved.');
     }
-    if(name==='run.submit') {if(!this.document.current)throw new Error('Open a recipe first.');payload.recipe_id=this.document.current.recipe_id;payload.expected_revision=this.document.current.revision;payload.trusted=true;payload.target='local-cpu';}
+    if(name==='run.submit') {
+      if(!this.document.current)throw new Error('Open a recipe first.');
+      const recipe=this.document.current;
+      const targets=await this.client.invoke('execution.targets',{project_id:this.project!.project_id});
+      const policy=await this.client.invoke('policy.get',{project_id:this.project!.project_id});
+      const available:RecordValue[]=(targets.targets??[]).filter((target:RecordValue)=>target.available===true&&policy.allowed_targets.includes(target.id));
+      if(!available.length)throw new Error('No available local execution target is permitted by this project policy.');
+      const choice=await vscode.window.showQuickPick(available.map((target:RecordValue)=>({label:target.id,
+        description:`${target.device} placement; no resource reservation`,
+        detail:target.exact_resume?'Exact continuation is limited to compatible CPU checkpoints.':'Accelerator exact continuation is unverified; warm start only.',target})),
+        {title:'Select the recipe execution device',placeHolder:'Must match the saved recipe environment.device and its pinned profile'});
+      if(!choice)return;
+      const selected=(choice as {target:RecordValue}).target;
+      if(selected.device!==(recipe.environment?.device??'cpu'))throw new Error('Save a recipe revision with the selected environment.device and matching pinned environment profile before submitting.');
+      if(generation!==this.generation||this.document.current?.revision!==recipe.revision)throw new Error('The recipe changed during device selection. Review the current revision before submitting.');
+      payload.recipe_id=recipe.recipe_id;payload.expected_revision=recipe.revision;payload.trusted=true;payload.target=selected.id;
+    }
     if(fromFile&&(this.dirty||vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='modelrecipe'&&doc.uri.path===`/${this.project!.project_id}/${this.document.current!.recipe_id}.modelrecipe.json`)))throw new Error('Unsaved recipe source appeared while the dialog was open. Your draft is preserved.');
     if(generation!==this.generation)throw new Error('The model project changed before the operation was submitted.');
     let result:RecordValue;try{result=await this.client.invoke(name,payload);}catch(error){if(name==='model.version.promote'&&error instanceof OperationError&&error.status===409&&generation===this.generation){await this.refreshSnapshot();}throw error;}

@@ -197,7 +197,7 @@ def test_backend_hardware_never_adds_execution_targets_or_enforcement(tmp_path, 
     backend = ZenMLBackend(tmp_path, python_executable=str(tmp_path / "absent-python"))
     monkeypatch.setattr(backend.hardware_discovery, "snapshot", lambda: {"gpu": {"devices": [{"name": "Fixture GPU"}]}})
     response = backend.invoke("execution.targets", {})
-    assert [target["id"] for target in response["targets"]] == ["local-cpu"]
+    assert [target["id"] for target in response["targets"]] == ["local-cpu", "local-mps", "local-cuda"]
     assert not response["targets"][0]["available"]
     assert response["capabilities"]["node_settings"]["resource_request"] == {"gpu": [0], "cpu": "unsupported", "memory_mb": "unsupported"}
     assert not response["remote_enabled"]

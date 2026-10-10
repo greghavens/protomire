@@ -13,6 +13,14 @@ class Backend:
     def __init__(self):
         self.payloads = []
 
+    def prepare_execution(self, operation, payload):
+        return operation, payload
+
+    def launch_prepared(self, prepared, authorize=None):
+        if authorize:
+            authorize()
+        return self.invoke(*prepared, None)
+
     def invoke(self, op, payload, actor):
         self.payloads.append(payload)
         if op == "run.plan":

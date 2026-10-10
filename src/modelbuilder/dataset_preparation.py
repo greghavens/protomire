@@ -1,4 +1,4 @@
-"""Unlocked dataset decode/row preparation followed by checked atomic dispatch."""
+"""Unlocked dataset/device preparation followed by checked atomic dispatch."""
 from __future__ import annotations
 
 import copy
@@ -33,6 +33,12 @@ def snapshot(service, operation, payload):
             state["recipe"] = service._current_recipe(project_id, payload["recipe_id"])
             service._revision(state["recipe"], payload["expected_revision"])
     else:
+        from .backend.placement import backend_identity
+        state["policy"] = copy.deepcopy(service._policy("policy.get", payload))
+        state["source_settings"] = copy.deepcopy(service.source_workspaces.aliases)
+        state["require_source_binding"] = service.require_source_binding
+        state["backend"] = backend_identity(service.backend)
+        state["backend_instance"] = id(service.backend)
         from .execution import continuation_selection, selection
         recipe = service._current_recipe(project_id, payload.get("recipe_id"))
         state["current_recipe"] = recipe
@@ -80,17 +86,18 @@ def snapshot(service, operation, payload):
     return state, declarations, enriched
 
 
-def prepare(service, operation, payload, actor, payload_hash):
+def prepare(service, operation, payload, actor, payload_hash, *, reserved=False):
     with service.store.transaction():
         service._require_current_authority(operation, actor, payload["project_id"])
-        if "idempotency_key" in payload:
+        if "idempotency_key" in payload and not reserved:
             previous = service.store.idempotent_result(actor.id, payload["idempotency_key"], operation, payload_hash)
             if previous is not None:
                 service._check_idempotent_recipe_identity(operation, previous)
-                return None, {}, previous
+                return None, {}, previous, {}
         state, declarations, enriched = snapshot(service, operation, payload)
-    entries = {}
-    with materialization_session(entries, compute=True):
+    from .backend.placement import probe_session
+    entries, probes = {}, {}
+    with materialization_session(entries, compute=True), probe_session(probes, compute=True):
         for declaration in declarations:
             try:
                 service._dataset_registry._materialize(payload["project_id"], declaration)
@@ -103,6 +110,35 @@ def prepare(service, operation, payload, actor, payload_hash):
             try:
                 backend = service._source_backend(operation, enriched)
                 backend = resolve_backend(service, backend, enriched)
+                from .backend.adapter import ZenMLBackend
+                from .backend.placement import backend_identity, device_from_recipe, target_for_device, validate_placement
+                target = (target_for_device(device_from_recipe(enriched["recipe"])) if operation == "run.resume"
+                          else payload.get("target", "local-cpu"))
+                enriched["target"] = target
+                # Only a currently authorized, explicitly trusted, policy-permitted
+                # execution request may prepare a tensor allocation. Plan is read-only.
+                if (isinstance(backend, ZenMLBackend) and enriched.get("trusted") is True
+                        and target in state["policy"]["allowed_targets"]):
+                    service._require_recipe_review(payload["project_id"])
+                    prepared_backend_identity = backend_identity(backend)
+                    validate_placement(backend, enriched)
+                    if operation in {"run.submit", "run.resume"}:
+                        # A prior metadata probe or dataset decode may have been
+                        # slow. Fence authority and settings again before the
+                        # separately authorized tiny allocation, never inside it.
+                        # Re-resolve the approved request checkout and dataset
+                        # bytes after metadata discovery, outside the writer lock.
+                        # The base backend may point at a different repository.
+                        recheck_materialized_sources(entries)
+                        refreshed = service._source_backend(operation, copy.deepcopy(enriched))
+                        refreshed = resolve_backend(service, refreshed, enriched)
+                        if backend_identity(refreshed) != prepared_backend_identity:
+                            raise ServiceError("placement_preparation_changed", "Prepared source or interpreter identity changed before allocation; retry explicitly", status_code=409)
+                        with service.store.transaction():
+                            service._require_current_authority(operation, actor, payload["project_id"])
+                            if snapshot(service, operation, payload)[0] != state:
+                                raise ServiceError("placement_preparation_changed", "Authority or execution settings changed before the allocation probe; retry explicitly", status_code=409)
+                        validate_placement(backend, enriched, allocate=True)
                 selected = set(enriched["execution"]["node_ids"])
                 for node in enriched["recipe"]["nodes"]:
                     if node["id"] in selected and node["kind"] == "dataset.version.import":
@@ -110,4 +146,4 @@ def prepare(service, operation, payload, actor, payload_hash):
             except (ServiceError, BackendError):
                 pass  # Plan retains blocked_reasons; submit retains its refusal.
     recheck_materialized_sources(entries)
-    return state, entries, None
+    return state, entries, None, probes

@@ -28,7 +28,7 @@ def context(spec: dict) -> tuple[dict, Path]:
     log_metadata({"application_operation_id": job.name, "recipe_digest": spec["recipe_digest"],
                   "node_id": spec["node_id"], "parent_run_id": spec.get("parent_run_id", ""),
                   "parent_checkpoint_ref": spec.get("parent_checkpoint_ref", ""),
-                  "resume_mode": spec.get("resume_mode", ""), **spec.get("recipe_provenance", {})})
+                  "resume_mode": spec.get("resume_mode", ""), "placement": spec.get("placement", {"device": "cpu"}), **spec.get("recipe_provenance", {})})
     log_metadata(spec.get("recipe_provenance", {}), run_id_name_or_prefix=ctx.pipeline_run.id)
     out = job / "outputs" / spec["node_id"]
     return spec["parameters"], out
@@ -92,7 +92,7 @@ def initialize_step(data: dict, spec: dict) -> Annotated[Path, ArtifactConfig(na
 @step(enable_cache=False)
 def train_step(data: dict, initial: Path, spec: dict) -> Annotated[Path, ArtifactConfig(name="checkpoint", is_model_artifact=True)]:
     parameters, out = context(spec)
-    parameters = {**parameters, "_cancel_file": str(Path(spec["job_dir"]) / "cancel.json"),
+    parameters = {**parameters, "_execution_device": spec.get("placement", {}).get("device", "cpu"), "_cancel_file": str(Path(spec["job_dir"]) / "cancel.json"),
                   "resume_mode": spec.get("resume_mode", "exact_state"), "checkpoint_kind": spec.get("checkpoint_kind", "last")}
     coordinator = None
     if spec.get("live_evaluation"):
@@ -199,6 +199,7 @@ def prepare_run(job: Path) -> dict:
         raise ValueError("Native artifact binding provenance changed after admission")
     execution_provenance = {**execution, "input_bindings": resolved}
     provenance["execution"] = execution_provenance
+    provenance["placement"] = request.get("placement", {"device": "cpu"})
     active_recipe = selected_recipe(recipe, execution)
     ordered = [node for node in topological_nodes(recipe) if node["id"] in execution["node_ids"]]
     functions = {n["id"]: (compile_python(n, job) if n["kind"] == "code.python" else compile_component(n, job) if n["kind"] == "component.run" else STEPS[n["kind"]]) for n in ordered}
@@ -250,6 +251,7 @@ def invoke_nodes(prepared: dict, condition_callback=None) -> None:
         if node["kind"] == "code.python":
             kwargs.update(node.get("parameters", {}))
         kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "parameters": node.get("parameters", {}),
+                              "placement": request.get("placement", {"device": "cpu"}),
                               "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
                               "dataset_source_guards": request.get("dataset_source_guards", {}),
                               "dependencies": active_recipe.get("resources", []) + active_recipe.get("external_dependencies", []),

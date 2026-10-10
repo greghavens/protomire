@@ -19,6 +19,7 @@ from .models import (Actor, Claim, Decision, Evidence, Hypothesis, ModelProject,
 from .source_provenance import verify_export_git_provenance
 from .store import SQLiteStore
 from .tracking import resolve_tracking, disclosure
+from .backend.placement import is_local_target, device_from_recipe, target_for_device
 
 
 class OperationService:
@@ -162,11 +163,14 @@ class OperationService:
                 return self._execution(operation, payload, actor)
             if operation == "run.compare":
                 return self._compare_unlocked(payload, actor)
-            dataset_state, dataset_values = None, None
+            if operation in {"run.plan", "run.submit", "run.resume", "run.status", "run.cancel", "run.list", "run.logs", "run.artifacts", "run.evaluations.list", "run.events.list"}:
+                from .run_preparation import invoke as invoke_run
+                return invoke_run(self, operation, payload, actor, payload_hash, request_id)
+            dataset_state, dataset_values, placement_values = None, None, None
             from .dataset_preparation import OPERATIONS as DATASET_PREPARED_OPERATIONS
             if operation in DATASET_PREPARED_OPERATIONS:
                 from .dataset_preparation import prepare
-                dataset_state, dataset_values, previous = prepare(self, operation, payload, actor, payload_hash)
+                dataset_state, dataset_values, previous, placement_values = prepare(self, operation, payload, actor, payload_hash)
                 if previous is not None:
                     return previous
             prepared = None
@@ -214,7 +218,8 @@ class OperationService:
                 if prepared is not None and self._evidence_snapshot(operation, payload) != prepared[0]:
                     raise ServiceError("comparison_changed", "Decision or execution evidence changed; prepare again", status_code=409)
                 from .dataset import materialization_session
-                with materialization_session(dataset_values or {}, compute=False):
+                from .backend.placement import probe_session
+                with materialization_session(dataset_values or {}, compute=False), probe_session(placement_values or {}, compute=False):
                     result = self._dispatch(operation, payload, actor,
                                             prepared_evidence=prepared[1] if prepared is not None else None)
                 if spec.mutating:
@@ -541,11 +546,15 @@ class OperationService:
         self._confirm_recipe_review(project_id)
         return result
 
-    def _save_recipe(self, body, project_id, recipe_id, revision, expected=None):
+    def _recipe_candidate(self, body, project_id, recipe_id, revision):
         canonical = {key: value for key, value in body.items() if key not in {"digest", "import_report"}}
         canonical.update(recipe_id=recipe_id, project_id=project_id, revision=revision)
         normalized = recipe_module.normalize_recipe(canonical)
         result = {**normalized, "digest": recipe_module.recipe_digest(normalized)}
+        return result
+
+    def _save_recipe(self, body, project_id, recipe_id, revision, expected=None):
+        result = self._recipe_candidate(body, project_id, recipe_id, revision)
         return self.store.put("recipe", recipe_id, project_id, result, expected)
 
     def _check_links(self, body, project_id):
@@ -637,10 +646,10 @@ class OperationService:
                       "spending_enforced": False, "remote_spend_cap": 0}
         if op == "cost.estimate":
             target = p.get("target", "local-cpu")
-            if target != "local-cpu":
+            if not is_local_target(target):
                 raise ServiceError("remote_disabled", "Remote cost estimates require an authorized, tested accounting provider", status_code=403)
             return {"target": target, "currency": "USD", "provider_charge": 0, "total_cost": None,
-                    "spending_enforced": False, "note": "Local CPU has no provider charge; electricity and hardware costs are not estimated."}
+                    "spending_enforced": False, "note": "Local execution has no provider charge; electricity and hardware costs are not estimated."}
         if op == "policy.get":
             return policy
         self._revision(policy, p["expected_revision"])
@@ -649,8 +658,9 @@ class OperationService:
         updated = {**policy, **p["changes"], "revision": policy["revision"] + 1}
         if any(updated[key] is not False for key in ("remote_execution_enabled", "untrusted_execution_enabled")):
             raise ServiceError("capability_unavailable", "Remote and untrusted execution are disabled; publication is limited to the local private registry", status_code=403)
-        if updated["allowed_targets"] not in ([], ["local-cpu"]) or updated["remote_spend_cap"] != 0:
-            raise ServiceError("remote_disabled", "Only the verified local CPU target is permitted", status_code=403)
+        if (not isinstance(updated["allowed_targets"], list) or not all(is_local_target(target) for target in updated["allowed_targets"])
+                or updated["remote_spend_cap"] != 0):
+            raise ServiceError("remote_disabled", "Only explicit local placement targets are permitted; runtime/profile admission is checked separately", status_code=403)
         maximum = updated["max_local_runtime_seconds"]
         if type(maximum) is not int or not 1 <= maximum <= 3600:
             raise ServiceError("validation_error", "Local runtime limit must be an integer from 1 to 3600 seconds")
@@ -685,7 +695,7 @@ class OperationService:
                 "recipe_id": executed["recipe_id"], "recipe_revision": executed["recipe_revision"],
                 "recipe_digest": executed["recipe_digest"],
                 "operation_identity": {key: value for key, value in executed.items()
-                                       if key not in {"revision", "status", "last_reconciled_at", "errors"}},
+                                       if key not in {"revision", "status", "last_reconciled_at", "errors", "dispatch_state"}},
                 "configuration": {key: manifest.get(key) for key in
                     ("nodes", "edges", "source", "environment", "external_dependencies", "evaluation")}})
         enriched = {**payload, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"]}
@@ -828,7 +838,7 @@ class OperationService:
             raise ServiceError("backend_contract_error", "Backend did not return a structured response", status_code=502)
         return result
 
-    def _execution(self, op, p, actor, *, prepared_promotion=None):
+    def _execution(self, op, p, actor, *, prepared_promotion=None, prepare_only=False):
         project_id = p["project_id"]
         project = self._get("project", project_id, project_id)
         enriched = {**p, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"]}
@@ -854,7 +864,7 @@ class OperationService:
                     self._find_operation(project_id, backend_run_id=binding["backend_run_id"])
             target = p.get("target", "local-cpu")
             policy = self._policy("policy.get", p)
-            if target != "local-cpu" or target not in policy["allowed_targets"]:
+            if not is_local_target(target) or target not in policy["allowed_targets"]:
                 raise ServiceError("remote_disabled", "Execution target is not permitted; remote spending is disabled", status_code=403)
             enriched.update(target=target, max_runtime_seconds=policy["max_local_runtime_seconds"])
             if op == "run.submit":
@@ -870,8 +880,6 @@ class OperationService:
                 if p.get("trusted") is not True:
                     raise ServiceError("untrusted_execution_blocked", "Explicit source trust is required to resume", status_code=403)
                 policy = self._policy("policy.get", p)
-                if "local-cpu" not in policy["allowed_targets"]:
-                    raise ServiceError("target_disabled", "Local execution is disabled by project policy", status_code=403)
                 enriched["parent_operation_id"] = correlation["operation_id"]
                 enriched["operation_id"] = str(uuid5(NAMESPACE_URL, f"modelbuilder:{actor.id}:{op}:{p['idempotency_key']}"))
                 self._require_recipe_review(project_id)
@@ -888,6 +896,12 @@ class OperationService:
                 resumed_recipe = copy.deepcopy(current_recipe if mode == "warm_start" else parent_recipe)
                 parent_execution = continuation_selection(parent_recipe, parent_recipe, correlation.get("execution"), "exact_state")
                 enriched["execution"] = continuation_selection(parent_recipe, resumed_recipe, correlation.get("execution"), mode)
+                resume_target = target_for_device(device_from_recipe(resumed_recipe))
+                if resume_target not in policy["allowed_targets"]:
+                    raise ServiceError("target_disabled", "Selected local device is disabled by project policy", status_code=403)
+                if mode == "exact_state" and (resume_target != "local-cpu" or device_from_recipe(parent_recipe) != "cpu"):
+                    raise ServiceError("capability_unavailable", "Accelerator exact-state continuation is not hardware-verified; use warm_start")
+                enriched["target"] = resume_target
                 parent_nodes = selected_recipe(parent_recipe, parent_execution)["nodes"]
                 resumed_nodes = selected_recipe(resumed_recipe, enriched["execution"])["nodes"]
                 component_training = [node for node in parent_nodes
@@ -914,8 +928,10 @@ class OperationService:
                 if parent_recipe["recipe_id"] != current_recipe["recipe_id"]:
                     enriched["legacy_parent_recipe_id"] = parent_recipe["recipe_id"]
                 resumed_recipe["name"] = current_recipe["name"]
-                enriched["recipe"] = self._save_recipe(resumed_recipe, project_id, current_recipe["recipe_id"],
-                                                       current_recipe["revision"] + 1, current_recipe["revision"])
+                enriched["recipe"] = self._recipe_candidate(resumed_recipe, project_id, current_recipe["recipe_id"],
+                                                             current_recipe["revision"] + 1)
+                if not prepare_only:
+                    self.store.put("recipe", current_recipe["recipe_id"], project_id, enriched["recipe"], current_recipe["revision"])
                 enriched["recipe_id"] = current_recipe["recipe_id"]
                 enriched["max_runtime_seconds"] = policy["max_local_runtime_seconds"]
                 if not p.get("mode", p.get("resume_mode")):
@@ -942,6 +958,8 @@ class OperationService:
             enriched["candidate_run_ids"] = decision["run_ids"]
             if decision["selection_rule"].get("evaluations"):
                 enriched["evaluations"] = decision["selection_rule"]["evaluations"]
+        if prepare_only:
+            return enriched
         result = self._call_backend(op, enriched, actor, prepared_promotion=prepared_promotion)
         if op == "run.compare":
             configurations = []

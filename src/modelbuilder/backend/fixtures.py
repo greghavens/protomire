@@ -123,7 +123,8 @@ def build_model(fixture: str, width: int):
 def atomic_save(value: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".partial")
-    torch.save(value, temporary)
+    from .placement import checkpoint_cpu
+    torch.save(checkpoint_cpu(value), temporary)
     os.replace(temporary, path)
 
 
@@ -165,6 +166,11 @@ def _batch(data: dict, indices: torch.Tensor):
     return {k: torch.tensor(v, dtype=torch.long)[indices] for k, v in data["tokens"].items()}
 
 
+def _device_batch(data, indices, device):
+    batch = _batch(data, indices)
+    return {key: value.to(device) for key, value in batch.items()} if isinstance(batch, dict) else batch.to(device)
+
+
 def _logits(model, batch):
     return model(**batch).logits if isinstance(batch, dict) else model(batch)
 
@@ -178,7 +184,12 @@ def train(data: dict, initial: Path, parameters: dict, out: Path, resume: Path |
     if data.get("fixture") != fixture or ck["width"] != width or ck["dataset_sha256"] != digest:
         raise ValueError("Checkpoint architecture/dataset identity mismatch")
     setup(ck["seed"])
-    model = build_model(fixture, width)
+    from .placement import runtime_device_identity, synchronize
+    device = parameters.get("_execution_device", "cpu")
+    placement = {**runtime_device_identity(device), "dtype": "float32"}
+    if resume and mode == "exact_state" and (device != "cpu" or ck.get("placement", {}).get("device", "cpu") != "cpu"):
+        raise ValueError("Accelerator exact-state continuation is not hardware-verified; use warm_start")
+    model = build_model(fixture, width).to(device)
     model.load_state_dict(ck["model"])
     reference = copy.deepcopy(model).eval()
     reference.load_state_dict(ck["reference"])
@@ -232,15 +243,15 @@ def train(data: dict, initial: Path, parameters: dict, out: Path, resume: Path |
         cursor += len(ids)
         model.train()
         optimizer.zero_grad()
-        logits = _logits(model, _batch(data, ids))
+        logits = _logits(model, _device_batch(data, ids, device))
         with torch.no_grad():
-            ref_logits = _logits(reference, _batch(data, ids))
+            ref_logits = _logits(reference, _device_batch(data, ids, device))
         logp, logq = logits.log_softmax(-1), ref_logits.log_softmax(-1)
         if direction in {"reference_to_model", "forward"}:
             kl = (logq.exp() * (logq - logp)).sum(-1).mean()
         else:
             kl = (logp.exp() * (logp - logq)).sum(-1).mean()
-        ce = nn.functional.cross_entropy(logits, y[ids])
+        ce = nn.functional.cross_entropy(logits, y[ids].to(device))
         # Exercise Python RNG as well as dropout/minibatch Torch RNG in exact-resume tests.
         loss = ce + coefficient * kl + logits.square().mean() * (0.0004 + random.random() * 0.0002)
         if parameters.get("intentional_failure_step") == step_index + 1:
@@ -250,13 +261,16 @@ def train(data: dict, initial: Path, parameters: dict, out: Path, resume: Path |
         scheduler.step()
         model.eval()
         with torch.no_grad():
-            validation_loss = float(nn.functional.cross_entropy(_logits(model, _batch(data, val_ids)), y[val_ids]))
+            validation_loss = float(nn.functional.cross_entropy(_logits(model, _device_batch(data, val_ids, device)), y[val_ids].to(device)))
         history.append({"step": step_index + 1, "loss": float(loss.detach()), "cross_entropy": float(ce.detach()),
                         "kl": float(kl.detach()), "validation_loss": validation_loss})
         is_best = validation_loss < best
         if is_best:
             best, best_step = validation_loss, step_index + 1
-        state = {"fixture": fixture, "width": width, "seed": ck["seed"], "model": model.state_dict(),
+        synchronize(device)
+        accelerator_rng = (torch.mps.get_rng_state() if device == "mps" else
+                           torch.cuda.get_rng_state(device) if device.startswith("cuda:") else None)
+        state = {"placement": placement, "accelerator_rng": accelerator_rng, "fixture": fixture, "width": width, "seed": ck["seed"], "model": model.state_dict(),
                  "reference": reference.state_dict(), "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict(),
                  "torch_rng": torch.get_rng_state(), "python_rng": random.getstate(), "step": step_index + 1,
                  "epoch": epoch, "cursor": cursor, "order": order, "training_contract": contract,

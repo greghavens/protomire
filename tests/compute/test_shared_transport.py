@@ -36,7 +36,7 @@ async def test_execution_targets_hardware_http_mcp_readonly_parity(tmp_path, mon
                 assert response["hardware"]["scope"] == "operation_service_host"
                 assert response["hardware"]["cpu"]["logical_cores"] > 0
                 assert response["hardware"]["memory"]["total_bytes"] > 0
-                assert [row["id"] for row in response["targets"]] == ["local-cpu"]
+                assert [row["id"] for row in response["targets"]] == ["local-cpu", "local-mps", "local-cuda"]
                 assert response["targets"][0]["available"] is False
                 assert not response["hardware"]["resource_control"]["gpu_execution"]
             first["hardware"].pop("freshness")

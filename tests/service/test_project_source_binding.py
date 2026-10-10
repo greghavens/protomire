@@ -293,7 +293,7 @@ def test_lost_submit_reply_cannot_relabel_job_after_project_rebind(setup, monkey
     # Emulate a surviving native job whose enclosing service transaction rolled back.
     bind(service, project, "second")
     monkeypatch.setattr(service.backend, "_validate_execution", lambda payload: None)
-    def rpc(operation, payload):
+    def rpc(operation, payload, **kwargs):
         assert operation == "backend.validate", "Conflicting retry must never read/relabel the accepted run"
         return {}
     monkeypatch.setattr(service.backend, "_rpc", rpc)
@@ -304,9 +304,14 @@ def test_lost_submit_reply_cannot_relabel_job_after_project_rebind(setup, monkey
             service.invoke("run.submit", {"project_id": project["project_id"], "recipe_id": project["recipe_id"],
                 "expected_revision": 1, "trusted": True, "idempotency_key": "lost-reply"}, OWNER)
     assert error.value.code == "conflict"
-    with pytest.raises(ServiceError) as missing:
-        service.store.get("operation", operation_id)
-    assert missing.value.code == "not_found"
+    failed = service.store.get("operation", operation_id)
+    assert failed["status"] == "failed"
+    assert failed["backend_run_id"] is None
+    assert failed["source_binding"] is None
+    assert failed["errors"][0]["code"] == "conflict"
+    from modelbuilder.backend.common import read_json
+    assert read_json(job / "native.json")["backend_run_id"] == "accepted-native-run"
+    assert read_json(job / "request.json")["source_root"] == str(accepted_backend.repository)
 
 
 def test_in_root_source_symlink_is_blocked_before_runtime(setup):

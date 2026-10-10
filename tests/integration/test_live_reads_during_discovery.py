@@ -17,7 +17,7 @@ import pytest
 
 pytest.importorskip("torch")
 from modelbuilder import parquet_reader, research_content  # noqa: E402
-from modelbuilder.backend import ZenMLBackend, fixtures  # noqa: E402
+from modelbuilder.backend import ZenMLBackend, fixtures, placement  # noqa: E402
 from modelbuilder.backend.live_evaluation import LiveEvaluationCoordinator, list_evaluations  # noqa: E402
 from modelbuilder.models import Actor  # noqa: E402
 from modelbuilder.service import OperationService  # noqa: E402
@@ -25,8 +25,10 @@ from modelbuilder.service import OperationService  # noqa: E402
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.parametrize("hold_parquet", [False, True])
-def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held(tmp_path, monkeypatch, hold_parquet):
+@pytest.mark.parametrize("held_preparation", ["none", "parquet", "placement"])
+def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held(tmp_path, monkeypatch, held_preparation):
+    hold_parquet = held_preparation == "parquet"
+    hold_placement = held_preparation == "placement"
     if hold_parquet:
         if os.environ.get("MODELBUILDER_REQUIRE_PARQUET") == "1":
             import pyarrow as arrow
@@ -70,7 +72,32 @@ def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
     evidence = call("evidence.add", {"project_id": pid, "title": "Independent synthetic paper",
                                      "source_identifier": "PMC123", "idempotency_key": "evidence"})
     compute_entered, content_entered, release = threading.Event(), threading.Event(), threading.Event()
-    parquet_entered = threading.Event()
+    parquet_entered, placement_entered = threading.Event(), threading.Event()
+    placement_calls = []
+    expected_revision = 1
+    if hold_placement:
+        # The actual CPU harness remains tied to its original revision. A second
+        # revision plans a different device while those checkpoints are read.
+        recipe = call("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"]})
+        recipe["environment"]["device"] = "mps"
+        recipe["environment"]["lock_file"] = {"path": "requirements/profiles/backend-darwin-arm64.lock",
+                                               "sha256": placement.MPS_LOCK_SHA256}
+        call("recipe.update", {"project_id": pid, "recipe_id": project["recipe_id"], "expected_revision": 1,
+                               "recipe": recipe, "idempotency_key": "device-revision"})
+        expected_revision = 2
+        call("policy.update", {"project_id": pid, "expected_revision": 1,
+             "changes": {"allowed_targets": ["local-cpu", "local-mps"]}, "idempotency_key": "mps-policy"})
+        def held_probe(_backend, device, *, allocate=False):
+            assert not service.store._lock._is_owned()
+            assert device == "mps" and allocate is False
+            if placement._PREPARED_PROBES.get() is None:
+                # Discovery has its own held fixture below, separate from the plan.
+                return {"device": device, "available": False, "reason": "Controlled discovery fixture"}
+            placement_calls.append((device, allocate))
+            placement_entered.set()
+            assert release.wait(25), "Held placement fixture was not released"
+            return {"device": device, "available": False, "reason": "Controlled unavailable MPS fixture"}
+        monkeypatch.setattr(placement, "_probe", held_probe)
     if hold_parquet:
         from modelbuilder.dataset import DatasetRegistry
         root = tmp_path / "external-data"
@@ -111,9 +138,13 @@ def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
                 "expected_evidence_revision": 1, "provider": "europe_pmc", "source_identifier": "PMC123", "idempotency_key": "fetch"})
             dataset = (pool.submit(call, "dataset.register", {"project_id": pid, "manifest": manifest,
                        "idempotency_key": "held-dataset"}) if hold_parquet else None)
+            planned = (pool.submit(call, "run.plan", {"project_id": pid, "recipe_id": project["recipe_id"],
+                       "target": "local-mps", "trusted": True}) if hold_placement else None)
             try:
-                assert compute_entered.wait(3) and content_entered.wait(3)
+                assert compute_entered.wait(3), compute.exception() if compute.done() else "Discovery did not reach fixture"
+                assert content_entered.wait(3)
                 assert not hold_parquet or parquet_entered.wait(3)
+                assert not hold_placement or placement_entered.wait(3)
                 assert not service.store.connection.in_transaction
                 trainer.start()
                 observed = []
@@ -127,6 +158,7 @@ def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
                 assert len(observed) >= 2, observed
                 assert trainer.is_alive() and not compute.done() and not content.done()
                 assert dataset is None or not dataset.done()
+                assert planned is None or not planned.done()
                 assert all(row["metrics"]["validation_loss"] > 0 for row in observed)
                 assert {row["step"] for row in observed}.issuperset({2, 4})
                 assert pool.submit(call, "run.status", {"project_id": pid, "operation_id": operation_id}).result(timeout=1)["status"] == "running"
@@ -138,6 +170,11 @@ def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
                 release.set()
             assert compute.result(timeout=3)["hardware"]["scope"] == "controlled-held-probe"
             assert content.result(timeout=3)["status"] == "succeeded"
+            if planned is not None:
+                result = planned.result(timeout=5)
+                assert result["executable"] is False
+                assert any("Controlled unavailable MPS fixture" in row["message"] for row in result["blocked_reasons"])
+                assert placement_calls == [("mps", False)]  # No allocation or commit-time retry.
             if dataset is not None:
                 assert dataset.result(timeout=5)["row_count"] == 1
         trainer.join(timeout=25)
@@ -145,11 +182,12 @@ def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
         coordinator.close()
         assert list_evaluations(job)["summary"]["completed"] == 8
         current = call("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"]})
-        assert current["revision"] == 1
+        assert current["revision"] == expected_revision
         assert len(service.store.list("recipe", pid)) == 1
         assert len(service.store.list("operation", pid)) == 1  # Only the explicitly installed local harness.
         (tmp_path / "verified-read-responsiveness.json").write_text(json.dumps({"observed_steps_while_training": [row["step"] for row in observed],
-            "compute_and_content_pending": True, "cross_connection_write_completed": True, "recipe_revision": 1}))
+            "compute_and_content_pending": True, "cross_connection_write_completed": True, "recipe_revision": expected_revision,
+            "held_preparation": held_preparation}))
     finally:
         release.set()
         if trainer.ident:

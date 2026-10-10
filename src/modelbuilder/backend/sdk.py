@@ -362,6 +362,19 @@ def status(job: Path, *, verify_evaluations=False) -> dict:
             "log_available": (job / "worker.log").exists(), "executed_recipe_digest": request.get("executed_recipe_digest") or request["recipe"].get("digest") }
 
 
+def _checkpoint_resume_modes(request: dict, declared: list[str]) -> list[str]:
+    """Report effective capabilities without rewriting immutable checkpoint claims."""
+    from .placement import device_from_recipe, effective_resume_modes, target_for_device
+    try:
+        device = device_from_recipe(request["recipe"])
+        if (request.get("placement", {}).get("device", device) != device
+                or request.get("target", target_for_device(device)) != target_for_device(device)):
+            raise ValueError("Saved checkpoint placement differs from its executed recipe")
+    except (ValueError, TypeError, AttributeError, KeyError) as error:
+        raise BackendError("dependency_mismatch", "Checkpoint execution placement is inconsistent") from error
+    return effective_resume_modes(device, declared)
+
+
 def checkpoint(job: Path, kind: str) -> dict:
     run = reconcile(job)
     if not run:
@@ -391,7 +404,9 @@ def checkpoint(job: Path, kind: str) -> dict:
                 mismatches.append(descriptor["purpose"])
                 continue
             return {**selected, "path": str(path), "checkpoint_kind": kind, "sha256": identity(descriptor),
-                    "resume_modes": descriptor["resume_modes"], "descriptor": descriptor}
+                    "resume_modes": _checkpoint_resume_modes(request, descriptor["resume_modes"]),
+                    "descriptor": descriptor,
+                    "descriptor_scope": "immutable_component_declaration_not_effective_capabilities"}
         if training_nodes.get(selected.get("node_id"), {}).get("kind") == "component.run":
             continue  # Other declared Path outputs are not checkpoints.
         expected_file = Path(path) / ("best.pt" if kind == "best" else "checkpoint.pt")
@@ -400,7 +415,7 @@ def checkpoint(job: Path, kind: str) -> dict:
         import hashlib
         return {**selected, "path": str(path), "checkpoint_kind": kind,
                 "sha256": hashlib.sha256(expected_file.read_bytes()).hexdigest(),
-                "resume_modes": ["exact_state", "warm_start"]}
+                "resume_modes": _checkpoint_resume_modes(request, ["exact_state", "warm_start"])}
     raise BackendError("capability_unavailable", "No verified checkpoint supports the requested purpose", {"requested": kind, "available_purposes": mismatches})
 
 

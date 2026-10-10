@@ -26,6 +26,14 @@ class InspectBackend:
         result.guards = copy.deepcopy(guards)
         return result
 
+    def prepare_execution(self, operation, payload):
+        return operation, payload
+
+    def launch_prepared(self, prepared, authorize=None):
+        if authorize:
+            authorize()
+        return self.invoke(*prepared, None)
+
     def invoke(self, operation, payload, actor):
         self.calls.append((operation, copy.deepcopy(payload), self.dependency_paths, self.guards))
         return {"executable": True}

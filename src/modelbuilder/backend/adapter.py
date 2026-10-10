@@ -18,6 +18,7 @@ except ImportError:  # Native Windows can still import and run the service.
     fcntl = None
 import time
 import uuid
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from .common import alive, now, process_group_alive, recipe_provenance, read_json, write_json, runtime_identity
@@ -26,10 +27,37 @@ from .admission import BackendError, capabilities, environment_profiles, validat
 from ..compute_discovery import HardwareDiscovery
 
 
+def _durable_launch_record(path: Path, value: dict) -> None:
+    """Publish launch intent/acknowledgment before crossing a process boundary."""
+    write_json(path, value)
+    # Persist the file rename and any freshly created job/jobs directory entries.
+    for parent in (path.parent, path.parent.parent, path.parent.parent.parent):
+        directory = os.open(parent, os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+
+
+@dataclass(frozen=True, slots=True)
+class _PreparedExecution:
+    """Opaque in-process result of preflight, containing no mutable payloads."""
+    operation_id: str
+    project_id: str
+    _root: str = field(repr=False)
+    _python: str = field(repr=False)
+    _request_json: str = field(repr=False)
+    _environment: tuple[tuple[str, str], ...] = field(repr=False)
+    _owner: object = field(repr=False)
+
+
 class ZenMLBackend:
+    initialization_lock_timeout_seconds = 5.0
+
     def __init__(self, data_dir: str | Path, python_executable: str | None = None,
                  trusted_code_roots: list[str] | None = None, dependency_paths: dict[str, str] | None = None,
                  source_root: str | Path | None = None, pretrained_path: str | Path | None = None):
+        self._preparation_owner = object()
         self.root = Path(data_dir).resolve() / "backend"
         self.root.mkdir(parents=True, exist_ok=True)
         package_root = Path(__file__).resolve().parents[2]
@@ -67,7 +95,7 @@ class ZenMLBackend:
 
     def _env(self) -> dict:
         allowed = {"PATH", "LANG", "LC_ALL", "TZ", "HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY", "NO_PROXY",
-                   "https_proxy", "http_proxy", "all_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR"}
+                   "https_proxy", "http_proxy", "all_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR", "CUDA_VISIBLE_DEVICES"}
         env = {key: value for key, value in os.environ.items() if key in allowed}
         env["HOME"] = str(self.root / "home")
         Path(env["HOME"]).mkdir(parents=True, exist_ok=True)
@@ -97,7 +125,7 @@ class ZenMLBackend:
         if reason:
             raise BackendError("capability_unavailable", reason)
 
-    def _rpc(self, operation: str, payload: dict) -> dict:
+    def _rpc(self, operation: str, payload: dict, *, pass_fds: tuple[int, ...] = ()) -> dict:
         self._require_capability()
         if not Path(self.python).is_file():
             raise BackendError("capability_unavailable", "Pinned ZenML backend environment is not installed; run scripts/bootstrap.sh --backend")
@@ -108,7 +136,7 @@ class ZenMLBackend:
         with path.with_suffix(".log").open("w") as log:
             try:
                 completed = subprocess.run([self.python, "-P", "-m", "modelbuilder.backend.sdk", str(path)], env=self._env(),
-                                           cwd=self.root, stdout=log, stderr=subprocess.STDOUT, timeout=90)
+                                           cwd=self.root, stdout=log, stderr=subprocess.STDOUT, timeout=90, pass_fds=pass_fds)
             except subprocess.TimeoutExpired as error:
                 raise BackendError("backend_timeout", "ZenML read did not complete", {"request_id": request_id}) from error
         response = read_json(result)
@@ -180,8 +208,8 @@ print(json.dumps(result))"""
             handle = prepared_promotion if prepared_promotion is not None else self.prepare_promotion(payload, actor)
             return self._rpc(operation, {**payload, "_prepared_promotion": handle})
         if operation == "execution.targets":
-            return {"targets": [{"id": "local-cpu", "available": self._capability_reason() is None, "unavailable_reason": self._capability_reason(), "backend": "zenml", "version": "0.97.0",
-                                 "cancel": "supervised_process_termination", "exact_resume": True, "untrusted_isolation": False}],
+            from .placement import targets
+            return {"targets": targets(self),
                     "remote_enabled": False, "capabilities": capabilities(self),
                     "environment_profiles": environment_profiles(self),
                     "hardware": self.hardware_discovery.snapshot()}
@@ -198,7 +226,10 @@ print(json.dumps(result))"""
                     "execution": {**payload.get("execution", {}), "input_bindings": payload.get("resolved_input_bindings", [])}, "executable": not blocked,
                     "blocked_reasons": blocked, "warnings": [item["message"] for item in blocked],
                     "dependency_verification": "verified_at_plan_and_rechecked_at_submission" if not blocked else "blocked",
-                    "capabilities": capabilities(self), "tracking": disclosure(payload.get("tracking") or {"mode": "disabled"}),
+                    "capabilities": capabilities(self), "placement": {"device": recipe.get("environment", {}).get("device", "cpu"),
+                    "requested_device": recipe.get("environment", {}).get("device", "cpu"), "component_execution_observed": False,
+                    "allocation_verified": False, "allocation_verification_scope": "tiny_tensor_probe_only",
+                    "reservation": False, "live_evaluation_device": "cpu", "allocation_probe": "submission_only"}, "tracking": disclosure(payload.get("tracking") or {"mode": "disabled"}),
                     "tracking_readiness": tracking_readiness(payload.get("tracking"), os.environ.get("MODELBUILDER_TRACKING_PYTHON", self.python)),
                     "isolation": "trusted_local_process", "estimated_cost": {"currency": "USD", "amount": 0, "scope": "local provider charge only"}}
         if operation == "run.submit":
@@ -219,6 +250,8 @@ print(json.dumps(result))"""
                 return {"operation_id": job.name, "logs": content[cursor:cursor + 100000], "cursor": str(min(len(content), cursor + 100000))}
             if operation == "run.cancel":
                 return self.cancel(job, request)
+            if operation == "run.status":
+                return self._execution_status(job, request)
             return self._rpc(operation, {**payload, "job_dir": str(job)})
         if operation == "run.compare":
             run_ids = payload.get("backend_run_ids", payload.get("run_ids", []))
@@ -240,26 +273,66 @@ print(json.dumps(result))"""
     def _check_submission_identity(self, request: dict, payload: dict) -> None:
         """A lost service transaction cannot relabel an already submitted native job."""
         from ..execution import selection
+        from ..tracking import TrackingConfig
+        try:
+            # Older journals omitted disabled tracking defaults. Compare their
+            # effective configuration without discarding destination/sharing fields.
+            request_tracking = TrackingConfig.model_validate(
+                {} if request.get("tracking") is None else request["tracking"]).model_dump()
+            payload_tracking = TrackingConfig.model_validate(
+                {} if payload.get("tracking") is None else payload["tracking"]).model_dump()
+        except (ValueError, TypeError) as error:
+            raise BackendError("conflict", "Existing submission tracking identity is invalid; inspect the original run") from error
         if (not request or request.get("project_id") != payload.get("project_id")
                 or request.get("idempotency_key") != payload.get("idempotency_key")
                 or request.get("recipe") != payload.get("recipe")
+                or request.get("target", "local-cpu") != payload.get("target", "local-cpu")
                 or selection(request["recipe"], request.get("execution")) != selection(payload["recipe"], payload.get("execution"))
                 or request.get("resolved_input_bindings", []) != payload.get("resolved_input_bindings", [])
-                or request.get("source_root") != str(self.repository)
-                or request.get("dependency_paths", {}) != self.dependency_paths
-                or request.get("dataset_source_guards", {}) != getattr(self, "dataset_source_guards", {})
+                or request.get("source_root") != payload.get("source_root", str(self.repository))
+                or request.get("dependency_paths", {}) != payload.get("dependency_paths", self.dependency_paths)
+                or request.get("dataset_source_guards", {}) != payload.get("dataset_source_guards", getattr(self, "dataset_source_guards", {}))
                 or request.get("source_binding") != payload.get("source_binding")
-                or request.get("source_workspace") != payload.get("source_workspace")):
+                or request.get("source_workspace") != payload.get("source_workspace")
+                or request_tracking != payload_tracking
+                or (request.get("tracking_online_consent") is True) != (payload.get("tracking_online_consent") is True)
+                or request.get("max_runtime_seconds", 600) != payload.get("max_runtime_seconds", 600)
+                or any(request.get(key) != payload.get(key) for key in (
+                    "parent_run_id", "parent_checkpoint_ref", "parent_recipe_id", "parent_recipe_revision",
+                    "parent_recipe_digest", "resume_mode", "resume_path", "checkpoint_kind"))):
             raise BackendError("conflict", "Operation identity reused with a conflicting request or source workspace; inspect the original run")
 
-    def submit(self, payload: dict) -> dict:
+    def prepare_execution(self, operation: str, payload: dict) -> _PreparedExecution:
+        """Do all potentially slow admission work before service write admission.
+
+        The result is process-local and opaque. It is neither a reservation nor
+        evidence that a worker has launched, and must never be accepted over an API.
+        """
+        if operation not in {"run.submit", "run.resume"}:
+            raise BackendError("validation_error", "Only submit and resume can prepare execution")
+        payload = copy.deepcopy(payload)
+        if operation == "run.resume":
+            payload = self._materialize_resume(payload)
         self._validate_execution(payload)
+        from .placement import validate_placement, placement_environment
+        payload["placement"] = validate_placement(self, payload, allocate=True)
         if not Path(self.python).is_file():
             raise BackendError("capability_unavailable", "Backend interpreter is not installed")
+        deadline = time.monotonic() + self.initialization_lock_timeout_seconds
         with (self.root / "initialize.lock").open("a") as initialization:
-            fcntl.flock(initialization.fileno(), fcntl.LOCK_EX)
-            self._rpc("backend.validate", {"environment": payload["recipe"].get("environment", {})})
-        supervisor_env = self._env()
+            while True:
+                try:
+                    fcntl.flock(initialization.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError as error:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise BackendError("backend_timeout", "Backend initialization is busy; retry preparation",
+                                           {"phase": "initialization_lock", "retryable": True}) from error
+                    time.sleep(min(0.02, remaining))
+            self._rpc("backend.validate", {"environment": payload["recipe"].get("environment", {})},
+                      pass_fds=(initialization.fileno(),))
+        supervisor_env = placement_environment(payload["placement"]["device"], self._env())
         if os.environ.get("MODELBUILDER_TRACKING_PYTHON"):
             supervisor_env["MODELBUILDER_TRACKING_PYTHON"] = os.environ["MODELBUILDER_TRACKING_PYTHON"]
         if payload.get("tracking", {}).get("mode") == "online" and payload.get("tracking_online_consent") is True:
@@ -267,39 +340,89 @@ print(json.dumps(result))"""
                 supervisor_env["MODELBUILDER_WANDB_API_KEY"] = os.environ["MODELBUILDER_WANDB_API_KEY"]
         operation_id = str(uuid.UUID(payload.get("operation_id") or str(uuid.uuid4())))
         job = self.root / "jobs" / operation_id
+        request = {**payload, "operation_id": operation_id, "root": str(self.root), "job_dir": str(job),
+                   "run_name": f"modelbuilder-{operation_id}", "dependency_paths": copy.deepcopy(self.dependency_paths),
+                   "dataset_source_guards": copy.deepcopy(getattr(self, "dataset_source_guards", {})),
+                   "source_root": str(self.repository), "trusted_code_roots": list(self.trusted_code_roots),
+                   "executed_recipe_digest": recipe_provenance(payload["recipe"])["recipe_digest"]}
+        # A resumed parent's submission time belongs to the parent, never this job.
+        request.pop("submitted_at", None)
+        existing = read_json(job / "request.json")
+        if existing:
+            # Fail legacy/native identity collisions before service admission can
+            # commit a prospective resume revision. Launch repeats this check to
+            # cover a request published concurrently after this read-only snapshot.
+            self._check_submission_identity(existing, request)
+        return _PreparedExecution(operation_id, payload["project_id"], str(self.root), self.python,
+                                  json.dumps(request, sort_keys=True), tuple(sorted(supervisor_env.items())),
+                                  self._preparation_owner)
+
+    def _execution_status(self, job: Path, request: dict) -> dict:
+        """Reconcile existing work without treating a missing PID as permission to spawn."""
+        result = self._rpc("run.status", {"project_id": request["project_id"], "job_dir": str(job)})
+        state = read_json(job / "state.json")
+        ack = read_json(job / "supervisor_ack.json")
+        if not any((job / name).exists() for name in ("spawn_attempt.json", "supervisor_ack.json", "state.json", "native.json")):
+            return result
+        if (not result.get("backend_run_id") and not read_json(job / "native.json").get("backend_run_id")
+                and not state.get("worker_pid") and not result.get("worker_pid")
+                and not alive(state.get("supervisor_pid"), state.get("supervisor_identity"))
+                and not alive(ack.get("supervisor_pid"), ack.get("supervisor_identity"))):
+            # Popen and recording its returned PID cannot be one atomic action.
+            # Intent alone proves neither success nor failure, including after reboot.
+            result.update(status="unknown", launch_state="uncertain", retryable=False,
+                          reconciliation_required=True,
+                          error="Supervisor launch was attempted but no owned worker or native run is confirmed; automatic respawn is disabled")
+        return result
+
+    def launch_prepared(self, handle: _PreparedExecution, authorize=None) -> dict:
+        """Launch an admitted frozen request; never repeat preflight or allocation.
+
+        authorize, when supplied, performs the service's short final authority/CAS
+        check under the launch lease. An exception prevents any spawn attempt.
+        """
+        if (not isinstance(handle, _PreparedExecution) or handle._owner is not self._preparation_owner
+                or handle._root != str(self.root) or handle._python != self.python):
+            raise BackendError("validation_error", "An internal execution preparation from this backend is required")
+        payload = json.loads(handle._request_json)
+        operation_id = handle.operation_id
+        job = self.root / "jobs" / operation_id
         job.mkdir(parents=True, exist_ok=True)
         with (job / "launch.lock").open("a") as lease:
             try:
                 fcntl.flock(lease.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError:
                 self._check_submission_identity(read_json(job / "request.json"), payload)
-                return self._rpc("run.status", {**payload, "job_dir": str(job)})
+                return self._execution_status(job, payload)
             if (job / "request.json").exists():
                 request = read_json(job / "request.json")
                 self._check_submission_identity(request, payload)
-                state = read_json(job / "state.json")
-                if (read_json(job / "native.json") or state.get("worker_pid") or
-                        alive(state.get("supervisor_pid"), state.get("supervisor_identity"))):
-                    return self._rpc("run.status", {**payload, "job_dir": str(job)})
-                # No process owns the inherited launch lease and no worker/native
-                # identity exists: the previous service died before a real launch.
+                if any((job / name).exists() for name in ("spawn_attempt.json", "supervisor_ack.json", "state.json", "native.json")):
+                    return self._execution_status(job, request)
+                # A durable request with no attempt can precede launch safely.
+                # Once an attempt exists, absence of a PID is never proof of no spawn.
             else:
-                request = {**payload, "operation_id": operation_id, "root": str(self.root), "job_dir": str(job),
-                           "run_name": f"modelbuilder-{operation_id}", "dependency_paths": self.dependency_paths,
-                           "dataset_source_guards": getattr(self, "dataset_source_guards", {}), "source_root": str(self.repository),
-                           "submitted_at": now(), "trusted_code_roots": self.trusted_code_roots,
-                           "executed_recipe_digest": recipe_provenance(payload["recipe"])["recipe_digest"]}
-                write_json(job / "request.json", request)
+                if any((job / name).exists() for name in ("spawn_attempt.json", "supervisor_ack.json", "state.json", "native.json")):
+                    raise BackendError("submission_uncertain", "Launch evidence exists without its request; inspect the original job",
+                                       {"operation_id": operation_id, "retryable": False})
+                request = {**payload, "submitted_at": now()}
+                _durable_launch_record(job / "request.json", request)
+            if authorize is not None:
+                authorize()
+            attempt = {"operation_id": operation_id, "attempt_id": str(uuid.uuid4()), "attempted_at": now(),
+                       "runtime_identity": runtime_identity()}
             write_json(job / "state.json", {"supervisor_state": "starting", "submitted_at": request["submitted_at"]})
+            _durable_launch_record(job / "spawn_attempt.json", attempt)
             try:
                 with (job / "supervisor.log").open("a") as log:
-                    process = subprocess.Popen([self.python, "-P", "-m", "modelbuilder.backend.supervisor", str(job), str(lease.fileno())],
-                                               cwd=self.root, env=supervisor_env, stdout=log, stderr=subprocess.STDOUT,
+                    process = subprocess.Popen([handle._python, "-P", "-m", "modelbuilder.backend.supervisor", str(job), str(lease.fileno())],
+                                               cwd=self.root, env=dict(handle._environment), stdout=log, stderr=subprocess.STDOUT,
                                                start_new_session=True, stdin=subprocess.DEVNULL, pass_fds=(lease.fileno(),))
             except OSError as error:
-                write_json(job / "state.json", {"supervisor_state": "submission_failed", "submission_error": str(error),
-                                                 "failed_at": now(), "retryable": True})
-                raise BackendError("submission_failed", "Local supervisor could not start; same-key retry is safe") from error
+                write_json(job / "state.json", {"supervisor_state": "submission_uncertain", "submission_error": str(error),
+                                                 "failed_at": now(), "retryable": False})
+                raise BackendError("submission_uncertain", "Supervisor launch failed after recording intent; inspect this job before any new submission",
+                                   {"operation_id": operation_id, "retryable": False}) from error
         deadline = time.monotonic() + 0.25
         while time.monotonic() < deadline and not (job / "native.json").exists():
             time.sleep(0.02)
@@ -311,9 +434,12 @@ print(json.dumps(result))"""
                 "execution": {**(request.get("execution") or {"node_ids": [node["id"] for node in request["recipe"].get("nodes", [])]}), "input_bindings": request.get("resolved_input_bindings", [])},
                 "executed_node_ids": []}
 
+    def submit(self, payload: dict) -> dict:
+        return self.launch_prepared(self.prepare_execution("run.submit", payload))
+
     def cancel(self, job: Path, request: dict) -> dict:
         self._require_capability()
-        status = self._rpc("run.status", {"project_id": request["project_id"], "job_dir": str(job)})
+        status = self._execution_status(job, request)
         if status["status"] in {"succeeded", "failed", "cancelled"}:
             return {**status, "cancellation_acknowledged": status["status"] == "cancelled"}
         write_json(job / "cancel.json", {"requested_at": now()})
@@ -341,10 +467,10 @@ print(json.dumps(result))"""
             if state.get("worker_reaped") or (state.get("worker_pid") and not process_group_alive(state["worker_pid"])):
                 break
             time.sleep(0.1)
-        result = self._rpc("run.status", {"project_id": request["project_id"], "job_dir": str(job)})
+        result = self._execution_status(job, request)
         return {**result, "cancellation_acknowledged": result["status"] == "cancelled" and result.get("worker_alive") is False}
 
-    def resume(self, payload: dict) -> dict:
+    def _materialize_resume(self, payload: dict) -> dict:
         job, parent = self._job({**payload, "operation_id": payload.get("parent_operation_id")})
         parent_status = self._rpc("run.status", {"project_id": payload["project_id"], "job_dir": str(job)})
         if (parent_status.get("status") not in {"succeeded", "failed", "cancelled"}
@@ -362,6 +488,10 @@ print(json.dumps(result))"""
                    "parent_run_id": checkpoint["backend_run_id"], "parent_checkpoint_ref": checkpoint["artifact_id"],
                    "resume_path": checkpoint["path"], "resume_mode": payload.get("mode", payload.get("resume_mode", "exact_state")),
                    "checkpoint_kind": payload.get("checkpoint_kind", "last")}
+        from .placement import device_from_recipe, target_for_device
+        request["target"] = target_for_device(device_from_recipe(request["recipe"]))
+        if request["resume_mode"] == "exact_state" and (request["target"] != "local-cpu" or parent.get("target", "local-cpu") != "local-cpu"):
+            raise BackendError("capability_unavailable", "Accelerator exact-state continuation is not hardware-verified; use warm_start")
         # A checkpoint cut is part of continuation identity. Never expand a
         # policy-only run into its unselected reference/calibration ancestors.
         # Resolve the original public pins again; cached host paths are not trust.
@@ -394,4 +524,8 @@ print(json.dumps(result))"""
                     raise BackendError("validation_error", "Resume requires a canonical recipe revision with the requested final steps")
         request.update(parent_recipe_id=parent_identity["recipe_id"], parent_recipe_revision=parent_identity["recipe_revision"],
                        parent_recipe_digest=parent_identity["recipe_digest"], executed_recipe_digest=current_identity["recipe_digest"])
-        return self.submit(request)
+        return request
+
+    def resume(self, payload: dict) -> dict:
+        # Preserve the public submit seam; submit itself uses the split contract.
+        return self.submit(self._materialize_resume(copy.deepcopy(payload)))

@@ -112,6 +112,12 @@ def test_public_cut_resume_selects_one_trainer_before_dataset_resolution(tmp_pat
         # Admission double; actual native continuation is independently exercised.
         def __init__(self):
             self.calls = []
+        def prepare_execution(self, operation, payload):
+            return operation, payload
+        def launch_prepared(self, prepared, authorize=None):
+            if authorize:
+                authorize()
+            return self.invoke(*prepared, None)
         def invoke(self, operation, payload, actor):
             self.calls.append((operation, deepcopy(payload)))
             result = {"operation_id": payload.get("operation_id"), "status": "submitted",

@@ -26,6 +26,16 @@ class NonexecutingBackend:
         self.calls = []
         self.fail_resume = False
 
+    def prepare_execution(self, operation, payload):
+        if operation == "run.resume" and self.fail_resume:
+            raise ServiceError("fixture_backend_failure", "Nonexecuting resume preparation failure", status_code=502)
+        return operation, payload
+
+    def launch_prepared(self, prepared, authorize=None):
+        if authorize:
+            authorize()
+        return self.invoke(*prepared, None)
+
     def invoke(self, operation, payload, actor):
         self.calls.append((operation, deepcopy(payload)))
         if operation == "run.resume" and self.fail_resume:
@@ -250,7 +260,7 @@ def test_stale_resume_fails_before_backend_or_recipe_mutation(service):
     assert canonical(service, pid) == latest
 
 
-def test_failed_resume_rolls_back_canonical_revision(service):
+def test_failed_resume_preparation_does_not_save_canonical_revision(service):
     pid, _, run, latest = submitted_then_edited(service)
     service.backend.fail_resume = True
     with pytest.raises(ServiceError) as error:

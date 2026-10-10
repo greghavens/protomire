@@ -407,7 +407,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "dee51909ee7f0e98c798492e0a865e967d60e400",
+    "commit": "61555911fd2887b4a46f19eaef7a294ade3b8301",
     "files": [
       {
         "path": "pyproject.toml",
@@ -471,7 +471,7 @@
       },
       {
         "path": "scripts/replay_bundle.py",
-        "sha256": "4213aa3cfa426659a53de0189f5876e780fe420b3f8d97bb19267e3e11f9d426"
+        "sha256": "208bcee53a0f604cb31d9b909e528a550dca7490bf64bb0640a3a963c2eb894e"
       },
       {
         "path": "src/modelbuilder/__init__.py",
@@ -479,11 +479,11 @@
       },
       {
         "path": "src/modelbuilder/api.py",
-        "sha256": "9e049655951c6038cac8622ec8c9a1062d61df5666c73f3c578e956cbb1a4db4"
+        "sha256": "ec4c30f3384d0f470e17d17291b6fcdf69d678772b5e1f952dd2302c72e2d181"
       },
       {
         "path": "src/modelbuilder/auth.py",
-        "sha256": "fbb19260a3059fe3ee6058a0cc63fa46f10f588dff854f71b7a8a9d431c10999"
+        "sha256": "1cc4b5253aa9373cf83063c50d25608062196030b1e05d8bdb8c9125e8b7be24"
       },
       {
         "path": "src/modelbuilder/backend/__init__.py",
@@ -491,15 +491,15 @@
       },
       {
         "path": "src/modelbuilder/backend/adapter.py",
-        "sha256": "af9fd59234ca2fca5f6d295a57a0c3f200539f12069861a5c5290d595240ee3f"
+        "sha256": "53412179cc4f6974ecb6394722b46afa4b117f8b7d123b8e151e3544e709332f"
       },
       {
         "path": "src/modelbuilder/backend/admission.py",
-        "sha256": "913438916accf34b7357384557d285ef9187c4215b96d5b15ab2c73cb4d3bf35"
+        "sha256": "798805c137bc7682553c8504e50b58733884792f1b1ecb96a0d8c7ec98a69371"
       },
       {
         "path": "src/modelbuilder/backend/calibration.py",
-        "sha256": "e92290dc9091f12f1ee234b8b2a3829a2e679929d46712ae047c1529f9d4a0f5"
+        "sha256": "4a7fdb08d36d72c877c16afe33debeb5bbbb254557bd7f9a3f0fb3ce7fedf6d2"
       },
       {
         "path": "src/modelbuilder/backend/common.py",
@@ -511,7 +511,11 @@
       },
       {
         "path": "src/modelbuilder/backend/components/runtime.py",
-        "sha256": "cae994d2e4f519836d03f1cb142790f970697c39bf31a671b3701cb83ff9ed41"
+        "sha256": "b59a9a01568eba9e18af84cf38e7f6f0c2ced009ad0eedef678ba118e9947448"
+      },
+      {
+        "path": "src/modelbuilder/backend/evaluation_binding.py",
+        "sha256": "84fca9c7e791865018e76bb12137fc8ebf8c16997543c78091c9bb5086ae1aab"
       },
       {
         "path": "src/modelbuilder/backend/execution_limits.py",
@@ -527,15 +531,23 @@
       },
       {
         "path": "src/modelbuilder/backend/native_exports.py",
-        "sha256": "391bcef2efcdcd05c9fa1c0df152d645674f824b98808c9771bfbc7a4f2fcc62"
+        "sha256": "2ab760dc04535b5479bd1c715f92fab47c5ded48845962a7d16cf3d30ea3e56e"
+      },
+      {
+        "path": "src/modelbuilder/backend/native_inputs.py",
+        "sha256": "6c97e92661a29be4cfa52240f4c381a21b82f2f0e8ab6cd5ca94ec91f4dd8cd4"
       },
       {
         "path": "src/modelbuilder/backend/operator_config.py",
         "sha256": "9e1228d03666125749772c3f3a1845a9c180bc49e7a551ab175d6c31d32f2dbd"
       },
       {
+        "path": "src/modelbuilder/backend/promotion.py",
+        "sha256": "063cfbbcba7a6ba3422e89b34f34423d8870f6621450f4eeb516cfe6a1b37aa5"
+      },
+      {
         "path": "src/modelbuilder/backend/sdk.py",
-        "sha256": "f5a85e2c54e362ad2c2a97e4a7ceb0523e3bb1957ab3590aa734a6460f894431"
+        "sha256": "74d0992e9009c782de5b488653dc9cc67da4ea3cabd7b1e66e0fd3f1f2da4a21"
       },
       {
         "path": "src/modelbuilder/backend/supervisor.py",
@@ -551,7 +563,7 @@
       },
       {
         "path": "src/modelbuilder/backend/worker.py",
-        "sha256": "faa9833528083a89669c3022317fad4246659bcadabee6ba43af49c412b1acc6"
+        "sha256": "803d83c4e1db32ce35fc108d78bc8d43dd760451bb0e2e09b9c4d70569a9ae43"
       },
       {
         "path": "src/modelbuilder/dataset.py",
@@ -566,12 +578,20 @@
         "sha256": "a09ff1080fa75f4aa0e6823f170d9b5a4e4900391d77528cff29a73620df0847"
       },
       {
+        "path": "src/modelbuilder/execution.py",
+        "sha256": "ee2415043d303e26515262578dc3862caa97430b642f8dedf8a20dc383da5bde"
+      },
+      {
         "path": "src/modelbuilder/export_packages.py",
-        "sha256": "82280ab653b383291980adc0a35d6a1032845c47deeeb5a1c4c0bcc023530124"
+        "sha256": "5ab8b2415c0b23d1b92ac169b5b6bd63e920a8f79fb7d78a25178c4fc46fa70b"
       },
       {
         "path": "src/modelbuilder/literature.py",
-        "sha256": "744fa1b146c11199e299bd38958626c2d774bf19fee563163e3f9e35ed24918a"
+        "sha256": "db95df181f62ce28f0ca092cbcdb9e714214b77f616a9f586a79a0226469eb38"
+      },
+      {
+        "path": "src/modelbuilder/literature_fetch.py",
+        "sha256": "faab6f6b1c8d3b3d6e610a2397584a979375fbc94b79dce3eba60e30885cab6f"
       },
       {
         "path": "src/modelbuilder/mcp_server.py",
@@ -579,11 +599,11 @@
       },
       {
         "path": "src/modelbuilder/models.py",
-        "sha256": "2a15c40c8548db0c3c5bce04e5fc4bb78d4a4d429f9aba200fd5f24edcf6c11f"
+        "sha256": "76d74db3ec0dfe582dc29257535604313d36f49c5de222c3527036fdaccc490f"
       },
       {
         "path": "src/modelbuilder/platform_file_access.py",
-        "sha256": "6f12475f907bc00af30370371d853485352b639c40da2061333494b1590d5e2a"
+        "sha256": "f52e4d5466bae1ad31b55071cc8c93d0a5c6f55e8aa71817baa8f14c07a2d1da"
       },
       {
         "path": "src/modelbuilder/recipe.py",
@@ -627,15 +647,19 @@
       },
       {
         "path": "src/modelbuilder/research.py",
-        "sha256": "66926940f595948d97fdb83a9df92ef56d276b672a0639115149e0c8fc6c633b"
+        "sha256": "896bd056fbb0cfc3cc44da4da7145c2330d69fcc91f3e0abc31f1c5f18da4288"
       },
       {
         "path": "src/modelbuilder/research_contract.py",
-        "sha256": "5f91cdded0c10b4b428a805ed11964af68ae3d2ccab679e2b1f53b6ccf73eb36"
+        "sha256": "6564104bb9982f1bcb4f59edd84f699851435c675f7e386e2688c877a8803f0d"
+      },
+      {
+        "path": "src/modelbuilder/research_scheduler.py",
+        "sha256": "4187369daeb91a68aa242f9cfed4ff1f9be22c567b635ba0f597664cd7d0661c"
       },
       {
         "path": "src/modelbuilder/service.py",
-        "sha256": "9be39c12708800e448d887788324cf32d932380e0ad619d4931cc7baea3636db"
+        "sha256": "e5d9d14a12e7571e388c59986d3e6db41f0f5b4355d0aaa770ed0778adccb652"
       },
       {
         "path": "src/modelbuilder/source_pinning.py",
@@ -655,7 +679,7 @@
       },
       {
         "path": "src/modelbuilder/store.py",
-        "sha256": "3e83fcd5a4212a2dcd441599035aee5e56ea83dfa6ebcc0b9269d8d1d3441441"
+        "sha256": "5b612bb25c035215a89f7d6fb3cd0a768f0d3f098ae5638bf90f702574a23825"
       },
       {
         "path": "src/modelbuilder/tracking.py",

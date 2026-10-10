@@ -77,15 +77,24 @@ def test_train_once_two_benchmarks_export_native_bindings(tmp_path):
         assert "train" not in result["executed_node_ids"]
         assert "validation_loss" not in result["metrics"]
         assert len(result["evaluations"]) == 6
-        assert {entry["model_version_ref"] for entry in result["evaluations"]} == {trained["model_version_ref"]}
+        # Polling must stay lightweight and must not attribute an unverified
+        # evaluator claim to a model. Explicit comparison below verifies the
+        # connected checkpoint bytes and the original training owner.
+        assert {entry["model_version_ref"] for entry in result["evaluations"]} == {None}
+        assert all(entry["checkpoint_verification"] == {
+            "verified": False, "code": "checkpoint_verification_pending",
+            "message": "Checkpoint identity and ownership are verified on explicit comparison or promotion",
+        } for entry in result["evaluations"])
         assert len({entry["record"]["dataset"]["content_digest"] for entry in result["evaluations"]}) == 2
         evaluations.append(result)
     compare = {"project_id": project, "run_ids": [result["backend_run_id"] for result in evaluations],
                "metric": "validation_loss", "direction": "minimize"}
     assert not backend.invoke("run.compare", compare)["compatible"]
     compatible = backend.invoke("run.compare", {**compare, "evaluations": [selector(result, "evaluate") for result in evaluations]})
-    assert compatible["compatible"], compatible
+    assert compatible["compatible"] and not compatible["diagnostics"], compatible
     assert compatible["selected_model_version_ref"] == trained["model_version_ref"]
+    assert {entry["model_version_ref"] for entry in compatible["runs"]} == {trained["model_version_ref"]}
+    assert compatible["selected_run_id"] in {result["backend_run_id"] for result in evaluations}
     incompatible = backend.invoke("run.compare", {**compare, "evaluations": [selector(evaluations[0], "evaluate"), selector(evaluations[1], "evaluate_two")]})
     assert not incompatible["compatible"] and incompatible["selected_run_id"] is None
     wrong = selector(evaluations[0], "evaluate")

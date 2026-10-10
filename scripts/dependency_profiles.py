@@ -12,6 +12,7 @@ UV_PLATFORMS = {
     'win32-arm64': 'aarch64-pc-windows-msvc',
 }
 BACKEND_TARGETS = frozenset({'linux-x64', 'linux-arm64', 'darwin-arm64'})
+PARQUET_TARGETS = frozenset({'linux-x64', 'linux-arm64', 'darwin-x64', 'darwin-arm64', 'win32-x64'})
 CPU_INDEX = 'https://download.pytorch.org/whl/cpu'
 
 
@@ -30,8 +31,10 @@ def backend_reason(target: str) -> str | None:
 
 
 def lock_path(root: Path, component: str, target: str) -> Path:
-    if component not in {'service', 'backend'}:
+    if component not in {'service', 'backend', 'parquet'}:
         raise ValueError(f'Unknown dependency component: {component}')
+    if component == 'parquet' and target not in PARQUET_TARGETS:
+        raise ValueError(f'No official pinned PyArrow CPython 3.12 wheel profile for {target}.')
     if component == 'backend' and (reason := backend_reason(target)):
         raise ValueError(reason)
     if target not in UV_PLATFORMS and target != 'linux-armhf':

@@ -25,7 +25,7 @@ export class RecipeDocument {
 }
 /** Pure authoring transforms preserve unknown fields and full Python references. */
 export function replaceNode(recipe: Recipe, node: RecipeNode): Recipe { return {...recipe,nodes:recipe.nodes.map(existing => existing.id === node.id ? structuredClone(node) : existing)}; }
-export function removeNode(recipe: Recipe, nodeId: string): Recipe { return {...recipe,nodes:recipe.nodes.filter(node => node.id !== nodeId),edges:recipe.edges.filter(edge => edge.source_node !== nodeId && edge.target_node !== nodeId)}; }
+export function removeNode(recipe: Recipe, nodeId: string): Recipe { if(recipe.nodes.some(node=>node.condition?.source_node===nodeId))throw new Error('Remove the terminal condition before deleting its boolean gate.');return {...recipe,nodes:recipe.nodes.filter(node => node.id !== nodeId),edges:recipe.edges.filter(edge => edge.source_node !== nodeId && edge.target_node !== nodeId)}; }
 export function newNode(id: string, kind: string, commit: string): RecipeNode {
   return {id,kind,...(kind==='component.run'?{component:blankComponent()}:{}),implementation_ref:kind==='component.run'?{module:'',entrypoint:'',commit}:kind === 'code.python' ? {module:'my_model',entrypoint:'run',commit} : `builtin:${kind}`,inputs:[],outputs:[],parameters:{},environment_ref:'default',resource_request:{},retry:{max_attempts:1,backoff_seconds:0},timeout:300,cache_policy:'disabled',provenance:{}};
 }

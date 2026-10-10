@@ -26,6 +26,11 @@ EVALUATIONS_SCHEMA = {"type": "array", "items": EVALUATION_SELECTOR_SCHEMA, "min
 def selection(recipe: dict, requested: dict | None = None) -> dict:
     """Validate the cut, including inputs on its boundary, without loading code."""
     from .models import ServiceError
+    from .conditions import ConditionError, validate_conditions, validate_selected_gates
+    try:
+        validate_conditions(recipe)
+    except ConditionError as error:
+        raise ServiceError(error.code, error.message, error.details) from error
     nodes = {node["id"]: node for node in recipe.get("nodes", [])}
     if requested is None:
         return {"node_ids": list(nodes), "input_bindings": []}
@@ -35,6 +40,10 @@ def selection(recipe: dict, requested: dict | None = None) -> dict:
     chosen = set(requested["node_ids"])
     if not chosen <= nodes.keys():
         raise ServiceError("invalid_execution_selection", "Execution selection names an unknown recipe node")
+    try:
+        validate_selected_gates(recipe, chosen)
+    except ConditionError as error:
+        raise ServiceError(error.code, error.message, error.details) from error
     bindings = {}
     for binding in requested["input_bindings"]:
         target = (binding["node_id"], binding["input_port"])
@@ -62,7 +71,9 @@ def selected_recipe(recipe: dict, execution: dict) -> dict:
     chosen = set(execution["node_ids"])
     body = {**recipe, "nodes": [node for node in recipe["nodes"] if node["id"] in chosen],
             "edges": [edge for edge in recipe.get("edges", []) if edge["source_node"] in chosen and edge["target_node"] in chosen]}
-    if len(chosen) != len(recipe["nodes"]):
+    trainers = [node for node in body["nodes"] if node["kind"] == "model.train" or node.get("component", {}).get("role") == "training"]
+    evaluators = [node for node in body["nodes"] if node["kind"] == "model.evaluate" or node.get("component", {}).get("role") == "evaluation"]
+    if len(chosen) != len(recipe["nodes"]) and not (trainers and evaluators):
         body["evaluation"] = copy.deepcopy(recipe.get("evaluation", {}))
         body["evaluation"].pop("live", None)
     # Generated dataset resources only serve their import node; other resources

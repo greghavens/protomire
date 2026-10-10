@@ -85,3 +85,59 @@ hashes. Review generated diffs and run native acceptance before upgrading.
 with existing recipe digests. It is not repurposed as a universal lock. Per-target
 locks live in `requirements/profiles/`. The original `service.lock` is retained
 as the baseline/tool pin record; bootstrap uses the hash-enforced profiles.
+
+
+## Optional Parquet profile
+
+`--parquet` overlays the exact hash-locked `pyarrow==25.0.0` wheel on each selected
+service/backend environment. The service and backend still remain separate;
+`--backend-only --parquet` touches only the selected backend. Tracking remains
+separate and is unaffected. Use explicit fresh venv paths to keep a previous
+frozen installation unchanged. A later backend sync without `--parquet` removes
+the optional adapter, which causes Parquet execution admission to fail closed.
+
+PyArrow 25.0.0 has no Python distribution dependencies. Baseline locks and their
+existing fixture digests are not changed. Optional profiles cover official
+CPython 3.12 wheels for Linux x64/arm64 (glibc 2.28+), macOS x64/arm64 (12+), and
+Windows x64. Windows arm64 and Linux armhf fail before installation because no
+reviewed official wheel exists. Installation is wheel-only with SHA256 checks;
+resolution for other targets is not native runtime acceptance. Real runtime
+verification here is Linux x64 only. The memory-contained Parquet reader is
+currently Linux-only: macOS/Windows installation does not enable Parquet decoding
+or execution admission until equivalent hard process limits are verified. A
+structured capability diagnostic offers JSONL/CSV or a supported Linux backend;
+the IDE and non-Parquet paths remain available. Native Windows training remains
+subject to the backend limitations above.
+
+Regenerate using `python scripts/lock_dependencies.py --component parquet`, or
+add `--target linux-x64` for one profile. See
+[the dataset adapter contract](../docs/DATASET_LIFECYCLE.md#optional-real-parquet-adapter).
+Official artifacts and APIs: [PyPI release](https://pypi.org/project/pyarrow/25.0.0/),
+[Apache Arrow ParquetFile](https://arrow.apache.org/docs/python/generated/pyarrow.parquet.ParquetFile.html).
+
+
+## CPU CI coverage
+
+The existing Linux CPU lifecycle job bootstraps `--backend --tracking --parquet`
+using the committed profiles. `MODELBUILDER_REQUIRE_PARQUET=1` makes missing
+PyArrow a failure in both service registration and native dataset execution tests.
+The backend-only phase of `scripts/test_all.sh` sets
+`MODELBUILDER_REQUIRE_LOCAL_INFERENCE=1` and runs the complete component suite,
+including real generation → separate judge → explicitly reviewed dataset
+preparation native pipelines. Missing Torch, Transformers or ZenML fails that
+phase rather than silently skipping. These model libraries are already pinned
+in the backend profile; they are not added to the service environment.
+Generation/judge tests construct tiny independent local safetensors assets, so
+this coverage adds no provider calls, online model fetches or large model download.
+The existing verified pretrained fixture bootstrap is unchanged. This is one
+existing CPU job, not a claim of native acceptance on other target platforms.
+
+
+`bootstrap.py --plan` distinguishes optional wheel metadata from decoder support:
+`parquet_wheel_available` reports whether a reviewed lock profile exists, while
+`parquet_available` reports whether that profile's target supports the contained
+runtime (currently Linux only). `parquet_unavailable` explains unsupported
+runtime targets; `parquet_lock` remains available for reviewed macOS/Windows
+wheels. This is a pre-installation platform plan, not proof that PyArrow is
+installed, hard limits can be established, or a dataset will pass validation.
+Actual use still verifies those conditions. Linux arm64 is not native-tested here.

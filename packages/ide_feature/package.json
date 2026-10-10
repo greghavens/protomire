@@ -143,7 +143,9 @@
     "test:workspace-http": "npm run compile && node test/typedWorkspaceHttp.cjs",
     "test:workspace-browser": "npm run compile && node test/typedWorkspaceDom.cjs",
     "test:component-http": "npm run compile && node test/componentAuthoringHttp.cjs",
-    "test:source-pin-http": "npm run compile && node test/sourcePinHttp.cjs"
+    "test:source-pin-http": "npm run compile && node test/sourcePinHttp.cjs",
+    "test:history-http": "npm run compile && node test/recipeHistoryHttp.cjs",
+    "test:history-browser": "npm run compile && node test/recipeHistoryDom.cjs"
   },
   "devDependencies": {
     "@types/node": "22.10.2",

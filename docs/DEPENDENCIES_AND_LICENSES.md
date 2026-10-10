@@ -15,6 +15,7 @@ not change this. Dependencies retain their own licenses.
 | ZenML | 0.97.0 | Apache-2.0; separate interpreter, public APIs |
 | PyTorch CPU | 2.9.0+cpu | BSD-3-Clause plus bundled notices |
 | Transformers | 4.57.1 | Apache-2.0 |
+| PyArrow (optional Parquet adapter) | 25.0.0 | Apache-2.0 plus bundled native-library notices; official wheel only, hash-locked optional overlay |
 | NumPy | 2.2.6 | BSD-3-Clause core; wheel also contains additional notices including BLAS and compiler runtime libraries |
 | FastAPI / Pydantic | 0.115.12 / 2.11.4 | MIT |
 | Uvicorn / HTTPX | 0.34.2 / 0.28.1 | BSD-3-Clause |

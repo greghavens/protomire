@@ -9,13 +9,13 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from scripts.dependency_profiles import BACKEND_TARGETS, CPU_INDEX, UV_PLATFORMS  # noqa: E402
+from scripts.dependency_profiles import BACKEND_TARGETS, CPU_INDEX, PARQUET_TARGETS, UV_PLATFORMS  # noqa: E402
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--target', choices=sorted(UV_PLATFORMS), action='append')
-    parser.add_argument('--component', choices=['service', 'backend'], action='append')
+    parser.add_argument('--component', choices=['service', 'backend', 'parquet'], action='append')
     args = parser.parse_args()
     env = dict(os.environ)
     env.setdefault('UV_CACHE_DIR', str(ROOT / '.cache/uv'))
@@ -25,8 +25,10 @@ def main() -> None:
     destination = ROOT / 'requirements/profiles'
     destination.mkdir(parents=True, exist_ok=True)
     for target in args.target or sorted(UV_PLATFORMS):
-        for component in args.component or ['service', 'backend']:
+        for component in args.component or ['service', 'backend', 'parquet']:
             if component == 'backend' and target not in BACKEND_TARGETS:
+                continue
+            if component == 'parquet' and target not in PARQUET_TARGETS:
                 continue
             source = f'requirements/{component}.in'
             if component == 'backend' and target == 'darwin-arm64':
@@ -36,6 +38,8 @@ def main() -> None:
                        '--generate-hashes', '--no-annotate', '--custom-compile-command',
                        f'python scripts/lock_dependencies.py --target {target} --component {component}',
                        '-o', f'requirements/profiles/{component}-{target}.lock']
+            if component == 'parquet':
+                command += ['--only-binary', ':all:']
             if component == 'backend':
                 command += ['-c', 'requirements/backend.constraints']
                 if target.startswith('linux-'):

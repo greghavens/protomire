@@ -23,6 +23,7 @@ from pathlib import Path
 from .common import alive, now, process_group_alive, recipe_provenance, read_json, write_json, runtime_identity
 
 from .admission import BackendError, capabilities, environment_profiles, validate_execution
+from ..compute_discovery import HardwareDiscovery
 
 
 class ZenMLBackend:
@@ -37,6 +38,7 @@ class ZenMLBackend:
         default_python = repository / ".venv-backend" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         configured = python_executable or os.environ.get("MODELBUILDER_BACKEND_PYTHON") or str(default_python)
         self.python = shutil.which(configured) or str(Path(configured).expanduser().resolve())
+        self.hardware_discovery = HardwareDiscovery(self.python)
         self.repository = repository
         self.package_root = package_root
         self.pretrained_path = Path(pretrained_path or repository / ".cache/models/bert-tiny").resolve()
@@ -181,7 +183,8 @@ print(json.dumps(result))"""
             return {"targets": [{"id": "local-cpu", "available": self._capability_reason() is None, "unavailable_reason": self._capability_reason(), "backend": "zenml", "version": "0.97.0",
                                  "cancel": "supervised_process_termination", "exact_resume": True, "untrusted_isolation": False}],
                     "remote_enabled": False, "capabilities": capabilities(self),
-                    "environment_profiles": environment_profiles(self)}
+                    "environment_profiles": environment_profiles(self),
+                    "hardware": self.hardware_discovery.snapshot()}
         if operation == "run.plan":
             recipe = payload.get("recipe", {})
             blocked = []
@@ -206,7 +209,7 @@ print(json.dumps(result))"""
             job, request = self._job(payload)
             if operation == "run.evaluations.list":
                 from .live_evaluation import list_evaluations
-                return list_evaluations(job)
+                return list_evaluations(job, limit=payload.get("limit"))
             if operation == "run.events.list":
                 from .live_evaluation import list_events
                 return list_events(job, after=payload.get("after", 0), limit=payload.get("limit", 200))

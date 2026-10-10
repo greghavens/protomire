@@ -4,7 +4,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import sys
 from types import SimpleNamespace
 
 import httpx
@@ -29,7 +28,11 @@ def make_manifest(root, *, suffix="", rows=None, fmt="jsonl"):
         {"id": "heldout-1", "text": "winter snow", "label": 0},
     ]
     target = root / ("weather" + suffix + "." + fmt)
-    if fmt == "csv":
+    if fmt == "parquet":
+        import pyarrow as arrow
+        import pyarrow.parquet as parquet
+        parquet.write_table(arrow.Table.from_pylist(rows), target, write_page_checksum=True)
+    elif fmt == "csv":
         import csv
         with target.open("w", newline="") as out:
             writer = csv.DictWriter(out, fieldnames=["id", "text", "label"])
@@ -260,8 +263,10 @@ def test_bounds_schema_code_and_parquet_capability_fail_closed(setup, monkeypatc
     assert registry.validate(pid, bad)["diagnostics"][0]["code"] == "dataset_manifest_invalid"
     bad = deepcopy(manifest)
     bad["sources"][0]["format"] = "parquet"
-    monkeypatch.setitem(sys.modules, "pyarrow", None)
-    monkeypatch.setitem(sys.modules, "pyarrow.parquet", None)
+    from modelbuilder import parquet_reader
+    def absent(_name):
+        raise parquet_reader.importlib.metadata.PackageNotFoundError("pyarrow")
+    monkeypatch.setattr(parquet_reader.importlib.metadata, "version", absent)
     assert registry.validate(pid, bad)["diagnostics"][0]["code"] == "capability_unavailable"
 
 

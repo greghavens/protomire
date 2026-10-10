@@ -85,7 +85,7 @@ def runtime_source_identity(package_root: Path | None = None) -> str:
     """Hash installed execution code, independent of checkout/installation paths."""
     root = package_root or Path(__file__).resolve().parents[2]
     files = list((root / "backend").rglob("*.py"))
-    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "evaluation.py", "tracking.py", "dataset.py", "models.py", "store.py", "research_contract.py") if (root / name).is_file()]
+    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "evaluation.py", "tracking.py", "dataset.py", "models.py", "store.py", "research_contract.py") if (root / name).is_file()]
     return identity({str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in sorted(files)})
 
@@ -202,7 +202,8 @@ def dispatch(inputs: dict, spec: dict):
                 if not selected or manifest["selected_checkpoint"] not in selected:
                     raise ValueError("Export is not bound to its connected selected checkpoint")
         values.append(value)
-    return values[0] if len(values) == 1 else tuple(values)
+    from ..native_cache import record_outputs
+    return record_outputs(spec, values[0] if len(values) == 1 else tuple(values))
 
 
 def compile_component(node: dict, job: Path):
@@ -242,7 +243,8 @@ def dispatch_python(arguments: dict, spec: dict):
     node = spec["component_node"]
     context(spec)
     function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
-    return function(**arguments)
+    from ..native_cache import record_outputs
+    return record_outputs(spec, function(**arguments))
 
 
 def compile_python(node: dict, job: Path):

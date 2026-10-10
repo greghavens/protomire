@@ -44,15 +44,17 @@ def validate_execution(backend, payload: dict) -> dict:
     from ..models import ServiceError
     try:
         execution = selection(recipe, payload.get("execution"))
+        recipe = selected_recipe(recipe, execution)
     except ServiceError as error:
         raise BackendError(error.code, error.message, error.details) from error
-    recipe = selected_recipe(recipe, execution)
+    except ValueError as error:
+        raise BackendError("capability_unavailable", str(error), {"field": "evaluation.live"}) from error
     selected_payload = {**payload, "recipe": recipe}
     if any(node.get("kind") in {"code.python", "component.run"} for node in recipe.get("nodes", [])) and not backend.trusted_code_roots:
         raise BackendError("untrusted_execution_blocked", "Arbitrary Python requires an operator-configured trusted source root")
     from .components import validate_live_evaluation
     try:
-        validate_live_evaluation(recipe)
+        validate_live_evaluation(recipe, input_bindings=execution["input_bindings"])
     except ValueError as error:
         raise BackendError("capability_unavailable", str(error), {"field": "evaluation.live"}) from error
     if any(node.get("kind") in {"code.python", "component.run"} for node in recipe.get("nodes", [])) and not any(
@@ -159,7 +161,7 @@ def validate_execution(backend, payload: dict) -> dict:
 
 def validate_dataset_import(backend, payload: dict, node: dict) -> None:
     """Validate the same portable dataset used by the worker, without execution."""
-    from ..dataset import load_portable_split, MAX_FILE_BYTES
+    from ..dataset import load_portable_split, MAX_FILE_BYTES, PYARROW_REQUIREMENT
     from ..models import ServiceError
     parameters = node.get("parameters", {})
     if (not isinstance(parameters, dict) or set(parameters) - {"reference_id", "split_id", "purpose"}
@@ -182,6 +184,15 @@ def validate_dataset_import(backend, payload: dict, node: dict) -> None:
             raise BackendError("dependency_mismatch", "Dataset version reference is oversized or differs from its pinned hash",
                                {"node_id": node["id"]})
         reference = json.loads(raw)
+        manifest = reference.get("manifest") if isinstance(reference, dict) else None
+        if (isinstance(manifest, dict) and isinstance(manifest.get("sources"), list)
+                and any(isinstance(source, dict) and source.get("format") == "parquet"
+                        for source in manifest["sources"])):
+            from ..parquet_reader import require_platform
+            require_platform()
+            # Admission runs in the service interpreter; workers use a separate
+            # environment. Verify the worker's optional adapter before planning.
+            verify_environment(backend, {"environment": {"python": "3.12", "requirements": [PYARROW_REQUIREMENT]}})
         load_portable_split(reference, {key: value for key, value in backend.dependency_paths.items() if key in declared},
                             parameters["split_id"], purpose=parameters.get("purpose", "training"),
                             expected_project_id=payload["project_id"],
@@ -199,8 +210,13 @@ def validate_node_settings(node: dict) -> None:
     details = {"node_id": node.get("id")}
     if node.get("environment_ref", "default") != "default":
         raise BackendError("capability_unavailable", "Per-node environments are unsupported; use the verified default environment", details)
-    if node.get("cache_policy", "disabled") != "disabled":
-        raise BackendError("capability_unavailable", "Step caching is unsupported; cache_policy must be disabled", details)
+    policy = node.get("cache_policy", "disabled")
+    if policy not in {"disabled", "enabled"}:
+        raise BackendError("validation_error", "Unknown native cache policy", details)
+    if policy == "enabled":
+        from .native_cache import supports_cache
+        if not supports_cache(node):
+            raise BackendError("capability_unavailable", "Caching supports JSON-value code.python and dataset/utility components only; lifecycle stages and Path ports require cache_policy=disabled", details)
     resource = node.get("resource_request", {})
     if resource.get("gpu", 0) or "cpu" in resource or "memory_mb" in resource:
         raise BackendError("capability_unavailable", "Local execution cannot enforce CPU, memory, or GPU reservations; omit CPU/memory requests and use gpu=0", details)
@@ -286,12 +302,15 @@ def verify_environment(backend, recipe: dict) -> dict:
 def capabilities(backend) -> dict:
     return {"schema_version": "1", "executable_kinds": sorted(BUILTINS | PLATFORM_BUILTINS | {"code.python", "component.run"}),
             "unsupported_schema_kinds": {"training.kl_anchor": "Use model.train.parameters.kl anchored to the connected initial model"},
-            "node_settings": {"environment_ref": ["default"], "cache_policy": ["disabled"],
+            "node_settings": {"environment_ref": ["default"], "cache_policy": ["disabled", "enabled"],
+                              "cache_scope": "explicitly opted-in JSON-value code.python and dataset/utility components; exact recipe revision, project, native input IDs and actual runtime identity",
                               "resource_request": {"gpu": [0], "cpu": "unsupported", "memory_mb": "unsupported"},
                               "timeout": {"minimum_exclusive": 0, "maximum": 86400, "behavior": "node deadline aborts the entire local run through process supervision"},
                               "retry": {"max_attempts": [1, 100], "backoff_seconds": "nonnegative integer"}},
             "arbitrary_python": {"configured": bool(backend.trusted_code_roots), "isolation": False,
                                  "requires": ["per-run trust consent", "operator trusted source root", "pinned implementation in source closure"]},
+            "control_flow": {"conditions": "explicit bool gates on terminal stages; gate must be selected; sequential native dynamic pipeline",
+                             "loops": False, "independent_stage_concurrency": False, "conditional_live_evaluation": False},
             "environment": {"requirements": "exact installed versions with target markers", "oci": False},
             "dependency_resolution": "operator configured SHA256 verified local files; no automatic download"}
 

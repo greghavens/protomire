@@ -35,7 +35,7 @@ def test_two_real_checkpoint_evaluations_arrive_while_training_is_running(tmp_pa
     try:
         deadline = time.monotonic() + 20
         while trainer.is_alive() and time.monotonic() < deadline:
-            records = list_evaluations(job)
+            records = list_evaluations(job, limit=200)
             completed = [record for record in records["evaluations"] if record["status"] == "completed"]
             if len(completed) >= 2:
                 observed = completed
@@ -54,6 +54,11 @@ def test_two_real_checkpoint_evaluations_arrive_while_training_is_running(tmp_pa
     assert not trainer.is_alive()
     assert not failures
     assert list_evaluations(job)["summary"]["completed"] == 4
+    latest = list_evaluations(job, limit=2)
+    assert [record["step"] for record in latest["evaluations"]] == [6, 8]
+    assert latest["summary"]["completed"] == 4
+    assert latest["truncated"] is True
+    assert latest["evaluations"][0]["comparisons"]["validation_loss"]["previous_evaluation_id"] not in {row["evaluation_id"] for row in latest["evaluations"]}
     page = list_events(job)
     assert len({row["event_id"] for row in page["events"]}) == len(page["events"])
     assert not list_events(job, after=page["next_cursor"])["events"]

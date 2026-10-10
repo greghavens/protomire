@@ -4331,6 +4331,61 @@
       "additionalProperties": false,
       "properties": {
         "operation": {
+          "const": "research.text.fetch"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "evidence_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "expected_evidence_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "idempotency_key": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "provider": {
+              "const": "europe_pmc"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "source_identifier": {
+              "pattern": "^PMC[1-9][0-9]{0,9}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "evidence_id",
+            "expected_evidence_revision",
+            "provider",
+            "source_identifier",
+            "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
           "const": "research.text.get"
         },
         "payload": {
@@ -4427,6 +4482,146 @@
             "rights_basis",
             "rights_confirmed",
             "idempotency_key"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "research.text.inspect"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "length": {
+              "default": 8000,
+              "maximum": 16000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "section_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "start": {
+              "maximum": 200000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "text_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "text_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "research.text.list"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "evidence_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "research.text.search"
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "case_sensitive": {
+              "default": false,
+              "type": "boolean"
+            },
+            "limit": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "project_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "query": {
+              "maxLength": 300,
+              "minLength": 1,
+              "type": "string"
+            },
+            "request_id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "start": {
+              "maximum": 200000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "text_id": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "text_id",
+            "query"
           ],
           "type": "object"
         }
@@ -5041,6 +5236,11 @@
             "backend_run_id": {
               "minLength": 1,
               "type": "string"
+            },
+            "limit": {
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
             },
             "operation_id": {
               "minLength": 1,

@@ -106,8 +106,19 @@ def train(*, inputs, parameters, context):
         temporary = output / "checkpoint.manifest.partial"
         temporary.write_text(json.dumps(manifest))
         temporary.replace(output / "checkpoint.manifest.json")
+        # The mutable root is a convenient final output, not a durable prior
+        # checkpoint: the next step overwrites its assets. Preserve each ready
+        # step in a fresh immutable directory; publish its manifest only after
+        # every asset copy closes. Recovery ignores an interrupted partial step.
+        snapshot = output / "checkpoints" / f"{i + 1:08d}"
+        snapshot.mkdir(parents=True)
+        for asset in manifest["assets"]:
+            shutil.copyfile(output / asset["path"], snapshot / asset["path"])
+        committed = snapshot / "checkpoint.manifest.partial"
+        committed.write_text(json.dumps(manifest))
+        committed.replace(snapshot / "checkpoint.manifest.json")
         if context.get("checkpoint_ready"):
-            context["checkpoint_ready"](path=output, step=i + 1, purpose="last")
+            context["checkpoint_ready"](path=snapshot, step=i + 1, purpose="last")
         time.sleep(parameters.get("step_delay", 0))
     return {"trained": output}
 

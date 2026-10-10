@@ -50,3 +50,20 @@ Initial failures remain documented as failures rather than being counted as pass
 A trusted Python module can be interrupted during import, before ZenML creates a pipeline run. The supervisor now durably records its wait result, original worker identity, runtime identity and positively empty process group. In that case, status returns `cancelled` with `backend_run_id: null`, `backend_status: null`, and `termination_record_source: supervisor_journal`. It never invents a native run. Missing or uncertain process evidence remains pending/unknown. A prior observed worker failure cannot be reclassified by a late cancellation request.
 
 Continuation is rejected while the parent worker is running, while cancellation is pending, or while process state is unknown. Once termination is reconciled, continuation still requires a real native checkpoint; a pre-pipeline cancellation has none and is rejected clearly.
+
+## Bounded native value-stage caching
+
+Explicitly cache-enabled JSON-value source stages can reuse completed native
+outputs after a downstream failure or cancellation, with exact immutable
+execution identity and original native producer provenance. Training,
+evaluation, export, Path artifacts and resource/environment isolation remain
+outside this cache capability. See [the supported contract and limitations](NATIVE_PIPELINE_CACHE.md).
+
+## Explicit terminal conditions
+
+[Native terminal conditions](NATIVE_CONDITIONAL_EXECUTION.md) add typed boolean
+control dependencies to the same canonical recipe and editor. Selected gates
+are explicit; native metadata records skipped stages without invented outputs.
+This bounded sequential path does not implement loops, conditional downstream
+merges, conditional live sidecars, independent-stage concurrency or per-stage
+isolation/resources.

@@ -94,8 +94,12 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `research_proposal_get` | `research.proposal.get` | `read` | Read a staged proposal with immutable citation snapshots, review and applied revision linkage. |
 | `research_proposal_list` | `research.proposal.list` | `read` | List retained research proposals, including rejected and applied proposals. |
 | `research_proposal_review` | `research.proposal.review` | `modify` | Explicitly approve or reject the exact staged proposal; approval does not apply or validate claims. |
-| `research_text_get` | `research.text.get` | `read` | Read locally imported source text and its exact content hash and rights declaration. |
+| `research_text_fetch` | `research.text.fetch` | `modify` | Explicitly retrieve one Europe PMC OA JATS XML article to local storage after supported-license and citation-identity checks. Sends only the PMC identifier to www.ebi.ac.uk; no redirects, arbitrary URLs, PDFs or inference. |
+| `research_text_get` | `research.text.get` | `read` | Read local imported or legally retrieved source text with its exact content hash, provenance and rights declaration. |
 | `research_text_import` | `research.text.import` | `modify` | Import bounded user-supplied licensed text, pin bytes to a citation and preserve rights attestation; never fetch a URL. |
+| `research_text_inspect` | `research.text.inspect` | `read` | Read a bounded section or passage from an immutable local paper, including methods when present; structure and exact text are not method validation. |
+| `research_text_list` | `research.text.list` | `read` | List local source-text snapshots and retrieval outcomes without network activity or returning whole papers. |
+| `research_text_search` | `research.text.search` | `read` | Search a local paper snapshot with a bounded literal query and exact Unicode offsets; no remote query or scientific inference. |
 | `research_watch_create` | `research.watch.create` | `modify` | Create a project-scoped bounded metadata query watch; no scheduler starts. |
 | `research_watch_get` | `research.watch.get` | `read` | Read a watch, refresh status and next due time. |
 | `research_watch_list` | `research.watch.list` | `read` | List project research watches; never fetch implicitly. |

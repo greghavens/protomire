@@ -282,3 +282,62 @@ def test_parent_terminal_events_require_native_evidence_and_deduplicate(tmp_path
                  "process_group_alive": False, "termination": {"reason": "cancelled", "confirmed": True, "process_group_terminated": True}}
     assert record_run_terminal(tmp_path / "cancelled-job", cancelled)
     assert list_events(tmp_path / "cancelled-job")["events"][0]["kind"] == "run.cancelled"
+
+
+def test_latest_evaluation_window_is_bounded_consistent_and_preserves_full_history(tmp_path):
+    job = tmp_path / "window"
+    with _connect(job, create=True, write=True) as connection:
+        for step in range(1, 206):
+            checkpoint_id = f"c{step:04d}"
+            evaluation_id = f"e{step:04d}"
+            checkpoint_record = {"checkpoint_id": checkpoint_id, "step": step, "path": "/private/snapshot"}
+            status = "failed" if step == 204 else "running" if step == 205 else "completed"
+            evaluation = {"evaluation_id": evaluation_id, "checkpoint_id": checkpoint_id,
+                          "node_id": "evaluate", "step": step, "status": status,
+                          "metrics": {"loss": 1 / step} if status == "completed" else {},
+                          "comparisons": {"loss": {"previous_evaluation_id": f"e{step - 1:04d}", "compatible": True}}}
+            connection.execute("INSERT INTO checkpoints VALUES (?,?,?,?)", (checkpoint_id, "train", step, json.dumps(checkpoint_record)))
+            connection.execute("INSERT INTO evaluations (evaluation_id,checkpoint_id,node_id,step,status,record,request) VALUES (?,?,?,?,?,?,?)",
+                               (evaluation_id, checkpoint_id, "evaluate", step, status, json.dumps(evaluation), "{}"))
+    complete = list_evaluations(job)
+    window = list_evaluations(job, limit=3)
+    assert len(complete["evaluations"]) == 205
+    assert window["evaluations"] == complete["evaluations"][-3:]
+    assert [item["step"] for item in window["checkpoints"]] == [203, 204, 205]
+    assert window["summary"] == complete["summary"] == {"queued": 0, "running": 1, "completed": 203, "failed": 1, "canceled": 0}
+    assert window["total_evaluations"] == 205
+    assert window["truncated"] is True
+    assert "path" not in window["checkpoints"][0]
+    assert window["evaluations"][0]["comparisons"]["loss"]["previous_evaluation_id"] == "e0202"
+    assert list_evaluations(job) == complete  # A UI window cannot prune evidence.
+    assert len(list_evaluations(job, limit=200)["evaluations"]) == 200
+
+
+@pytest.mark.parametrize("limit", [True, False, 0, -1, 201, 1.5, "3"])
+def test_evaluation_window_rejects_invalid_limits_even_before_a_run_exists(tmp_path, limit):
+    with pytest.raises(ValueError, match="window limit"):
+        list_evaluations(tmp_path, limit=limit)
+    assert not (tmp_path / "live_evaluation").exists()
+
+
+def test_empty_evaluation_window_reports_no_truncation_without_creating_state(tmp_path):
+    result = list_evaluations(tmp_path, limit=200)
+    assert result["evaluations"] == result["checkpoints"] == []
+    assert result["total_evaluations"] == 0
+    assert result["truncated"] is False
+    assert result["limit"] == 200
+    assert not (tmp_path / "live_evaluation").exists()
+
+
+def test_evaluation_window_contract_and_adapter_forward_the_same_optional_limit(tmp_path, monkeypatch):
+    from modelbuilder.models import OPERATIONS
+    from modelbuilder.backend.adapter import ZenMLBackend
+    from modelbuilder.backend import live_evaluation
+    assert OPERATIONS["run.evaluations.list"].input_schema["properties"]["limit"] == {"type": "integer", "minimum": 1, "maximum": 200}
+    backend = object.__new__(ZenMLBackend)
+    monkeypatch.setattr(backend, "_job", lambda payload: (tmp_path, {}))
+    captured = []
+    monkeypatch.setattr(live_evaluation, "list_evaluations", lambda job, limit=None: captured.append((job, limit)) or {"evaluations": []})
+    backend.invoke("run.evaluations.list", {"project_id": "p", "operation_id": "r", "limit": 17})
+    backend.invoke("run.evaluations.list", {"project_id": "p", "operation_id": "r"})
+    assert captured == [(tmp_path, 17), (tmp_path, None)]

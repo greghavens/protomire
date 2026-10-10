@@ -1,0 +1,2 @@
+# Optional in-process dataset adapter; no changes to baseline service/backend pins.
+pyarrow==25.0.0

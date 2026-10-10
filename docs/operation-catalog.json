@@ -4081,7 +4081,59 @@
       "scope": "modify"
     },
     {
-      "description": "Read locally imported source text and its exact content hash and rights declaration.",
+      "description": "Explicitly retrieve one Europe PMC OA JATS XML article to local storage after supported-license and citation-identity checks. Sends only the PMC identifier to www.ebi.ac.uk; no redirects, arbitrary URLs, PDFs or inference.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "expected_evidence_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "provider": {
+            "const": "europe_pmc"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "source_identifier": {
+            "pattern": "^PMC[1-9][0-9]{0,9}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "evidence_id",
+          "expected_evidence_revision",
+          "provider",
+          "source_identifier",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "research.text.fetch",
+      "operation": "research.text.fetch",
+      "required_scopes": [
+        "modify"
+      ],
+      "scope": "modify"
+    },
+    {
+      "description": "Read local imported or legally retrieved source text with its exact content hash, provenance and rights declaration.",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
@@ -4183,6 +4235,137 @@
         "modify"
       ],
       "scope": "modify"
+    },
+    {
+      "description": "Read a bounded section or passage from an immutable local paper, including methods when present; structure and exact text are not method validation.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "length": {
+            "default": 8000,
+            "maximum": 16000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "section_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "start": {
+            "maximum": 200000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "text_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "text_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "research.text.inspect",
+      "operation": "research.text.inspect",
+      "required_scopes": [
+        "read"
+      ],
+      "scope": "read"
+    },
+    {
+      "description": "List local source-text snapshots and retrieval outcomes without network activity or returning whole papers.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "research.text.list",
+      "operation": "research.text.list",
+      "required_scopes": [
+        "read"
+      ],
+      "scope": "read"
+    },
+    {
+      "description": "Search a local paper snapshot with a bounded literal query and exact Unicode offsets; no remote query or scientific inference.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "case_sensitive": {
+            "default": false,
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 20,
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "query": {
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "start": {
+            "maximum": 200000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "text_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "text_id",
+          "query"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "research.text.search",
+      "operation": "research.text.search",
+      "required_scopes": [
+        "read"
+      ],
+      "scope": "read"
     },
     {
       "description": "Create a project-scoped bounded metadata query watch; no scheduler starts.",
@@ -4751,6 +4934,11 @@
           "backend_run_id": {
             "minLength": 1,
             "type": "string"
+          },
+          "limit": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
           },
           "operation_id": {
             "minLength": 1,

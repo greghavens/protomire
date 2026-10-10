@@ -8,6 +8,8 @@ transactions, idempotency and audit; the registry independently checks ownership
 from __future__ import annotations
 
 import copy
+from contextlib import contextmanager
+from contextvars import ContextVar
 import csv
 import hashlib
 import io
@@ -29,6 +31,30 @@ CONSUMPTION_SCHEMA = "modelbuilder.dataset-consumption/v1"
 MAX_FILE_BYTES = 16 * 1024 * 1024
 MAX_TOTAL_BYTES = 32 * 1024 * 1024
 MAX_ROWS = 100_000
+PYARROW_REQUIREMENT = "pyarrow==25.0.0"
+PARQUET_METADATA_BYTES = 1024 * 1024
+PARQUET_METADATA_ITEMS = 100_000
+_MATERIALIZATIONS = ContextVar("modelbuilder_dataset_materializations", default=None)
+
+
+@contextmanager
+def materialization_session(entries, *, compute):
+    """Request-local verified preparation, never a cross-request content cache."""
+    token = _MATERIALIZATIONS.set((entries, compute))
+    try:
+        yield
+    finally:
+        _MATERIALIZATIONS.reset(token)
+
+
+def recheck_materialized_sources(entries):
+    # Reread pinned bytes after the expensive decode and before the commit phase.
+    for entry in entries.values():
+        if "value" in entry:
+            for source in entry["value"][0]["sources"]:
+                entry["reader"]._read_source(entry["project_id"], source)
+
+
 _ID = {"type": "string", "minLength": 1, "maxLength": 200}
 _FIELDS = {"type": "array", "items": _ID, "minItems": 1, "maxItems": 256, "uniqueItems": True}
 _SOURCE = {"type": "object", "additionalProperties": False,
@@ -213,7 +239,8 @@ class DatasetRegistry:
             for handle in reversed(handles):
                 os.close(handle)
 
-    def _parse(self, data, source, schema):
+    def _parse(self, data, source, schema, *, decoded_budget=None):
+        decoded_budget = self.max_total_bytes if decoded_budget is None else decoded_budget
         fmt = source["format"]
         try:
             if fmt == "jsonl":
@@ -240,41 +267,66 @@ class DatasetRegistry:
                             row[field] = json.loads(value)
                     rows.append(row)
             else:
-                try:
-                    import pyarrow.parquet as parquet
-                except ImportError as exc:
-                    raise ServiceError("capability_unavailable", "Parquet import requires the optional PyArrow adapter") from exc
-                table = parquet.ParquetFile(io.BytesIO(data))
-                if table.metadata.num_rows > self.max_rows:
-                    _fail("dataset_limit_exceeded", "Dataset exceeds the configured row limit")
-                rows, decoded = [], 0
-                for batch in table.iter_batches(batch_size=1024):
-                    decoded += batch.nbytes
-                    if decoded > self.max_total_bytes:
-                        _fail("dataset_limit_exceeded", "Decoded Parquet data exceeds the configured byte limit")
-                    rows.extend(batch.to_pylist())
+                rows = self._parse_parquet(data, source, decoded_budget)
             if len(rows) > self.max_rows:
                 _fail("dataset_limit_exceeded", "Dataset exceeds the configured row limit")
             if any(not isinstance(row, dict) for row in rows):
                 _fail("dataset_source_invalid", "Dataset rows must be JSON objects")
             # Reject NaN/Infinity and nonportable Parquet values (timestamps,
             # bytes, extension objects) rather than silently changing semantics.
-            json.dumps(rows, allow_nan=False)
+            size = 0
+            for row in rows:
+                size += len(json.dumps(row, allow_nan=False).encode("utf-8"))
+                if size > decoded_budget:
+                    _fail("dataset_limit_exceeded", "Decoded dataset exceeds the configured byte limit")
             return rows
         except (UnicodeError, ValueError, TypeError, RecursionError, csv.Error) as exc:
             raise ServiceError("dataset_source_invalid", "Dataset rows cannot be decoded as finite JSON objects",
                                {"source_id": source["id"]}) from exc
 
+    def _parse_parquet(self, data, source, decoded_budget):
+        from .parquet_reader import read_parquet
+        return read_parquet(data, max_file_bytes=self.max_file_bytes,
+                            max_rows=self.max_rows, decoded_budget=decoded_budget)
+
     def _materialize(self, project_id, manifest):
+        session = _MATERIALIZATIONS.get()
+        if session is None:
+            return self._materialize_unprepared(project_id, manifest)
+        entries, compute = session
+        key = (project_id, digest(manifest), self.max_file_bytes, self.max_total_bytes, self.max_rows)
+        if key in entries:
+            entry = entries[key]
+            if "error" in entry:
+                raise entry["error"]
+            # A different portable reader must prove its own approved path/root
+            # still supplies the exact same pinned bytes before sharing values.
+            for source in entry["value"][0]["sources"]:
+                self._read_source(project_id, source)
+            return entry["value"]
+        if not compute:
+            _fail("dataset_preparation_required", "Dataset decoding was not prepared outside the writer transaction")
+        try:
+            value = self._materialize_unprepared(project_id, manifest)
+        except ServiceError as exc:
+            entries[key] = {"error": exc}
+            raise
+        entries[key] = {"value": value, "reader": self, "project_id": project_id}
+        return value
+
+    def _materialize_unprepared(self, project_id, manifest):
         manifest = validate_manifest(manifest)
-        indexed, total, seen = [], 0, set()
+        indexed, total, decoded_total, seen = [], 0, 0, set()
         id_column = manifest["id_column"]
         for source in manifest["sources"]:
             data = self._read_source(project_id, source)
             total += len(data)
             if total > self.max_total_bytes:
                 _fail("dataset_limit_exceeded", "Combined dataset sources exceed the configured byte limit")
-            for number, row in enumerate(self._parse(data, source, manifest["row_schema"]), 1):
+            rows = self._parse(data, source, manifest["row_schema"],
+                               decoded_budget=self.max_total_bytes - decoded_total)
+            for number, row in enumerate(rows, 1):
+                decoded_total += len(json.dumps(row, allow_nan=False).encode("utf-8"))
                 sample_id = row.get(id_column)
                 if not isinstance(sample_id, str) or not sample_id or len(sample_id) > 200:
                     _fail("dataset_sample_invalid", "Every sample needs a nonempty string identity")

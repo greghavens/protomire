@@ -4,6 +4,7 @@ from copy import deepcopy
 from importlib.util import module_from_spec, spec_from_file_location
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import time
@@ -15,7 +16,7 @@ import httpx
 from test_registry import make_manifest
 
 ROOT = Path(__file__).resolve().parents[2]
-BACKEND_PYTHON = ROOT / ".venv-backend/bin/python"
+BACKEND_PYTHON = Path(os.environ.get("MODELBUILDER_BACKEND_PYTHON", ROOT / ".venv-backend/bin/python"))
 pytestmark = [pytest.mark.integration, pytest.mark.skipif(not BACKEND_PYTHON.exists(), reason="Pinned native backend required")]
 HARNESS = '''from pathlib import Path
 import json
@@ -58,7 +59,10 @@ def fit(inputs, parameters, context):
 '''
 
 
-async def test_registered_dataset_native_import_and_actual_model_consumption(tmp_path, monkeypatch):
+@pytest.mark.parametrize("fmt", ["jsonl", "parquet"])
+async def test_registered_dataset_native_import_and_actual_model_consumption(tmp_path, monkeypatch, fmt):
+    if fmt == "parquet" and os.environ.get("MODELBUILDER_REQUIRE_PARQUET") != "1":
+        pytest.importorskip("pyarrow", reason="Optional pinned Parquet profile required")
     source = tmp_path / "independent-model"
     source.mkdir()
     (source / "harness.py").write_text(HARNESS)
@@ -72,7 +76,7 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
     data_root.mkdir()
     rows = [{"id": f"{split}-{i}", "text": "x" * i, "label": 2 * i + 1}
             for split, indices in [("train", range(1, 7)), ("dev", range(7, 9)), ("heldout", range(9, 11))] for i in indices]
-    manifest = make_manifest(data_root, rows=rows)
+    manifest = make_manifest(data_root, rows=rows, fmt=fmt)
     spec = spec_from_file_location("native_dataset_mcp_harness", ROOT / "scripts/mcp_smoke.py")
     harness = module_from_spec(spec)
     spec.loader.exec_module(harness)
@@ -138,6 +142,8 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
                     assert await call_mcp("dataset_bind", request) == bound
                     current = bound["recipe"]
                 assert current["recipe_id"] == project["recipe_id"] and current["revision"] == 5
+                if fmt == "parquet":
+                    assert "pyarrow==25.0.0" in current["environment"]["requirements"]
                 assert str(data_root) not in json.dumps(current) and str(source) not in json.dumps(current)
                 reference = next(item["metadata"]["dataset_reference"] for item in current["external_dependencies"]
                                  if "dataset_reference" in item.get("metadata", {}))
@@ -168,7 +174,7 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
                 assert len(status["artifacts"]) >= 4 and status["backend_run_id"] and (output / "model.pt").is_file()
                 bundle = await call_mcp("recipe_export", {"project_id": pid, "recipe_id": current["recipe_id"]})
                 assert str(data_root) not in json.dumps(bundle) and str(source) not in json.dumps(bundle)
-                assert not any(path.endswith(".jsonl") for path in bundle["files"])
+                assert not any(path.endswith((".jsonl", ".parquet")) for path in bundle["files"])
                 assert bundle["recipe"]["external_dependencies"] == current["external_dependencies"]
                 job_request = json.loads((job / "request.json").read_text())
                 assert job_request["dataset_source_guards"]  # captured roots reach actual worker

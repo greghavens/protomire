@@ -120,7 +120,7 @@ Example file contents:
 {"id":"heldout-1","text":"winter snow","label":0}
 ```
 
-Sources can be CSV or JSONL. CSV uses Python's standard `csv` parser; declared
+Sources can be CSV, JSONL, or optional hash-pinned Parquet. CSV uses Python's standard `csv` parser; declared
 numeric, boolean, object, array, and null fields use JSON decoding. JSONL rows
 must be finite JSON objects. The data schema is a bounded, explicit JSON Schema
 subset, validated with the existing `jsonschema` library. It rejects remote
@@ -134,11 +134,88 @@ The reader refuses training on validation/test/calibration data, calibration on
 other roles, and evaluation on training/calibration data. It also refuses exact
 duplicate content crossing splits, even when sample IDs differ.
 
-PyArrow-based Parquet decoding is implemented as an optional adapter, with
-metadata row and decoded-batch byte limits. PyArrow is **not installed in the
-pinned tested environments**: requesting Parquet there returns
-`capability_unavailable`. It has not passed a real Parquet acceptance gate and
-is not claimed as supported by this delivery.
+### Optional real Parquet adapter
+
+`python3.12 scripts/bootstrap.py --parquet --skip-frontend` adds the exact
+`pyarrow==25.0.0` profile to the selected service environment. Use
+`--backend --parquet` to install the adapter in both separate environments, or
+`--backend-only --parquet` for an existing service. Choose fresh environment
+directories with `--service-venv` / `--backend-venv` when preserving a frozen
+installation. Original service/backend lockfiles are unchanged; the optional
+SHA256-locked overlay is under `requirements/profiles/parquet-*.lock`.
+
+The reader accepts a single local Parquet file per source, including bounded
+variable-length lists and structs of JSON-compatible scalar types. It refuses
+binary, timestamp, decimal and extension values instead of silently coercing
+them, as well as duplicate field names and external column-file references.
+No partition discovery, remote URI, Hugging Face resolver, pandas conversion,
+or arbitrary framework dataset support is implied.
+
+Only already-hashed bounded bytes reach a standalone decoder subprocess. On
+Linux it establishes hard limits **before importing PyArrow**: 512 MiB total
+virtual address space (including Python, Arrow and runtime baseline), 15 seconds
+CPU time with a 16-second hard kill, and 34 MiB output-file size. The parent adds
+a 20-second wall deadline, kills/reaps timed-out children, and bounds the anonymous
+output before loading JSON. There is no weaker in-process fallback. Two decoder
+slots per service/worker process bound concurrent parser work; overload refuses
+with a retryable diagnostic. This is resource containment, not a general sandbox
+for arbitrary code. Inputs cannot select paths, URLs, plugins, or executable code;
+the child receives verified bytes under a sanitized environment.
+
+Thrift metadata limits remain 1 MiB of strings and 100,000 container items.
+Preflight bounds cover 256 leaf columns, 4,096 row groups and encoded sizes.
+The 64-row decode batch and 32 MiB cumulative decoded/serialized-JSON budget are
+logical data limits, not proofs of allocation size: dictionary and nested-list
+expansion occurs only inside the hard-capped process. The parent still allocates
+bounded JSON rows and application lineage structures; its RSS is not capped at
+32 MiB. Page checksums are verified when present; pinned whole-file SHA256
+validation remains mandatory.
+
+Dataset registration, versioning, validation, preview, binding and run admission
+prepare decoding and row transformations outside the SQLite writer transaction.
+Atomic commit rechecks the exact initiating token grant, project/source binding,
+recipe and selected dataset revisions, approved root identity, and pinned source
+bytes. A second token for the same actor cannot revive revoked work. Concurrent
+idempotent calls retain one receipt. Bounded secure source reads/hashes remain in
+the commit phase; native parsing and row transformation do not.
+
+The contained decoder is currently enabled only on Linux; Linux x64 has actual
+runtime acceptance. macOS and Windows Parquet use fails closed with
+`capability_unavailable` until an equivalent hard boundary is verified, even when
+the optional PyArrow wheel installs successfully. This does not block the IDE,
+project/recipe workflow, JSONL or CSV. Admission diagnoses the optional platform
+limit before execution. Linux arm64 is not claimed as native-tested here.
+
+`dataset.bind` records the exact PyArrow requirement in the revisioned recipe.
+Admission separately verifies the worker interpreter's installed adapter, so a
+service-only installation cannot produce an executable Parquet plan. A missing
+adapter or mismatched version fails closed. The source hash, row schema, ordered
+split manifest, generator/source declaration and per-row lineage retain the
+existing immutable contract. External bytes are never copied into the registry.
+
+Linux x64 tests generate 48 real variable-length sequences with a fixed seed,
+write real Parquet and separate schema/split JSON manifests, re-generate matching
+bytes, apply a versioned deterministic normalization, and verify original bytes
+and metadata remain unchanged. HTTP/MCP gateway binding, actual backend admission,
+portable split loading, schema/split drift, duplicate handling, source tampering,
+symlinks, metadata bounds and compression/dictionary expansion have dedicated
+coverage in `tests/datasets/test_parquet.py`. The parameterized native acceptance
+in `tests/datasets/test_native_dataset.py` also passes with Parquet: a separate
+service and official MCP client bind three registered splits; the independent
+ZenML/Torch harness records 1,800 actual training IDs, checks split separation,
+reduces loss and saves weights with real native run/artifact identities. Both
+service and worker use separately bootstrapped optional profiles. This does not
+complete the broader G07 generator lifecycle, required external benchmark-
+contamination check, or native GUI gate.
+
+Run the mandatory optional-profile gate with:
+
+```bash
+MODELBUILDER_REQUIRE_PARQUET=1 PYTHONPATH=src .venv/bin/python -m pytest tests/datasets/test_parquet.py tests/datasets/test_parquet_boundary.py tests/portability/test_parquet_profiles.py
+```
+
+Without that flag, a base installation lacking PyArrow skips the optional tests;
+CI installs `--parquet` and sets the flag so a missing/broken adapter fails.
 
 ## Declared transformations
 

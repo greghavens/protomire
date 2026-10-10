@@ -95,6 +95,8 @@ def _connect(job: Path, *, create=False, write=False):
                     evaluation_id TEXT PRIMARY KEY, checkpoint_id TEXT NOT NULL, node_id TEXT NOT NULL,
                     step INTEGER NOT NULL, status TEXT NOT NULL, record TEXT NOT NULL, request TEXT NOT NULL,
                     owner_pid INTEGER, owner_identity TEXT, worker_pid INTEGER, worker_identity TEXT);
+                CREATE INDEX IF NOT EXISTS evaluations_step ON evaluations(step,evaluation_id);
+                CREATE INDEX IF NOT EXISTS evaluations_status ON evaluations(status);
                 CREATE TABLE IF NOT EXISTS events (
                     cursor INTEGER PRIMARY KEY AUTOINCREMENT, event_id TEXT NOT NULL UNIQUE,
                     record TEXT NOT NULL);
@@ -140,19 +142,45 @@ def list_events(job: Path, after: int = 0, limit: int = 200) -> dict:
             "next_cursor": page[-1]["cursor"] if page else after, "has_more": len(rows) > limit}
 
 
-def list_evaluations(job: Path) -> dict:
+def list_evaluations(job: Path, limit: int | None = None) -> dict:
+    """Read all durable history by default, or a bounded latest-evaluation window.
+
+    A window never mutates/truncates the journal. Counts cover the entire run;
+    checkpoint records in a window correspond only to its displayed evaluations.
+    """
+    if limit is not None and (isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 200):
+        raise ValueError("Evaluation window limit must be between 1 and 200")
     summary = dict.fromkeys(STATUSES, 0)
     if not _database(job).exists():
-        return {"schema": SCHEMA, "evaluations": [], "checkpoints": [], "summary": summary}
+        result = {"schema": SCHEMA, "evaluations": [], "checkpoints": [], "summary": summary}
+        if limit is not None:
+            result.update(limit=limit, total_evaluations=0, truncated=False)
+        return result
     with _connect(job) as connection:
-        evaluations = [json.loads(row[0]) for row in connection.execute("SELECT record FROM evaluations ORDER BY step,evaluation_id")]
-        checkpoints = [json.loads(row[0]) for row in connection.execute("SELECT record FROM checkpoints ORDER BY step,checkpoint_id")]
-    for record in evaluations:
-        summary[record["status"]] += 1
+        # Keep counts and the latest window in the same read snapshot while the
+        # trainer/evaluator may be appending or finishing checkpoints.
+        connection.execute("BEGIN")
+        if limit is None:
+            evaluations = [json.loads(row[0]) for row in connection.execute("SELECT record FROM evaluations ORDER BY step,evaluation_id")]
+            checkpoints = [json.loads(row[0]) for row in connection.execute("SELECT record FROM checkpoints ORDER BY step,checkpoint_id")]
+            for record in evaluations:
+                summary[record["status"]] += 1
+        else:
+            evaluations = [json.loads(row[0]) for row in connection.execute(
+                "SELECT record FROM evaluations ORDER BY step DESC,evaluation_id DESC LIMIT ?", (limit,))][::-1]
+            for row in connection.execute("SELECT status,COUNT(*) FROM evaluations GROUP BY status"):
+                summary[row[0]] = row[1]
+            ids = list(dict.fromkeys(record["checkpoint_id"] for record in evaluations))
+            checkpoints = [json.loads(row[0]) for row in connection.execute(
+                "SELECT record FROM checkpoints WHERE checkpoint_id IN (" + ",".join("?" for _ in ids) + ") ORDER BY step,checkpoint_id", ids)] if ids else []
     # Filesystem implementation details are not part of the service contract.
     for record in checkpoints:
         record.pop("path", None)
-    return {"schema": SCHEMA, "evaluations": evaluations, "checkpoints": checkpoints, "summary": summary}
+    result = {"schema": SCHEMA, "evaluations": evaluations, "checkpoints": checkpoints, "summary": summary}
+    if limit is not None:
+        total = sum(summary.values())
+        result.update(limit=limit, total_evaluations=total, truncated=total > len(evaluations))
+    return result
 
 
 def record_run_terminal(job: Path, result: dict) -> bool:

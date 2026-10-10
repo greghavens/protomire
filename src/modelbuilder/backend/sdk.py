@@ -139,11 +139,14 @@ def _reconcile(job: Path):
 def artifacts_for(job: Path, run) -> list[dict]:
     artifacts = []
     if run:
+        from .native_cache import output_provenance
         for step_name, step_run in run.steps.items():
+            cache = output_provenance(step_run, run)
             for port, versions in step_run.outputs.items():
                 for artifact in versions:
                     artifacts.append({"artifact_id": str(artifact.id), "name": artifact.name, "step_id": str(step_run.id),
-                                      "node_id": step_name, "port": port, "uri": artifact.uri, "backend_run_id": str(run.id)})
+                                      "node_id": step_name, "port": port, "uri": artifact.uri, "backend_run_id": str(run.id),
+                                      "cache": cache})
         recovery = read_json(job / "recovery.json")
         if recovery:
             artifact = Client().get_artifact_version(UUID(recovery["artifact_id"]))
@@ -319,7 +322,17 @@ def status(job: Path, *, verify_evaluations=False) -> dict:
     else:
         current = "submitted"
     evaluations = evaluation_outputs(run, request, verify_checkpoints=verify_evaluations)
+    conditional = metadata_values(run).get("conditional_execution", {}) if run else {}
+    conditional = conditional if isinstance(conditional, dict) else {}
     execution = request.get("execution") or {"node_ids": [node["id"] for node in request["recipe"]["nodes"]], "input_bindings": []}
+    declared_conditions = {node["id"]: node["condition"] for node in request["recipe"]["nodes"] if "condition" in node}
+    # Skipped outcomes come from actual native metadata, never from an absent
+    # step or a pending declaration. Existing native step status always wins.
+    conditional = {node: outcome for node, outcome in conditional.items()
+                   if node in declared_conditions and node in execution["node_ids"] and isinstance(outcome, dict)
+                   and outcome.get("condition") == declared_conditions[node]
+                   and outcome.get("status") in {"eligible", "skipped"}}
+    skipped = [node for node, outcome in conditional.items() if outcome["status"] == "skipped" and node not in run.steps] if run else []
     # Never report cancellation while the actual worker remains alive.
     if current == "cancelled" and worker_alive:
         current = "cancel_requested"
@@ -334,6 +347,9 @@ def status(job: Path, *, verify_evaluations=False) -> dict:
             "metrics": metrics_for(run, evaluations), "evaluations": evaluations, "artifacts": artifacts_for(job, run),
             "execution": {**execution, "input_bindings": request.get("resolved_input_bindings", [])},
             "executed_node_ids": [node for node, step in run.steps.items() if step.status.value in {"running", "completed", "cached", "failed"}] if run else [],
+            "cached_node_ids": [node for node, step in run.steps.items() if step.status.value == "cached"] if run else [],
+            "node_statuses": {**{node: "skipped" for node in skipped}, **{node: step.status.value for node, step in run.steps.items()}} if run else {},
+            "skipped_node_ids": skipped, "conditional_execution": conditional,
             "tracking": tracking_status(job, request, current),
             "parent_run_id": request.get("parent_run_id"), "parent_checkpoint_ref": request.get("parent_checkpoint_ref"),
             "parent_recipe_id": request.get("parent_recipe_id"), "parent_recipe_revision": request.get("parent_recipe_revision"),

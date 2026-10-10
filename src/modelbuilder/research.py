@@ -4,7 +4,8 @@ The operation service owns authorization, transactions, audit and idempotency.
 This module stores citations, source text, watches and staged recipe changes. It
 never trains a model, executes imported text, verifies
 paper conclusions or promotes model versions. Source matches mean only that the
-quoted characters occur in the exact user-supplied text snapshot.
+quoted characters occur in the exact local source snapshot, with its recorded
+source and rights validation.
 """
 from __future__ import annotations
 
@@ -297,8 +298,22 @@ class ResearchWorkflow:
 
     def _text(self, action, p, actor):
         project_id = p["project_id"]
-        if action == "get":
-            return self._get("text", p["text_id"], project_id)
+        if action == "list":
+            if p.get("evidence_id"):
+                self.service._get("evidence", p["evidence_id"], project_id)
+            texts = self.store.list("research_text", project_id)
+            retrievals = self.store.list("research_retrieval", project_id)
+            if p.get("evidence_id"):
+                texts = [item for item in texts if item["evidence_id"] == p["evidence_id"]]
+                retrievals = [item for item in retrievals if item["evidence_id"] == p["evidence_id"]]
+            return {"texts": [{key: value for key, value in item.items() if key != "text"} for item in texts],
+                    "retrievals": retrievals, "claim_verified": False}
+        if action in {"get", "search", "inspect"}:
+            text = self._get("text", p["text_id"], project_id)
+            if action == "get":
+                return text
+            from .research_content import inspect_text, search_text
+            return (search_text if action == "search" else inspect_text)(text, p)
         evidence = self.service._get("evidence", p["evidence_id"], project_id)
         self.service._revision(evidence, p["expected_evidence_revision"])
         content = p["text"]
@@ -341,10 +356,12 @@ class ResearchWorkflow:
                     raise ServiceError("citation_mismatch", "Source text belongs to another evidence record")
                 start, end = reference["start"], reference["end"]
                 if start >= end or end > len(text["text"]) or text["text"][start:end] != reference["quote"]:
-                    raise ServiceError("passage_mismatch", "Quoted passage does not match the exact imported text offsets")
+                    raise ServiceError("passage_mismatch", "Quoted passage does not match the exact local source-text offsets")
                 citation.update(text_id=text["text_id"], text_sha256=text["sha256"],
                                 quote=reference["quote"], start=start, end=end,
-                                validation_status="passage_matched_user_supplied_text",
+                                validation_status=("passage_matched_retrieved_text" if text.get("source_validation") == "provider_xml_identifier_matched"
+                                                   else "passage_matched_user_supplied_text"),
+                                source_validation=text["source_validation"], rights_validation=text["rights_validation"],
                                 rights_basis=text["rights_basis"], license=text["license"])
             citation["evidence_key"] = _evidence_key(evidence, text)
             key = (citation["evidence_key"], citation.get("start"), citation.get("end"))

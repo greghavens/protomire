@@ -26,7 +26,7 @@ def main():
     if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 10:
         return 1
     url = "https://api.openalex.org/works?" + urlencode({"search": query, "per-page": limit,
-        "select": "id,doi,title,publication_date,authorships,primary_location"})
+        "select": "id,doi,title,publication_date,authorships,primary_location,abstract_inverted_index"})
     request = Request(url, headers={"User-Agent": "Modelbuilder/0.1 literature-metadata", "Accept": "application/json"})
     # No credential-bearing ambient proxy and no redirect to another recipient.
     with build_opener(ProxyHandler({}), NoRedirect()).open(request, timeout=18) as response:

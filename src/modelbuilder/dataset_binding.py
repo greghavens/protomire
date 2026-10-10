@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import stat
 
+from .dataset import PYARROW_REQUIREMENT
 from .models import ServiceError
 
 
@@ -46,6 +47,14 @@ def bind(service, payload):
     data = registry.read_split(project_id, payload["dataset_id"], payload["dataset_revision"],
                                payload["split_id"], purpose=payload["purpose"])
     recipe = copy.deepcopy(current)
+    if any(source["format"] == "parquet" for source in reference["manifest"]["sources"]):
+        requirements = recipe.setdefault("environment", {}).setdefault("requirements", [])
+        existing_pin = next((pin for pin in requirements
+                             if pin.split("==")[0].split("[")[0].lower() == "pyarrow"), None)
+        if existing_pin and existing_pin.split("==")[1] != PYARROW_REQUIREMENT.split("==")[1]:
+            raise ServiceError("dataset_binding_conflict", "Recipe declares a conflicting Parquet adapter version")
+        if existing_pin is None:
+            requirements.append(PYARROW_REQUIREMENT)
     node_id = payload["node_id"]
     existing = next((node for node in recipe["nodes"] if node["id"] == node_id), None)
     if existing and existing["kind"] != "dataset.version.import":

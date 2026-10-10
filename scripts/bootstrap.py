@@ -12,13 +12,15 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from distribution.platform_config import detect_target  # noqa: E402
-from scripts.dependency_profiles import CPU_INDEX, backend_reason, lock_path, venv_python  # noqa: E402
+from scripts.dependency_profiles import CPU_INDEX, PARQUET_TARGETS, backend_reason, lock_path, venv_python  # noqa: E402
 
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument('--backend', action='store_true', help='Also install the supported local backend')
     result.add_argument('--backend-only', action='store_true')
+    result.add_argument('--parquet', action='store_true',
+                        help='Add the hash-locked PyArrow adapter to the selected service/backend environments')
     result.add_argument('--tracking', action='store_true', help='Install isolated optional W&B SDK; never enable uploads')
     result.add_argument('--tracking-venv', type=Path, default=Path(os.environ.get('MODELBUILDER_TRACKING_VENV', ROOT / '.venv-tracking')))
     result.add_argument('--skip-frontend', action='store_true', help='Install Python components only')
@@ -46,16 +48,26 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError('Optional tracking must use a separate environment.')
     wants_backend = args.backend or args.backend_only
     reason = backend_reason(target)
+    parquet_wheel = target in PARQUET_TARGETS
+    parquet_runtime = parquet_wheel and target.startswith('linux-')
+    parquet_unavailable = (None if parquet_runtime else
+        'Contained Parquet decoding is currently Linux-only; use JSONL/CSV or a supported Linux service/backend.'
+        if parquet_wheel else 'No reviewed optional PyArrow wheel profile is available for this target; use JSONL/CSV.')
     plan = {'target': target, 'python': pin, 'service_python': str(venv_python(service, target)),
             'backend_python': str(venv_python(backend, target)),
             'service_lock': str(lock_path(ROOT, 'service', target)), 'backend_unavailable': reason,
             'tracking_python': str(venv_python(tracking, target)),
+            'parquet_available': parquet_runtime,
+            'parquet_wheel_available': parquet_wheel,
+            'parquet_unavailable': parquet_unavailable,
+            'parquet_lock': str(lock_path(ROOT, 'parquet', target)) if parquet_wheel else None,
             'tracking_available': (ROOT / 'requirements/profiles' / f'tracking-wandb-{target}.lock').is_file()}
     if args.plan:
         print(json.dumps(plan, indent=2))
         return 0
     if '.'.join(map(str, sys.version_info[:3])) != pin:
         raise ValueError(f'Pinned Python {pin} required; run this script with that interpreter.')
+    parquet_lock = lock_path(ROOT, 'parquet', target) if args.parquet else None
     env = dict(os.environ)
     env.setdefault('PIP_CACHE_DIR', str(ROOT / '.cache' / 'pip'))
     env.setdefault('UV_CACHE_DIR', str(ROOT / '.cache' / 'uv'))
@@ -64,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
         python = venv_python(service, target)
         run([python, '-m', 'pip', 'install', '--require-hashes', '-r', lock_path(ROOT, 'service', target)], env=env)
         run([python, '-m', 'pip', 'install', '--no-deps', '--no-build-isolation', '-e', ROOT], env=env)
+        if parquet_lock:
+            run([python, '-m', 'pip', 'install', '--require-hashes', '--only-binary=:all:', '-r', parquet_lock], env=env)
         run([python, '-m', 'pip', 'check'], env=env)
         if not args.skip_frontend and (ROOT / 'packages/ide_feature/package-lock.json').is_file():
             npm = shutil.which('npm.cmd' if target.startswith('win32-') else 'npm')
@@ -84,6 +98,9 @@ def main(argv: list[str] | None = None) -> int:
         if target.startswith('linux-'):
             command += ['--extra-index-url', CPU_INDEX, '--index-strategy', 'unsafe-best-match']
         run(command, env=env)
+        if parquet_lock:
+            run([uv, 'pip', 'install', '--python', venv_python(backend, target), '--require-hashes',
+                 '--only-binary', ':all:', '-r', parquet_lock], env=env)
         run([uv, 'pip', 'check', '--python', venv_python(backend, target)], env=env)
         if not args.skip_model_download:
             env['PYTHONPATH'] = str(ROOT / 'src')

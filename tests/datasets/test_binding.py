@@ -153,7 +153,7 @@ async def test_http_and_native_gateway_expose_one_exact_binding_contract(bound):
         assert next(item for item in catalog if item["name"] == "dataset.bind")["scope"] == "modify"
         assert "dataset_bind" in {item.name for item in catalog_tools({"operations": catalog})[0]}
         # Idempotency is shared across the exact public HTTP request and service dispatcher.
-        assert response.json() == service.invoke("dataset.bind", payload, OWNER)
+        assert response.json() == service.invoke("dataset.bind", payload, app.state.auth.authenticate("Bearer owner"))
 
 
 def test_operator_python_selection_preserves_the_virtual_environment_symlink(tmp_path):

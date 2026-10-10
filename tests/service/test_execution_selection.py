@@ -107,3 +107,100 @@ def test_selected_admission_drops_only_unselected_generated_dataset_closures():
     assert {item['id'] for item in view['external_dependencies']} == {'ref-a', 'source-a', 'explicit-component-resource'}
     assert view['source'] == original['source']  # Entire immutable authored closure stays pinned.
     assert body == original
+
+
+def live_recipe():
+    body = recipe()
+    body["evaluation"]["live"] = {"enabled": True, "max_concurrency": 1, "timeout_seconds": 30}
+    return body
+
+
+def test_selected_trainer_and_explicit_evaluator_retain_live_without_export():
+    from modelbuilder.backend.components import live_evaluator, validate_live_evaluation
+    body = live_recipe()
+    original = copy.deepcopy(body)
+    execution = selection(body, {"node_ids": ["data", "initial", "train", "evaluate"], "input_bindings": []})
+    view = selected_recipe(body, execution)
+    validate_live_evaluation(view)
+    trainer = next(node for node in view["nodes"] if node["id"] == "train")
+    evaluator = live_evaluator(trainer, view)
+    assert evaluator["node"]["id"] == "evaluate"
+    assert evaluator["input_bindings"] == {"data": "data"}
+    assert "export" not in {node["id"] for node in view["nodes"]}
+    assert view["evaluation"]["live"] == body["evaluation"]["live"]
+    assert body == original
+
+
+@pytest.mark.parametrize("nodes,bindings", [(["data", "initial", "train"], []), (["data", "evaluate"], [binding()])])
+def test_live_cuts_never_launch_unselected_trainer_or_evaluator(nodes, bindings):
+    from modelbuilder.backend.components import live_evaluator, validate_live_evaluation
+    view = selected_recipe(live_recipe(), selection(live_recipe(), {"node_ids": nodes, "input_bindings": bindings}))
+    assert "live" not in view["evaluation"]
+    validate_live_evaluation(view)
+    assert all(live_evaluator(node, view) is None for node in view["nodes"])
+
+
+def test_live_cut_rejects_boundary_evaluator_input_instead_of_silently_dropping_it():
+    body = live_recipe()
+    for node in body["nodes"]:
+        if node["id"] == "evaluate":
+            node["inputs"].append({"name": "calibration", "type": "Path", "required": False})
+    execution = selection(body, {"node_ids": ["data", "initial", "train", "evaluate"],
+                                "input_bindings": [binding("evaluate", "calibration")]})
+    from modelbuilder.backend.components import validate_live_evaluation
+    with pytest.raises(ValueError, match="exactly one downstream evaluator"):
+        validate_live_evaluation(selected_recipe(body, execution), input_bindings=execution["input_bindings"])
+
+
+def test_live_cut_rejects_missing_shared_required_input():
+    from modelbuilder.backend.components import validate_live_evaluation
+    body = live_recipe()
+    execution = selection(body, {"node_ids": ["data", "initial", "train", "evaluate"], "input_bindings": []})
+    view = selected_recipe(body, execution)
+    view["edges"] = [edge for edge in view["edges"] if not (edge["target_node"] == "evaluate" and edge["target_port"] == "data")]
+    with pytest.raises(ValueError, match="exactly one downstream evaluator"):
+        validate_live_evaluation(view)
+
+
+def test_two_explicitly_selected_live_evaluators_remain_ambiguous():
+    from modelbuilder.backend.components import validate_live_evaluation
+    body = live_recipe()
+    evaluator = copy.deepcopy(next(node for node in body["nodes"] if node["id"] == "evaluate"))
+    evaluator["id"] = "other_eval"
+    body["nodes"].append(evaluator)
+    body["edges"].extend([{**edge, "target_node": "other_eval"} for edge in list(body["edges"]) if edge["target_node"] == "evaluate"])
+    view = selected_recipe(body, selection(body, {"node_ids": ["data", "initial", "train", "evaluate", "other_eval"], "input_bindings": []}))
+    with pytest.raises(ValueError, match="exactly one downstream evaluator"):
+        validate_live_evaluation(view)
+
+
+@pytest.mark.parametrize("changed", [None, "backend_run_id", "source_node_id", "source_port", "artifact_id", "content_sha256"])
+def test_live_cut_maps_only_identical_pinned_boundary_inputs(changed):
+    from modelbuilder.backend.components import live_evaluator, validate_live_evaluation
+    body = live_recipe()
+    pins = [binding("train", "data"), binding("evaluate", "data"), binding("initial", "data")]
+    if changed:
+        pins[1][changed] = "b" * 64 if changed == "content_sha256" else "different"
+    execution = selection(body, {"node_ids": ["initial", "train", "evaluate"], "input_bindings": pins})
+    view = selected_recipe(body, execution)
+    trainer = next(node for node in view["nodes"] if node["id"] == "train")
+    if changed:
+        with pytest.raises(ValueError, match="exactly one downstream evaluator"):
+            validate_live_evaluation(view, input_bindings=pins)
+    else:
+        validate_live_evaluation(view, input_bindings=pins)
+        assert live_evaluator(trainer, view, input_bindings=pins)["input_bindings"] == {"data": "data"}
+        assert "data" not in {node["id"] for node in view["nodes"]}
+
+
+def test_optional_live_boundary_input_is_preserved_when_explicitly_shared():
+    from modelbuilder.backend.components import live_evaluator
+    body = live_recipe()
+    for node in body["nodes"]:
+        if node["id"] in {"train", "evaluate"}:
+            node["inputs"].append({"name": "calibration", "type": "Path", "required": False})
+    pins = [binding("train", "calibration"), binding("evaluate", "calibration")]
+    execution = selection(body, {"node_ids": ["data", "initial", "train", "evaluate"], "input_bindings": pins})
+    view = selected_recipe(body, execution)
+    trainer = next(node for node in view["nodes"] if node["id"] == "train")
+    assert live_evaluator(trainer, view, input_bindings=pins)["input_bindings"] == {"data": "data", "calibration": "calibration"}

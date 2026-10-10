@@ -566,7 +566,7 @@ def test_research_native_mcp_catalog_keeps_shared_schemas_and_scopes(service):
     from modelbuilder.mcp_server import catalog_tools
     tools, aliases = catalog_tools({"operations": service.catalog(OWNER)})
     research = [item for item in tools if aliases[item.name].startswith("research.")]
-    assert len(research) == 17
+    assert {aliases[item.name] for item in research} == {name for name in OPERATIONS if name.startswith("research.")}
     for tool in research:
         operation = OPERATIONS[aliases[tool.name]]
         assert tool.inputSchema == operation.input_schema

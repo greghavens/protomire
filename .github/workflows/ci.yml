@@ -22,8 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24.19.0'
-      - run: bash scripts/bootstrap.sh
-      - run: bash scripts/test_all.sh
+      - run: bash scripts/bootstrap.sh --parquet
+      - run: MODELBUILDER_REQUIRE_PARQUET=1 bash scripts/test_all.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -42,8 +42,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24.19.0'
-      - run: bash scripts/bootstrap.sh --backend --tracking
-      - run: MODELBUILDER_RUN_INTEGRATION=1 bash scripts/test_all.sh
+      - run: bash scripts/bootstrap.sh --backend --tracking --parquet
+      - run: MODELBUILDER_REQUIRE_PARQUET=1 MODELBUILDER_RUN_INTEGRATION=1 bash scripts/test_all.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:

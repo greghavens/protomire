@@ -73,10 +73,12 @@ def validate_component(node: dict) -> dict:
 
 
 def component_catalog(recipe: dict | None = None) -> list[dict]:
-    """Discover inert declarations, including the legacy versioned example family."""
+    """Discover inert reusable adapters and source-bound recipe declarations."""
+    from .local_inference import catalog_entries
     catalog = [{"id": "modelbuilder.examples", "version": "1", "protocol": "modelbuilder.fixture/v1",
                 "description": "Versioned custom classifier and tiny BERT examples; not a generic training framework.",
                 "capabilities": {"resume_modes": ["exact_state", "warm_start"], "export_formats": ["pytorch"], "frameworks": ["pytorch", "transformers"]}}]
+    catalog.extend(catalog_entries())
     for node in (recipe or {}).get("nodes", []):
         if node.get("kind") == "component.run":
             descriptor = validate_component(node)
@@ -201,7 +203,7 @@ def validate_export_manifest(manifest: dict) -> dict:
     return manifest
 
 
-def live_evaluator(node: dict, recipe: dict) -> dict | None:
+def live_evaluator(node: dict, recipe: dict, *, input_bindings=()) -> dict | None:
     """Resolve one explicit downstream evaluator without inventing model IO rules."""
     settings = recipe.get("evaluation", {}).get("live", {})
     if not settings.get("enabled"):
@@ -209,6 +211,9 @@ def live_evaluator(node: dict, recipe: dict) -> dict | None:
     if node["kind"] != "model.train" and node.get("component", {}).get("role") != "training":
         return None
     upstream = {(e["source_node"], e["source_port"]): e["target_port"] for e in recipe["edges"] if e["target_node"] == node["id"]}
+    def bound_identity(binding):
+        return tuple(binding.get(key) for key in ("backend_run_id", "source_node_id", "source_port", "artifact_id", "content_sha256"))
+    trainer_bound = [binding for binding in input_bindings if binding["node_id"] == node["id"]]
     candidates = []
     for evaluator in recipe["nodes"]:
         if evaluator["kind"] != "model.evaluate" and evaluator.get("component", {}).get("role") != "evaluation":
@@ -217,17 +222,35 @@ def live_evaluator(node: dict, recipe: dict) -> dict | None:
         checkpoints = [e for e in edges if e["source_node"] == node["id"]]
         if len(checkpoints) != 1:
             continue
-        if any((e["source_node"], e["source_port"]) not in upstream for e in edges if e not in checkpoints):
+        mapping = {}
+        compatible = True
+        for edge in edges:
+            if edge in checkpoints:
+                continue
+            source = (edge["source_node"], edge["source_port"])
+            if source not in upstream:
+                compatible = False
+                break
+            mapping[edge["target_port"]] = upstream[source]
+        for binding in input_bindings:
+            if binding["node_id"] != evaluator["id"]:
+                continue
+            matches = [item for item in trainer_bound if bound_identity(item) == bound_identity(binding)]
+            if len(matches) != 1 or binding["input_port"] in mapping or binding["input_port"] == checkpoints[0]["target_port"]:
+                compatible = False
+                break
+            mapping[binding["input_port"]] = matches[0]["input_port"]
+        supplied = set(mapping) | {checkpoints[0]["target_port"]}
+        if not compatible or any(port.get("required", True) and port["name"] not in supplied for port in evaluator.get("inputs", [])):
             continue
         candidates.append({"node": evaluator, "checkpoint_port": checkpoints[0]["target_port"],
-                           "input_bindings": {e["target_port"]: upstream[(e["source_node"], e["source_port"])] for e in edges if e not in checkpoints},
-                           "settings": settings})
+                           "input_bindings": mapping, "settings": settings})
     if len(candidates) != 1:
         raise ValueError("Live training requires exactly one downstream evaluator with shared upstream inputs")
     return candidates[0]
 
 
-def validate_live_evaluation(recipe: dict) -> None:
+def validate_live_evaluation(recipe: dict, *, input_bindings=()) -> None:
     settings = recipe.get("evaluation", {}).get("live", {})
     if not isinstance(settings, dict) or set(settings) - {"enabled", "max_concurrency", "timeout_seconds"}:
         raise ValueError("Unsupported live evaluation settings")
@@ -244,4 +267,4 @@ def validate_live_evaluation(recipe: dict) -> None:
         if (settings.get("enabled") and node["kind"] == "component.run"
                 and not node["component"]["capabilities"].get("checkpoint_events", False)):
             raise ValueError("Training component does not declare checkpoint publication support")
-        live_evaluator(node, recipe)
+        live_evaluator(node, recipe, input_bindings=input_bindings)

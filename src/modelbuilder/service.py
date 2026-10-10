@@ -149,11 +149,26 @@ class OperationService:
                 with self.store.transaction():
                     self._get("project", project_id, project_id)
                 return self._research(operation, payload, actor)
+            if operation == "research.text.fetch":
+                from .research_content import ContentRetrieval
+                return ContentRetrieval(self).invoke(operation, payload, actor, payload_hash, request_id)
             if operation in {"research.watch.refresh", "research.watch.refresh_due"}:
                 from .research_scheduler import ResearchRefresh
                 return ResearchRefresh(self).invoke(operation, payload, actor, payload_hash, request_id)
+            if operation == "execution.targets":
+                # Optional driver/runtime probes must not hold the SQLite writer
+                # transaction or its process-wide lock. This read has no writes;
+                # authorization and payload validation above remain mandatory.
+                return self._execution(operation, payload, actor)
             if operation == "run.compare":
                 return self._compare_unlocked(payload, actor)
+            dataset_state, dataset_values = None, None
+            from .dataset_preparation import OPERATIONS as DATASET_PREPARED_OPERATIONS
+            if operation in DATASET_PREPARED_OPERATIONS:
+                from .dataset_preparation import prepare
+                dataset_state, dataset_values, previous = prepare(self, operation, payload, actor, payload_hash)
+                if previous is not None:
+                    return previous
             prepared = None
             if operation == "model.version.promote" or (
                 operation == "decision.record" and payload["selection_rule"].get("comparison_digest")
@@ -174,7 +189,7 @@ class OperationService:
                     evidence = self._call_backend("run.compare", copy.deepcopy(snapshot["comparison_payload"]), actor)
                 prepared = (snapshot, evidence)
             with self.store.transaction():
-                if prepared is not None:
+                if prepared is not None or dataset_state is not None:
                     self._require_current_authority(operation, actor, project_id)
                 if project_id:
                     self._get("project", project_id, project_id)
@@ -192,10 +207,16 @@ class OperationService:
                             RecipeRegistry(self).authorize_cached_result(operation, payload, actor, previous)
                         self._check_idempotent_recipe_identity(operation, previous)
                         return previous
+                if dataset_state is not None:
+                    from .dataset_preparation import snapshot
+                    if snapshot(self, operation, payload)[0] != dataset_state:
+                        raise ServiceError("dataset_preparation_changed", "Project, dataset or source binding changed during preparation; retry explicitly", status_code=409)
                 if prepared is not None and self._evidence_snapshot(operation, payload) != prepared[0]:
                     raise ServiceError("comparison_changed", "Decision or execution evidence changed; prepare again", status_code=409)
-                result = self._dispatch(operation, payload, actor,
-                                        prepared_evidence=prepared[1] if prepared is not None else None)
+                from .dataset import materialization_session
+                with materialization_session(dataset_values or {}, compute=False):
+                    result = self._dispatch(operation, payload, actor,
+                                            prepared_evidence=prepared[1] if prepared is not None else None)
                 if spec.mutating:
                     self.store.save_idempotent(actor.id, payload["idempotency_key"], operation, payload_hash, result)
                     result_project = project_id or result.get("project_id")

@@ -40,6 +40,46 @@ def urlopen(request, timeout=FETCH_TIMEOUT_SECONDS):
     return io.BytesIO(result.stdout)
 
 
+def _abstract(item):
+    """Reconstruct bounded abstracts only with a supported source license label.
+
+    OpenAlex metadata being open does not itself license the paper or abstract.
+    Unknown rights remain visible without retaining reconstructed source text.
+    """
+    index = item.get("abstract_inverted_index")
+    if index is None:
+        return {"status": "missing", "rights_status": "unknown"}
+    location = item.get("primary_location") or {}
+    label = location.get("license") if isinstance(location, dict) else None
+    label = label if isinstance(label, str) else None
+    base = {"license": label, "rights_validation": "provider_primary_location_license_label",
+            "attribution_source": item.get("id"), "claim_verified": False}
+    if label not in {"cc-by", "cc-by-sa", "cc0"}:
+        return {**base, "status": "rights_unknown", "rights_status": "unknown"}
+    if not isinstance(index, dict) or not 1 <= len(index) <= 10000:
+        return {**base, "status": "invalid", "rights_status": "provider_declared"}
+    positions, expanded_bytes = {}, 0
+    for word, offsets in index.items():
+        if not isinstance(word, str) or not word or not isinstance(offsets, list) or len(offsets) > 10000:
+            return {**base, "status": "invalid", "rights_status": "provider_declared"}
+        try:
+            expanded_bytes += (len(word.encode()) + 1) * len(offsets)
+        except UnicodeError:
+            return {**base, "status": "invalid", "rights_status": "provider_declared"}
+        if expanded_bytes > 50001:
+            return {**base, "status": "invalid", "rights_status": "provider_declared"}
+        for offset in offsets:
+            if type(offset) is not int or not 0 <= offset < 10000 or offset in positions:
+                return {**base, "status": "invalid", "rights_status": "provider_declared"}
+            positions[offset] = word
+    if not positions or len(positions) != max(positions) + 1:
+        return {**base, "status": "invalid", "rights_status": "provider_declared"}
+    text = " ".join(positions[offset] for offset in range(len(positions)))
+    if len(text.encode()) > 50000 or "\x00" in text:
+        return {**base, "status": "invalid", "rights_status": "provider_declared"}
+    return {**base, "status": "available", "rights_status": "provider_declared", "text": text}
+
+
 def search_openalex(query: str, limit: int = 5) -> list[dict]:
     """Retrieve metadata from the fixed public endpoint without following user URLs."""
     if not isinstance(query, str) or not 1 <= len(query.strip()) <= 300:
@@ -48,7 +88,7 @@ def search_openalex(query: str, limit: int = 5) -> list[dict]:
         raise ValueError("limit must be an integer from 1 to 10")
     url = "https://api.openalex.org/works?" + urlencode(
         {"search": query.strip(), "per-page": limit,
-         "select": "id,doi,title,publication_date,authorships,primary_location"}
+         "select": "id,doi,title,publication_date,authorships,primary_location,abstract_inverted_index"}
     )
     request = Request(url, headers={"User-Agent": "Modelbuilder/0.1 literature-metadata", "Accept": "application/json"})
     try:
@@ -57,7 +97,7 @@ def search_openalex(query: str, limit: int = 5) -> list[dict]:
         if len(raw) > 2_000_000:
             raise LiteratureUnavailable("OpenAlex response exceeded metadata limit")
         body = json.loads(raw)
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+    except (HTTPError, URLError, TimeoutError, UnicodeError, json.JSONDecodeError) as exc:
         raise LiteratureUnavailable(f"OpenAlex metadata unavailable: {type(exc).__name__}") from exc
     if not isinstance(body, dict) or not isinstance(body.get("results"), list):
         raise LiteratureUnavailable("OpenAlex returned an unexpected response schema")
@@ -70,6 +110,6 @@ def search_openalex(query: str, limit: int = 5) -> list[dict]:
             "title": item.get("title") or "Untitled", "publication_date": item.get("publication_date"),
             "authors": [a.get("author", {}).get("display_name", "") for a in item.get("authorships", [])],
             "citation_metadata": {"provider": "OpenAlex", "doi": item.get("doi"),
-                                  "claim_verified": False, "metadata_only": True},
+                                  "claim_verified": False, "metadata_only": True, "abstract": _abstract(item)},
         })
     return results

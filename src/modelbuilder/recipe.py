@@ -29,6 +29,7 @@ from urllib.parse import parse_qsl, unquote, urlsplit
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError, ValidationError
 from .backend.components import COMPONENT_SCHEMA, validate_component
+from .conditions import CONDITION_SCHEMA, ConditionError, control_dependencies, validate_conditions
 
 MAX_BUNDLE_BYTES = 32 * 1024 * 1024
 MAX_FILE_BYTES = 4 * 1024 * 1024
@@ -94,6 +95,7 @@ class RecipeNode(TypedDict):
     cache_policy: str
     provenance: dict[str, Any]
     parameter_schema: NotRequired[dict[str, Any]]
+    condition: NotRequired[dict[str, Any]]
 
 
 class RecipeValidationError(ValueError):
@@ -144,6 +146,7 @@ NODE_SCHEMA = _object({
     "parameters": {"type": "object"},
     "parameter_schema": {"type": "object"},
     "component": COMPONENT_SCHEMA,
+    "condition": CONDITION_SCHEMA,
     "environment_ref": {"type": "string", "minLength": 1},
     "resource_request": _object({"cpu": {"type": "number", "exclusiveMinimum": 0},
                                   "memory_mb": {"type": "integer", "minimum": 1},
@@ -364,11 +367,19 @@ def normalize_recipe(recipe: dict) -> dict:
         _fail("unsupported_schema_version", "Only recipe schema_version '0' is supported", received=recipe.get("schema_version"))
     result = copy.deepcopy(recipe)
     result.pop("digest", None)  # Derived service metadata is never included in its own digest.
+    if isinstance(result.get("nodes"), list):
+        for node in result["nodes"]:
+            if isinstance(node, dict) and {"loop", "repeat", "iterations"}.intersection(node):
+                _fail("unsupported_control_flow", "Loop/repeat stages are not supported. Use explicit stages or separate immutable recipe revisions; no implicit iteration is executed.", node_id=node.get("id"))
     errors = sorted(Draft202012Validator(RECIPE_SCHEMA).iter_errors(result), key=lambda e: str(list(e.path)))
     if errors:
         _fail("invalid_recipe", "Recipe does not match schema v0", errors=[
             {"path": "/" + "/".join(map(str, e.path)), "message": e.message} for e in errors[:32]
         ])
+    try:
+        validate_conditions(result)
+    except ConditionError as error:
+        _fail(error.code, error.message, **error.details)
     _scan_manifest(result)
     _safe_url(result["source"]["repository"], "source.repository")
     result["environment"]["requirements"] = validate_pinned_requirements(result["environment"]["requirements"])
@@ -448,6 +459,9 @@ def normalize_recipe(recipe: dict) -> dict:
         if target_key in incoming:
             _fail("multiple_input_sources", "A typed input port may have only one producer", edge=edge)
         incoming.add(target_key)
+        adjacency[source].append(target)
+        indegree[target] += 1
+    for source, target in control_dependencies(result):
         adjacency[source].append(target)
         indegree[target] += 1
     ready = sorted(node_id for node_id, degree in indegree.items() if degree == 0)

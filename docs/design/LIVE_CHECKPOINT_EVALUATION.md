@@ -87,6 +87,14 @@ existing project-scoped run selectors:
   `step`, `status`, timestamps, finite `metrics`, `evaluation_records`,
   `comparisons`, and nullable structured `error`. Status is `queued`, `running`,
   `completed`, `failed`, or `canceled`. Absolute checkpoint paths are omitted.
+  Optional `limit` (1–200) returns the latest evaluation window in ascending step/ID
+  order, its associated checkpoints, full-run status counts, `total_evaluations`,
+  `limit`, and `truncated`. Omitting it preserves the full-history contract. Reads
+  use a single SQLite snapshot and never prune durable evidence. The IDE uses this
+  bound for live SVG evaluation curves; training-step x coordinates do not relabel
+  evaluation metrics as training-loss measurements. Failed/pending gaps are not
+  interpolated, incompatible identities are never joined, and exact-value tables
+  remain available without relying on color or pointer interaction.
 - `run.events.list`: accepts `after` (nonnegative integer cursor, default 0) and
   `limit` (1–200, default 200; the internal journal helper also supports larger bounded pages). Returns `{events, next_cursor, has_more}`. Events
   have a monotonic integer `cursor`, stable `event_id`, `kind`, operation/native

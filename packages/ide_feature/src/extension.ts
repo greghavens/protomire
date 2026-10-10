@@ -7,6 +7,7 @@ import { RecipeDocument, editableRecipeSource, currentProjectRecipe } from './do
 import { checkMessage, escapeHtml, serviceUrl, UI_OPERATIONS } from './security';
 import { OperationSpec, Project, Recipe, RecordValue } from './types';
 import { EvaluationNotifications } from './notifications';
+import { EVALUATION_WINDOW } from './checkpointCurves';
 import { discoverRegistryRecipe, publishRegistryRecipe } from './registryFiles';
 import { chooseLocalSource, acknowledgeSource, sourceBindingPayload, matchLocalSource, reviewAndPinSource } from './sourceWorkspace';
 import { saveNativeModel } from './modelExport';
@@ -104,6 +105,7 @@ export class Workbench implements vscode.Disposable {
   private busy=false;
   private polling=false;
   private runId?:string;
+  private runRefreshSequence=0;
   private timer:NodeJS.Timeout;
   private generation=0;
   private disposed=false;
@@ -257,6 +259,83 @@ export class Workbench implements vscode.Disposable {
     if (generation!==this.generation) return;
     const backup=this.drafts[id];this.document=next;this.dirty=Boolean(backup);if(backup){next.current=backup.base;await this.post('recipe',{recipe:backup.base});await this.post('restoreDraft',{state:backup.state});if(recipe.revision!==backup.base.revision)await this.post('remoteChanged',{revision:recipe.revision,digest:recipe.digest});}else await this.post('recipe',{recipe});
   }
+  /** Historical bodies stay read-only; clone restores into this recipe's next revision. */
+  private async recipeHistoryAction(message:RecordValue) {
+    this.requireProject();
+    const document=this.document, base=document.current, generation=this.generation;
+    if(!base || message.projectId!==this.project!.project_id || message.projectId!==base.project_id || message.recipeId!==base.recipe_id || message.expectedRevision!==base.revision){await this.post('recipeHistorySettled',{projectId:message.projectId,recipeId:message.recipeId,requestId:message.requestId});throw new Error('The model recipe changed. Reopen revision history before continuing.');}
+    const context={projectId:base.project_id,recipeId:base.recipe_id,requestId:message.requestId};
+    const current=()=>!this.disposed&&generation===this.generation&&this.document===document&&this.project?.project_id===base.project_id&&document.current?.recipe_id===base.recipe_id;
+    const authorized=(operation:string)=>{if(!this.catalog.some(item=>item.name===operation&&item.authorized!==false))throw new Error(`Recipe history requires access to ${operation}.`);};
+    const post=async(action:string,result:RecordValue,extra:RecordValue={})=>{if(current())await this.post('recipeHistoryResult',{...context,expectedRevision:action==='restore'?document.current!.revision:base.revision,action,result,...extra});};
+    const historical=(value:RecordValue)=>{if(value.recipe_id!==base.recipe_id||value.project_id!==base.project_id||value.revision!==message.sourceRevision)throw new Error('The historical revision returned by the service does not match this recipe.');};
+    const nativeDrafts=()=>vscode.workspace.textDocuments?.filter(item=>item.isDirty&&item.uri.scheme==='modelrecipe'&&item.uri.path===`/${base.project_id}/${base.recipe_id}.modelrecipe.json`)??[];
+    const workbenchDraftIdentity=()=>JSON.stringify({dirty:this.dirty,state:this.drafts[base.recipe_id]?.state});
+    const draftIdentity=()=>JSON.stringify({workbench:workbenchDraftIdentity(),native:nativeDrafts().map(item=>({version:item.version,text:item.getText?.()}))});
+    try {
+      if(message.action==='list') {
+        authorized('recipe.history');
+        const result=await this.client.invoke('recipe.history',{project_id:base.project_id});
+        if(result.recipe_id!==base.recipe_id||!Array.isArray(result.revisions)||result.revisions.some((item:Recipe)=>item.recipe_id!==base.recipe_id||item.project_id!==base.project_id))throw new Error('Recipe history does not match the open model recipe.');
+        await post('list',result);
+      } else if(message.action==='inspect') {
+        authorized('recipe.get');
+        const result=await this.client.invoke('recipe.get',{project_id:base.project_id,recipe_id:base.recipe_id,revision:message.sourceRevision});
+        historical(result);await post('inspect',result);
+      } else if(message.action==='diff') {
+        authorized('recipe.diff');
+        const result=await this.client.invoke('recipe.diff',{project_id:base.project_id,recipe_id:base.recipe_id,from_revision:message.fromRevision,to_revision:message.toRevision});
+        await post('diff',result,{fromRevision:message.fromRevision,toRevision:message.toRevision});
+      } else if(message.action==='restore') {
+        for(const operation of ['recipe.clone','recipe.get','recipe.diff','recipe.history'])authorized(operation);
+        const identity=draftIdentity(), workbenchIdentity=workbenchDraftIdentity(), hadDraft=this.dirty, hadNativeDraft=nativeDrafts().length>0;
+        const selected=await this.client.invoke('recipe.get',{project_id:base.project_id,recipe_id:base.recipe_id,revision:message.sourceRevision});
+        if(!current())return;historical(selected);
+        const diff=await this.client.invoke('recipe.diff',{project_id:base.project_id,recipe_id:base.recipe_id,from_revision:base.revision,to_revision:message.sourceRevision});
+        if(!current())return;
+        await post('inspect',selected);await post('diff',diff,{fromRevision:base.revision,toRevision:message.sourceRevision});
+        const hasDraft=hadDraft||hadNativeDraft;
+        const keep=hasDraft?'Restore and keep drafts':'Restore revision';
+        const discard='Discard workbench draft and restore';
+        const warning=`Restore saved revision ${message.sourceRevision} (“${selected.name}”) as revision ${base.revision+1} of this same recipe? Previous revisions and runs remain available. No code is executed.`
+          +(hadDraft?' Your unsaved workbench draft can be kept at its original base revision, or explicitly discarded only after restore succeeds.':'')
+          +(hadNativeDraft?' Unsaved native JSON will be kept at its original base revision; save or revert it in its editor when ready.':'');
+        const choice=await vscode.window.showWarningMessage(warning,{modal:true},keep,...(hadDraft?[discard]:[]));
+        if(choice!==keep&&!(hadDraft&&choice===discard))return;
+        if(!current())return;
+        if(document.current!==base||draftIdentity()!==identity)throw new Error('The recipe or an unsaved draft changed during restore review. Reopen history and review again. All drafts have been preserved.');
+        let restored:Recipe;
+        try {
+          restored=await this.client.invoke<Recipe>('recipe.clone',{project_id:base.project_id,recipe_id:base.recipe_id,source_revision:message.sourceRevision,expected_revision:base.revision,idempotency_key:randomUUID()});
+        } catch(error) {
+          if(current()&&error instanceof Error&&'status' in error&&error.status===409)throw new Error('Restore conflicted with a newer saved recipe revision. No restore was applied and all drafts are preserved. Refresh history; explicitly reload or resolve your draft before trying again.');
+          throw error;
+        }
+        if(restored.project_id!==base.project_id||restored.recipe_id!==base.recipe_id||restored.revision!==base.revision+1)throw new Error('The service returned an unexpected restore result. Refresh history before continuing; do not repeat the restore without reviewing saved revisions.');
+        this.files.acceptRemote?.(restored);this.explorer.refresh();
+        if(!current())return;
+        // A draft typed while the request was in flight takes precedence over discard.
+        const retainedDraft=(hadDraft&&choice===keep)||workbenchDraftIdentity()!==workbenchIdentity;
+        if(retainedDraft) {
+          this.dirty=true;
+          await this.post('remoteChanged',{revision:restored.revision,digest:restored.digest});
+        } else {
+          document.current=restored;this.dirty=false;delete this.drafts[base.recipe_id];await this.persistDrafts();
+          if(!current())return;
+          await this.post('recipe',{recipe:restored});
+        }
+        if(!current())return;
+        void vscode.window.showInformationMessage(`Recipe revision ${message.sourceRevision} restored as revision ${restored.revision}. Previous revisions and runs remain available.`);
+        // Restoration is already committed. A failed history refresh must never suggest retrying it.
+        try {
+          const history=await this.client.invoke('recipe.history',{project_id:base.project_id});
+          await post('restore',history,{sourceRevision:message.sourceRevision,restoredRevision:restored.revision,retainedDraft,retainedNativeDraft:nativeDrafts().length>0});
+          if(current())await this.refreshSnapshot();
+        } catch(error) {if(current())await this.post('error',{message:`Restored successfully as revision ${restored.revision}, but the history refresh failed. Refresh history to inspect it. ${error instanceof Error?error.message:String(error)}`});}
+      }
+    } catch(error) {if(current())throw error;}
+    finally {if(current())await this.post('recipeHistorySettled',context);}
+  }
   private async message(raw:unknown) {
     let message:RecordValue;
     try { message=checkMessage(raw); } catch(error) {await this.post('error',{message:error instanceof Error?error.message:'Invalid workbench message.'});return;}
@@ -281,6 +360,7 @@ export class Workbench implements vscode.Disposable {
           break;
         }
         case 'validateRecipe': await this.post('result',{operation:'recipe.validate',result:await this.document.validate(JSON.parse(String(message.source)))});break;
+        case 'recipeHistory': await this.recipeHistoryAction(message);break;
         case 'diffRecipe': await this.post('result',{operation:'recipe.diff',result:await this.document.diff(JSON.parse(String(message.source)))});break;
         case 'reloadRecipe': if(this.document.current) await this.loadRecipe(this.document.current.recipe_id);break;
         case 'operation': await this.operation(String(message.operation),message.payload ?? {});break;
@@ -384,12 +464,12 @@ export class Workbench implements vscode.Disposable {
   private async refreshResearch(){
     if(!this.project)return;
     const generation=this.generation,projectId=this.project.project_id;
-    const requests=[['watches','research.watch.list'],['findings','research.finding.list'],['proposals','research.proposal.list']].filter(([,operation])=>this.catalog.some(item=>item.name===operation));
+    const requests=[['watches','research.watch.list'],['findings','research.finding.list'],['proposals','research.proposal.list'],['texts','research.text.list']].filter(([,operation])=>this.catalog.some(item=>item.name===operation));
     if(!requests.length)return;
     const values=await Promise.allSettled(requests.map(([,operation])=>this.client.invoke(operation,{project_id:projectId})));
     if(generation!==this.generation||projectId!==this.project?.project_id)return;
     const research:RecordValue={errors:{}};
-    requests.forEach(([key],index)=>{const value=values[index];if(value.status==='fulfilled')research[key]=value.value[key]??[];else research.errors[key]=value.reason instanceof Error?value.reason.message:String(value.reason);});
+    requests.forEach(([key],index)=>{const value=values[index];if(value.status==='fulfilled'){research[key]=value.value[key]??[];if(key==='texts')research.retrievals=value.value.retrievals??[];}else research.errors[key]=value.reason instanceof Error?value.reason.message:String(value.reason);});
     await this.post('research',{projectId,research});
   }
   private async refreshCostDiagnostics(){
@@ -409,16 +489,16 @@ export class Workbench implements vscode.Disposable {
   private async refreshSnapshot() {if(!this.project)return;const generation=this.generation;const projectId=this.project.project_id;const snapshot=await this.client.invoke('project.open',{project_id:projectId});if(generation===this.generation&&projectId===this.project?.project_id){this.project=snapshot.project;await this.post('snapshot',{snapshot});}}
   private async refreshRun() {
     if(!this.project || !this.runId)return;
-    const generation=this.generation;const runId=this.runId;const projectId=this.project.project_id;
+    const generation=this.generation;const runId=this.runId;const projectId=this.project.project_id;const sequence=++this.runRefreshSequence;
     const payload={project_id:projectId,operation_id:runId};
     const operations=['run.status','run.logs','run.artifacts'];
     if(this.catalog.some(item=>item.name==='run.evaluations.list'))operations.push('run.evaluations.list');
-    const values=await Promise.allSettled(operations.map(operation=>this.client.invoke(operation,payload)));
-    if(generation!==this.generation||runId!==this.runId||projectId!==this.project?.project_id)return;
+    const values=await Promise.allSettled(operations.map(operation=>this.client.invoke(operation,operation==='run.evaluations.list'&&this.catalog.find(item=>item.name===operation)?.input_schema?.properties?.limit?{...payload,limit:EVALUATION_WINDOW}:payload)));
+    if(this.disposed||sequence!==this.runRefreshSequence||generation!==this.generation||runId!==this.runId||projectId!==this.project?.project_id)return;
     const result:RecordValue={operation_id:runId};
     ['status','logs','artifacts','evaluations'].slice(0,values.length).forEach((key,index)=>{const value=values[index];result[key]=value.status==='fulfilled'?value.value:{unavailable:value.reason instanceof Error?value.reason.message:String(value.reason)};});
     if(!result.evaluations)result.evaluations={unavailable:'This service does not expose live checkpoint evaluations.'};
-    await this.post('run',{run:result});
+    await this.post('run',{projectId,run:result});
   }
   private async persistNotificationState(){await this.context.workspaceState?.update('modelbuilder.evaluationNotificationState',this.notifications.state);}
   private async refreshNotifications() {

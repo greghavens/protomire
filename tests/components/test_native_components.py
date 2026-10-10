@@ -104,7 +104,8 @@ def test_independent_exact_continuation_and_custom_loss_effect(tmp_path):
 
 
 @pytest.mark.integration
-def test_service_component_cancel_recover_resume_export(tmp_path):
+@pytest.mark.parametrize("interrupt_mid_checkpoint", [False, True])
+def test_service_component_cancel_recover_resume_export(tmp_path, interrupt_mid_checkpoint):
     import time
     import uuid
     from modelbuilder.backend import ZenMLBackend
@@ -113,6 +114,17 @@ def test_service_component_cancel_recover_resume_export(tmp_path):
     source = tmp_path / "user-source"
     source.mkdir()
     shutil.copy2(Path(__file__).with_name("independent_harness.py"), source / "harness.py")
+    if interrupt_mid_checkpoint:
+        # Pause after corrupting the mutable next-step weights, before its new
+        # manifest. A valid prior immutable step must survive actual SIGTERM.
+        harness_file = source / "harness.py"
+        needle = '        torch.save(model.state_dict(), output / "inference-tensors.bin")'
+        injected = needle + ('\n        if i == 1 and context.get("job_dir") and not context.get("resume"):\n'
+            '            (Path(context["job_dir"]) / "mid-checkpoint-write").write_text("ready")\n'
+            '            while True:\n'
+            '                time.sleep(0.1)')
+        assert needle in harness_file.read_text()
+        harness_file.write_text(harness_file.read_text().replace(needle, injected))
     subprocess.run(["git", "init", "-q", str(source)], check=True)
     subprocess.run(["git", "-C", str(source), "add", "."], check=True)
     subprocess.run(["git", "-C", str(source), "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "User owned image harness"], check=True)
@@ -140,14 +152,20 @@ def test_service_component_cancel_recover_resume_export(tmp_path):
     submitted = service.invoke("run.submit", {**request, "expected_revision": 1, "trusted": True, "idempotency_key": "submit"}, actor)
     operation = {"project_id": project["project_id"], "operation_id": submitted["operation_id"]}
     job = backend.root / "jobs" / submitted["operation_id"]
-    checkpoint_path = job / "outputs/train/checkpoint.manifest.json"
+    checkpoint_path = (job / "mid-checkpoint-write" if interrupt_mid_checkpoint else
+                       job / "outputs/train/checkpoints/00000001/checkpoint.manifest.json")
     deadline = time.monotonic() + 90
     while not checkpoint_path.exists() and time.monotonic() < deadline:
         time.sleep(.1)
     assert checkpoint_path.exists(), (job / "worker.log").read_text()
     cancelled = service.invoke("run.cancel", {**operation, "idempotency_key": "cancel"}, actor)
     assert cancelled["status"] == "cancelled", cancelled
+    if interrupt_mid_checkpoint:
+        with pytest.raises(ValueError, match="integrity mismatch"):
+            read_checkpoint(job / "outputs/train")
     recovered = service.invoke("model.checkpoint.get", operation, actor)
+    if interrupt_mid_checkpoint:
+        assert recovered["descriptor"]["step"] == 1
     assert recovered["descriptor"]["step"] < 8
     resumed = service.invoke("run.resume", {**operation, "mode": "exact_state", "trusted": True, "expected_recipe_revision": 1, "idempotency_key": "resume"}, actor)
     resumed_operation = {**operation, "operation_id": resumed["operation_id"]}

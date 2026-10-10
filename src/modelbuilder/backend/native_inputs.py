@@ -204,6 +204,8 @@ def output_descriptor(job: Path, run, node_id: str, output_port: str, artifact_i
                   "producer_recipe_digest": recipe_provenance(recipe)["recipe_digest"],
                   "producer_model_version_ref": str(run.model_version.id) if run.model_version else None,
                   "producer_role": node.get("component", {}).get("role") or ("training" if node["kind"] == "model.train" else node["kind"])}
+    from .native_cache import output_provenance
+    descriptor["cache"] = output_provenance(step, run)
     return descriptor, artifact
 
 

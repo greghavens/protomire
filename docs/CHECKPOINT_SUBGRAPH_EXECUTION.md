@@ -78,10 +78,23 @@ producer model version, not their separate evaluation-run version. Promotion
 recomputes the same comparison; evaluation failure or cancellation never
 changes the prior training run, its metrics, or a project's chosen model.
 
-A selected subset disables implicit live-evaluation sidecars, so unselected
-nodes do not execute indirectly. The existing full recipe retains live
-checkpoint evaluation behavior. Recovery-only artifacts and arbitrary custom
-materializers are intentionally outside this first binding contract.
+A selected training cut retains live checkpoint evaluation when its evaluator is
+explicitly selected and the resolver proves one compatible evaluator with shared
+selected upstream inputs. No unselected evaluator or ancestor runs. Trainer-only
+and evaluator-only cuts have no live sidecars. Boundary-bound evaluator inputs
+(including optional calibration inputs) must match one explicit trainer input's
+same producer run/node/port, artifact ID and content SHA256. The native backend
+revalidates those pinned inputs before loading them; only the trainer's existing
+loaded value is forwarded to its live evaluator. No producer is run implicitly.
+Missing, conflicting or unmatched inputs and ambiguous selected evaluators fail
+admission. The canonical
+recipe is never rewritten by this execution view. Recovery-only artifacts and
+arbitrary custom materializers remain outside the first binding contract.
+
+Conditional terminal stages and live evaluation are separate bounded paths.
+A canonical recipe containing both conditions and enabled live evaluation fails
+validation explicitly; selected cuts cannot bypass that restriction or execute
+a hidden gate/evaluator. See [native terminal conditions](NATIVE_CONDITIONAL_EXECUTION.md).
 
 An export-only run owns its own native version and package. Saving that export
 uses the export run/version ID; it does not relabel the package as owned by the

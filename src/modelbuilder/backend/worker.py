@@ -159,10 +159,12 @@ STEPS = {"dataset.version.import": import_dataset_version_step, "dataset.import"
 
 
 def topological_nodes(recipe: dict) -> list[dict]:
+    from ..conditions import control_dependencies
     nodes = {n["id"]: n for n in recipe["nodes"]}
+    dependencies = [(e["source_node"], e["target_node"]) for e in recipe["edges"]] + control_dependencies(recipe)
     pending, result = set(nodes), []
     while pending:
-        ready = sorted(n for n in pending if all(e["source_node"] not in pending for e in recipe["edges"] if e["target_node"] == n))
+        ready = sorted(n for n in pending if all(source not in pending for source, target in dependencies if target == n))
         if not ready:
             raise ValueError("Recipe graph contains a cycle")
         for n in ready:
@@ -171,8 +173,9 @@ def topological_nodes(recipe: dict) -> list[dict]:
     return result
 
 
-def run(job: Path) -> None:
+def prepare_run(job: Path) -> dict:
     request = read_json(job / "request.json")
+    os.environ["MODELBUILDER_JOB_DIR"] = str(job)
     client = Client()
     project_name = f"modelbuilder-{request['project_id']}"
     try:
@@ -200,41 +203,86 @@ def run(job: Path) -> None:
     ordered = [node for node in topological_nodes(recipe) if node["id"] in execution["node_ids"]]
     functions = {n["id"]: (compile_python(n, job) if n["kind"] == "code.python" else compile_component(n, job) if n["kind"] == "component.run" else STEPS[n["kind"]]) for n in ordered}
 
-    @pipeline(name="modelbuilder_recipe", enable_cache=False)
-    def execute_recipe():
-        outputs = {}
-        for node in ordered:
-            kwargs = {e["target_port"]: outputs[(e["source_node"], e["source_port"])]
-                      for e in recipe["edges"] if e["target_node"] == node["id"] and e["source_node"] in execution["node_ids"]}
-            kwargs.update({port: artifact for (target, port), artifact in bound_inputs.items() if target == node["id"]})
-            function = functions[node["id"]].with_options(
-                on_start=deadline_start, on_end=deadline_end,
-                environment={"MODELBUILDER_JOB_DIR": str(job)})
-            retry = node.get("retry", {})
-            retries = int(retry.get("max_attempts", 1)) - 1
-            if retries > 0:
-                function = function.with_options(retry=StepRetryConfig(max_retries=retries, delay=int(retry.get("backoff_seconds", 0))))
-            if node["kind"] == "code.python":
-                kwargs.update(node.get("parameters", {}))
-            kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "parameters": node.get("parameters", {}),
-                                  "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
-                                  "dataset_source_guards": request.get("dataset_source_guards", {}),
-                                  "dependencies": active_recipe.get("resources", []) + active_recipe.get("external_dependencies", []),
-                                  "execution": execution_provenance, "component_node": node, "source": recipe.get("source", {}), "environment": recipe.get("environment", {}),
-                                  "source_root": request["source_root"], "trusted_code_roots": request.get("trusted_code_roots", []), **{k: request[k] for k in ("resume_path", "resume_mode", "checkpoint_kind", "parent_run_id", "parent_checkpoint_ref") if k in request}}
-            kwargs["spec"]["live_evaluation"] = live_evaluator(node, active_recipe)
-            result = function(id=node["id"], **kwargs)
-            declared = node["outputs"]
-            values = result if isinstance(result, (tuple, list)) else (result,)
-            if len(values) != len(declared):
-                raise ValueError("Native node outputs disagree with declared typed ports")
-            for port, value in zip(declared, values):
-                outputs[(node["id"], port["name"])] = value
+    from .native_cache import cache_identity
+    from .components.runtime import runtime_environment
+    actual_environment = runtime_environment() if any(n.get("cache_policy") == "enabled" for n in ordered) else None
+    cache_identities = {n["id"]: cache_identity(request, n, execution_provenance, actual_environment)
+                        for n in ordered if n.get("cache_policy") == "enabled"}
+
+    return {"job": job, "request": request, "project": project, "recipe": recipe, "digest": digest, "provenance": provenance, "execution": execution, "execution_provenance": execution_provenance, "active_recipe": active_recipe, "ordered": ordered, "functions": functions, "bound_inputs": bound_inputs, "cache_identities": cache_identities}
+
+
+def invoke_nodes(prepared: dict, condition_callback=None) -> None:
+    """Bind typed calls; native ZenML alone executes/schedules each invocation."""
+    from .native_cache import configure_cache
+    job = prepared["job"]
+    request = prepared["request"]
+    recipe = prepared["recipe"]
+    digest = prepared["digest"]
+    provenance = prepared["provenance"]
+    execution = prepared["execution"]
+    execution_provenance = prepared["execution_provenance"]
+    active_recipe = prepared["active_recipe"]
+    ordered = prepared["ordered"]
+    functions = prepared["functions"]
+    bound_inputs = prepared["bound_inputs"]
+    cache_identities = prepared["cache_identities"]
+    outputs = {}
+    for node in ordered:
+        if "condition" in node:
+            if condition_callback is None:
+                raise ValueError("Conditional nodes require the supported native dynamic executor")
+            gate = node["condition"]
+            artifact = outputs[(gate["source_node"], gate["source_port"])]
+            if not condition_callback(node, artifact):
+                continue
+        kwargs = {e["target_port"]: outputs[(e["source_node"], e["source_port"])]
+                  for e in recipe["edges"] if e["target_node"] == node["id"] and e["source_node"] in execution["node_ids"]}
+        kwargs.update({port: artifact for (target, port), artifact in bound_inputs.items() if target == node["id"]})
+        function = functions[node["id"]].with_options(
+            on_start=deadline_start, on_end=deadline_end, enable_cache=False)
+        if node["id"] in cache_identities:
+            function = configure_cache(function, node, job, cache_identities[node["id"]])
+        retry = node.get("retry", {})
+        retries = int(retry.get("max_attempts", 1)) - 1
+        if retries > 0:
+            function = function.with_options(retry=StepRetryConfig(max_retries=retries, delay=int(retry.get("backoff_seconds", 0))))
+        if node["kind"] == "code.python":
+            kwargs.update(node.get("parameters", {}))
+        kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "parameters": node.get("parameters", {}),
+                              "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
+                              "dataset_source_guards": request.get("dataset_source_guards", {}),
+                              "dependencies": active_recipe.get("resources", []) + active_recipe.get("external_dependencies", []),
+                              "execution": execution_provenance, "component_node": node, "source": recipe.get("source", {}), "environment": recipe.get("environment", {}),
+                              "source_root": request["source_root"], "trusted_code_roots": request.get("trusted_code_roots", []), **{k: request[k] for k in ("resume_path", "resume_mode", "checkpoint_kind", "parent_run_id", "parent_checkpoint_ref") if k in request}}
+        kwargs["spec"]["live_evaluation"] = live_evaluator(node, active_recipe, input_bindings=execution_provenance["input_bindings"])
+        kwargs["spec"]["cache_identity"] = cache_identities.get(node["id"])
+        result = function(id=node["id"], **kwargs)
+        declared = node["outputs"]
+        values = result if isinstance(result, (tuple, list)) else (result,)
+        if len(values) != len(declared):
+            raise ValueError("Native node outputs disagree with declared typed ports")
+        for port, value in zip(declared, values):
+            outputs[(node["id"], port["name"])] = value
+
+
+def run(job: Path) -> None:
+    prepared = prepare_run(job)
+    request, project, provenance = (prepared[key] for key in ("request", "project", "provenance"))
+    if any("condition" in node for node in prepared["ordered"]):
+        from .conditional_worker import execute_conditional_recipe
+        execute_recipe = execute_conditional_recipe
+        arguments = {"job_directory": str(job)}
+    else:
+        @pipeline(name="modelbuilder_recipe", enable_cache=True)
+        def execute_recipe():
+            invoke_nodes(prepared)
+        arguments = {}
 
     model_name = f"model-{request['project_id']}"
     native = execute_recipe.with_options(model=Model(name=model_name, version=request["operation_id"],
                                                      description=request.get("model_name", "Modelbuilder model lifecycle")),
-                                         run_name=request["run_name"], extra=provenance)()
+                                         run_name=request["run_name"], extra=provenance)(**arguments)
     log_metadata(provenance, run_id_name_or_prefix=native.id)
     write_json(job / "native.json", {"backend_run_id": str(native.id),
                                      "model_version_ref": str(native.model_version.id) if native.model_version else None,

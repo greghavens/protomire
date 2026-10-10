@@ -5,6 +5,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -340,11 +341,18 @@ def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_so
         for path in ["platform_file_access.py", "source_workspace.py", "recipe_registry_contract.py",
                      "remote/__init__.py", "remote/contracts.py", "remote/operation_contract.py",
                      "source_pinning_contract.py", "export_packages.py", "backend/native_exports.py",
-                     "execution.py", "backend/native_inputs.py", "backend/evaluation_binding.py", "backend/promotion.py"]:
+                     "execution.py", "conditions.py", "backend/conditional_worker.py", "compute_discovery.py", "backend/native_inputs.py",
+                     "parquet_reader.py", "parquet_decode.py",
+                     "backend/evaluation_binding.py", "backend/promotion.py"]:
             assert "modelbuilder/" + path in archive.namelist()
-        for path in ("service.py", "research_scheduler.py", "literature_fetch.py"):
+        for path in ("service.py", "dataset_preparation.py", "research_scheduler.py", "literature_fetch.py"):
             assert ("modelbuilder/" + path in archive.namelist()) == (kind == "service")
         archive.extractall(installed)
+    sample = tmp_path / "sample.parquet"
+    if os.environ.get("MODELBUILDER_REQUIRE_PARQUET") == "1" or importlib.util.find_spec("pyarrow"):
+        import pyarrow as arrow
+        import pyarrow.parquet as parquet
+        parquet.write_table(arrow.table({"id": ["installed"], "text": ["bounded decoder"]}), sample)
     probe = """
 import importlib, importlib.util, pathlib, sys
 root = pathlib.Path(sys.argv[1]).resolve()
@@ -352,7 +360,8 @@ sys.path.insert(0, str(root))
 for name in ('modelbuilder.dataset', 'modelbuilder.models', 'modelbuilder.source_workspace',
              'modelbuilder.backend.admission', 'modelbuilder.backend.operator_config',
              'modelbuilder.export_packages', 'modelbuilder.backend.native_exports',
-             'modelbuilder.execution', 'modelbuilder.backend.native_inputs',
+             'modelbuilder.execution', 'modelbuilder.conditions', 'modelbuilder.backend.native_inputs',
+             'modelbuilder.parquet_reader',
              'modelbuilder.backend.evaluation_binding', 'modelbuilder.backend.promotion',
              'modelbuilder.remote.operation_contract', 'modelbuilder.remote.provider'):
     module = importlib.import_module(name)
@@ -369,12 +378,17 @@ if sys.argv[2] == 'service':
     assert child.returncode == 1 and child.stdout == ''
 else:
     assert importlib.util.find_spec('modelbuilder.service') is None
+sample = pathlib.Path(sys.argv[3])
+if sample.exists():
+    from modelbuilder.parquet_reader import read_parquet
+    assert read_parquet(sample.read_bytes(), max_file_bytes=100000, max_rows=100, decoded_budget=100000) == [
+        {'id': 'installed', 'text': 'bounded decoder'}]
 from modelbuilder.remote.provider import diagnostics
 assert diagnostics()['remote_execution_enabled'] is False
 print('Isolated runtime wheel import closure passed')
 """
     # Import closure is service-safe and must not require the optional native runtime.
-    result = subprocess.run([sys.executable, "-I", "-c", probe, str(installed), kind], cwd=tmp_path,
+    result = subprocess.run([sys.executable, "-I", "-c", probe, str(installed), kind, str(sample)], cwd=tmp_path,
                             capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "Isolated runtime wheel import closure passed" in result.stdout

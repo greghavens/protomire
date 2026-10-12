@@ -437,7 +437,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "49c0f34daabc6d3a64a28bbb0ef0b241037efca3",
+    "commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
     "files": [
       {
         "path": "pyproject.toml",
@@ -633,7 +633,7 @@
       },
       {
         "path": "src/modelbuilder/backend/native_invocations.py",
-        "sha256": "b3b0d223a6dc83051cc003b42617bdc8ce9a0450c41983d768e46503eacd8cbf"
+        "sha256": "b50ad08978eb6fc1c4e24f4b35e7ae34a9b7f955b28a08df777701b6c9dbd62c"
       },
       {
         "path": "src/modelbuilder/backend/operator_config.py",
@@ -665,7 +665,7 @@
       },
       {
         "path": "src/modelbuilder/backend/worker.py",
-        "sha256": "56aaf0a364fb50f888db1b417058bfc99afb0d3a4a496567f604cfd5efff854c"
+        "sha256": "d03beeb5f02f58cb8d70eae30cf0d9152a43736f59977f517830a90ec5614add"
       },
       {
         "path": "src/modelbuilder/compute_discovery.py",

@@ -104,3 +104,27 @@ def test_iteration_member_order_does_not_change_digest_or_initial_mapping():
     reverse = copy.deepcopy(body)
     reverse['bounded_iterations'][0]['node_ids'].reverse()
     assert recipe_digest(body) == recipe_digest(reverse)
+
+
+@pytest.mark.parametrize('until', [True, False])
+def test_skipped_mandatory_control_is_incomplete_even_when_every_body_node_skipped(until):
+    import hashlib
+    from types import SimpleNamespace as NS
+    from modelbuilder.backend.native_invocations import execution_projection
+    body = recipe()
+    body['nodes'][0]['outputs'] = [{'name': 'value', 'type': 'bool'}]
+    body['nodes'][1]['condition'] = {'source_node': 'seed', 'source_port': 'value', 'equals': True}
+    block = body['bounded_iterations'][0]
+    if not until:
+        block.pop('until')
+    info = invocation_identity('increment', block, 1)
+    gate = NS(id='allow-artifact')
+    run = NS(steps={'seed': NS(id='seed-step', inputs={}, outputs={'value': [gate]}, status=NS(value='completed'))})
+    metadata = {'bounded_iterations': {'refine': {'1': {'iteration': 1, 'max_iterations': 4, 'status': 'started', 'status_source': 'native_run_metadata'}}},
+        'conditional_execution': {info['invocation_id']: {'invocation': info, 'condition': body['nodes'][1]['condition'],
+            'gate_artifact_id': gate.id, 'gate_value': False, 'gate_value_sha256': hashlib.sha256(b'false').hexdigest(),
+            'status': 'skipped', 'status_source': 'native_run_metadata'}}}
+    projected = execution_projection(run, body, {'seed', 'increment', 'final'}, metadata)
+    row = projected[-1]['refine']['iterations'][0]
+    assert row['node_statuses'] == {'increment': 'skipped'}
+    assert row['status'] == 'incomplete' and 'stop_reason' not in row

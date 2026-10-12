@@ -106,9 +106,10 @@ def execution_projection(run, recipe, chosen, metadata):
                     "conditional_execution": accepted.get(node_id), "conditional_inputs": accepted_joins.get(node_id)}
             stored_rows = saved.get(block["id"], {})
             recorded = stored_rows.get(str(index), {}) if isinstance(stored_rows, dict) else {}
+            body_completed = all(value in {"completed", "cached", "skipped"} for value in statuses.values())
             outcome = {"iteration": index, "node_statuses": statuses,
-                       "status": "completed" if all(value in {"completed", "cached", "skipped"} for value in statuses.values()) else "failed" if "failed" in statuses.values() else "incomplete"}
-            if outcome["status"] == "completed" and isinstance(recorded, dict) and recorded.get("status") == "completed":
+                       "status": "failed" if "failed" in statuses.values() else "incomplete"}
+            if body_completed and isinstance(recorded, dict) and recorded.get("status") == "completed":
                 reason = recorded.get("stop_reason")
                 gate = block.get("until")
                 if gate:
@@ -119,9 +120,9 @@ def execution_projection(run, recipe, chosen, metadata):
                     if (type(value) is bool and recorded.get("until") == gate and any(str(artifact.id) == recorded.get("gate_artifact_id") for artifact in artifacts)
                             and recorded.get("gate_value_sha256") == hashlib.sha256(json.dumps(value).encode()).hexdigest()
                             and reason == ("until" if value == gate["equals"] else "bound" if index == block["max_iterations"] else "continue")):
-                        outcome.update({key: recorded[key] for key in ("stop_reason", "gate_artifact_id", "gate_value", "gate_value_sha256")})
+                        outcome.update(status="completed", **{key: recorded[key] for key in ("stop_reason", "gate_artifact_id", "gate_value", "gate_value_sha256")})
                 elif reason == ("bound" if index == block["max_iterations"] else "continue"):
-                    outcome["stop_reason"] = reason
+                    outcome.update(status="completed", stop_reason=reason)
             block_rows.append(outcome)
         iteration_rows[block["id"]] = {"max_iterations": block["max_iterations"], "iterations": block_rows,
             "status_source": "native_steps_and_run_metadata"}

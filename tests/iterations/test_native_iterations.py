@@ -20,6 +20,9 @@ import time
 def seed() -> int:
     return 0
 
+def disabled() -> bool:
+    return False
+
 def increment(value: int, stop: int, fail: int, delay: float, marker: str):
     value += 1
     if marker:
@@ -381,3 +384,25 @@ def test_repeated_exports_select_exact_invocation_checkpoint_and_package(tmp_pat
     assert backend.invoke('model.export.inspect', reference) == selected
     packaged = backend.invoke('model.export.package', {**reference, 'expected_export_digest': selected['export_digest']})
     assert packaged['sha256'] and packaged['chunk_sha256']
+
+
+@pytest.mark.parametrize('until', [True, False])
+def test_skipped_mandatory_iteration_control_fails_without_completed_outcome(tmp_path, until):
+    backend, payload = setup(tmp_path)
+    body = payload['recipe']
+    allow = copy.deepcopy(body['nodes'][0])
+    allow.update(id='allow', outputs=[{'name': 'allowed', 'type': 'bool'}])
+    allow['implementation_ref']['entrypoint'] = 'disabled'
+    body['nodes'].append(allow)
+    body['nodes'][1]['condition'] = {'source_node': 'allow', 'source_port': 'allowed', 'equals': True}
+    if not until:
+        body['bounded_iterations'][0].pop('until')
+    result, request = execute(backend, payload)
+    assert result['status'] == 'failed', result
+    assert result['node_statuses']['increment'] == 'skipped'
+    assert not any(artifact['node_id'] == 'increment' for artifact in result['artifacts'])
+    row = result['bounded_iterations']['refine']['iterations'][0]
+    assert row['node_statuses'] == {'increment': 'skipped'} and row['status'] == 'incomplete'
+    assert 'stop_reason' not in row and 'final' not in result['node_statuses']
+    log = (backend.root / 'jobs' / request['operation_id'] / 'worker.log').read_text()
+    assert ('early-exit producer was skipped' if until else 'state producer was skipped') in log

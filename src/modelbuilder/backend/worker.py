@@ -369,16 +369,22 @@ def invoke_nodes(prepared: dict, condition_callback=None, skip_callback=None, jo
                 value = artifact.load()
                 stop = condition_decision(gate, value)
                 decision = {"until": gate, "gate_artifact_id": str(artifact.id), "gate_value": value, "gate_value_sha256": value_digest(value)}
+            feedback = {}
+            if not stop and index < unit["max_iterations"]:
+                for state in unit["state"]:
+                    artifact = outputs.get((state["source_node"], state["source_port"]))
+                    if artifact is None:
+                        raise ValueError("Iteration state producer was skipped; prior state is never silently reused")
+                    producer = next(node for node in ordered if node["id"] == state["source_node"])
+                    port = next(port for port in producer["outputs"] if port["name"] == state["source_port"])
+                    validate_native_type(artifact, port["type"])
+                    if str(artifact.project.id) != str(prepared["project"].id):
+                        raise ValueError("Iteration state artifact belongs to another project")
+                    feedback[(state["target_node"], state["target_port"])] = artifact
             iteration_callback(unit, index, {"status": "completed", "stop_reason": "until" if stop else "bound" if index == unit["max_iterations"] else "continue",
                 "skipped_node_ids": sorted(body & skipped), **decision})
             if stop or index == unit["max_iterations"]:
                 break
-            feedback = {}
-            for state in unit["state"]:
-                artifact = outputs.get((state["source_node"], state["source_port"]))
-                if artifact is None:
-                    raise ValueError("Iteration state producer was skipped; prior state is never silently reused")
-                feedback[(state["target_node"], state["target_port"])] = artifact
 
 
 def run(job: Path) -> None:

@@ -1,6 +1,6 @@
 # ModelBuilder development runbook
 
-This is a local, single-researcher vertical slice. The operation service is authoritative for projects, canonical recipes, research, policies, revisions, and audit history. ZenML 0.97.0 owns native runs, artifacts, and model versions. The built-in Code OSS workbench and standalone MCP server both call the same authenticated service.
+This runbook covers the currently implemented local, single-researcher workflows. The full product remains under implementation; these instructions do not establish full-product acceptance. The operation service is authoritative for projects, canonical recipes, research, policies, revisions, and audit history. ZenML 0.97.0 owns native runs, artifacts, and model versions. The built-in Code OSS workbench and standalone MCP server both call the same authenticated service.
 
 Use [ACCEPTANCE_MATRIX.md](ACCEPTANCE_MATRIX.md) for current gate results. A successful CPU demo or generic MCP client does not establish production readiness, cloud cost enforcement, or Claude/Codex extension compatibility.
 
@@ -10,10 +10,10 @@ Run commands from the repository root. Verified service and backend interpreter:
 
 ```bash
 bash scripts/bootstrap.sh
-bash scripts/bootstrap.sh --backend
+bash scripts/bootstrap.sh --backend --trainer
 ```
 
-The first command creates `.venv`, installs `requirements/service.lock`, installs the repository package editable without resolving additional dependencies, checks Python dependencies, and type-checks/builds the workbench TypeScript when its lockfile is present. The second additionally calls `scripts/bootstrap_backend.sh`, which requires the official `uv` executable, installs the hash-locked CPU backend into `.venv-backend`, and downloads the pinned pretrained fixture. Neither command provisions credentials, accounts, paid compute, or remote targets.
+The first command creates `.venv`, installs `requirements/service.lock`, installs the repository package editable without resolving additional dependencies, checks Python dependencies, and type-checks/builds the workbench TypeScript when its lockfile is present. The second additionally installs the backend and hash-locked Trainer overlay, which requires the official `uv` executable, installs the hash-locked CPU backend into `.venv-backend`, and downloads the pinned pretrained fixture. Neither command provisions credentials, accounts, paid compute, or remote targets.
 
 Backend-only installation, after service setup:
 

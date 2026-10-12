@@ -477,7 +477,8 @@ print(json.dumps(result))"""
                 or parent_status.get("worker_alive") is not False):
             raise BackendError("conflict", "Checkpoint continuation requires the parent worker to stop and cancellation to reconcile")
         checkpoint = self._rpc("model.checkpoint.get", {"project_id": payload["project_id"], "job_dir": str(job),
-                                                       "checkpoint_kind": payload.get("checkpoint_kind", "last")})
+                                                       "checkpoint_kind": payload.get("checkpoint_kind", "last"),
+                                                       "checkpoint_ref": payload.get("checkpoint_ref") or payload.get("checkpoint_id")})
         requested_checkpoint = payload.get("checkpoint_ref") or payload.get("checkpoint_id")
         if requested_checkpoint and requested_checkpoint != checkpoint["artifact_id"]:
             raise BackendError("dependency_mismatch", "Requested checkpoint identity differs from resolved parent checkpoint")
@@ -486,7 +487,8 @@ print(json.dumps(result))"""
         request = {**parent, **payload, "operation_id": payload.get("operation_id") or str(uuid.uuid4()),
                    "recipe": copy.deepcopy(payload.get("recipe") or parent["recipe"]), "trusted": payload.get("trusted", False),
                    "parent_run_id": checkpoint["backend_run_id"], "parent_checkpoint_ref": checkpoint["artifact_id"],
-                   "resume_path": checkpoint["path"], "resume_mode": payload.get("mode", payload.get("resume_mode", "exact_state")),
+                   "resume_path": checkpoint["path"], "resume_node_id": checkpoint.get("node_id"),
+                   "parent_invocation": {key: checkpoint[key] for key in ("invocation_id", "iteration_block_id", "iteration") if key in checkpoint}, "resume_mode": payload.get("mode", payload.get("resume_mode", "exact_state")),
                    "checkpoint_kind": payload.get("checkpoint_kind", "last")}
         from .placement import device_from_recipe, target_for_device
         request["target"] = target_for_device(device_from_recipe(request["recipe"]))
@@ -501,6 +503,12 @@ print(json.dumps(result))"""
             continuation_selection(parent["recipe"], request["recipe"], parent.get("execution"), request["resume_mode"]))
         if request["resume_mode"] == "exact_state" and requested_execution != parent_execution:
             raise BackendError("dependency_mismatch", "Exact continuation must retain its selected nodes and reference/input bindings; submit a new stage for changed inputs")
+        if checkpoint.get("node_id") and checkpoint["node_id"] not in requested_execution["node_ids"]:
+            raise BackendError("dependency_mismatch", "The exact parent checkpoint trainer must be selected for continuation; checkpoint state is never silently assigned to another stage")
+        if request["resume_mode"] == "exact_state" and (
+                any(set(block["node_ids"]) & set(requested_execution["node_ids"]) for block in request["recipe"].get("bounded_iterations", []))
+                or "iteration" in checkpoint):
+            raise BackendError("unsupported_iteration_resume", "Exact loop continuation needs a preserved iteration cursor and full carried-state contract. Use explicit warm_start to restart from iteration 1; exact continuation outside iteration blocks remains supported.")
         request["execution"] = requested_execution
         for key in ("resolved_input_bindings", "input_binding_jobs"):
             request.pop(key, None)

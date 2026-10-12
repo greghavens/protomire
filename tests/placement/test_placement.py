@@ -27,11 +27,11 @@ def test_target_must_match_versioned_recipe_device():
         placement.validate_placement(None, body)
 
 
-def test_cuda_profile_is_unavailable_even_with_mocked_hardware(monkeypatch):
+def test_cuda_requires_reviewed_profile_even_with_mocked_hardware(monkeypatch):
     monkeypatch.setattr(placement, "probe", lambda *a, **k: pytest.fail("CUDA must reject before hardware probing"))
     with pytest.raises(BackendError, match="hash-locked") as error:
         placement.validate_placement(None, payload("cuda:3"), allocate=True)
-    assert error.value.details["profile_status"] == "unavailable"
+    assert error.value.details["profile_status"] == "required"
 
 
 def test_mps_requires_reviewed_lock_before_runtime_probe(monkeypatch):

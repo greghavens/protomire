@@ -17,6 +17,13 @@ HTTP/MCP operation facade and accepts only explicit synthetic fixture amounts.
 The provider interface reuses existing ZenML stack/orchestrator and run identities.
 It is not a training framework, orchestrator implementation, or GPU marketplace.
 
+An [optional real Modal SDK/native ZenML bridge](REMOTE_MODAL_PROVIDER.md) is now
+implemented. It includes native identity recovery, status/termination, and
+provider rate/usage/summary reads, with a separate hash-locked environment.
+Its missing all-in total-charge, global-deadline, provider-idempotency and
+invoice-finality guarantees keep production admission blocked. Offline SDK
+construction tests are explicitly not remote acceptance.
+
 ## Implemented invariants
 
 - Money uses integer minor units, a currency code, and an explicit decimal exponent.

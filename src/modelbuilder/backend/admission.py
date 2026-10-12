@@ -12,6 +12,7 @@ import subprocess
 from pathlib import Path
 from jsonschema.exceptions import ValidationError, SchemaError
 from .common import recipe_provenance
+from .dependency_files import dependency_sha256
 
 BUILTINS = {"dataset.import", "dataset.synthetic", "dataset.validate", "model.initialize", "model.train", "model.evaluate", "model.checkpoint", "model.export", "model.compare"}
 
@@ -106,7 +107,11 @@ def validate_execution(backend, payload: dict) -> dict:
         if path and identifier in getattr(backend, "dataset_source_guards", {}):
             continue  # Reopened through captured no-symlink roots by dataset validation above.
         if path:
-            if not Path(path).is_file() or hashlib.sha256(Path(path).read_bytes()).hexdigest() != dependency.get("sha256"):
+            try:
+                actual = dependency_sha256(path)
+            except ValueError as error:
+                raise BackendError("dependency_mismatch", "Configured dependency is missing, unsafe, or changed", {"id": identifier}) from error
+            if actual != dependency.get("sha256"):
                 raise BackendError("dependency_mismatch", "Configured dependency bytes do not match manifest", {"id": identifier})
         elif dependency.get("revision") == "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837":
             pinned = {"config.json": "cf3179684f7c360dd6185962d480e7d426ceb8fe49f5db7b64bdc15dba0b8798",
@@ -320,12 +325,16 @@ def capabilities(backend) -> dict:
                               "retry": {"max_attempts": [1, 100], "backoff_seconds": "nonnegative integer"}},
             "arbitrary_python": {"configured": bool(backend.trusted_code_roots), "isolation": False,
                                  "requires": ["per-run trust consent", "operator trusted source root", "pinned implementation in source closure"]},
-            "control_flow": {"conditions": "explicit bool gates on terminal stages; gate must be selected; sequential native dynamic pipeline",
-                             "loops": False, "independent_stage_concurrency": False, "conditional_live_evaluation": False},
+            "control_flow": {"conditions": "nested bool branches, required-input skip propagation, optional-input joins; sequential native dynamic pipeline",
+                             "loops": "explicit bounded_iterations; typed prior-artifact feedback; post-body bool early exit; maximum 10000 invocations",
+                             "iteration_resume": "explicit warm_start only; restarts at iteration 1; exact loop cursor resume unavailable",
+                             "iteration_live_evaluation": False, "independent_stage_concurrency": False, "conditional_live_evaluation": True,
+                             "conditional_live_gate_policy": "evaluator gate must already be a canonical ancestor of its trainer; false/skipped gates launch no sidecar"},
             "environment": {"requirements": "exact installed versions with target markers", "oci": False},
             "placement": {"recipe_field": "environment.device", "reservations": False, "live_evaluation_device": "cpu",
                           "non_training_builtins_device": "cpu", "component_enforcement": "trusted component must honor declared device context",
-                          "accelerator_exact_resume": False, "cuda_profile": "unavailable"},
+                          "accelerator_exact_resume": False, "cuda_profile": "cuda-cu128",
+                          "cuda_platforms": ["linux-x64", "linux-arm64"], "cuda_hardware_acceptance": "not_verified"},
             "dependency_resolution": "operator configured SHA256 verified local files; no automatic download"}
 
 
@@ -344,4 +353,12 @@ def environment_profiles(backend) -> list[dict]:
                              "devices": ["cpu", "mps"] if target == "darwin-arm64" else ["cpu"],
                              "environment": {"python": "3.12.14", "requirements": ["numpy==2.2.6", f"torch=={torch_pin}", "transformers==4.57.1", "zenml[server]==0.97.0"],
                                              "lock_file": {"path": relative, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}}})
+    from .placement import CUDA_PROFILES
+    for target, lock in CUDA_PROFILES.items():
+        path = backend.repository / lock["path"]
+        if path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == lock["sha256"]:
+            profiles.append({"target_platform": target, "variant": "cuda-cu128", "requires_recipe_revision": True,
+                             "devices": ["cpu", "cuda"], "hardware_acceptance": "not_verified",
+                             "environment": {"python": "3.12.14", "requirements": ["numpy==2.2.6", "torch==2.9.0+cu128", "transformers==4.57.1", "zenml[server]==0.97.0"],
+                                             "lock_file": dict(lock)}})
     return profiles

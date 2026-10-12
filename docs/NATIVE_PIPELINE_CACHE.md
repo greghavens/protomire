@@ -96,12 +96,12 @@ Actual installed ZenML 0.97 local probes established:
 
 These are real SDK probes, not general Modelbuilder loop/concurrency
 acceptance. The adapter compiles static DAGs except for the separately bounded
-[terminal-condition path](NATIVE_CONDITIONAL_EXECUTION.md). Its singleton active-node
+[branch/optional-join path](NATIVE_CONDITIONAL_EXECUTION.md). Its singleton active-node
 supervision journal, job environment, trusted-source import/snapshot state and
 native logging need an explicit safe concurrency design before enabling dynamic
-inline threads. General iterative flow and conditional downstream merges still need product
-integration. They are not missing SDK support or credential blockers.
-The terminal-condition document explains the dynamic-parameter cache-key
+inline threads. General iterative flow still needs product integration. Nested branches and optional-input
+joins are integrated through sequential public dynamic calls. They are not missing SDK support or credential blockers.
+The branch-condition document explains the dynamic-parameter cache-key
 adaptation; declared typed input artifact IDs remain authoritative.
 
 The installed local orchestrator does not honor resource reservations and does

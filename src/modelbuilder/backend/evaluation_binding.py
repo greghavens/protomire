@@ -23,7 +23,7 @@ def pending_verification():
             "message": "Checkpoint identity and ownership are verified on explicit comparison or promotion"}
 
 
-def checkpoint_candidates(run, request, node_id):
+def checkpoint_candidates(run, request, node_id, *, invocation_id=None):
     """Return proven connected checkpoint identities and their native owners.
 
     Only native Path checkpoints using the published manifest, plus the explicit
@@ -37,6 +37,12 @@ def checkpoint_candidates(run, request, node_id):
         raise ValueError("Evaluation recipe/project provenance differs from its native run")
     nodes = {node["id"]: node for node in recipe["nodes"]}
     node = nodes[node_id]
+    from .native_invocations import invocation, output_step
+    invocation_id = invocation_id or node_id
+    evaluator_step = run.steps[invocation_id]
+    evaluator_info = invocation(invocation_id, evaluator_step, recipe)
+    from ..iterations import memberships
+    member = memberships(recipe)
     bindings = request.get("resolved_input_bindings", [])
     native_execution = extra.get("execution", {})
     if bindings != native_execution.get("input_bindings", []):
@@ -70,10 +76,11 @@ def checkpoint_candidates(run, request, node_id):
         semantic_cache[key] = checkpoint
         return checkpoint
 
-    def owner(target, port, artifact, seen=()):
-        if target in seen or str(artifact.project.id) != str(run.project.id):
+    def owner(target, port, artifact, target_info, seen=()):
+        if target_info["invocation_id"] in seen or str(artifact.project.id) != str(run.project.id):
             raise ValueError("Checkpoint input has cyclic or foreign-project ownership")
-        bound = [entry for entry in bindings if entry["node_id"] == target and entry["input_port"] == port]
+        state = next((state for state in member.get(target, {}).get("state", []) if state["target_node"] == target and state["target_port"] == port), None) if target_info.get("iteration", 1) > 1 else None
+        bound = [entry for entry in bindings if entry["node_id"] == target and entry["input_port"] == port] if state is None else []
         if bound:
             if len(bound) != 1 or bound[0]["artifact_id"] != str(artifact.id):
                 raise ValueError("Native checkpoint input differs from its admitted binding")
@@ -85,12 +92,17 @@ def checkpoint_candidates(run, request, node_id):
             if storage_identity(artifact, root) != binding["content_sha256"]:
                 raise ValueError("Bound native checkpoint storage changed after admission")
             return binding["producer_model_version_ref"], [binding]
-        edges = [edge for edge in recipe["edges"] if edge["target_node"] == target and edge["target_port"] == port
+        edges = [state] if state else [edge for edge in recipe["edges"] if edge["target_node"] == target and edge["target_port"] == port
                  and edge["source_node"] in selected]
         if len(edges) != 1:
             raise ValueError("Checkpoint input has no unique executed producer")
         edge = edges[0]
-        source, source_step = nodes[edge["source_node"]], run.steps[edge["source_node"]]
+        source = nodes[edge["source_node"]]
+        source_info, source_step = output_step(run, recipe, source["id"], edge["source_port"], str(artifact.id))
+        if target_info.get("iteration_block_id") and source_info.get("iteration_block_id") == target_info["iteration_block_id"]:
+            expected = target_info["iteration"] - (1 if state else 0)
+            if source_info.get("iteration") != expected:
+                raise ValueError("Native checkpoint input comes from the wrong declared iteration")
         produced = source_step.outputs.get(edge["source_port"], [])
         if len(produced) != 1 or str(produced[0].id) != str(artifact.id):
             raise ValueError("Native checkpoint input differs from its connected producer output")
@@ -106,7 +118,7 @@ def checkpoint_candidates(run, request, node_id):
             # supported checkpoint identity, never unlike container-byte digests.
             if str(incoming[0].project.id) != str(run.project.id) or semantic(incoming[0]) != semantic(artifact):
                 raise ValueError("Checkpoint relay content differs from its input")
-            return owner(source["id"], "checkpoint", incoming[0], (*seen, target))
+            return owner(source["id"], "checkpoint", incoming[0], source_info, (*seen, target_info["invocation_id"]))
         raise ValueError("Checkpoint producer does not establish a training model owner")
 
     candidates, errors = [], []
@@ -124,7 +136,7 @@ def checkpoint_candidates(run, request, node_id):
             # lineage and explicit checkpoint types must still fail closed.
             if len(roles) == 1 and roles[0] and roles[0] not in {"training", "model.train", "model.checkpoint"}:
                 continue
-        artifacts = run.steps[node_id].inputs.get(port["name"], [])
+        artifacts = evaluator_step.inputs.get(port["name"], [])
         if len(artifacts) > 1:
             errors.append("Checkpoint input port has multiple native artifacts")
             continue
@@ -133,7 +145,7 @@ def checkpoint_candidates(run, request, node_id):
                 if str(artifact.project.id) != str(run.project.id):
                     raise ValueError("Checkpoint artifact belongs to another native project")
                 validate_native_type(artifact, "Path")
-                version, checkpoint_bindings = owner(node_id, port["name"], artifact)
+                version, checkpoint_bindings = owner(node_id, port["name"], artifact, evaluator_info)
                 checkpoint = semantic(artifact)
                 candidates.append({"artifact_id": str(artifact.id), "input_port": port["name"], "identity": checkpoint,
                                    "model_version_ref": version, "checkpoint_bindings": checkpoint_bindings})

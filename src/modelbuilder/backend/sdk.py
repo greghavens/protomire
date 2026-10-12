@@ -103,8 +103,22 @@ def _reconcile(job: Path):
             run = client.get_pipeline_run(run.id, include_full_metadata=True)
         if not (job / "recovery.json").exists():
             request = read_json(job / "request.json")
-            for node in request["recipe"]["nodes"]:
-                source = job / "outputs" / node["id"]
+            from .native_invocations import invocations
+            nodes = {node["id"]: node for node in request["recipe"]["nodes"]}
+            recovered_records = []
+            from ..iterations import invocation_identity, memberships
+            repeated = memberships(request["recipe"])
+            entries = invocations(run, request["recipe"])
+            # Preserve the established ordinary-stage recovery path when native
+            # step registration itself was interrupted. Repeated calls require
+            # an actual validated native invocation; no index is inferred.
+            entries += [(invocation_identity(node_id), None) for node_id in nodes
+                        if node_id not in repeated and node_id not in run.steps]
+            for info, step in entries:
+                node = nodes[info["canonical_node_id"]]
+                if step is not None and step.status.value in {"completed", "cached"}:
+                    continue
+                source = job / "outputs" / info["invocation_id"]
                 recovered = None
                 if node["kind"] == "model.train" and (source / "checkpoint.pt").is_file():
                     recovered = source
@@ -124,12 +138,16 @@ def _reconcile(job: Path):
                         recovered = max(valid, key=lambda item: item[0])[1]
                 if recovered is not None and run.status != ExecutionStatus.COMPLETED:
                     artifact = save_artifact(recovered, name=f"recovery-{job.name}", include_visualizations=False,
-                                             user_metadata={"parent_run_id": str(run.id), "recovery_after_termination": True})
+                                             user_metadata={"parent_run_id": str(run.id), "recovery_after_termination": True, **info})
                     if run.model_version:
                         client.zen_store.create_model_version_artifact_link(ModelVersionArtifactRequest(
                             model_version=run.model_version.id, artifact_version=artifact.id))
-                    log_metadata({"recovery_checkpoint_ref": str(artifact.id)}, run_id_name_or_prefix=run.id)
-                    write_json(job / "recovery.json", {"artifact_id": str(artifact.id)})
+                    recovered_records.append({"artifact_id": str(artifact.id), "node_id": node["id"], **info})
+            if recovered_records:
+                log_metadata({"recovery_checkpoint_refs": recovered_records, "recovery_checkpoint_ref": recovered_records[-1]["artifact_id"]}, run_id_name_or_prefix=run.id)
+                journal = ({"artifact_id": recovered_records[0]["artifact_id"]} if len(recovered_records) == 1 and "iteration" not in recovered_records[0]
+                           else {"checkpoints": recovered_records})
+                write_json(job / "recovery.json", journal)
         if not supervisor_alive and not state.get("worker_reaped"):
             state.update(supervisor_state="recovered", worker_termination_confirmed=True, recovered_at=now())
             write_json(job / "state.json", state)
@@ -140,17 +158,19 @@ def artifacts_for(job: Path, run) -> list[dict]:
     artifacts = []
     if run:
         from .native_cache import output_provenance
-        for step_name, step_run in run.steps.items():
+        from .native_invocations import invocations
+        request = read_json(job / "request.json")
+        for info, step_run in invocations(run, request["recipe"]):
             cache = output_provenance(step_run, run)
             for port, versions in step_run.outputs.items():
                 for artifact in versions:
                     artifacts.append({"artifact_id": str(artifact.id), "name": artifact.name, "step_id": str(step_run.id),
-                                      "node_id": step_name, "port": port, "uri": artifact.uri, "backend_run_id": str(run.id),
+                                      "node_id": info["canonical_node_id"], **info, "port": port, "uri": artifact.uri, "backend_run_id": str(run.id),
                                       "cache": cache})
         recovery = read_json(job / "recovery.json")
-        if recovery:
-            artifact = Client().get_artifact_version(UUID(recovery["artifact_id"]))
-            artifacts.append({"artifact_id": str(artifact.id), "name": artifact.name, "port": "recovery_checkpoint",
+        for recovered in recovery.get("checkpoints", [recovery] if recovery.get("artifact_id") else []):
+            artifact = Client().get_artifact_version(UUID(recovered["artifact_id"]))
+            artifacts.append({**recovered, "artifact_id": str(artifact.id), "name": artifact.name, "port": "recovery_checkpoint",
                               "uri": artifact.uri, "backend_run_id": str(run.id)})
     return artifacts
 
@@ -165,13 +185,16 @@ def evaluation_outputs(run, request=None, *, verify_checkpoints=True) -> list[di
     from .evaluation_binding import checkpoint_candidates, pending_verification, verify_checkpoint
     declared = {node["id"]: node for node in request.get("recipe", {}).get("nodes", [])}
     rows = []
-    for node_id, step_run in run.steps.items():
+    from .native_invocations import invocations
+    entries = invocations(run, request["recipe"]) if request.get("recipe") else [({"canonical_node_id": name, "invocation_id": name}, step) for name, step in run.steps.items()]
+    for info, step_run in entries:
+        node_id = info["canonical_node_id"]
         node = declared.get(node_id, {})
         evaluation_node = node.get("kind") == "model.evaluate" or node.get("component", {}).get("role") == "evaluation"
         candidates, errors = [], []
         if verify_checkpoints:
             try:
-                candidates, errors = checkpoint_candidates(run, request, node_id)
+                candidates, errors = checkpoint_candidates(run, request, node_id, invocation_id=info["invocation_id"])
             except (BackendError, OSError, ValueError, KeyError, TypeError, AttributeError) as error:
                 errors = [str(error)]
         for output_port, versions in step_run.outputs.items():
@@ -194,7 +217,7 @@ def evaluation_outputs(run, request=None, *, verify_checkpoints=True) -> list[di
                         verification, model_version, checkpoint_bindings = (verify_checkpoint(record, candidates, errors)
                             if verify_checkpoints else (pending_verification(), None,
                                 [binding for binding in request.get("resolved_input_bindings", []) if binding["node_id"] == node_id]))
-                        rows.append({"backend_run_id": str(run.id), "node_id": node_id, "output_port": output_port,
+                        rows.append({"backend_run_id": str(run.id), "node_id": node_id, **info, "output_port": output_port,
                             "artifact_id": str(artifact.id), "metric": metric, "value": measured.get(metric, record.get("value")),
                             "evaluation_digest": record.get("digest"), "record": record,
                             "checkpoint_bindings": checkpoint_bindings, "model_version_ref": model_version,
@@ -322,17 +345,10 @@ def status(job: Path, *, verify_evaluations=False) -> dict:
     else:
         current = "submitted"
     evaluations = evaluation_outputs(run, request, verify_checkpoints=verify_evaluations)
-    conditional = metadata_values(run).get("conditional_execution", {}) if run else {}
-    conditional = conditional if isinstance(conditional, dict) else {}
     execution = request.get("execution") or {"node_ids": [node["id"] for node in request["recipe"]["nodes"]], "input_bindings": []}
-    declared_conditions = {node["id"]: node["condition"] for node in request["recipe"]["nodes"] if "condition" in node}
-    # Skipped outcomes come from actual native metadata, never from an absent
-    # step or a pending declaration. Existing native step status always wins.
-    conditional = {node: outcome for node, outcome in conditional.items()
-                   if node in declared_conditions and node in execution["node_ids"] and isinstance(outcome, dict)
-                   and outcome.get("condition") == declared_conditions[node]
-                   and outcome.get("status") in {"eligible", "skipped"}}
-    skipped = [node for node, outcome in conditional.items() if outcome["status"] == "skipped" and node not in run.steps] if run else []
+    from .native_invocations import execution_projection
+    native_steps, conditional, skipped, join_inputs, invocation_statuses, iterations = execution_projection(
+        run, request["recipe"], set(execution["node_ids"]), metadata_values(run) if run else {})
     # Never report cancellation while the actual worker remains alive.
     if current == "cancelled" and worker_alive:
         current = "cancel_requested"
@@ -346,15 +362,16 @@ def status(job: Path, *, verify_evaluations=False) -> dict:
             "submitted_at": request["submitted_at"], "last_reconciled_at": now(),
             "metrics": metrics_for(run, evaluations), "evaluations": evaluations, "artifacts": artifacts_for(job, run),
             "execution": {**execution, "input_bindings": request.get("resolved_input_bindings", [])},
-            "executed_node_ids": [node for node, step in run.steps.items() if step.status.value in {"running", "completed", "cached", "failed"}] if run else [],
-            "cached_node_ids": [node for node, step in run.steps.items() if step.status.value == "cached"] if run else [],
-            "node_statuses": {**{node: "skipped" for node in skipped}, **{node: step.status.value for node, step in run.steps.items()}} if run else {},
-            "skipped_node_ids": skipped, "conditional_execution": conditional,
+            "executed_node_ids": sorted({row["canonical_node_id"] for row in invocation_statuses.values() if row["status"] in {"running", "completed", "cached", "failed"}}),
+            "cached_node_ids": sorted({row["canonical_node_id"] for row in invocation_statuses.values() if row["status"] == "cached"}),
+            "node_statuses": {**{node: "skipped" for node in skipped}, **{node: step.status.value for node, step in native_steps.items()}},
+            "invocation_statuses": invocation_statuses, "bounded_iterations": iterations,
+            "skipped_node_ids": sorted(skipped), "conditional_execution": conditional, "conditional_inputs": join_inputs,
             "tracking": tracking_status(job, request, current),
             "parent_run_id": request.get("parent_run_id"), "parent_checkpoint_ref": request.get("parent_checkpoint_ref"),
             "parent_recipe_id": request.get("parent_recipe_id"), "parent_recipe_revision": request.get("parent_recipe_revision"),
             "parent_recipe_digest": request.get("parent_recipe_digest"),
-            "resume_mode": request.get("resume_mode"), "termination": termination,
+            "resume_mode": request.get("resume_mode"), "parent_invocation": request.get("parent_invocation"), "termination": termination,
             "runtime_status_source": "verified_local_supervisor",
             "termination_record_source": "native_run_metadata" if run and termination else ("supervisor_journal" if termination else None),
             "error": (str(run.exception_info) if run and run.exception_info else
@@ -375,7 +392,7 @@ def _checkpoint_resume_modes(request: dict, declared: list[str]) -> list[str]:
     return effective_resume_modes(device, declared)
 
 
-def checkpoint(job: Path, kind: str) -> dict:
+def checkpoint(job: Path, kind: str, requested: str | None = None) -> dict:
     run = reconcile(job)
     if not run:
         raise BackendError("not_found", "Native run has no checkpoint")
@@ -388,6 +405,12 @@ def checkpoint(job: Path, kind: str) -> dict:
                   (a.get("node_id") in training_ids and (a["port"] == "checkpoint" or
                    any(port["name"] == a["port"] and port["type"] == "Path"
                        for port in training_nodes[a["node_id"]].get("outputs", []))))]
+    if requested:
+        candidates = [candidate for candidate in candidates if candidate["artifact_id"] == requested]
+        if not candidates:
+            raise BackendError("dependency_mismatch", "Requested checkpoint UUID is not a checkpoint output of the selected native run")
+    elif any("iteration" in candidate for candidate in candidates) and len(candidates) > 1:
+        raise BackendError("ambiguous_checkpoint", "Repeated training outputs require an explicit checkpoint_ref UUID; no latest invocation is guessed")
     if not candidates:
         raise BackendError("not_found", "No completed native checkpoint or recovered checkpoint exists")
     mismatches = []
@@ -515,7 +538,7 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
         if payload.get("include_binding_descriptors"):
             from .native_inputs import output_descriptor
             for item in artifacts:
-                if item.get("node_id"):
+                if item.get("node_id") and item["port"] != "recovery_checkpoint":
                     descriptor, _ = output_descriptor(job, run, item["node_id"], item["port"], item["artifact_id"])
                     item["binding_descriptor"] = descriptor
         return {"backend_run_id": str(run.id) if run else None, "artifacts": artifacts}
@@ -524,7 +547,7 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
         return compare_evaluations(records, payload)
     if operation == "model.checkpoint.get":
         if payload.get("job_dir"):
-            result = checkpoint(Path(payload["job_dir"]), payload.get("checkpoint_kind", "last"))
+            result = checkpoint(Path(payload["job_dir"]), payload.get("checkpoint_kind", "last"), payload.get("checkpoint_ref") or payload.get("checkpoint_id"))
             requested = payload.get("checkpoint_ref") or payload.get("checkpoint_id")
             if requested and requested != result["artifact_id"]:
                 raise BackendError("dependency_mismatch", "Requested checkpoint identity differs from resolved checkpoint")
@@ -535,7 +558,7 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
             native = read_json(job / "native.json")
             if request.get("project_id") == payload["project_id"] and (native.get("backend_run_id") == identity or
                     native.get("model_version_ref") in {payload.get("model_version_ref"), payload.get("model_version_id")} - {None}):
-                result = checkpoint(job, payload.get("checkpoint_kind", "last"))
+                result = checkpoint(job, payload.get("checkpoint_kind", "last"), payload.get("checkpoint_ref") or payload.get("checkpoint_id"))
                 requested = payload.get("checkpoint_ref") or payload.get("checkpoint_id")
                 if requested and requested != result["artifact_id"]:
                     raise BackendError("dependency_mismatch", "Requested checkpoint identity differs from resolved checkpoint")

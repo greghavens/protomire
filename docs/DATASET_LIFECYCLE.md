@@ -55,8 +55,10 @@ The POSIX reader opens directories and files using descriptor-relative
 `O_NOFOLLOW` handles, verifies the startup root inode, rejects symlinks and
 nonregular files (including FIFOs), and checks the opened file before/after
 reading for concurrent changes. SHA256 is checked on the exact bounded bytes
-that are parsed. Limits are 16 MiB per source, 32 MiB total source bytes, 100,000
-rows, 64 sources, and 32 declared transformations.
+that are parsed. Existing eager manifests retain limits of 16 MiB per source,
+32 MiB total source bytes and 100,000 rows. The manifest supports up to 4,096
+explicit source shards and 32 transformations. Select `access_mode: "streaming"`
+for larger data; its separate resource caps and index semantics are below.
 
 The Windows reader is implemented in `platform_file_access.py`: it traverses
 with native no-reparse handles, checks file identity and metadata, and retains
@@ -216,6 +218,117 @@ MODELBUILDER_REQUIRE_PARQUET=1 PYTHONPATH=src .venv/bin/python -m pytest tests/d
 
 Without that flag, a base installation lacking PyArrow skips the optional tests;
 CI installs `--parquet` and sets the flag so a missing/broken adapter fails.
+
+## Streaming and sharded datasets
+
+Choose **Streaming: large local files and shards** in the workbench's Data →
+Register dataset → access mode selector, then apply the manifest fields. The
+same `access_mode: "streaming"` declaration works through HTTP and native MCP.
+Existing manifests without the field preserve their eager behavior and identity.
+Split cards, version inspection, binding, validation and paged previews use the
+same operations. Sources remain explicit hash-pinned CSV, JSONL or Parquet files;
+there is no remote download, upload, hosted copy or arbitrary directory discovery.
+
+For large splits, declare `source_ids`, for example:
+
+```json
+{
+  "access_mode": "streaming",
+  "splits": [
+    {"id": "train", "role": "train", "source_ids": ["train-000", "train-001"]},
+    {"id": "validation", "role": "validation", "source_ids": ["validation-000"]}
+  ]
+}
+```
+
+This is a fragment to merge into a complete manifest. Each named shard must have
+its own approved root alias, relative path, format and full-file SHA256 entry.
+Explicit ordered `sample_ids` remain available for smaller curated splits.
+
+The service streams ingestion and builds a private SQLite lineage index beside
+its application database, in `<database-name>.dataset-lineage/`. This contains
+sample identities, source row positions/byte spans, row hashes, split membership
+and transformation fingerprints, **never row bodies or private text**. Standard
+SQLite indexes implement global identity uniqueness, stable deduplication and
+training-only decontamination without in-memory ID sets. All transformations
+retain their declared ordering, including filtering before schema validation.
+The persisted, hash-checked index is reused after service restart. Missing indexes
+are reconstructed from pinned sources; changed indexes or source bytes fail closed.
+
+Every row's original content digest and transformed content digest contribute to
+an ordered length-prefixed canonical-JSON SHA256 stream. Each split pins its
+ordered lineage hash and sample count. The compact version identity includes
+source hashes/counts, schema, transformations, split lineages and original manifest.
+Records therefore do not embed millions of sample IDs. Preview uses a primary-key
+ordinal seek, then decodes only selected rows; it does not materialize or skip
+decode the preceding split. Full pinned source and metadata-index hashing still
+occurs outside the writer transaction. Commit checks descriptor/inode, size,
+mtime and ctime against that verified snapshot, and each returned row is checked
+against its pinned original/transformed hashes. Concurrent changes refuse the
+operation rather than silently advancing a registered version.
+
+Default streaming caps are operator-controlled with `dataset_limits` in the
+operator configuration (all values are positive integers):
+
+```json
+{
+  "dataset_limits": {
+    "max_file_bytes": 68719476736,
+    "max_total_bytes": 274877906944,
+    "max_rows": 100000000,
+    "max_row_bytes": 1048576,
+    "max_decoded_bytes": 549755813888,
+    "max_index_bytes": 34359738368
+  }
+}
+```
+
+These mean 64 GiB per source, 256 GiB source total, 100 million rows, 1 MiB per
+row, 512 GiB decoded JSON total and 32 GiB metadata index. Lower deployment caps
+are supported, including after restart. Operators may raise caps deliberately;
+individual row size retains a hard 16 MiB ceiling. SQLite uses a 2 MiB page cache
+and disk-backed sorts, so sufficient local temporary disk is required in addition
+to index storage. Preview remains at most 100 rows/1 MiB regardless of these caps.
+This is a bounded resource policy, not a claim that every configured maximum has
+been benchmarked or is a good fit for a particular computer.
+
+Streaming Parquet retains the optional exact PyArrow pin and Linux-only hard
+memory boundary. It passes an already-open, checked descriptor to an isolated
+worker, streams 64-row batches through a bounded pipe, rejects remote/external
+column references and extension values, verifies available page checksums, and
+limits each row group's advertised uncompressed data to 256 MiB. The process is
+limited to 512 MiB address space, 590/591 seconds CPU and a 600-second wall deadline
+per source/group read; two decoder slots bound concurrency. Random previews read
+only the relevant bounded row groups. These streaming limits are separate from
+the smaller eager Parquet decoder described above.
+
+Runtime dataset imports return a compact `modelbuilder.dataset-stream/v1`
+descriptor. Components consume `modelbuilder.dataset_streaming.iter_stream_rows`
+in bounded memory, with full source/version/split verification and per-row lineage.
+`StreamingConsumption` records only rows delivered to the actual batch consumer,
+checks their indexed membership, and exposes ordered SHA256/count checkpoints as
+`modelbuilder.dataset-consumption/v2`. Repeated epochs preserve repeated ordered
+row identities. A preview or import descriptor never claims model consumption.
+The descriptor's runtime-approved paths are worker-only; saved recipes, portable
+references, consumption snapshots and service dataset metadata contain no local
+absolute paths. Components that require eager row lists must explicitly support
+this streaming interface before receiving a streaming dataset.
+
+For bounded exact-ID evaluation, `materialize_stream_split(data, max_rows=...,
+max_bytes=...)` materializes only the selected held-out split. Its immutable row
+and decoded-byte counts are checked before row reads, and it retains the same
+dataset/version with full sample IDs and per-row hashes. Training and evaluation
+share one runtime metadata index. This lets a large training split and a small
+held-out split stay in one registered manifest; no second registration is needed.
+Consumers supply their explicit budgets. Oversized evaluation splits fail closed
+instead of silently truncating evidence or loading the full training dataset.
+
+Tests cover a real JSONL source over 32 MiB with 110,001 rows, incremental peak RSS
+below 48 MiB, restart and historical pages that forbid full-source decoding,
+indexed deep-page seeks, CSV multiline records, real multi-row-group Parquet,
+source/index tampering, concurrent source changes, ordered filters and split
+lineage, operator limits, and independent native-MCP lifecycle/restart. Runtime
+training acceptance is covered separately by the standard Trainer tests.
 
 ## Declared transformations
 

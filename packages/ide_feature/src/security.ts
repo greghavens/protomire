@@ -11,6 +11,7 @@ export const UI_OPERATIONS = new Set([
   'dataset.register', 'dataset.version', 'dataset.bind', 'dataset.get', 'dataset.list', 'dataset.validate', 'dataset.preview',
   'research.watch.create', 'research.watch.get', 'research.watch.list', 'research.watch.update', 'research.watch.refresh', 'research.watch.refresh_due', 'research.watch.schedule_enable', 'research.watch.schedule_disable',
   'research.finding.list', 'research.finding.review', 'research.text.import', 'research.text.get', 'research.text.fetch', 'research.text.list', 'research.text.search', 'research.text.inspect',
+  'research.document.capabilities',
   'research.proposal.create', 'research.proposal.list', 'research.proposal.get', 'research.proposal.review', 'research.proposal.apply',
   'project.history', 'project.update', 'recipe.resolve_dependencies', 'recipe.history', 'recipe.get', 'recipe.diff',
   'evidence.add', 'evidence.get', 'evidence.search', 'claim.create', 'claim.get', 'claim.list', 'claim.update',
@@ -23,6 +24,10 @@ export function checkMessage(raw: unknown): Record<string, any> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Invalid workbench message.');
   const message = raw as Record<string, any>;
   if (typeof message.type !== 'string' || JSON.stringify(message).length > 2_000_000) throw new Error('Invalid or oversized workbench message.');
+  if(message.type==='importResearchDocument'){
+    const allowed=new Set(['type','projectId','evidenceId','expectedEvidenceRevision']);
+    if(Object.keys(message).some(key=>!allowed.has(key))||typeof message.projectId!=='string'||!message.projectId||typeof message.evidenceId!=='string'||!message.evidenceId||!Number.isSafeInteger(message.expectedEvidenceRevision)||message.expectedEvidenceRevision<1)throw new Error('Select a current saved citation before importing a PDF.');
+  }
   if (message.type === 'recipeHistory') {
     const allowed = new Set(['type', 'action', 'projectId', 'recipeId', 'expectedRevision', 'requestId', 'sourceRevision', 'fromRevision', 'toRevision']);
     const positive = (value: unknown) => Number.isSafeInteger(value) && Number(value) > 0;

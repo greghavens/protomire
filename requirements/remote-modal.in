@@ -1,0 +1,3 @@
+# Optional provider SDK overlay for ZenML 0.97.0's existing Modal orchestrator.
+# No provider credentials or account are configured by installation.
+modal==1.6.1

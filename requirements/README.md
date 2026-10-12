@@ -35,8 +35,8 @@ The regular backend installation still verifies all pinned model file hashes.
 
 | Native target | Service/MCP lock | Local pinned backend |
 |---|---|---|
-| Linux x64 | yes | ZenML 0.97.0, torch 2.9.0+cpu |
-| Linux arm64 | yes | ZenML 0.97.0, torch 2.9.0+cpu |
+| Linux x64 | yes | ZenML 0.97.0, torch 2.9.0+cpu; explicit CUDA 12.8 variant available |
+| Linux arm64 | yes | ZenML 0.97.0, torch 2.9.0+cpu; explicit CUDA 12.8 variant available |
 | Linux armhf | shared architecture-independent Linux service closure; native source builds may be required | unavailable: no official torch 2.9.0 wheel |
 | macOS arm64 | yes | ZenML 0.97.0, torch 2.9.0 |
 | macOS Intel x64 | yes; native source builds may be required | unavailable: no official torch 2.9.0 wheel |
@@ -85,6 +85,45 @@ hashes. Review generated diffs and run native acceptance before upgrading.
 with existing recipe digests. It is not repurposed as a universal lock. Per-target
 locks live in `requirements/profiles/`. The original `service.lock` is retained
 as the baseline/tool pin record; bootstrap uses the hash-enforced profiles.
+
+
+## Explicit CUDA profile
+
+CUDA is an opt-in backend variant, using the existing Torch/ZenML executor:
+
+`python3.12 scripts/bootstrap.py --backend-only --backend-variant cuda-cu128 --backend-venv .venv-backend-cuda`
+
+The default CPU/macOS installation and all existing lock digests remain unchanged.
+The CUDA profile is available only for Linux x64/ARM64, Python 3.12.14 and official
+`torch==2.9.0+cu128` wheels. All 118 packages, including NVIDIA CUDA 12.8 libraries
+and Triton 3.5.0, are exactly pinned and hash-checked. Installation is wheel-only;
+no driver, CUDA system toolkit, account or remote resource is provisioned. Plan
+mode prints the selected variant and lock without installing. Native Windows
+ZenML, macOS CUDA, ROCm and unreviewed CUDA versions fail closed.
+
+Use a fresh backend venv to preserve the existing CPU one and allow several GB of
+free disk space. Configure `MODELBUILDER_BACKEND_PYTHON` to the absolute selected
+interpreter. A recipe revision must select the matching profile from
+`execution.targets.environment_profiles` and set `environment.device` to an
+explicit `cuda:<visible ordinal>`; project policy must also permit that target.
+A working installed CUDA wheel does not establish GPU/driver compatibility.
+Planning does not allocate tensors; submission runs a bounded real allocation,
+forward/backward and synchronization probe. Accelerator continuation remains
+explicit `warm_start` only. See [device placement](../docs/LOCAL_DEVICE_PLACEMENT.md).
+
+Regenerate with `python scripts/lock_dependencies.py --component backend
+--backend-variant cuda-cu128`, optionally adding `--target linux-x64` or
+`--target linux-arm64`. Review the lock diff and update the reviewed profile
+SHA256 constants in `src/modelbuilder/backend/placement.py`; the tests enforce
+those digests. Original backend constraints still fix all non-CUDA dependency
+versions. Torch's exact NVIDIA/Triton requirements supply the additional closure.
+
+Linux x64 installation, package metadata verification and CPU execution with the
+CUDA wheel have been exercised locally. ARM64 has resolution evidence only;
+CUDA GPU arithmetic and native lifecycle acceptance require actual hardware.
+Official sources: [PyTorch 2.9.0 installers](https://pytorch.org/get-started/previous-versions/),
+[CUDA 12.8 wheel index](https://download.pytorch.org/whl/cu128/torch/) and
+[NVIDIA compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/).
 
 
 ## Optional Parquet profile
@@ -141,3 +180,15 @@ runtime targets; `parquet_lock` remains available for reviewed macOS/Windows
 wheels. This is a pre-installation platform plan, not proof that PyArrow is
 installed, hard limits can be established, or a dataset will pass validation.
 Actual use still verifies those conditions. Linux arm64 is not native-tested here.
+
+## Optional Transformers Trainer profile
+
+`--backend --trainer` (or `--backend-only --trainer`) adds the pure-Python
+hash-locked `accelerate==1.11.0` overlay to the selected backend after its normal
+profile sync. This also composes with an explicitly selected CUDA profile; it
+does not select a device or establish hardware acceptance. The service remains
+separate. Installation uses `--require-hashes --only-binary :all: --no-deps`, then
+checks the complete frozen backend dependency closure. All Accelerate runtime
+dependencies already belong to that backend. A later sync without `--trainer`
+removes the optional overlay. See [standard Trainer components](../docs/TRANSFORMERS_TRAINER.md)
+for configuration and the required real CPU/optional accelerator test gates.

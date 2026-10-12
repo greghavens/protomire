@@ -27,8 +27,10 @@ def selection(recipe: dict, requested: dict | None = None) -> dict:
     """Validate the cut, including inputs on its boundary, without loading code."""
     from .models import ServiceError
     from .conditions import ConditionError, validate_conditions, validate_selected_gates
+    from .iterations import validate_iterations, validate_selected_iterations
     try:
         validate_conditions(recipe)
+        validate_iterations(recipe)
     except ConditionError as error:
         raise ServiceError(error.code, error.message, error.details) from error
     nodes = {node["id"]: node for node in recipe.get("nodes", [])}
@@ -42,6 +44,7 @@ def selection(recipe: dict, requested: dict | None = None) -> dict:
         raise ServiceError("invalid_execution_selection", "Execution selection names an unknown recipe node")
     try:
         validate_selected_gates(recipe, chosen)
+        validate_selected_iterations(recipe, chosen)
     except ConditionError as error:
         raise ServiceError(error.code, error.message, error.details) from error
     bindings = {}
@@ -71,6 +74,8 @@ def selected_recipe(recipe: dict, execution: dict) -> dict:
     chosen = set(execution["node_ids"])
     body = {**recipe, "nodes": [node for node in recipe["nodes"] if node["id"] in chosen],
             "edges": [edge for edge in recipe.get("edges", []) if edge["source_node"] in chosen and edge["target_node"] in chosen]}
+    if "bounded_iterations" in recipe:
+        body["bounded_iterations"] = [block for block in recipe["bounded_iterations"] if set(block["node_ids"]) <= chosen]
     trainers = [node for node in body["nodes"] if node["kind"] == "model.train" or node.get("component", {}).get("role") == "training"]
     evaluators = [node for node in body["nodes"] if node["kind"] == "model.evaluate" or node.get("component", {}).get("role") == "evaluation"]
     if len(chosen) != len(recipe["nodes"]) and not (trainers and evaluators):

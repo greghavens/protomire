@@ -52,7 +52,7 @@ def recheck_materialized_sources(entries):
     for entry in entries.values():
         if "value" in entry:
             for source in entry["value"][0]["sources"]:
-                entry["reader"]._read_source(entry["project_id"], source)
+                entry["reader"]._verify_source(entry["project_id"], source, entry["value"][0])
 
 
 _ID = {"type": "string", "minLength": 1, "maxLength": 200}
@@ -65,7 +65,7 @@ _SOURCE = {"type": "object", "additionalProperties": False,
                           "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}}
 _SPLIT = {"type": "object", "additionalProperties": False, "required": ["id", "role"],
           "properties": {"id": _ID, "role": {"enum": ["train", "validation", "test", "calibration"]},
-                         "source_ids": _FIELDS,
+                         "source_ids": {"type": "array", "items": _ID, "minItems": 1, "maxItems": 4096, "uniqueItems": True},
                          "sample_ids": {"type": "array", "items": _ID, "minItems": 1,
                                         "maxItems": MAX_ROWS, "uniqueItems": True}},
           "oneOf": [{"required": ["source_ids"]}, {"required": ["sample_ids"]}]}
@@ -86,7 +86,8 @@ MANIFEST_SCHEMA = {
                        "properties": {"source": {"type": "string", "minLength": 1, "maxLength": 2048},
                                       "source_revision": _ID, "retrieved_at": _ID,
                                       "description": {"type": "string", "maxLength": 10000}}},
-        "sources": {"type": "array", "items": _SOURCE, "minItems": 1, "maxItems": 64},
+        "sources": {"type": "array", "items": _SOURCE, "minItems": 1, "maxItems": 4096},
+        "access_mode": {"enum": ["eager", "streaming"]},
         "id_column": _ID, "row_schema": {"type": "object"},
         "splits": {"type": "array", "items": _SPLIT, "minItems": 1, "maxItems": 32},
         "transformations": {"type": "array", "maxItems": 32, "items": {"oneOf": [
@@ -164,8 +165,22 @@ def validate_manifest(manifest: dict) -> dict:
 
 class DatasetRegistry:
     def __init__(self, store, *, project_roots=None, max_file_bytes=MAX_FILE_BYTES,
-                 max_total_bytes=MAX_TOTAL_BYTES, max_rows=MAX_ROWS):
+                 max_total_bytes=MAX_TOTAL_BYTES, max_rows=MAX_ROWS, streaming_limits=None):
         self.store = store
+        import tempfile
+        from .dataset_streaming import limits
+        self.streaming_limits = limits(streaming_limits)
+        self._stream_temp = tempfile.TemporaryDirectory(prefix="modelbuilder-lineage-")
+        self._stream_directory = self._stream_temp.name
+        if store is not None and getattr(store, "path", ":memory:") != ":memory:":
+            directory = Path(store.path).absolute().with_suffix(".dataset-lineage")
+            if directory.is_symlink():
+                raise ValueError("Dataset lineage cache cannot be a symlink")
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            self._stream_directory = str(directory)
+        self._stream_indexes = {}
+        self._stream_records = {}
+        self._stream_signatures = {}
         self.max_file_bytes, self.max_total_bytes, self.max_rows = max_file_bytes, max_total_bytes, max_rows
         self._roots = {}
         for project_id, roots in (project_roots or {}).items():
@@ -239,6 +254,20 @@ class DatasetRegistry:
             for handle in reversed(handles):
                 os.close(handle)
 
+    def _verify_source(self, project_id, source, manifest, stream=None):
+        if manifest.get("access_mode") == "streaming":
+            from .dataset_streaming import verify_source, verify_prepared_source
+            session = _MATERIALIZATIONS.get()
+            if session is not None and not session[1]:
+                entry = next((entry for entry in session[0].values() if "value" in entry
+                              and entry.get("project_id") == project_id and entry["value"][0] == manifest), None)
+                if entry is None:
+                    _fail("dataset_preparation_required", "Streaming source was not verified before the writer transaction")
+                expected = entry["reader"]._stream_signatures.get((project_id, source["id"], source["sha256"]))
+                return verify_prepared_source(self, project_id, source, expected, stream)
+            return verify_source(self, project_id, source, stream)
+        return self._read_source(project_id, source)
+
     def _parse(self, data, source, schema, *, decoded_budget=None):
         decoded_budget = self.max_total_bytes if decoded_budget is None else decoded_budget
         fmt = source["format"]
@@ -294,7 +323,7 @@ class DatasetRegistry:
         if session is None:
             return self._materialize_unprepared(project_id, manifest)
         entries, compute = session
-        key = (project_id, digest(manifest), self.max_file_bytes, self.max_total_bytes, self.max_rows)
+        key = (project_id, digest(manifest), self.max_file_bytes, self.max_total_bytes, self.max_rows, digest(self.streaming_limits))
         if key in entries:
             entry = entries[key]
             if "error" in entry:
@@ -302,7 +331,7 @@ class DatasetRegistry:
             # A different portable reader must prove its own approved path/root
             # still supplies the exact same pinned bytes before sharing values.
             for source in entry["value"][0]["sources"]:
-                self._read_source(project_id, source)
+                self._verify_source(project_id, source, entry["value"][0])
             return entry["value"]
         if not compute:
             _fail("dataset_preparation_required", "Dataset decoding was not prepared outside the writer transaction")
@@ -316,6 +345,9 @@ class DatasetRegistry:
 
     def _materialize_unprepared(self, project_id, manifest):
         manifest = validate_manifest(manifest)
+        if manifest.get("access_mode") == "streaming":
+            from .dataset_streaming import compile_index
+            return compile_index(self, project_id, manifest)
         indexed, total, decoded_total, seen = [], 0, 0, set()
         id_column = manifest["id_column"]
         for source in manifest["sources"]:
@@ -411,6 +443,8 @@ class DatasetRegistry:
         record = self.store.get("dataset", dataset_id, revision) if revision is not None else current
         if record.get("project_id") != project_id:
             raise ServiceError("not_found", "Dataset was not found in this project", status_code=404)
+        if record.get("access_mode") == "streaming":
+            self._stream_records[(project_id, record["manifest_digest"])] = record
         return record
 
     def list(self, project_id):
@@ -443,6 +477,12 @@ class DatasetRegistry:
     def read_split(self, project_id, dataset_id, revision, split_id, *, purpose):
         record = self.get(project_id, dataset_id, revision)
         materialized = self._materialize(project_id, record["manifest"])
+        if record.get("access_mode") == "streaming":
+            from .dataset_streaming import check_record, stream_data
+            check_record(record, materialized)
+            paths, guards = self.execution_sources(project_id, dataset_id, revision)
+            return stream_data(record, self.portable_reference(project_id, dataset_id, revision), paths, guards,
+                               split_id, purpose, self.streaming_limits)
         return _split_data(record, materialized, split_id, purpose)
 
     def portable_reference(self, project_id, dataset_id, revision):
@@ -450,6 +490,7 @@ class DatasetRegistry:
         record = self.get(project_id, dataset_id, revision)
         return {"schema": SCHEMA, "project_id": project_id, "dataset_id": dataset_id, "revision": record["revision"],
                 "version_id": record["version_id"], "content_digest": record["content_digest"], "manifest": record["manifest"],
+                **({"streaming_limits": self.streaming_limits} if record.get("access_mode") == "streaming" else {}),
                 "dependencies": [{"id": "dataset-" + source["sha256"], "sha256": source["sha256"],
                                   "kind": "dataset", "license": record["license"],
                                   "source_id": source["id"], "required": True}
@@ -461,7 +502,7 @@ class DatasetRegistry:
         paths, guards = {}, {}
         for source in record["manifest"]["sources"]:
             # Independently reread via the captured approved root, not a resolved client path.
-            self._read_source(project_id, source)
+            self._verify_source(project_id, source, record["manifest"])
             root = self._roots[project_id][source["root_id"]]
             if isinstance(root, WindowsRoot):
                 _fail("capability_unavailable", "Native Windows dataset execution requires a supported backend host")
@@ -475,6 +516,10 @@ class DatasetRegistry:
         if (isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100
                 or isinstance(offset, bool) or not isinstance(offset, int) or offset < 0):
             _fail("dataset_request_invalid", "Preview requires a positive limit at most 100 and a nonnegative offset")
+        record = self.get(project_id, dataset_id, revision)
+        if record.get("access_mode") == "streaming":
+            from .dataset_streaming import preview
+            return preview(record, self._materialize(project_id, record["manifest"]), split_id, purpose, offset, limit)
         data = self.read_split(project_id, dataset_id, revision, split_id, purpose=purpose)
         rows, size = [], 0
         for row in data["rows"][offset:offset + limit]:
@@ -494,6 +539,9 @@ class DatasetRegistry:
 
 
 def _version_record(project_id, dataset_id, revision, manifest, indexed, splits, report, parent=None):
+    if manifest.get("access_mode") == "streaming":
+        from .dataset_streaming import version_record
+        return version_record(project_id, dataset_id, revision, manifest, indexed, splits, report, parent)
     sample_index = [{k: v for k, v in item.items() if k != "row"} for item in indexed]
     content_digest = digest({"sample_index": sample_index, "splits": splits, "row_schema": manifest["row_schema"]})
     version_id = digest({"manifest": manifest, "content_digest": content_digest})
@@ -518,7 +566,8 @@ def _split_data(record, materialized, split_id, purpose):
             "consumption": lineage}
 
 
-def load_portable_split(reference, dependency_paths, split_id, *, purpose, expected_project_id=None, source_guards=None):
+def load_portable_split(reference, dependency_paths, split_id, *, purpose, expected_project_id=None, source_guards=None,
+                        streaming_limits=None, _return_index=False):
     """Read a portable registered version inside a worker without a service DB.
 
     The caller obtains dependency_paths from operator admission, never from
@@ -526,7 +575,7 @@ def load_portable_split(reference, dependency_paths, split_id, *, purpose, expec
     Every source is reopened through a no-symlink descriptor and checked again.
     """
     required = {"schema", "project_id", "dataset_id", "revision", "version_id", "content_digest", "manifest", "dependencies"}
-    if not isinstance(reference, dict) or set(reference) != required or reference.get("schema") != SCHEMA:
+    if not isinstance(reference, dict) or (set(reference) - {"streaming_limits"}) != required or reference.get("schema") != SCHEMA:
         _fail("dataset_reference_invalid", "Portable dataset reference has an unsupported shape")
     for key in ("project_id", "dataset_id"):
         if not isinstance(reference[key], str) or not reference[key]:
@@ -566,7 +615,9 @@ def load_portable_split(reference, dependency_paths, split_id, *, purpose, expec
             return super()._read_source(project_id, sources[source["id"]])
 
     try:
-        reader = PortableReader(None, project_roots={} if source_guards is not None else {project_id: roots})
+        reader = PortableReader(None, project_roots={} if source_guards is not None else {project_id: roots},
+                                streaming_limits=streaming_limits or reference.get("streaming_limits"))
+        reader._stream_sources = sources
         if source_guards is not None:
             reader._roots = {project_id: captured}
     except (OSError, ValueError) as exc:
@@ -575,6 +626,10 @@ def load_portable_split(reference, dependency_paths, split_id, *, purpose, expec
     record = _version_record(project_id, reference["dataset_id"], reference["revision"], *materialized)
     if record["version_id"] != reference["version_id"] or record["content_digest"] != reference["content_digest"]:
         _fail("dataset_identity_mismatch", "Portable dataset contents differ from the pinned version")
+    if manifest.get("access_mode") == "streaming":
+        from .dataset_streaming import stream_data
+        data = stream_data(record, reference, dependency_paths, source_guards, split_id, purpose, reader.streaming_limits)
+        return (data, materialized[1]) if _return_index else data
     return _split_data(record, materialized, split_id, purpose)
 
 

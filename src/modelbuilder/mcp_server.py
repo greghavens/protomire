@@ -90,7 +90,10 @@ class OperationGateway:
 
     async def request(self, method: str, path: str, payload: dict | None = None) -> dict[str, Any]:
         try:
-            response = await self.client.request(method, path, json=payload)
+            # The PDF decoder has its own 90-second hard deadline. Do not lose
+            # its durable result to the generic 30-second transport default.
+            options = {"timeout": max(120.0, self.client.timeout.read or 120.0)} if path == "/v1/operations/research.document.import" else {}
+            response = await self.client.request(method, path, json=payload, **options)
         except httpx.RequestError:
             # Do not serialize exceptions: they can contain request headers/URLs.
             raise OperationError(503, error_body("service_unavailable", "Operation service is unreachable")) from None

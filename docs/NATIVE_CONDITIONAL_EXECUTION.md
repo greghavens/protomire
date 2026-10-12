@@ -1,4 +1,4 @@
-# Native terminal conditions on the canonical recipe
+# Native branches, joins and gated live evaluation
 
 This is a bounded adapter implementation of the original conditional-pipeline
 requirement (handoff §5.2 / evaluation G05). It uses the same recipe ID, revision,
@@ -8,7 +8,7 @@ artifact registry, training loop, expression language or alternative workflow.
 
 ## Authoring and validation
 
-A terminal node may declare an explicit boolean control dependency:
+A node may declare an explicit boolean control dependency:
 
 ```json
 "condition": {
@@ -30,14 +30,50 @@ shows recorded skips in run inspection. The panel refuses stale/removed gate
 choices. A gate used by another node cannot be silently deleted. JSON/HTTP/MCP
 use the same exported service-owned schema and validation.
 
-Only globally terminal stages can be conditional: their outputs cannot feed
-another data edge or another condition. Downstream merges and nested conditions
-are rejected with an actionable message. `loop`, `repeat` and `iterations` node
-settings are rejected explicitly. A recipe containing conditions and enabled
-live evaluation is rejected because the current sidecar path cannot honor the
-gate. General loops, independent-stage concurrency and conditional live
-sidecars remain unimplemented product requirements; native SDK probes are not
-claims of their integration.
+Conditions can feed downstream data consumers and nested boolean gates. A false
+condition skips the node. A required input or control gate from a recorded skipped
+node skips its consumer transitively. Failed or pending producers are never
+classified as skipped. Data and control cycles remain invalid.
+
+Joins use the existing typed input declaration, without a new node kind:
+
+```json
+"inputs": [
+  {"name": "left", "type": "dict", "required": false},
+  {"name": "right", "type": "dict", "required": false}
+]
+```
+
+Each port still has exactly one producer. A skipped optional producer is omitted
+from the native step signature and call, rather than replaced by a fabricated
+artifact or `None` input. A `code.python` join needs callable defaults for omitted
+arguments; a `component.run` join receives only the available keys in `inputs`.
+The callable decides what to do when one, several, or no branches survive. A
+missing Python default, bad return type, or deliberate rejection is an actual
+native step failure. Native typed input IDs retain the original producer lineage.
+Built-in lifecycle stages are not optional-join adapters. Parameters cannot
+shadow declared Python input ports.
+
+`loop`, `repeat` and `iterations` node settings are still rejected explicitly.
+Explicit typed bounded iteration is described in [NATIVE_BOUNDED_ITERATION.md](NATIVE_BOUNDED_ITERATION.md). Arbitrary loops and independent-stage concurrency remain unsupported; native SDK probes are not claims of their integration.
+
+## Conditional live checkpoints
+
+Enabled live evaluation can coexist with branches. A skipped trainer cannot
+start a sidecar. A conditioned evaluator's gate must already be an explicit
+ancestor of its trainer through the canonical data/control graph. The same
+project-owned bool artifact is checked before training starts and again before
+final evaluation; a false or skipped gate disables that evaluator's sidecar.
+Skipped shared required inputs also disable the sidecar. Omitted optional inputs
+remain absent from the sidecar's component input dictionary.
+
+A gate produced by the trainer, by a later stage, or by an independent unordered
+stage cannot control live evaluation. Admission rejects it as
+`unsupported_conditional_live_gate`, explaining that the gate must precede
+training or live mode must be disabled. The adapter adds no hidden gate,
+dependency, ancestor or extra run. Existing bounded checkpoint snapshots,
+evaluator child processes, event identities, cleanup and cancellation continue
+to own live observations; ZenML owns the enclosing run and final artifacts.
 
 ## Exact selections and native outcomes
 
@@ -59,11 +95,15 @@ ZenML does not create a StepRun for a branch that is never invoked. The adapter
 does not fabricate one. It records `conditional_execution` on the actual native
 pipeline run with the gate artifact ID, boolean value and value SHA256, exact
 condition, decision (`eligible` or `skipped`) and `status_source` of
-`native_run_metadata`. `eligible` means the gate passed, not that the stage
+`native_run_metadata`. Propagated skips record the exact `blocked_by` data/control
+dependencies and `reason: upstream_skipped`, rooted in a verified native gate
+artifact decision. `eligible` means the gate passed, not that the stage
 finished successfully. Its actual native step status remains authoritative.
 `run.status` exposes these decisions, `skipped_node_ids`, and a merged
 `node_statuses` view. An absent or pending stage is never inferred to be skipped.
 A skipped stage has no output artifact, checkpoint or evaluation record.
+`conditional_inputs` records omitted optional edges and actual consumed native
+input IDs; status verifies these against the corresponding native step inputs.
 
 ## Cache, provenance and supervision
 
@@ -99,18 +139,20 @@ producer; an evaluation-only run version cannot be promoted as that model.
 
 ## Acceptance and remaining gates
 
-Automated acceptance includes strict schema/selection/loop/downstream/live
-rejections; editor preservation/stale-choice/graph/status tests; actual native
+Automated acceptance includes strict schema/selection/loop/cycle and unavailable
+live-gate rejections; editor preservation/stale-choice/graph/status tests; actual native
 true/false runs with a false branch module that fails if imported; actual gate
 cache reuse; supervisor timeout cancellation; and native selected-checkpoint
-conditional evaluation/comparison checks. Exact commands and terminal results
+conditional evaluation/comparison checks; nested true/false branches, Python and
+component joins, empty joins, transitive skips, native failures, exact selected
+cuts, restored status and native input-ID inspection. Exact commands and terminal results
 are supplied in the separate patch's verification evidence. This document does
 not claim full aggregate installed-wheel, native GUI, remote CI, other OS/GPU,
 hostile-code or remote/provider acceptance. This follow-on is rebased onto the selected-cut resume, evaluation-attribution
 and phased-promotion baseline. Live selected cuts additionally preserve early
 evaluations only when the trainer and compatible evaluator are both explicitly
-selected; boundary data must match the same pinned native input. This does not
-relax the conditions-plus-live rejection. Final source pins and installed source
+selected; boundary data must match the same pinned native input. Conditional live evaluation additionally requires its gate to precede the trainer
+and honors that gate before launching the first evaluator child. Final source pins and installed source
 inventory still require regeneration and replay on the final union.
 
 Primary SDK references inspected:
@@ -123,3 +165,26 @@ Primary SDK references inspected:
 
 The pinned package behavior and actual native tests are the authority; current
 online documentation may describe later versions.
+
+### Branch/join and conditional-live verification (2026-10-12)
+
+Task-scoped evidence is under `evidence/tests/native-branches/`:
+
+- `native.xml`: seven real ZenML branch/join cases passed, including Python and
+  component joins, nested/required skip chains, deliberate exception/type failures,
+  empty joins, exact selected cuts and restored native identity/input inspection.
+- `live.xml`: four real CPU cases passed. A permitted evaluator published scores
+  before a later training checkpoint. False evaluator and trainer gates produced
+  no live checkpoint/evaluation records. Cancellation retained completed scores
+  and left no queued/running evaluator children.
+- `regression.xml`: native MCP/HTTP parity, deadline termination, explicit cancel
+  and false-gate cache reuse passed. The true-gate cache assertion failed during
+  concurrent runtime-source edits: the same immutable recipe produced different
+  runtime-derived cache keys. The assertion remains unchanged. The exact keys are
+  retained in `concurrent-cache-key-change.json`; stable-union replay is required.
+- 89 recipe/selection/condition contract tests and six editor condition tests
+  passed, along with TypeScript checks/build and targeted Python lint.
+
+These are focused tests, not a claim of a clean full-product aggregate or native
+GUI acceptance. Generated contract drift from the concurrent union still needs
+regeneration and final verification by the integrating task.

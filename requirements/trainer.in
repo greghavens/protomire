@@ -1,0 +1,2 @@
+# Optional Transformers Trainer overlay; all transitive dependencies are in the backend profile.
+accelerate==1.11.0

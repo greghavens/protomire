@@ -11,6 +11,7 @@ import platform
 from pathlib import Path
 
 from . import PORT_TYPES, identity, read_checkpoint, read_export, validate_component, validate_resume
+from ..dependency_files import dependency_sha256
 
 _SNAPSHOT_ROOTS: set[Path] = set()
 
@@ -85,7 +86,7 @@ def runtime_source_identity(package_root: Path | None = None) -> str:
     """Hash installed execution code, independent of checkout/installation paths."""
     root = package_root or Path(__file__).resolve().parents[2]
     files = list((root / "backend").rglob("*.py"))
-    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "evaluation.py", "tracking.py", "dataset.py", "models.py", "store.py", "research_contract.py") if (root / name).is_file()]
+    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py") if (root / name).is_file()]
     return identity({str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in sorted(files)})
 
@@ -132,7 +133,7 @@ def dispatch(inputs: dict, spec: dict):
     output.mkdir(parents=True, exist_ok=True)
     for dependency in spec.get("dependencies", []):
         path = spec.get("dependency_paths", {}).get(dependency["id"])
-        if not path or hashlib.sha256(Path(path).read_bytes()).hexdigest() != dependency["sha256"]:
+        if not path or dependency_sha256(path) != dependency["sha256"]:
             raise ValueError("Component dependency changed after admission: " + dependency["id"])
     actual_environment = runtime_environment()
     from ..placement import runtime_device_identity, effective_resume_modes
@@ -147,7 +148,7 @@ def dispatch(inputs: dict, spec: dict):
         "training": identity({"component": component, "parameters": parameters}),
         "data": identity({k: input_identity(v) for k, v in inputs.items()})}
     run_context = {"protocol": component["protocol"], "output_dir": str(output),
-                   "job_dir": spec["job_dir"], "node_id": spec["node_id"], "identities": identities, "environment": actual_environment,
+                   "job_dir": spec["job_dir"], "node_id": spec["node_id"], "invocation": spec.get("invocation", {}), "identities": identities, "environment": actual_environment,
                    "device": selected_device, "placement": selected_placement, "resume_modes": resume_modes,
                    "source_root": spec["source_root"], "source": spec["source"],
                    "dependencies": spec.get("dependency_paths", {}),
@@ -158,6 +159,10 @@ def dispatch(inputs: dict, spec: dict):
         descriptor = validate_resume(Path(spec["resume_path"]), mode, identities,
                                      {**component["capabilities"], "resume_modes": resume_modes})
         run_context.update(resume={"path": spec["resume_path"], "descriptor": descriptor}, resume_mode=mode)
+    if component["role"] == "training" and spec.get("iteration_resume_input"):
+        previous = inputs[spec["iteration_resume_input"]]
+        descriptor = validate_resume(previous, "warm_start", identities, {**component["capabilities"], "resume_modes": resume_modes})
+        run_context.update(resume={"path": str(previous), "descriptor": descriptor, "artifact_id": spec["iteration_checkpoint_ref"]}, resume_mode="warm_start")
     function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
     run_context["source_root"] = function.__source_snapshot_root__
     coordinator = None
@@ -213,18 +218,28 @@ def dispatch(inputs: dict, spec: dict):
     return record_outputs(spec, values[0] if len(values) == 1 else tuple(values))
 
 
-def compile_component(node: dict, job: Path):
+def _shim_inputs(node: dict, input_names: set[str] | None) -> list[dict]:
+    inputs = node["inputs"]
+    if input_names is None:
+        return inputs
+    if any(port.get("required", True) and port["name"] not in input_names for port in inputs):
+        raise ValueError("Native shim cannot omit a required typed input")
+    return [port for port in inputs if port["name"] in input_names]
+
+
+def compile_component(node: dict, job: Path, *, input_names: set[str] | None = None):
     """Generate only a typed ABI shim, not model/training code, for native ZenML."""
     from zenml import step
     validate_component(node)
     # Index-generated identifiers keep user-controlled names out of executable code.
-    tag = hashlib.sha256(node["id"].encode()).hexdigest()[:20]
+    inputs = _shim_inputs(node, input_names)
+    tag = hashlib.sha256((node["id"] + repr(inputs)).encode()).hexdigest()[:20]
     name = "modelbuilder_adapter_" + tag
-    arguments = [f"{p['name']}: {PORT_TYPES[p['type']].__name__}" for p in node["inputs"]]
+    arguments = [f"{p['name']}: {PORT_TYPES[p['type']].__name__}" for p in inputs]
     arguments.append("spec: dict")
     returns = [f"Annotated[{PORT_TYPES[p['type']].__name__}, {p['name']!r}]" for p in node["outputs"]]
     annotation = returns[0] if len(returns) == 1 else "tuple[" + ", ".join(returns) + "]"
-    mapping = ", ".join(f"{p['name']!r}: {p['name']}" for p in node["inputs"])
+    mapping = ", ".join(f"{p['name']!r}: {p['name']}" for p in inputs)
     call = f"dispatch({{{mapping}}}, spec)"
     # ZenML 0.97 recognizes multiple outputs only from a literal tuple return.
     body = (f"return {call}" if len(returns) == 1 else
@@ -254,15 +269,16 @@ def dispatch_python(arguments: dict, spec: dict):
     return record_outputs(spec, function(**arguments))
 
 
-def compile_python(node: dict, job: Path):
+def compile_python(node: dict, job: Path, *, input_names: set[str] | None = None):
     """Persist the deadline/identity wrapper so ZenML reconstruction cannot drop it."""
     from zenml import step
     import keyword
-    tag = hashlib.sha256(node["id"].encode()).hexdigest()[:20]
+    inputs = _shim_inputs(node, input_names)
+    tag = hashlib.sha256((node["id"] + repr(inputs)).encode()).hexdigest()[:20]
     name = "modelbuilder_python_" + tag
     if any(port["type"] not in PORT_TYPES for port in node["inputs"] + node["outputs"]):
         raise ValueError("Python shim requires a declared supported native artifact type")
-    input_types = {p["name"]: PORT_TYPES[p["type"]].__name__ for p in node["inputs"]}
+    input_types = {p["name"]: PORT_TYPES[p["type"]].__name__ for p in inputs}
     input_types.update({key: type(value).__name__ if type(value) in (str, int, float, bool, dict, list) else "dict"
                         for key, value in node.get("parameters", {}).items()})
     if any(not key.isidentifier() or keyword.iskeyword(key) or key == "spec" for key in input_types):

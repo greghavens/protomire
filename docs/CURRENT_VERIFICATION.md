@@ -1,5 +1,45 @@
 # Current verification and remaining gates
 
+## 2026-10-12 implementation in progress
+
+The full product remains incomplete. This working-tree checkpoint adds real
+Transformers Trainer/inference components, streaming datasets, conditional live
+execution, bounded native iteration, PDF/OCR research ingestion, a locked CUDA
+profile and an offline-tested native Modal bridge. These are implementation and
+focused-test results, not a replacement for final combined acceptance.
+
+- The first combined light regression has **1,916 passed, 137 skipped and 59
+  deselected**; two shipping source-closure tests fail because the new source
+  modules are not yet repinned to a committed runtime. They remain required.
+- Focused real CPU Trainer/native pipelines, streaming JSONL/Parquet consumption,
+  general local inference and research HTTP/MCP extraction tests pass. Reports
+  remain separately recorded; overlapping counts are not summed.
+- Native bounded-iteration tests demonstrate actual iterations, early exit,
+  checkpoint ancestry and explicit warm-start. Final parity/regression checks
+  are in progress. General concurrent native execution is still outstanding.
+- The CUDA profile installs and passes CPU-side admission checks. Actual GPU
+  execution is unverified because this environment exposes no GPU. MPS and other
+  platform acceptance remain hardware-specific gates.
+- Fresh Code - OSS source/toolchain preparation and native-header preparation
+  succeeded. The build stopped at an npm network policy denial. An offline-only
+  retry then failed with `ENOTCACHED` for `vscode-uri-3.0.2.tgz`. Neither attempt
+  establishes a current native build or GUI pass.
+- The Modal SDK bridge is offline-tested; production dispatch remains blocked
+  by source-image provenance and authoritative all-in billing/runtime limits.
+  An account or spending approval alone does not resolve those design gates.
+- The host cannot establish the required isolated worker namespace. No hostile
+  code sandbox is claimed. Native GUI, macOS/Windows/ARM runtime, live vendor
+  assistant calls and online tracking remain separate unverified gates.
+- Hosted CI remains disabled by user instruction. All checks here run locally.
+
+Source freeze, current installed-wheel replay, refreshed shipping pins, final
+combined tests and publication verification are still pending. The preceding
+report below is preserved as historical evidence, not applied to this source.
+
+---
+
+# Historical 2026-10-10 verification
+
 Runtime source: `decf680d96ed92e28170580c09bf388c17a1ff22`, with an **86-file verified source closure**. This is an implementation checkpoint, not full-product completion. The [preceding 84-file report and passing d14 local CI](https://github.com/greghavens/modelbuilder/blob/5475d94145ae68bca06fd3bca05bd52e3f43143c/docs/CURRENT_VERIFICATION.md) remain historical evidence.
 
 ## Verified at this checkpoint

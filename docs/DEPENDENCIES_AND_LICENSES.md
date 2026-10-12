@@ -14,13 +14,19 @@ not change this. Dependencies retain their own licenses.
 | Node build toolchain | 22.19.0, SHA256 in distribution pin | Node license and bundled notices; local source-build toolchain |
 | ZenML | 0.97.0 | Apache-2.0; separate interpreter, public APIs |
 | PyTorch CPU | 2.9.0+cpu | BSD-3-Clause plus bundled notices |
+| PyTorch CUDA (explicit optional backend) | 2.9.0+cu128 | BSD-3-Clause plus bundled notices; official hash-locked Linux wheels |
+| NVIDIA CUDA user-space libraries (optional CUDA closure) | Exact versions in `backend-cuda-cu128-*.lock` | NVIDIA proprietary redistribution terms and bundled notices; not covered by the PyTorch BSD license; no driver installed |
+| Triton (optional CUDA closure) | 3.5.0 | MIT plus bundled notices |
 | Transformers | 4.57.1 | Apache-2.0 |
+| Accelerate (optional Trainer overlay) | 1.11.0 | Apache-2.0; hash-locked backend-only wheel, no service dependency |
 | PyArrow (optional Parquet adapter) | 25.0.0 | Apache-2.0 plus bundled native-library notices; official wheel only, hash-locked optional overlay |
 | NumPy | 2.2.6 | BSD-3-Clause core; wheel also contains additional notices including BLAS and compiler runtime libraries |
 | FastAPI / Pydantic | 0.115.12 / 2.11.4 | MIT |
 | Uvicorn / HTTPX | 0.34.2 / 0.28.1 | BSD-3-Clause |
 | Official MCP Python SDK | 1.30.0 | MIT |
 | jsonschema | 4.23.0 service, 4.26.0 backend | MIT |
+| Poppler PDF command-line tools (optional research extraction) | Operator-installed; exact executed version retained in extraction provenance | GPL-2.0-or-later; separate system commands, not bundled or installed by the feature |
+| Tesseract (optional local research OCR) | Operator-installed; exact executed version retained in extraction provenance | Apache-2.0; language-data notices also apply; separate system command, no cloud OCR |
 | Python / Jupyter / basedpyright / debugpy extensions | Exact versions and SHA256s in distribution manifest | Individually checked MIT artifacts from Open VSX; license copies retained |
 
 The service and backend dependency graphs intentionally differ. Never install
@@ -64,3 +70,7 @@ arbitrary imported Python.
 
 See `distribution/README.md`, `distribution/extension_manifest/extensions.lock.json`
 and its retained license texts for primary-source URLs and exact artifacts.
+
+The optional CUDA profile installs NVIDIA runtime distributions under their supplied
+licenses. Consult the installed distribution notices and [CUDA EULA](https://docs.nvidia.com/cuda/eula/index.html)
+before redistributing a bundled environment. It does not bundle or install the NVIDIA driver.

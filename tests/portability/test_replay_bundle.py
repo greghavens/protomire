@@ -1,6 +1,7 @@
 """Fast transport/packaging assertions. These are not the real T19 CPU run."""
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import importlib.util
@@ -29,6 +30,23 @@ def test_shipping_recipe_has_complete_verified_source_closure(fixture):
     assert {item["path"] for item in recipe["source"]["files"]} == set(inventory)
     pinned = pin_source_files(recipe, ROOT, inventory, recipe["source"]["commit"])
     assert pinned == recipe
+
+
+def test_source_inventory_includes_all_runtime_helpers_and_optional_profiles():
+    inventory = replay.source_inventory(ROOT)
+    assert len(inventory) == len(set(inventory))
+    assert {
+        "src/modelbuilder/dataset_streaming.py", "src/modelbuilder/parquet_stream.py",
+        "src/modelbuilder/parquet_stream_decode.py", "src/modelbuilder/iterations.py",
+        "src/modelbuilder/backend/native_invocations.py",
+        "src/modelbuilder/backend/components/transformers_loader.py",
+        "src/modelbuilder/backend/components/transformers_training.py",
+        "src/modelbuilder/backend/components/transformers_inference.py",
+        "src/modelbuilder/research_documents.py", "src/modelbuilder/research_document_decode.py",
+        "requirements/profiles/trainer.lock",
+        "requirements/profiles/remote-modal-linux-x64.lock",
+    } <= set(inventory)
+    assert all(name.endswith((".py", ".toml", ".lock")) for name in inventory)
 
 
 @pytest.fixture
@@ -351,13 +369,21 @@ def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_so
     with zipfile.ZipFile(wheel["wheel"]) as archive:
         for path in ["platform_file_access.py", "source_workspace.py", "recipe_registry_contract.py",
                      "remote/__init__.py", "remote/contracts.py", "remote/operation_contract.py",
+                     "remote/modal_contract.py", "remote/modal_runtime.py", "remote/modal_provider.py",
+                     "remote/modal_journal.py", "remote/modal_build_inputs.py",
                      "source_pinning_contract.py", "export_packages.py", "backend/native_exports.py",
-                     "execution.py", "conditions.py", "backend/conditional_worker.py", "compute_discovery.py", "backend/native_inputs.py",
-                     "parquet_reader.py", "parquet_decode.py",
+                     "execution.py", "conditions.py", "iterations.py", "backend/native_invocations.py",
+                     "backend/conditional_worker.py", "compute_discovery.py", "backend/native_inputs.py",
+                     "dataset_streaming.py", "parquet_reader.py", "parquet_decode.py",
+                     "parquet_stream.py", "parquet_stream_decode.py",
+                     "backend/components/transformers_loader.py", "backend/components/transformers_training.py",
+                     "backend/components/transformers_inference.py",
                      "backend/evaluation_binding.py", "backend/promotion.py"]:
             assert "modelbuilder/" + path in archive.namelist()
-        for path in ("service.py", "dataset_preparation.py", "research_scheduler.py", "literature_fetch.py"):
+        for path in ("service.py", "dataset_preparation.py", "research_scheduler.py", "literature_fetch.py",
+                     "research_documents.py", "research_document_decode.py"):
             assert ("modelbuilder/" + path in archive.namelist()) == (kind == "service")
+        assert_local_import_closure(archive)
         archive.extractall(installed)
     sample = tmp_path / "sample.parquet"
     if os.environ.get("MODELBUILDER_REQUIRE_PARQUET") == "1" or importlib.util.find_spec("pyarrow"):
@@ -369,17 +395,26 @@ import importlib, importlib.util, pathlib, sys
 root = pathlib.Path(sys.argv[1]).resolve()
 sys.path.insert(0, str(root))
 for name in ('modelbuilder.dataset', 'modelbuilder.models', 'modelbuilder.source_workspace',
+             'modelbuilder.dataset_streaming', 'modelbuilder.parquet_stream',
              'modelbuilder.backend.admission', 'modelbuilder.backend.operator_config',
              'modelbuilder.export_packages', 'modelbuilder.backend.native_exports',
-             'modelbuilder.execution', 'modelbuilder.conditions', 'modelbuilder.backend.native_inputs',
+             'modelbuilder.execution', 'modelbuilder.conditions', 'modelbuilder.iterations',
+             'modelbuilder.backend.native_invocations', 'modelbuilder.backend.native_inputs',
+             'modelbuilder.backend.components.transformers_loader',
+             'modelbuilder.backend.components.transformers_training',
+             'modelbuilder.backend.components.transformers_inference',
              'modelbuilder.parquet_reader',
              'modelbuilder.backend.evaluation_binding', 'modelbuilder.backend.promotion',
-             'modelbuilder.remote.operation_contract', 'modelbuilder.remote.provider'):
+             'modelbuilder.remote.operation_contract', 'modelbuilder.remote.provider',
+             'modelbuilder.remote.modal_runtime', 'modelbuilder.remote.modal_provider',
+             'modelbuilder.remote.modal_build_inputs'):
     module = importlib.import_module(name)
     assert pathlib.Path(module.__file__).resolve().is_relative_to(root), name
 if sys.argv[2] == 'service':
     import json, subprocess
-    for name in ('modelbuilder.service', 'modelbuilder.api', 'modelbuilder.research_scheduler', 'modelbuilder.literature_fetch'):
+    for name in ('modelbuilder.service', 'modelbuilder.api', 'modelbuilder.research_scheduler',
+                 'modelbuilder.literature_fetch', 'modelbuilder.research_documents',
+                 'modelbuilder.research_document_decode'):
         module = importlib.import_module(name)
         assert pathlib.Path(module.__file__).resolve().is_relative_to(root), name
     helper = root / 'modelbuilder/literature_fetch.py'
@@ -387,6 +422,10 @@ if sys.argv[2] == 'service':
     child = subprocess.run([sys.executable, '-I', str(helper)], input=json.dumps({'query':'','limit':1}),
                            text=True, capture_output=True, timeout=5)
     assert child.returncode == 1 and child.stdout == ''
+    helper = root / 'modelbuilder/research_document_decode.py'
+    child = subprocess.run([sys.executable, '-I', str(helper)], input=b'not a PDF',
+                           capture_output=True, timeout=5)
+    assert child.returncode == 1 and json.loads(child.stdout)['error'] == 'invalid_document'
 else:
     assert importlib.util.find_spec('modelbuilder.service') is None
 sample = pathlib.Path(sys.argv[3])
@@ -394,6 +433,15 @@ if sample.exists():
     from modelbuilder.parquet_reader import read_parquet
     assert read_parquet(sample.read_bytes(), max_file_bytes=100000, max_rows=100, decoded_budget=100000) == [
         {'id': 'installed', 'text': 'bounded decoder'}]
+    from modelbuilder.parquet_stream import iter_parquet
+    from modelbuilder.dataset_streaming import limits
+    with sample.open('rb') as stream:
+        rows = list(iter_parquet(stream, limits()))
+    assert [row[2] for row in rows] == [{'id': 'installed', 'text': 'bounded decoder'}]
+from modelbuilder.backend.components import component_catalog
+ids = {entry['id'] for entry in component_catalog()}
+assert {'modelbuilder.transformers.train', 'modelbuilder.transformers.evaluate',
+        'modelbuilder.transformers.export'} <= ids
 from modelbuilder.remote.provider import diagnostics
 assert diagnostics()['remote_execution_enabled'] is False
 print('Isolated runtime wheel import closure passed')
@@ -403,3 +451,27 @@ print('Isolated runtime wheel import closure passed')
                             capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "Isolated runtime wheel import closure passed" in result.stdout
+
+
+def assert_local_import_closure(archive):
+    """Cover lazy imports too, without importing native frameworks or source hooks."""
+    files = {name for name in archive.namelist() if name.endswith(".py")}
+    for path in files:
+        package = path.removesuffix(".py").replace("/", ".").rsplit(".", 1)[0]
+        for node in ast.walk(ast.parse(archive.read(path), filename=path)):
+            if isinstance(node, ast.Import):
+                modules = [item.name for item in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                module = (importlib.util.resolve_name("." * node.level + (node.module or ""), package)
+                          if node.level else node.module or "")
+                modules = [module]
+                # A from-import can refer to a symbol or a sibling module. Only
+                # treat names that exist in the source snapshot as modules.
+                modules += [module + "." + item.name for item in node.names
+                            if (ROOT / "src" / module.replace(".", "/") / (item.name + ".py")).is_file()]
+            else:
+                continue
+            for module in modules:
+                if module == "modelbuilder" or module.startswith("modelbuilder."):
+                    stem = module.replace(".", "/")
+                    assert stem + ".py" in files or stem + "/__init__.py" in files, (path, module)

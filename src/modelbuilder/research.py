@@ -102,6 +102,9 @@ class ResearchWorkflow:
             return self._finding(action, payload, actor)
         if kind == "text":
             return self._text(action, payload, actor)
+        if kind == "document" and action == "capabilities":
+            from .research_documents import document_capabilities
+            return {"project_id": payload["project_id"], **document_capabilities()}
         if kind == "proposal":
             return self._proposal(action, payload, actor)
         raise ServiceError("unknown_operation", "Research operation is not available", status_code=404)
@@ -363,6 +366,11 @@ class ResearchWorkflow:
                                                    else "passage_matched_user_supplied_text"),
                                 source_validation=text["source_validation"], rights_validation=text["rights_validation"],
                                 rights_basis=text["rights_basis"], license=text["license"])
+                if text.get("pages"):
+                    from .research_content import page_references
+                    citation.update(document_sha256=text["provenance"]["raw_sha256"],
+                                    pages=page_references(text, start, end),
+                                    extraction_provenance=copy.deepcopy(text["provenance"]))
             citation["evidence_key"] = _evidence_key(evidence, text)
             key = (citation["evidence_key"], citation.get("start"), citation.get("end"))
             if key in unique:

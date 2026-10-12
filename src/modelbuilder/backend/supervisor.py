@@ -46,7 +46,7 @@ def main(job: Path, lease_fd: int | None = None) -> None:
             cancellation = (job / "cancel.json").exists()
             if timed_out and not cancellation:
                 write_json(job / "cancel.json", {"requested_at": now(), "reason": "node_timeout_exceeded" if expired_node else "max_runtime_exceeded",
-                                                 **({"node_id": expired_node["node_id"]} if expired_node else {})})
+                                                 **({key: expired_node[key] for key in ("node_id", "canonical_node_id", "invocation_id", "iteration_block_id", "iteration", "max_iterations") if key in expired_node} if expired_node else {})})
                 cancellation = True
             if cancellation:
                 if cancelled_at is None:

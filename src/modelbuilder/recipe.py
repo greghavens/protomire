@@ -30,6 +30,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError, ValidationError
 from .backend.components import COMPONENT_SCHEMA, validate_component
 from .conditions import CONDITION_SCHEMA, ConditionError, control_dependencies, validate_conditions
+from .iterations import ITERATIONS_SCHEMA, validate_iterations
 
 MAX_BUNDLE_BYTES = 32 * 1024 * 1024
 MAX_FILE_BYTES = 4 * 1024 * 1024
@@ -175,6 +176,7 @@ RECIPE_SCHEMA = {
                             "files": {"type": "array", "items": FILE_REF_SCHEMA, "maxItems": MAX_BUNDLE_FILES}},
                            ["repository", "commit"]),
         "nodes": {"type": "array", "items": NODE_SCHEMA, "maxItems": 4096},
+        "bounded_iterations": ITERATIONS_SCHEMA,
         "edges": {"type": "array", "items": _object({key: {"type": "string", "pattern": IDENTIFIER}
                   for key in ["source_node", "source_port", "target_node", "target_port"]},
                  ["source_node", "source_port", "target_node", "target_port"]), "maxItems": 16384},
@@ -379,6 +381,7 @@ def normalize_recipe(recipe: dict) -> dict:
         ])
     try:
         validate_conditions(result)
+        validate_iterations(result)
     except ConditionError as error:
         _fail(error.code, error.message, **error.details)
     _scan_manifest(result)
@@ -475,11 +478,16 @@ def normalize_recipe(recipe: dict) -> dict:
             if indegree[target] == 0:
                 ready.append(target)
     if visited != len(nodes):
-        _fail("graph_cycle", "Cycles and loop nodes are not supported in recipe v0")
+        _fail("graph_cycle", "Ordinary data/control edges must remain acyclic; use explicit bounded_iterations for feedback")
     for node in nodes.values():
         for port in node["inputs"]:
             if port.get("required", False) and (node["id"], port["name"]) not in incoming:
                 _fail("unconnected_input", "A required input is not connected", node_id=node["id"], port=port["name"])
+    for block in result.get("bounded_iterations", []):
+        block["node_ids"].sort()
+        block["state"].sort(key=lambda state: (state["target_node"], state["target_port"]))
+    if "bounded_iterations" in result:
+        result["bounded_iterations"].sort(key=lambda block: block["id"])
     result["nodes"].sort(key=lambda node: node["id"])
     result["edges"].sort(key=lambda edge: tuple(edge[key] for key in ("source_node", "source_port", "target_node", "target_port")))
     result["resources"].sort(key=lambda ref: ref["id"])

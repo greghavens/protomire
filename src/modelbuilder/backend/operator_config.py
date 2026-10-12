@@ -12,7 +12,7 @@ def load_operator_config(path: str | Path | None = None) -> dict:
         return {}
     source = Path(path).expanduser().resolve()
     value = json.loads(source.read_text())
-    allowed = {"source_root", "python_executable", "pretrained_path", "trusted_code_roots", "dependency_paths", "dataset_roots", "source_roots"}
+    allowed = {"source_root", "python_executable", "pretrained_path", "trusted_code_roots", "dependency_paths", "dataset_roots", "source_roots", "dataset_limits"}
     if not isinstance(value, dict) or set(value) - allowed:
         raise ValueError("Operator configuration must be an object with supported backend settings only")
     def local_path(item, *, preserve_symlink=False):
@@ -47,6 +47,9 @@ def load_operator_config(path: str | Path | None = None) -> dict:
         resolved_roots[project] = {alias: local_path(item) for alias, item in aliases.items()}
     if resolved_roots:
         result["dataset_roots"] = resolved_roots
+    if "dataset_limits" in value:
+        from ..dataset_streaming import limits
+        result["dataset_limits"] = limits(value["dataset_limits"])
     if "source_roots" in value:
         aliases = value["source_roots"]
         if not isinstance(aliases, dict):

@@ -1,4 +1,4 @@
-"""One typed graph, explicit terminal conditions, no hidden selection expansion."""
+"""One typed graph, explicit branch conditions, no hidden selection expansion."""
 import copy
 
 import pytest
@@ -37,8 +37,6 @@ def test_typed_condition_is_in_one_canonical_immutable_recipe():
     (lambda b:b["nodes"][0]["outputs"][0].update(type="int"),"condition_type_mismatch"),
     (lambda b:b["nodes"][1].update(loop={"max_iterations":3}),"unsupported_control_flow"),
     (lambda b:b["nodes"][1].update(repeat=3),"unsupported_control_flow"),
-    (lambda b:b["edges"].append({"source_node":"terminal","source_port":"output","target_node":"gate","target_port":"data"}),"unsupported_conditional_downstream"),
-    (lambda b:b["evaluation"].update(live={"enabled":True}),"unsupported_conditional_live_evaluation"),
 ])
 def test_unsupported_or_ambiguous_controls_fail_validation(change,code):
     body=recipe()
@@ -77,3 +75,91 @@ def test_direct_admission_contract_rejects_expression_and_malformed_conditions(c
         validate_conditions(body)
     with pytest.raises(ServiceError):
         selection(body)
+
+
+def test_nested_conditions_and_typed_downstream_joins_share_existing_graph():
+    body = recipe()
+    nested = copy.deepcopy(body['nodes'][1])
+    nested.update(id='nested', inputs=[{'name': 'left', 'type': 'dict', 'required': False}])
+    nested.pop('condition')
+    body['nodes'].append(nested)
+    body['edges'] = [{'source_node': 'terminal', 'source_port': 'output', 'target_node': 'nested', 'target_port': 'left'}]
+    assert normalize_recipe(body)['edges'] == body['edges']
+    body['nodes'][1]['outputs'] = [{'name': 'output', 'type': 'bool'}]
+    body['nodes'][2]['inputs'] = []
+    body['nodes'][2]['condition'] = {'source_node': 'terminal', 'source_port': 'output', 'equals': True}
+    body['edges'] = []
+    assert next(node for node in normalize_recipe(body)['nodes'] if node['id'] == 'nested')['condition'] == body['nodes'][2]['condition']
+
+
+def test_mixed_data_control_cycle_still_fails():
+    body = recipe()
+    body['nodes'][0]['inputs'] = [{'name': 'data', 'type': 'dict'}]
+    body['edges'] = [{'source_node': 'terminal', 'source_port': 'output', 'target_node': 'gate', 'target_port': 'data'}]
+    with pytest.raises(RecipeValidationError) as failure:
+        normalize_recipe(body)
+    assert failure.value.code == 'graph_cycle'
+
+
+def test_native_input_parameter_shadowing_and_optional_builtins_are_rejected():
+    body = recipe()
+    body['nodes'][1]['inputs'] = [{'name': 'data', 'type': 'dict', 'required': False}]
+    body['nodes'][1]['parameters'] = {'data': {}}
+    with pytest.raises(RecipeValidationError) as failure:
+        normalize_recipe(body)
+    assert failure.value.code == 'ambiguous_input_parameter'
+    body['nodes'][1]['parameters'] = {}
+    body['nodes'][1].update(kind='dataset.validate', implementation_ref='builtin:dataset.validate')
+    with pytest.raises(RecipeValidationError) as failure:
+        normalize_recipe(body)
+    assert failure.value.code == 'unsupported_optional_input'
+
+
+def test_skip_projection_requires_native_gate_artifact_and_a_valid_transitive_chain():
+    from types import SimpleNamespace
+    from modelbuilder.conditions import recorded_decisions, skipped_dependencies
+    import hashlib
+    body = recipe()
+    downstream = copy.deepcopy(body['nodes'][1])
+    downstream.update(id='join', inputs=[{'name': 'left', 'type': 'dict'}])
+    downstream.pop('condition')
+    body['nodes'].append(downstream)
+    body['edges'] = [{'source_node': 'terminal', 'source_port': 'output', 'target_node': 'join', 'target_port': 'left'}]
+    chosen = {'gate', 'terminal', 'join'}
+    blocked = skipped_dependencies(body, downstream, chosen, {'terminal'})
+    native = {'gate': SimpleNamespace(outputs={'allowed': [SimpleNamespace(id='native-artifact')]})}
+    records = {'join': {'status': 'skipped', 'reason': 'upstream_skipped', 'condition': None,
+                       'blocked_by': blocked, 'status_source': 'native_run_metadata'},
+               'terminal': {'status': 'skipped', 'condition': body['nodes'][1]['condition'],
+                            'gate_value': False, 'gate_value_sha256': hashlib.sha256(b'false').hexdigest(),
+                            'gate_artifact_id': 'native-artifact', 'status_source': 'native_run_metadata'}}
+    assert recorded_decisions(body, chosen, records, native) == records
+    assert not recorded_decisions(body, chosen, records, {})
+    assert not recorded_decisions(body, {'join'}, records, native)
+    assert not recorded_decisions(body, {'terminal', 'join'}, records, native)
+    records['terminal']['gate_value'] = True
+    assert not recorded_decisions(body, chosen, records, native)
+
+
+def test_live_evaluator_gate_must_be_available_before_training_without_hidden_edges():
+    body = recipe()
+    gate = body['nodes'][0]
+    trainer = copy.deepcopy(body['nodes'][1])
+    trainer.update(id='train', kind='model.train')
+    evaluator = copy.deepcopy(body['nodes'][1])
+    evaluator.update(id='evaluate', kind='model.evaluate', inputs=[{'name': 'checkpoint', 'type': 'dict'}])
+    body['nodes'] = [gate, trainer, evaluator]
+    body['edges'] = [{'source_node': 'train', 'source_port': 'output', 'target_node': 'evaluate', 'target_port': 'checkpoint'}]
+    body['evaluation']['live'] = {'enabled': True}
+    before = copy.deepcopy(body)
+    validate_conditions(body)
+    assert body == before
+    trainer.pop('condition')
+    with pytest.raises(ConditionError) as failure:
+        validate_conditions(body)
+    assert failure.value.code == 'unsupported_conditional_live_gate'
+    trainer['outputs'] = [{'name': 'allowed', 'type': 'bool'}]
+    evaluator['condition'] = {'source_node': 'train', 'source_port': 'allowed', 'equals': True}
+    with pytest.raises(ConditionError) as failure:
+        validate_conditions(body)
+    assert failure.value.code == 'unsupported_conditional_live_gate'

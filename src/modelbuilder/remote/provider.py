@@ -1,8 +1,8 @@
 """ZenML/provider adapter boundary and an explicitly local deterministic simulator.
 
-No provider SDK, network request, credentials, provisioning, or training runner
-is implemented here. A future adapter delegates execution to its existing
-ZenML stack/orchestrator, and provides separate cleanup/billing observations.
+The simulator has no provider side effects. The optional Modal implementation
+uses the existing ZenML orchestrator and public provider SDK; its financial
+admission gate remains closed on specific unverified/missing capabilities.
 """
 from __future__ import annotations
 
@@ -45,6 +45,7 @@ class ProviderAdapter(Protocol):
 
 
 def diagnostics(adapter: ProviderAdapter | None = None) -> dict:
+    from .modal_contract import implementation_diagnostics
     declared = adapter.declared_capabilities() if adapter else frozenset()
     return {
         "configured": adapter is not None,
@@ -56,6 +57,7 @@ def diagnostics(adapter: ProviderAdapter | None = None) -> dict:
         "remote_execution_enabled": False,
         "spending_enforced": False,
         "remote_acceptance": "BLOCKED",
+        "available_implementations": [implementation_diagnostics()],
         "blockers": [
             "Production dispatch is disabled in this release.",
             "No configured provider has passed authorized funded concurrency, cancellation, cleanup and invoice tests.",

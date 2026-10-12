@@ -1,4 +1,5 @@
 """Tiny real subprocesses test CI scheduling/cleanup; no native training occurs."""
+import ast
 from collections import Counter
 import importlib.util
 import json
@@ -90,6 +91,8 @@ def test_group_environment_and_junit_paths_are_isolated(tmp_path, monkeypatch):
     temporary.mkdir()
     monkeypatch.setenv("MODELBUILDER_REQUIRE_PARQUET", "1")
     monkeypatch.setenv("MODELBUILDER_TRACKING_TEST_PYTHON", "/approved/tracking/python")
+    monkeypatch.delenv("MODELBUILDER_REQUIRE_CUDA", raising=False)
+    monkeypatch.delenv("MODELBUILDER_REQUIRE_TRAINER_DEVICE", raising=False)
     groups = runner.build_groups(root, Path(sys.executable), temporary)
     assert [group.name for group in groups] == ["cpu-lifecycle", "integration", "cpu-components"]
     for key in ("HOME", "XDG_CACHE_HOME", "ZENML_CONFIG_PATH", "ZENML_LOCAL_STORES_PATH", "TMPDIR", "TMP", "TEMP"):
@@ -99,14 +102,180 @@ def test_group_environment_and_junit_paths_are_isolated(tmp_path, monkeypatch):
         env = group.environment
         assert env["MODELBUILDER_REQUIRE_PARQUET"] == "1"
         assert env["MODELBUILDER_TRACKING_TEST_PYTHON"] == "/approved/tracking/python"
+        assert "MODELBUILDER_REQUIRE_CUDA" not in env
+        assert "MODELBUILDER_REQUIRE_TRAINER_DEVICE" not in env
         assert all(env[key] == "1" for key in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"))
         assert any(arg.startswith("--basetemp=") for arg in group.command)
         assert any(arg.startswith("cache_dir=") for arg in group.command)
         if group.name != "integration":
             assert env["MODELBUILDER_REQUIRE_LOCAL_INFERENCE"] == "1"
+            assert env["MODELBUILDER_REQUIRE_TRAINER"] == "1"
             assert all(f"--ignore={path}" in group.command for path in runner.SERVICE_ONLY_TESTS)
         else:
             assert ("-m", "integration") == group.command[-7:-5]
+
+
+def test_new_native_features_are_selected_and_backend_cannot_import_service_transports():
+    assert "tests/iterations/test_native_iterations.py" in runner.SERVICE_TESTS
+    assert "tests/iterations/test_native_iterations.py" in runner.SERVICE_ONLY_TESTS
+    files = {str(path.relative_to(ROOT)) for name in runner.LIFECYCLE_TESTS + runner.COMPONENT_TESTS
+             for path in ((ROOT / name).rglob("test_*.py") if (ROOT / name).is_dir() else [ROOT / name])
+             if str(path.relative_to(ROOT)) not in runner.SERVICE_ONLY_TESTS}
+    assert {
+        "tests/components/test_transformers_training.py", "tests/components/test_transformers_inference.py",
+        "tests/components/test_local_inference.py", "tests/placement/test_cuda_execution.py",
+    } <= files
+    assert not set(runner.SERVICE_ONLY_TESTS) & files
+    for filename in files:
+        for node in ast.walk(ast.parse((ROOT / filename).read_text())):
+            modules = ([entry.name for entry in node.names] if isinstance(node, ast.Import) else
+                       [node.module or ""] if isinstance(node, ast.ImportFrom) else [])
+            assert all(module != "fastapi.testclient" and module.split(".")[0] not in {"httpx", "mcp"}
+                       for module in modules), filename
+
+
+def test_explicit_hardware_requirements_are_preserved_without_becoming_defaults(tmp_path, monkeypatch):
+    (tmp_path / ".venv-backend/bin").mkdir(parents=True)
+    (tmp_path / ".venv-backend/bin/python").touch()
+    temporary = tmp_path / "groups"
+    temporary.mkdir()
+    monkeypatch.setenv("MODELBUILDER_REQUIRE_CUDA", "1")
+    monkeypatch.setenv("MODELBUILDER_CUDA_TEST_DEVICE", "cuda:1")
+    monkeypatch.setenv("MODELBUILDER_REQUIRE_TRAINER_DEVICE", "cuda:1")
+    for group in runner.build_groups(tmp_path, Path(sys.executable), temporary):
+        assert group.environment["MODELBUILDER_REQUIRE_CUDA"] == "1"
+        assert group.environment["MODELBUILDER_CUDA_TEST_DEVICE"] == "cuda:1"
+        assert group.environment["MODELBUILDER_REQUIRE_TRAINER_DEVICE"] == "cuda:1"
+
+
+AGGREGATE_SPY = r'''
+import json, os, subprocess, sys, types
+from pathlib import Path
+arguments = sys.argv[1:]
+with Path(os.environ["AGGREGATE_SPY_LOG"]).open("a") as stream:
+    stream.write(json.dumps({"executable": sys.argv[0], "args": arguments,
+        "environment": {key: value for key, value in os.environ.items() if key.startswith("MODELBUILDER_")}}) + "\n")
+if arguments == ["-"]:
+    module = types.ModuleType("modelbuilder.research_documents")
+    ready = os.environ.get("SPY_DOCUMENT_TOOLS", "1") == "1"
+    module.document_capabilities = lambda: {"available": ready, "ocr_available": ready, "tools": {"pdfinfo": ready}}
+    sys.modules["modelbuilder"] = types.ModuleType("modelbuilder")
+    sys.modules[module.__name__] = module
+    subprocess.run = lambda *a, **kw: types.SimpleNamespace(returncode=0,
+        stdout="eng\nosd\n" if os.environ.get("SPY_OCR_ENGLISH", "1") == "1" else "osd\n")
+    exec(compile(sys.stdin.read(), "test_all.sh:document-preflight", "exec"))
+if arguments[:1] == ["-c"] and os.environ.get("SPY_TRAINER", "1") != "1":
+    raise SystemExit(1)
+if arguments == ["run", "test:research-document-http"]:
+    if os.environ.get("SPY_RESEARCH_FAIL") == "1":
+        raise SystemExit(3)
+    Path(os.environ["MODELBUILDER_RESEARCH_DOCUMENT_REPORT"]).write_text('{"status":"PASS","scope":"test double"}')
+if "tests/test_remote_modal_sdk.py" in arguments and os.environ.get("SPY_MODAL_FAIL") == "1":
+    raise SystemExit(4)
+for argument in arguments:
+    if argument.startswith("--junitxml="):
+        Path(argument.split("=", 1)[1]).write_text('<testsuite tests="1"/>')
+'''
+
+
+def aggregate_harness(tmp_path, *, integration=True, modal=True, processes=1, **changes):
+    """Run the real shell control flow with command spies, never native training."""
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    (root / "scripts/test_all.sh").write_text((ROOT / "scripts/test_all.sh").read_text())
+    package = root / "packages/ide_feature"
+    package.mkdir(parents=True)
+    (package / "package-lock.json").write_text("{}")
+    executables = [".venv/bin/python", ".venv-backend/bin/python", "bin/npm"]
+    if modal:
+        executables.append(".venv-remote-modal/bin/python")
+    for filename in executables:
+        path = root / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"#!{sys.executable}\n" + AGGREGATE_SPY)
+        path.chmod(0o755)
+    evidence = root / "evidence/tests"
+    evidence.mkdir(parents=True)
+    (evidence / "research-document-http.json").write_text('{"status":"PASS","scope":"stale"}')
+    (evidence / "remote-modal-sdk.xml").write_text('<testsuite tests="100"/>')
+    environment = {key: value for key, value in os.environ.items()
+                   if not key.startswith(("MODELBUILDER_", "SPY_"))}
+    environment.update(PATH=str(root / "bin") + os.pathsep + os.environ["PATH"],
+        AGGREGATE_SPY_LOG=str(root / "commands.jsonl"), MODELBUILDER_RUN_INTEGRATION=str(int(integration)),
+        MODELBUILDER_NATIVE_TEST_PROCESSES=str(processes), **changes)
+    result = subprocess.run(["bash", "scripts/test_all.sh"], cwd=root, env=environment,
+                            capture_output=True, text=True, timeout=30)
+    commands = [json.loads(line) for line in (root / "commands.jsonl").read_text().splitlines()]
+    return result, root, commands
+
+
+@pytest.mark.parametrize("processes", [1, 2])
+def test_aggregate_runs_research_and_offline_sdk_before_native_with_separate_interpreters(tmp_path, processes):
+    result, root, commands = aggregate_harness(tmp_path, processes=processes)
+    assert result.returncode == 0, result.stdout + result.stderr
+    research = next(row for row in commands if row["args"] == ["run", "test:research-document-http"])
+    modal = next(row for row in commands if "tests/test_remote_modal_sdk.py" in row["args"])
+    service = next(row for row in commands if "--ignore=tests/test_remote_modal_sdk.py" in row["args"])
+    assert service["executable"] == str(root / ".venv/bin/python")
+    assert research["environment"]["MODELBUILDER_GUI_PYTHON"] == service["executable"]
+    assert modal["executable"] == str(root / ".venv-remote-modal/bin/python")
+    assert modal["environment"]["MODELBUILDER_REQUIRE_MODAL_SDK"] == "1"
+    assert "MODELBUILDER_REQUIRE_MODAL_SDK" not in service["environment"]
+    assert all("MODELBUILDER_REQUIRE_CUDA" not in row["environment"] for row in commands)
+    assert commands.index(research) < commands.index(modal)
+    if processes == 1:
+        backend = next(row for row in commands if "tests/integration/test_cpu_fixtures.py" in row["args"])
+        assert backend["executable"] == str(root / ".venv-backend/bin/python")
+        assert backend["environment"]["MODELBUILDER_REQUIRE_TRAINER"] == "1"
+        assert backend["environment"]["MODELBUILDER_REQUIRE_LOCAL_INFERENCE"] == "1"
+        assert all(f"--ignore={path}" in backend["args"] for path in runner.SERVICE_ONLY_TESTS)
+        integration = next(row for row in commands if "tests/iterations/test_native_iterations.py" in row["args"])
+        assert integration["executable"] == service["executable"]
+        assert "MODELBUILDER_REQUIRE_TRAINER" not in integration["environment"]
+        assert commands.index(modal) < commands.index(backend)
+    else:
+        queue = next(row for row in commands if "scripts/native_test_runner.py" in row["args"])
+        assert commands.index(modal) < commands.index(queue)
+
+
+@pytest.mark.parametrize("missing", ["SPY_DOCUMENT_TOOLS", "SPY_OCR_ENGLISH"])
+def test_missing_research_dependencies_block_integration_and_replace_stale_pass(tmp_path, missing):
+    result, root, commands = aggregate_harness(tmp_path, **{missing: "0"})
+    assert result.returncode == 2 and "BLOCKED: Research" in result.stderr
+    receipt = json.loads((root / "evidence/tests/research-document-http.json").read_text())
+    assert receipt["status"] == "BLOCKED" and not receipt["ocr_english_data_verified"]
+    assert not any(row["args"] == ["run", "test:research-document-http"] for row in commands)
+    assert not any("tests/integration/test_cpu_fixtures.py" in row["args"] for row in commands)
+    assert not (root / "evidence/tests/remote-modal-sdk.xml").exists()
+
+
+@pytest.mark.parametrize("required", [False, True])
+def test_absent_optional_modal_sdk_is_reported_without_stale_acceptance(tmp_path, required):
+    result, root, commands = aggregate_harness(tmp_path, modal=False, MODELBUILDER_REQUIRE_MODAL_SDK=str(int(required)))
+    assert result.returncode == (2 if required else 0), result.stdout + result.stderr
+    log = (root / "evidence/tests/remote-modal-sdk.log").read_text()
+    assert ("BLOCKED:" if required else "NOT RUN:") in log
+    assert not (root / "evidence/tests/remote-modal-sdk.xml").exists()
+    assert not any("tests/test_remote_modal_sdk.py" in row["args"] for row in commands)
+
+
+@pytest.mark.parametrize("failure,code", [("SPY_TRAINER", 2), ("SPY_RESEARCH_FAIL", 3), ("SPY_MODAL_FAIL", 4)])
+def test_acceptance_dependency_or_stage_failure_cannot_reach_native_queue(tmp_path, failure, code):
+    result, root, commands = aggregate_harness(tmp_path, processes=2, **{failure: "0" if failure == "SPY_TRAINER" else "1"})
+    assert result.returncode == code, result.stdout + result.stderr
+    assert not any("scripts/native_test_runner.py" in row["args"] for row in commands)
+    assert not any(row["args"] == ["run", "test:component-http"] for row in commands)
+    assert not (root / "evidence/tests/remote-modal-sdk.xml").exists()
+    if failure == "SPY_TRAINER":
+        assert not (root / "evidence/tests/research-document-http.json").exists()
+
+
+def test_light_aggregate_does_not_claim_or_require_native_dependencies(tmp_path):
+    result, _root, commands = aggregate_harness(tmp_path, integration=False, modal=False, SPY_DOCUMENT_TOOLS="0", SPY_TRAINER="0")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert not any(row["args"] == ["-"] or "-c" in row["args"] for row in commands)
+    assert not any(row["args"] == ["run", "test:research-document-http"] for row in commands)
+    assert not any("tests/test_remote_modal_sdk.py" in row["args"] for row in commands)
 
 
 WORKER = r'''

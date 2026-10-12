@@ -2,6 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "access_mode": {
+      "enum": [
+        "eager",
+        "streaming"
+      ]
+    },
     "benchmark": {
       "maxLength": 200,
       "minLength": 1,
@@ -97,7 +103,7 @@
         ],
         "type": "object"
       },
-      "maxItems": 64,
+      "maxItems": 4096,
       "minItems": 1,
       "type": "array"
     },
@@ -147,7 +153,7 @@
               "minLength": 1,
               "type": "string"
             },
-            "maxItems": 256,
+            "maxItems": 4096,
             "minItems": 1,
             "type": "array",
             "uniqueItems": true

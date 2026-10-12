@@ -2,7 +2,7 @@
 
 Discovery/plan do not allocate tensors. Submission verifies a tiny operation in
 an isolated configured interpreter. Framework execution rechecks in its worker.
-CUDA is deliberately unavailable until a reviewed hash-locked profile exists.
+CUDA requires an explicit reviewed CUDA profile and the matching visible runtime.
 """
 from __future__ import annotations
 import copy
@@ -11,13 +11,19 @@ from contextvars import ContextVar
 import hashlib
 import json
 import os
+import platform
 import re
 import stat
 import subprocess
+import sys
 from pathlib import Path
 
 MPS_LOCK_SHA256 = "c6a0af3c9c73c6c0293139e581859de8df067d2738e8cd95c7397d844b93bdf7"
-CUDA_PROFILE_REASON = "CUDA placement has no reviewed hash-locked backend profile; CPU wheels cannot execute CUDA. No installation or driver change is performed."
+CUDA_PROFILE_REASON = "CUDA requires the reviewed Linux x64/ARM64 CUDA 12.8 backend profile, Python 3.12.14, Torch 2.9.0+cu128 and a visible compatible NVIDIA device. No installation or driver change is performed."
+CUDA_PROFILES = {
+    "linux-x64": {"path": "requirements/profiles/backend-cuda-cu128-linux-x64.lock", "sha256": "4ad97d32bad25f2cd1a68f39f243776247190a8b763d28c4edf97c3d0b516933"},
+    "linux-arm64": {"path": "requirements/profiles/backend-cuda-cu128-linux-arm64.lock", "sha256": "ab2c32c254e3f5811f40bf4b0eb3ca71f635b37656d8dc957b0b9d04a5eaa21f"},
+}
 DEVICE_PATTERN = r"^(cpu|mps|cuda:(0|[1-9][0-9]{0,2}))$"
 
 
@@ -40,11 +46,15 @@ def is_local_target(target) -> bool:
 
 def placement_environment(device: str, base: dict) -> dict:
     env = dict(base)
-    # Retain operator CUDA visibility if an eventual CUDA adapter is added.
+    # Retain operator CUDA visibility; recipe ordinals index this visible set.
     # Visibility is advisory for trusted code, not a security boundary.
     if device == "cpu":
         env["CUDA_VISIBLE_DEVICES"] = ""
         env["HIP_VISIBLE_DEVICES"] = ""
+    elif device.startswith("cuda:"):
+        # Built-in training enables deterministic algorithms. CUDA matmul needs
+        # this documented cuBLAS workspace policy before context initialization.
+        env["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
     env["MODELBUILDER_EXECUTION_DEVICE"] = device
     env["PYTORCH_ENABLE_MPS_FALLBACK"] = "0"
     return env
@@ -53,18 +63,22 @@ def placement_environment(device: str, base: dict) -> dict:
 PROBE = r'''
 import json, platform, sys
 body = json.load(sys.stdin)
+result = {}
 try:
  device=body['device']
  if device=='mps' and sys.platform!='darwin': raise RuntimeError('MPS requires macOS in the configured backend interpreter')
  import torch
  result={'device':device,'python':platform.python_version(),'platform':sys.platform,
          'machine':platform.machine(),'torch':str(torch.__version__),'cuda_build':torch.version.cuda,
+         'hip_build':torch.version.hip,
          'mps_built':bool(torch.backends.mps.is_built()),'mps_available':bool(torch.backends.mps.is_available()),
          'allocation_verified':False}
  if device=='mps' and not result['mps_available']: raise RuntimeError('MPS is not available in the configured backend interpreter')
  if device.startswith('cuda:'):
   index=int(device.split(':')[1])
-  if not torch.cuda.is_available() or index >= torch.cuda.device_count(): raise RuntimeError('Selected CUDA device is not visible in the configured backend interpreter')
+  result['cuda_visible_devices']=int(torch.cuda.device_count())
+  if torch.version.hip or not torch.version.cuda: raise RuntimeError('Selected CUDA device requires an NVIDIA CUDA Torch build')
+  if not torch.cuda.is_available() or index >= result['cuda_visible_devices']: raise RuntimeError('Selected CUDA device is not visible in the configured backend interpreter')
  if body['allocate']:
   x=torch.ones(2,device=device,requires_grad=True)
   y=(x*x).sum(); y.backward()
@@ -75,7 +89,7 @@ try:
  result['available']=True
  print(json.dumps(result))
 except Exception as error:
- print(json.dumps({'available':False,'device':body['device'],'reason':str(error)[:1000]}))
+ print(json.dumps({**result,'available':False,'device':body['device'],'reason':str(error)[:1000]}))
 '''
 
 
@@ -207,11 +221,24 @@ def validate_placement(backend, payload: dict, *, allocate: bool = False) -> dic
     target = payload.get("target", "local-cpu")
     if target != target_for_device(device):
         raise BackendError("dependency_mismatch", "Execution target must match the recipe's versioned environment.device", {"device": device, "target": target})
-    if device.startswith("cuda:"):
-        raise BackendError("capability_unavailable", CUDA_PROFILE_REASON, {"device": device, "profile_status": "unavailable"})
     if device != "cpu" and payload.get("resume_mode", payload.get("mode")) == "exact_state":
         raise BackendError("capability_unavailable", "Accelerator exact-state continuation is not hardware-verified; use explicit warm_start")
-    if device == "mps":
+    if device.startswith("cuda:"):
+        environment = payload["recipe"].get("environment", {})
+        digest = environment.get("lock_file", {}).get("sha256")
+        if digest not in {profile["sha256"] for profile in CUDA_PROFILES.values()}:
+            raise BackendError("dependency_mismatch", "CUDA requires a reviewed hash-locked backend-cuda-cu128 profile as a recipe revision",
+                               {"device": device, "profile_status": "required"})
+        result = probe(backend, device, allocate=allocate)
+        profile = cuda_profile(result)
+        if profile is None or not result.get("available"):
+            raise BackendError("capability_unavailable", result.get("reason", CUDA_PROFILE_REASON))
+        if profile["sha256"] != digest:
+            raise BackendError("dependency_mismatch", "CUDA profile architecture differs from the configured backend interpreter")
+        count = result.get("cuda_visible_devices")
+        if type(count) is not int or not 0 < count <= 1000 or int(device.split(":")[1]) >= count:
+            raise BackendError("capability_unavailable", "Selected CUDA visible ordinal is unavailable")
+    elif device == "mps":
         environment = payload["recipe"].get("environment", {})
         if environment.get("lock_file", {}).get("sha256") != MPS_LOCK_SHA256:
             raise BackendError("dependency_mismatch", "MPS requires the reviewed hash-locked backend-darwin-arm64 profile as a recipe revision")
@@ -239,18 +266,45 @@ def validate_placement(backend, payload: dict, *, allocate: bool = False) -> dic
             "hardware_acceptance": "cpu_regression_tested" if device == "cpu" else "not_verified"}
 
 
+def cuda_profile(runtime: dict) -> dict | None:
+    """Map inspected runtime metadata to the exact reviewed binary profile."""
+    if (runtime.get("platform") != "linux" or runtime.get("python") != "3.12.14"
+            or runtime.get("torch") != "2.9.0+cu128" or runtime.get("cuda_build") != "12.8"
+            or runtime.get("hip_build") is not None):
+        return None
+    target = {"x86_64": "linux-x64", "aarch64": "linux-arm64"}.get(runtime.get("machine"))
+    return CUDA_PROFILES.get(target)
+
+
 def targets(backend) -> list[dict]:
     reason = backend._capability_reason()
     base = {"backend": "zenml", "version": "0.97.0", "cancel": "supervised_process_termination",
             "untrusted_isolation": False, "reservation": False, "live_evaluation_device": "cpu"}
     mps = probe(backend, "mps") if reason is None else {"available": False, "reason": reason}
     mps_available = bool(mps.get("available") and mps.get("platform") == "darwin" and mps.get("machine") == "arm64" and mps.get("torch") == "2.9.0")
-    return [{**base, "id": "local-cpu", "device": "cpu", "available": reason is None, "unavailable_reason": reason, "exact_resume": True},
-            {**base, "id": "local-mps", "device": "mps", "available": mps_available,
-             "unavailable_reason": None if mps_available else mps.get("reason", "Requires pinned macOS ARM64 Torch 2.9.0"),
-             "required_profile_sha256": MPS_LOCK_SHA256, "exact_resume": False, "hardware_acceptance": "not_verified"},
-            {**base, "id": "local-cuda", "device": None, "available": False, "unavailable_reason": CUDA_PROFILE_REASON,
-             "requires_explicit_device": "cuda:<visible ordinal>", "exact_resume": False, "hardware_acceptance": "not_verified"}]
+    result = [{**base, "id": "local-cpu", "device": "cpu", "available": reason is None, "unavailable_reason": reason, "exact_resume": True},
+              {**base, "id": "local-mps", "device": "mps", "available": mps_available,
+               "unavailable_reason": None if mps_available else mps.get("reason", "Requires pinned macOS ARM64 Torch 2.9.0"),
+               "required_profile_sha256": MPS_LOCK_SHA256, "exact_resume": False, "hardware_acceptance": "not_verified"}]
+    cuda = probe(backend, "cuda:0") if reason is None else {"available": False, "reason": reason}
+    profile = cuda_profile(cuda)
+    count = cuda.get("cuda_visible_devices")
+    if profile and cuda.get("available") and type(count) is int and 0 < count <= 1000:
+        # Enumerate interpreter-visible ordinals, never physical nvidia-smi IDs.
+        # Availability is metadata only; admission verifies the complete lock and
+        # submission probes the selected ordinal's actual forward/backward work.
+        for index in range(count):
+            result.append({**base, "id": f"local-cuda:{index}", "device": f"cuda:{index}", "available": True,
+                           "unavailable_reason": None, "required_profile_sha256": profile["sha256"],
+                           "required_profile_path": profile["path"], "exact_resume": False,
+                           "allocation_verified": False, "environment_verification": "submission_required",
+                           "hardware_acceptance": "not_verified"})
+    else:
+        result.append({**base, "id": "local-cuda", "device": None, "available": False,
+                       "unavailable_reason": cuda.get("reason", CUDA_PROFILE_REASON),
+                       "requires_explicit_device": "cuda:<visible ordinal>", "exact_resume": False,
+                       "hardware_acceptance": "not_verified"})
+    return result
 
 
 def synchronize(device: str) -> None:
@@ -279,9 +333,14 @@ def checkpoint_cpu(value):
 
 def runtime_device_identity(device: str) -> dict:
     import torch
+    if device.startswith("cuda:") and cuda_profile({"python": platform.python_version(), "platform": sys.platform,
+            "machine": platform.machine(), "torch": str(torch.__version__), "cuda_build": torch.version.cuda,
+            "hip_build": torch.version.hip}) is None:
+        raise ValueError("Selected CUDA device requires the pinned Linux CUDA 12.8 runtime; CPU fallback is disabled")
     if device == "mps" and not torch.backends.mps.is_available():
         raise ValueError("Selected MPS device is unavailable; CPU fallback is disabled")
-    if device.startswith("cuda:") and (not torch.cuda.is_available() or int(device.split(":")[1]) >= torch.cuda.device_count()):
+    if device.startswith("cuda:") and (torch.version.hip or not torch.version.cuda or not torch.cuda.is_available()
+                                      or int(device.split(":")[1]) >= torch.cuda.device_count()):
         raise ValueError("Selected CUDA device is unavailable; CPU fallback is disabled")
     return {"device": device, "requested_device": device, "component_execution_observed": False,
             "torch": str(torch.__version__), "cuda_build": torch.version.cuda,

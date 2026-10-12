@@ -18,19 +18,44 @@ existing project policy controls; existing CPU-only policies are not widened.
 - MPS: requires the reviewed `backend-darwin-arm64.lock` digest, exact installed
   versions, macOS ARM64 and an MPS-capable configured Torch 2.9.0 interpreter.
   Native MPS acceptance is not verified by Linux tests.
-- CUDA: currently unavailable because no reviewed hash-locked CUDA environment
-  profile has been established. The adapter rejects before execution, even when
-  physical discovery reports NVIDIA hardware. No runtime or driver is installed.
+- CUDA: requires a reviewed `backend-cuda-cu128-linux-x64.lock` or
+  `backend-cuda-cu128-linux-arm64.lock` digest, exact installed dependency versions,
+  Python 3.12.14, Linux and official Torch 2.9.0+cu128 (CUDA 12.8). CPU, ROCm,
+  other CUDA builds and architecture-mismatched profiles are rejected.
+  `execution.targets` enumerates `local-cuda:0`, `local-cuda:1`, etc. only from the
+  configured interpreter's visible devices and matching runtime identity. Physical
+  discovery alone cannot create an executable target. Each target records the
+  required profile digest; full dependency validation and the selected-device
+  allocation probe still run during admission/submission. Native Windows and
+  macOS CUDA remain unavailable. No driver is installed or upgraded.
 
 Targets/discovery and planning do not allocate tensors. Authorized submission
 performs a bounded tiny forward/backward and synchronization check in the selected
-interpreter for MPS and built-in Torch CPU training. A passing probe is not proof
+interpreter for CUDA, MPS and built-in Torch CPU training. A passing probe is not proof
 that the user's full model fits or all its operators are supported. Placement
 metadata records the requested/validated runtime device separately from observed
 component execution: `requested_device`, `allocation_verification_scope` set to
 `tiny_tensor_probe_only`, and `component_execution_observed: false`. A trusted
 component may ignore the supplied context; its declaration and the tiny probe do
 not establish that its training ran on an accelerator.
+
+CUDA installation is explicit: `python3.12 scripts/bootstrap.py --backend-only
+--backend-variant cuda-cu128 --backend-venv .venv-backend-cuda`. Point
+`MODELBUILDER_BACKEND_PYTHON` to that environment's absolute `bin/python` path.
+Select the matching CUDA profile returned by `execution.targets` in a new recipe
+revision and set `environment.device` to an explicit visible ordinal. Bootstrap
+installs hash-verified user-space NVIDIA runtime libraries and Torch into that
+backend environment; it does not change the system driver or project policy.
+Use a distinct venv to preserve the CPU installation. Existing profiles/recipes
+remain unchanged and do not automatically migrate. Installation requires enough
+local disk space for several gigabytes of official wheels and extracted libraries.
+
+`CUDA_VISIBLE_DEVICES` from the service operator is preserved into the probe and
+worker. Recipe ordinals index that visible set; they are not `nvidia-smi` physical
+ordinals. CUDA worker/probe environments set `CUBLAS_WORKSPACE_CONFIG=:4096:8`
+for the built-in deterministic-matmul contract. Device visibility does not reserve
+or isolate GPUs. A compatible NVIDIA driver and GPU are operator prerequisites;
+the real probe, not a driver-version string, decides whether an allocation works.
 
 Device metadata and allocation probes run outside the service writer transaction,
 alongside prepared dataset reads. Immediately before allocation and at atomic
@@ -109,12 +134,29 @@ cancellation and CPU exact resume. Real native CPU checkpoint/evaluation ingesti
 and an independent service writer also progress while another actual submission
 is held at environment validation; cancelling that pending intent prevents a
 second spawn (`tests/integration/test_admission_live_native.py`).
-Synthetic MPS probe responses test admission, profile/identity rejection and lack
-of exact-resume advertising; they are not hardware execution evidence. Actual
+Synthetic CUDA/MPS probe responses test admission, profile/identity rejection,
+CUDA visible-ordinal discovery and lack of exact-resume advertising; they are not
+hardware execution evidence. The Linux x64 CUDA profile was actually installed
+with hash enforcement and all 118 package versions verified; Torch 2.9.0+cu128,
+Transformers 4.57.1 and ZenML 0.97.0 imported successfully on the CPU-only host.
+Its actual CUDA allocation probe reports zero visible devices and fails closed.
+ARM64 lock resolution is not ARM64 installation or execution evidence. Actual
 CUDA/MPS training, OOM handling, driver cleanup, native cancellation and numerical
 continuation require corresponding hardware before those acceptance gates pass.
 
-Official references: [PyTorch MPS](https://docs.pytorch.org/docs/2.9/notes/mps.html),
+The hardware gate can be run on a configured CUDA host with
+`MODELBUILDER_REQUIRE_CUDA=1 PYTHONPATH=src .venv-backend-cuda/bin/python -m pytest
+tests/placement/test_cuda_execution.py -v`. Set `MODELBUILDER_CUDA_TEST_DEVICE`
+to another explicit visible ordinal if needed. It verifies real training,
+CPU-portable checkpoint tensors, CPU evaluation, warm-start and cooperative
+cancellation; requiring the gate makes absent CUDA hardware a failure. Process
+termination, OOM recovery and the complete native ZenML lifecycle still need
+separate corresponding-hardware acceptance. This gate does not enable exact resume.
+
+Official references: [PyTorch 2.9.0 CUDA 12.8 installation](https://pytorch.org/get-started/previous-versions/),
+[official CUDA 12.8 wheels](https://download.pytorch.org/whl/cu128/torch/),
+[NVIDIA driver compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/),
+[PyTorch MPS](https://docs.pytorch.org/docs/2.9/notes/mps.html),
 [CUDA semantics](https://docs.pytorch.org/docs/2.9/notes/cuda.html),
 [reproducibility](https://docs.pytorch.org/docs/2.9/notes/randomness.html),
 [ZenML local orchestrator](https://docs.zenml.io/stacks/stack-components/orchestrators/local).

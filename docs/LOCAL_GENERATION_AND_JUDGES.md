@@ -1,5 +1,7 @@
 # Local model-driven generation and judges, version 1
 
+For the additional installed Auto-class adapters with recipe-owned model/row/token budgets, see [General Transformers inference](TRANSFORMERS_INFERENCE.md). The version 1 contracts below remain compatible.
+
 ## What is implemented
 
 Three reusable adapters are shipped in `modelbuilder.backend.components.local_inference` and discoverable through the existing project-scoped `component.list` / `component.get` operations, HTTP, MCP, and Recipe → Browse reusable components:

@@ -15,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 @pytest.mark.integration
-async def test_independent_native_mcp_dataset_lifecycle_and_restart(tmp_path, monkeypatch):
+@pytest.mark.parametrize("access_mode", ["eager", "streaming"])
+async def test_independent_native_mcp_dataset_lifecycle_and_restart(tmp_path, monkeypatch, access_mode):
     spec = spec_from_file_location("dataset_mcp_harness", ROOT / "scripts/mcp_smoke.py")
     harness = module_from_spec(spec)
     spec.loader.exec_module(harness)
@@ -29,6 +30,8 @@ async def test_independent_native_mcp_dataset_lifecycle_and_restart(tmp_path, mo
     data = tmp_path / "data"
     data.mkdir()
     manifest = make_manifest(data)
+    if access_mode == "streaming":
+        manifest["access_mode"] = access_mode
     config = tmp_path / "operator.json"
     config.write_text(json.dumps({"dataset_roots": {pid: {"data": str(data)}}}))
     monkeypatch.setenv("MODELBUILDER_OPERATOR_CONFIG", str(config))

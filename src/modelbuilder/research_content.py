@@ -256,6 +256,12 @@ def parse_article(raw, identifier, evidence):
                            "omitted": ["reference_list", "supplementary_files", "images", "layout", "formula_layout"]}}
 
 
+def page_references(body, start, end):
+    """Intersect a Unicode passage with physical PDF pages, without inference."""
+    return [{**page, "passage_start": max(start, page["start"]), "passage_end": min(end, page["end"])}
+            for page in body.get("pages", []) if page["start"] < end and page["end"] > start]
+
+
 def inspect_text(body, payload):
     """Local section/passage inspection with stable Unicode offsets and hash."""
     content = body["text"]
@@ -268,15 +274,20 @@ def inspect_text(body, payload):
             raise ServiceError("not_found", "Section is not part of this text snapshot", status_code=404)
     lower, upper = (selected["start"], selected["end"]) if selected else (0, len(content))
     start = payload.get("start", lower)
-    if start < lower or start >= upper:
+    if start < lower or start > upper or (start == upper and lower != upper):
         raise ServiceError("validation_error", "Start offset is outside the selected text or section")
     end = min(upper, start + payload.get("length", 8000))
+    pages = page_references(body, start, end)
+    if selected and selected.get("kind") == "page" and lower == upper:
+        pages = [{**page, "passage_start": start, "passage_end": end} for page in body.get("pages", [])
+                 if page["page_number"] == selected.get("page_number")]
     return {"project_id": body["project_id"], "text_id": body["text_id"], "evidence_id": body["evidence_id"],
             "sha256": body["sha256"], "title": body.get("attribution", {}).get("title") or body["citation"]["title"], "text": content[start:end],
             "start": start, "end": end, "next_start": end if end < upper else None, "sections": sections,
             "section_id": selected["section_id"] if selected else None, "license": body["license"],
             "rights_validation": body["rights_validation"], "source_validation": body["source_validation"],
             "attribution": body.get("attribution", {}), "provenance": body.get("provenance", {}),
+            "pages": pages,
             "claim_verified": False}
 
 
@@ -293,6 +304,7 @@ def search_text(body, payload):
         left, right = max(0, start - 120), min(len(content), end + 120)
         matches.append({"start": start, "end": end, "quote": content[start:end],
                         "context": content[left:right], "context_start": left, "context_end": right,
+                        "pages": page_references(body, start, end),
                         "section_ids": [item["section_id"] for item in body.get("sections", [])
                                         if item["start"] <= start < item["end"]]})
     else:
@@ -305,8 +317,26 @@ def search_text(body, payload):
 
 class ContentRetrieval:
     """Short claim/commit transactions, with provider I/O outside store locks."""
+    lease_seconds = 40
+    failure_types = (ContentUnavailable,)
+    errors = ERRORS
+
     def __init__(self, service):
         self.service, self.store = service, service.store
+
+    def prepare(self, payload, evidence):
+        return parse_article(fetch_xml(payload["source_identifier"]), payload["source_identifier"], evidence)
+
+    def attempt_source(self, payload):
+        return {"source_identifier": payload["source_identifier"], "provider": "europe_pmc",
+                "source_url": f"https://www.ebi.ac.uk/europepmc/webservices/rest/{payload['source_identifier']}/fullTextXML"}
+
+    def text_identity(self, payload, evidence, document):
+        return (f"{payload['project_id']}:{evidence['evidence_id']}:{document['provenance']['raw_sha256']}:"
+                f"{document['license']}:{document['provenance']['extractor']}")
+
+    def validate_existing(self, text, document):
+        pass
 
     def invoke(self, operation, payload, actor, payload_hash, request_id):
         from .research_scheduler import authorized
@@ -331,15 +361,15 @@ class ContentRetrieval:
                 "SELECT COUNT(*) FROM research_requests WHERE operation=? AND expires_at>?", (operation, utcnow())).fetchone()[0]
             if active >= 2:
                 raise ServiceError("source_busy", "Two source-content requests are already running; retry later", status_code=409)
-            expiry = (_date(utcnow()) + timedelta(seconds=40)).isoformat()
+            expiry = (_date(utcnow()) + timedelta(seconds=self.lease_seconds)).isoformat()
             self.store.connection.execute("INSERT OR REPLACE INTO research_requests VALUES(?,?,?,?,?,?,?)",
                 (actor.id, key, operation, payload_hash, token, expiry, "{}"))
         started, document, error = utcnow(), None, None
         try:
             try:
-                document = parse_article(fetch_xml(payload["source_identifier"]), payload["source_identifier"], evidence)
-            except ContentUnavailable as exc:
-                error = {"code": exc.code, "message": ERRORS[exc.code]}
+                document = self.prepare(payload, evidence)
+            except self.failure_types as exc:
+                error = {"code": exc.code, "message": self.errors[exc.code]}
             with self.store.transaction():
                 pending = self.store.connection.execute("SELECT * FROM research_requests WHERE actor_id=? AND key=?",
                                                          (actor.id, key)).fetchone()
@@ -351,15 +381,13 @@ class ContentRetrieval:
                 current = self.service._get("evidence", evidence["evidence_id"], project_id)
                 self.service._revision(current, evidence["revision"])
                 attempt = {"retrieval_id": new_id(), "project_id": project_id, "evidence_id": evidence["evidence_id"],
-                           "evidence_revision": evidence["revision"], "source_identifier": payload["source_identifier"],
-                           "provider": "europe_pmc",
-                           "source_url": f"https://www.ebi.ac.uk/europepmc/webservices/rest/{payload['source_identifier']}/fullTextXML",
+                           "evidence_revision": evidence["revision"], **self.attempt_source(payload),
                            "actor": actor.id, "started_at": started, "finished_at": utcnow(),
                            "status": "failed" if error else "succeeded", "error": error, "revision": 1,
                            "text_id": None, "claim_verified": False}
                 if document is not None:
                     content_hash = _text_hash(document["text"])
-                    identity = f"{project_id}:{evidence['evidence_id']}:{document['provenance']['raw_sha256']}:{document['license']}:{document['provenance']['extractor']}"
+                    identity = self.text_identity(payload, evidence, document)
                     text_id = str(uuid5(NAMESPACE_URL, "modelbuilder:fetched-text:" + identity))
                     try:
                         text = self.service._get("research_text", text_id, project_id)
@@ -372,6 +400,7 @@ class ContentRetrieval:
                                 "byte_length": len(document["text"].encode()), "revision": 1,
                                 "imported_at": started, "imported_by": actor.id}
                         self.store.put("research_text", text_id, project_id, text)
+                    self.validate_existing(text, document)
                     attempt["text_id"] = text_id
                 self.store.put("research_retrieval", attempt["retrieval_id"], project_id, attempt)
                 result = {"project_id": project_id, "retrieval": attempt, "text_id": attempt["text_id"],

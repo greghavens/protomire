@@ -25,7 +25,7 @@ from .backend.placement import is_local_target, device_from_recipe, target_for_d
 class OperationService:
     def __init__(self, store: SQLiteStore | str | Path | None = None, backend=None, *,
                  db_path: str | Path | None = None, source_root: str | Path | None = None,
-                 dataset_roots: dict | None = None, source_roots: dict | None = None):
+                 dataset_roots: dict | None = None, source_roots: dict | None = None, dataset_limits: dict | None = None):
         self.store = store if isinstance(store, SQLiteStore) else SQLiteStore(db_path or store or "modelbuilder.sqlite3")
         self.research_authorizer = None
         self.operation_authorizer = None
@@ -34,7 +34,7 @@ class OperationService:
         self._remote_cost_operations = None
         self.dataset_roots = copy.deepcopy(dataset_roots or {})
         from .dataset import DatasetRegistry
-        self._dataset_registry = DatasetRegistry(self.store, project_roots=self.dataset_roots)
+        self._dataset_registry = DatasetRegistry(self.store, project_roots=self.dataset_roots, streaming_limits=dataset_limits)
         self.source_root = Path(source_root).resolve() if source_root else None
         from .source_workspace import SourceWorkspaces
         self.require_source_binding = source_roots is not None
@@ -153,6 +153,9 @@ class OperationService:
             if operation == "research.text.fetch":
                 from .research_content import ContentRetrieval
                 return ContentRetrieval(self).invoke(operation, payload, actor, payload_hash, request_id)
+            if operation == "research.document.import":
+                from .research_documents import DocumentImport
+                return DocumentImport(self).invoke(operation, payload, actor, payload_hash, request_id)
             if operation in {"research.watch.refresh", "research.watch.refresh_due"}:
                 from .research_scheduler import ResearchRefresh
                 return ResearchRefresh(self).invoke(operation, payload, actor, payload_hash, request_id)

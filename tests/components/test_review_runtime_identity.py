@@ -25,3 +25,14 @@ def test_runtime_source_identity_is_location_independent_and_content_sensitive(t
 def test_runtime_environment_includes_platform_source_identity(monkeypatch):
     monkeypatch.setattr(runtime, "runtime_source_identity", lambda: "reviewed-runtime-digest")
     assert runtime.runtime_environment()["modelbuilder_runtime_source"] == "reviewed-runtime-digest"
+
+
+def test_streaming_execution_source_changes_invalidate_runtime_identity(tmp_path):
+    root = tmp_path / "installed"
+    root.mkdir()
+    first = runtime.runtime_source_identity(root)
+    for filename in ("dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py"):
+        (root / filename).write_text("IMPLEMENTATION = 1\n")
+        changed = runtime.runtime_source_identity(root)
+        assert changed != first
+        first = changed

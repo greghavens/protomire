@@ -21,7 +21,10 @@ import time
 
 # HTTP transport tests use the existing service interpreter's httpx dependency;
 # importing TestClient in the pinned backend environment is unsupported.
-SERVICE_ONLY_TESTS = ("tests/live_evaluation/test_selected_live_native.py",)
+SERVICE_ONLY_TESTS = (
+    "tests/live_evaluation/test_selected_live_native.py",
+    "tests/iterations/test_native_iterations.py",
+)
 SERVICE_TESTS = (
     "tests/service/test_real_backend.py", "tests/integration/test_mcp_training.py",
     "tests/security/test_adversarial_review.py", "tests/integration/test_source_bound_execution.py",
@@ -42,6 +45,7 @@ COMPONENT_TESTS = (
     "tests/components", "tests/evaluation", "tests/live_evaluation",
     "tests/datasets/test_reference_atomic_read.py", "tests/tracking/test_cpu_live_tracking.py",
     "tests/placement/test_placement.py", "tests/placement/test_checkpoint_capabilities.py",
+    "tests/placement/test_cuda_execution.py",
 )
 MAX_SECONDS = 2100
 
@@ -267,6 +271,7 @@ def build_groups(root, python, temporary):
             NUMEXPR_NUM_THREADS="1", TOKENIZERS_PARALLELISM="false")
         if name != "integration":
             environment["MODELBUILDER_REQUIRE_LOCAL_INFERENCE"] = "1"
+            environment["MODELBUILDER_REQUIRE_TRAINER"] = "1"
         log, xml = root / f"evidence/tests/{name}.log", root / f"evidence/tests/{name}.xml"
         exclusions = tuple(f"--ignore={path}" for path in SERVICE_ONLY_TESTS) if name != "integration" else ()
         command = (interpreter, "-m", "pytest", *tests, *marker, *exclusions, "-v",

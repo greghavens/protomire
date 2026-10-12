@@ -145,7 +145,9 @@
     "test:component-http": "npm run compile && node test/componentAuthoringHttp.cjs",
     "test:source-pin-http": "npm run compile && node test/sourcePinHttp.cjs",
     "test:history-http": "npm run compile && node test/recipeHistoryHttp.cjs",
-    "test:history-browser": "npm run compile && node test/recipeHistoryDom.cjs"
+    "test:history-browser": "npm run compile && node test/recipeHistoryDom.cjs",
+    "test:research-document-http": "npm run compile && node test/researchDocumentHttp.cjs",
+    "test:research-document-browser": "npm run compile && node test/researchDocumentDom.cjs"
   },
   "devDependencies": {
     "@types/node": "22.10.2",

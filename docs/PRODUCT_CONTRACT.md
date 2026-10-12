@@ -15,18 +15,18 @@ Modelbuilder is a temporary product name. The product is a dedicated Code - OSS 
 
 ## Current delivery scope
 
-P0–P4 covers a reproducible distribution, local shared service/MCP, recipe/research/run workbench, two independently executed CPU model fixtures, truthful job lifecycle and clean recipe replay. Acceptance is recorded individually in ACCEPTANCE_MATRIX.md. Tests blocked by the current environment remain blocked even when implementation files exist.
+The owner has requested the complete product. P0–P4 describes the initial integration sequence, not the delivery stopping point. Existing implementation includes the local shared service/MCP, recipe/research/run workbench, source-bound framework components, immutable datasets, live checkpoint evaluation, research watches and a private recipe registry. Acceptance is recorded individually in ACCEPTANCE_MATRIX.md. Missing implementation, failed tests and externally blocked tests must remain distinct; implementation files alone do not establish acceptance.
 
 ## Retained full product requirements
 
-These are explicit future gates, not completed or abandoned features:
+These remain delivery requirements. Some have partial implementations; none is deemed complete merely by being listed here:
 
 1. One authorized remote provider with real rate sources, reservations, concurrent total-budget checks, cancellation, delayed billing reconciliation and idle/storage cleanup. P5 requires separate spending authorization.
 2. Wider local/remote/GPU and eventually distributed execution through reused runtimes, with reproducible environment and resource capability selection.
 3. A broad built-in component catalog wrapping established data/model/evaluation frameworks, while retaining arbitrary architecture and loss functions.
 4. External synthetic-data generators, contamination checks, adversarial judges, calibration and comparison compatibility contracts; general scientific quality needs validation beyond toy fixtures.
-5. Ongoing literature monitoring and richer research-to-experiment evolution without an embedded autonomous agent.
-6. Private recipe registry first, then discovery/fork/versioning and explicitly authorized publication/payment features after portability/trust/licensing tests.
+5. Expand the implemented literature watches and reviewed research-to-experiment proposals with broader source content and evidence capabilities, without an embedded autonomous agent.
+6. Extend the implemented private registry, discovery/fork/versioning with explicitly authorized external publication/payment capabilities after portability/trust/licensing tests.
 7. Production security, packaging, migration, recovery, accessibility and performance hardening on supported operating systems.
 
-The existing Biff repository is not modified, trained, mirrored or redistributed. Its private reference material is not a product template. Paid compute, public releases and model/data publication are not authorized by this slice.
+The existing Biff repository is not modified, trained, mirrored or redistributed. Its private reference material is not a product template. Full implementation does not itself authorize paid compute, public releases or model/data publication.

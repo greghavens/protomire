@@ -11,6 +11,7 @@ import { EVALUATION_WINDOW } from './checkpointCurves';
 import { discoverRegistryRecipe, publishRegistryRecipe } from './registryFiles';
 import { chooseLocalSource, acknowledgeSource, sourceBindingPayload, matchLocalSource, reviewAndPinSource } from './sourceWorkspace';
 import { saveNativeModel } from './modelExport';
+import { importResearchPdf } from './researchDocuments';
 import { configureOptionalAssistant } from './assistantSetup';
 
 const TOKEN_KEY = 'modelbuilder.serviceToken';
@@ -103,6 +104,7 @@ export class Workbench implements vscode.Disposable {
   private document:RecipeDocument;
   private dirty=false;
   private busy=false;
+  private documentImportActive=false;
   private polling=false;
   private runId?:string;
   private runRefreshSequence=0;
@@ -342,7 +344,7 @@ export class Workbench implements vscode.Disposable {
     if (message.type==='dirty') { this.dirty=message.dirty===true; return; }
     if(message.type==='draftState'){if(this.document.current&&message.recipeId===this.document.current.recipe_id&&message.state&&typeof message.state.source==='string'){this.drafts[message.recipeId]={base:this.document.current,state:message.state};await this.persistDrafts();}return;}
     if (this.busy) { await this.post('error',{message:'An operation is already in progress. Wait for its result.'}); return; }
-    this.busy=true;await this.post('busy',{busy:true});
+    this.busy=true;this.documentImportActive=message.type==='importResearchDocument';await this.post('busy',{busy:true});
     try {
       switch(message.type) {
         case 'ready': await this.ready();break;
@@ -387,13 +389,21 @@ export class Workbench implements vscode.Disposable {
           if(generation===this.generation&&projectId===this.project?.project_id)await this.post('datasetVersion',{projectId,dataset});break;
         }
         case 'refreshResearch': await this.refreshSnapshot();await this.refreshResearch();break;
+        case 'importResearchDocument': {
+          this.requireProject();const generation=this.generation,projectId=this.project!.project_id,endpoint=this.client.endpoint();
+          if(message.projectId!==projectId)throw new Error('The model project changed. Reopen the citation before importing.');
+          for(const name of ['research.document.import','research.document.capabilities','evidence.get'])if(!this.catalog.some(item=>item.name===name&&item.authorized!==false))throw new Error('Document import is not authorized on this service.');
+          const current=()=>{if(generation!==this.generation||projectId!==this.project?.project_id||this.disposed||endpoint!==this.client.endpoint())throw new Error('The model project or service changed; PDF import was stopped.');};
+          const result=await importResearchPdf(this.client,{project_id:projectId,evidence_id:message.evidenceId,expected_evidence_revision:message.expectedEvidenceRevision},endpoint,current);
+          if(result&&generation===this.generation&&projectId===this.project?.project_id&&!this.disposed&&endpoint===this.client.endpoint()){await this.post('result',{operation:'research.document.import',result});await this.refreshResearch();this.explorer.refresh();}break;
+        }
         case 'setupAssistant': await vscode.commands.executeCommand('modelbuilder.setupAssistant');break;
         case 'openCode': await this.openProjectCode();break;
         case 'pinRecipeSource': await this.pinRecipeSource(message);break;
         default: throw new Error('Unknown workbench action.');
       }
     } catch(error) {await this.post('error',{message:error instanceof Error ? error.message : String(error),code:error instanceof OperationError ? error.code : undefined,details:error instanceof OperationError ? error.details : undefined});}
-    finally {this.busy=false;await this.post('busy',{busy:false});}
+    finally {this.busy=false;this.documentImportActive=false;await this.post('busy',{busy:false});}
   }
   private requireProject() {if(!this.project) throw new Error('Select a model project first.');}
   private async operation(name:string,raw:unknown,fromFile=false) {
@@ -540,7 +550,7 @@ export class Workbench implements vscode.Disposable {
     else void vscode.window.showInformationMessage(text);
   }
   private async poll() {
-    if(this.disposed||this.busy||this.polling||!this.project)return;
+    if(this.disposed||(this.busy&&!this.documentImportActive)||this.polling||!this.project)return;
     this.polling=true;const generation=this.generation;
     try {
       const polledDocument=this.document;

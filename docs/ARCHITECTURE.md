@@ -22,7 +22,7 @@ Repository-owned fixtures reuse PyTorch and Transformers. They are small example
 
 Actors have read/modify/execute/spend/delete/publish scopes and optional project restrictions. Defaults do not create an anonymous admin or a persistent credential. Test identities are disposable. Worker environments exclude control-plane and unrelated provider credentials. Untrusted imports are inert; actual execution requires an explicit supported trust/isolation path. A trusted local subprocess is not advertised as a security sandbox. Without verified isolation, arbitrary untrusted execution is refused.
 
-Remote execution, spend and recipe publication fail closed in this slice. Local cost output says only that there is no provider charge; it does not claim hardware/electricity are free or a remote budget enforced.
+Production remote execution/spend and external recipe publication currently fail closed. Authorized local-private recipe publication, discovery and versioned import are implemented through the same service. Local cost output says only that there is no provider charge; it does not claim hardware/electricity are free or a remote budget enforced.
 
 ## Distribution
 

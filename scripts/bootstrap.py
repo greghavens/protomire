@@ -12,15 +12,22 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from distribution.platform_config import detect_target  # noqa: E402
-from scripts.dependency_profiles import CPU_INDEX, PARQUET_TARGETS, backend_reason, lock_path, venv_python  # noqa: E402
+from scripts.dependency_profiles import (  # noqa: E402
+    BACKEND_VARIANTS, CPU_INDEX, CUDA_INDEX, PARQUET_TARGETS,
+    backend_reason, lock_path, venv_python,
+)
 
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument('--backend', action='store_true', help='Also install the supported local backend')
     result.add_argument('--backend-only', action='store_true')
+    result.add_argument('--backend-variant', choices=BACKEND_VARIANTS, default='default',
+                        help='Explicit backend wheel profile; CUDA installs runtime libraries, never a driver')
     result.add_argument('--parquet', action='store_true',
                         help='Add the hash-locked PyArrow adapter to the selected service/backend environments')
+    result.add_argument('--trainer', action='store_true',
+                        help='Add the optional hash-locked Transformers Trainer adapter to the backend only')
     result.add_argument('--tracking', action='store_true', help='Install isolated optional W&B SDK; never enable uploads')
     result.add_argument('--tracking-venv', type=Path, default=Path(os.environ.get('MODELBUILDER_TRACKING_VENV', ROOT / '.venv-tracking')))
     result.add_argument('--skip-frontend', action='store_true', help='Install Python components only')
@@ -47,7 +54,13 @@ def main(argv: list[str] | None = None) -> int:
     if tracking in {service, backend}:
         raise ValueError('Optional tracking must use a separate environment.')
     wants_backend = args.backend or args.backend_only
-    reason = backend_reason(target)
+    if args.backend_variant != "default" and not wants_backend:
+        raise ValueError("--backend-variant requires --backend or --backend-only.")
+    if args.trainer and not wants_backend:
+        raise ValueError("--trainer requires --backend or --backend-only.")
+    reason = backend_reason(target, args.backend_variant)
+    trainer_lock = ROOT / "requirements/profiles/trainer.lock"
+    backend_lock = None if reason else lock_path(ROOT, "backend", target, backend_variant=args.backend_variant)
     parquet_wheel = target in PARQUET_TARGETS
     parquet_runtime = parquet_wheel and target.startswith('linux-')
     parquet_unavailable = (None if parquet_runtime else
@@ -56,6 +69,8 @@ def main(argv: list[str] | None = None) -> int:
     plan = {'target': target, 'python': pin, 'service_python': str(venv_python(service, target)),
             'backend_python': str(venv_python(backend, target)),
             'service_lock': str(lock_path(ROOT, 'service', target)), 'backend_unavailable': reason,
+            'backend_variant': args.backend_variant, 'backend_lock': str(backend_lock) if backend_lock else None,
+            'trainer_available': reason is None and trainer_lock.is_file(), 'trainer_lock': str(trainer_lock),
             'tracking_python': str(venv_python(tracking, target)),
             'parquet_available': parquet_runtime,
             'parquet_wheel_available': parquet_wheel,
@@ -94,13 +109,19 @@ def main(argv: list[str] | None = None) -> int:
         if not uv:
             raise ValueError('Install the service environment or official uv 0.12.23 first.')
         run([uv, 'venv', '--allow-existing', '--python', sys.executable, backend], env=env)
-        command = [uv, 'pip', 'sync', '--python', venv_python(backend, target), '--require-hashes', lock_path(ROOT, 'backend', target)]
+        command = [uv, 'pip', 'sync', '--python', venv_python(backend, target), '--require-hashes', backend_lock]
         if target.startswith('linux-'):
-            command += ['--extra-index-url', CPU_INDEX, '--index-strategy', 'unsafe-best-match']
+            index = CUDA_INDEX if args.backend_variant == 'cuda-cu128' else CPU_INDEX
+            command += ['--extra-index-url', index, '--index-strategy', 'unsafe-best-match']
+        if args.backend_variant == 'cuda-cu128':
+            command += ['--only-binary', ':all:']
         run(command, env=env)
         if parquet_lock:
             run([uv, 'pip', 'install', '--python', venv_python(backend, target), '--require-hashes',
                  '--only-binary', ':all:', '-r', parquet_lock], env=env)
+        if args.trainer:
+            run([uv, 'pip', 'install', '--python', venv_python(backend, target), '--require-hashes',
+                 '--only-binary', ':all:', '--no-deps', '-r', trainer_lock], env=env)
         run([uv, 'pip', 'check', '--python', venv_python(backend, target)], env=env)
         if not args.skip_model_download:
             env['PYTHONPATH'] = str(ROOT / 'src')

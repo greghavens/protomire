@@ -76,10 +76,14 @@ def validate_component(node: dict) -> dict:
 def component_catalog(recipe: dict | None = None) -> list[dict]:
     """Discover inert reusable adapters and source-bound recipe declarations."""
     from .local_inference import catalog_entries
+    from .transformers_training import catalog_entries as trainer_catalog_entries
+    from .transformers_inference import catalog_entries as inference_catalog_entries
     catalog = [{"id": "modelbuilder.examples", "version": "1", "protocol": "modelbuilder.fixture/v1",
                 "description": "Versioned custom classifier and tiny BERT examples; not a generic training framework.",
                 "capabilities": {"resume_modes": ["exact_state", "warm_start"], "export_formats": ["pytorch"], "frameworks": ["pytorch", "transformers"]}}]
     catalog.extend(catalog_entries())
+    catalog.extend(trainer_catalog_entries())
+    catalog.extend(inference_catalog_entries())
     for node in (recipe or {}).get("nodes", []):
         if node.get("kind") == "component.run":
             descriptor = validate_component(node)

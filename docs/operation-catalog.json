@@ -3700,6 +3700,137 @@
       "scope": "read"
     },
     {
+      "description": "Inspect local PDF/OCR tool availability and bounded limits without opening a document or making a network request.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "mutating": false,
+      "name": "research.document.capabilities",
+      "operation": "research.document.capabilities",
+      "required_scopes": [
+        "read"
+      ],
+      "scope": "read"
+    },
+    {
+      "description": "Extract an explicitly supplied, rights-attested PDF locally using Poppler and optional English Tesseract OCR. Pin document and page hashes to an immutable citation; no URLs, cloud OCR, source execution or scientific inference.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content_base64": {
+            "maxLength": 11184812,
+            "minLength": 4,
+            "type": "string"
+          },
+          "evidence_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "expected_evidence_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "expected_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^/\\\\\\u0000-\\u001f\\u007f]+\\.[pP][dD][fF]$",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "license": {
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          },
+          "max_ocr_pages": {
+            "default": 20,
+            "maximum": 20,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "max_pages": {
+            "default": 100,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "media_type": {
+            "const": "application/pdf"
+          },
+          "ocr_mode": {
+            "default": "disabled",
+            "enum": [
+              "disabled",
+              "auto",
+              "always"
+            ]
+          },
+          "project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "request_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "rights_basis": {
+            "enum": [
+              "self_authored",
+              "public_domain",
+              "licensed",
+              "permission"
+            ]
+          },
+          "rights_confirmed": {
+            "const": true
+          }
+        },
+        "required": [
+          "project_id",
+          "evidence_id",
+          "expected_evidence_revision",
+          "filename",
+          "media_type",
+          "content_base64",
+          "expected_sha256",
+          "license",
+          "rights_basis",
+          "rights_confirmed",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "mutating": true,
+      "name": "research.document.import",
+      "operation": "research.document.import",
+      "required_scopes": [
+        "modify"
+      ],
+      "scope": "modify"
+    },
+    {
       "description": "Read watch findings with immutable citation and change provenance.",
       "input_schema": {
         "additionalProperties": false,

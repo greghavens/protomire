@@ -188,7 +188,11 @@ def output_descriptor(job: Path, run, node_id: str, output_port: str, artifact_i
         raise BackendError("artifact_binding_denied", "Producer native project provenance disagrees with the owning job")
     node = next((node for node in recipe["nodes"] if node["id"] == node_id), None)
     port = next((port for port in (node or {}).get("outputs", []) if port["name"] == output_port), None)
-    step = run.steps.get(node_id)
+    from .native_invocations import output_step
+    try:
+        info, step = output_step(run, recipe, node_id, output_port, artifact_id)
+    except ValueError as error:
+        raise BackendError("artifact_binding_denied", str(error)) from error
     if port is None or step is None:
         raise BackendError("artifact_binding_denied", "Native binding producer is not a declared executed output")
     if request.get("execution") and node_id not in request["execution"]["node_ids"]:
@@ -197,7 +201,7 @@ def output_descriptor(job: Path, run, node_id: str, output_port: str, artifact_i
     if artifact is None or str(artifact.project.id) != str(run.project.id):
         raise BackendError("artifact_binding_denied", "Artifact does not belong to the requested native output and project")
     validate_native_type(artifact, port["type"])
-    descriptor = {"backend_run_id": str(run.id), "source_node_id": node_id, "source_port": output_port,
+    descriptor = {**info, "backend_run_id": str(run.id), "source_node_id": node_id, "source_port": output_port,
                   "artifact_id": str(artifact.id), "declared_type": port["type"],
                   "content_sha256": storage_identity(artifact, Path(request["root"])),
                   "producer_recipe_id": recipe["recipe_id"], "producer_recipe_revision": recipe["revision"],

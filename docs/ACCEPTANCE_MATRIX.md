@@ -2,12 +2,14 @@
 
 > Owner-requested corrections are verified below: one fixed model project and one recipe identity with immutable revisions; recipe transfer belongs only in the native File menu. Original design inputs are unchanged. Earlier selector and workspace-transfer screenshots are historical, not accepted UI. This is technical verification, not a claim of owner acceptance or full-product completion.
 
-Current-checkpoint pointer updated 2026-10-10. Direct-main development, Linux x64 CPU execution evidence only. Status names are
+Current status updated 2026-10-12; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 checkpoint below is historical.
+
+Historical checkpoint: Direct-main development, Linux x64 CPU execution evidence only. Status names are
 literal: PASS is demonstrated, FAIL is a tested unmet requirement, BLOCKED needs
 an external prerequisite/authorization, UNVERIFIED has not finished testing.
 No aggregate below is a full-product completion claim.
 
-## Current integration checkpoint
+## Historical 2026-10-10 integration checkpoint
 
 Runtime source: `decf680d96ed92e28170580c09bf388c17a1ff22` (86-file source/lock closure), including bounded local placement and unlocked admission/durable dispatch. Complete local CI passed: 1,781 light tests, 319 frontend tests and all 309 native cases, with verified process cleanup. This does not establish native accelerator or GUI acceptance. See [current verification and remaining gates](CURRENT_VERIFICATION.md) for this checkpoint's installed-wheel replay, optional-profile/native tests, build, platform, provider and CI status.
 

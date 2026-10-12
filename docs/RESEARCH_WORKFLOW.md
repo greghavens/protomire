@@ -145,3 +145,138 @@ No content schedule is added. Opening the Research screen, a retrieval form, a r
 `tests/research/test_research_content.py` uses synthetic local article fixtures. It covers licensed XML/abstract/method extraction, attribution, DOI/PMC identity, exact Unicode search offsets, pagination, source/proposal provenance, durable failed rights/access outcomes, input/authorization/project guards, stale evidence and authority, unlocked I/O, concurrent idempotency, cross-worker admission, byte/encoding/XML/redirect protections, and an actually killed/reaped timeout child. HTTP tests and an official MCP SDK memory-stream session traverse the same operation service. No live Europe PMC/OpenAlex paper request or private-query/content upload is used by the tests.
 
 `packages/ide_feature/test/researchView.test.cjs` covers inert source rendering and reader/actions. `researchContentDom.cjs` is the controlled Chromium acceptance script for retrieval cancellation/disclosure, section inspection, search pagination, dismiss/reopen and stale project navigation; running it requires a Chromium-capable environment. Browser-only checks do not establish native Code - OSS or live-provider acceptance.
+
+## Explicit local PDF and OCR ingestion
+
+Saved evidence and findings now expose **Import authorized PDF** in the existing
+Research screen. This opens the native file picker, asks for the rights basis and
+license/permission, and offers embedded text, local OCR for empty-text pages, or
+local OCR for every page. A final review names the exact citation, filename,
+byte count, raw SHA-256, OCR mode and configured service destination before any
+PDF bytes are sent. Cancel at any review step sends no document. Opening the
+reader or Research screen is inert. This workflow does not add a recipe import
+menu, embedded agent, scientific summary, or new model framework.
+
+The selected file is read with a bounded, same-handle local reader; symlinks,
+nonregular files, unexpected changes and remote filesystem-provider URIs are
+rejected. Local filesystem paths and raw PDF bytes never enter the webview.
+The webview passes only the current project/evidence IDs and evidence revision
+to the native host. Project/service changes fence the pending upload; an
+uncertain network result is never automatically retried. For a remote configured
+ModelBuilder service, the explicitly reviewed upload transfers the document to
+that service. “Local extraction” means on the configured service machine, not
+necessarily on the IDE user's computer. No document is forwarded to an OCR or
+model-inference provider.
+
+### Operations and immutable evidence
+
+- `research.document.capabilities` is a project-scoped read. It reports platform,
+  installed fixed-location tool availability, maximum limits and configuration
+  errors without parsing a document or making a network request. Tool presence
+  does not prove installed English OCR data or extraction success.
+- `research.document.import` requires `project_id`, `evidence_id`,
+  `expected_evidence_revision`, a basename `filename` ending in `.pdf`,
+  `media_type:"application/pdf"`, canonical `content_base64`, the mandatory
+  `expected_sha256` of decoded bytes, `license`, `rights_basis`,
+  `rights_confirmed:true`, and `idempotency_key`. Optional `ocr_mode` is
+  `disabled` (default), `auto` (only pages with no embedded text), or `always`.
+  Optional `max_pages` (1–100) and `max_ocr_pages` (1–20) can reduce page limits.
+  No URL, password, arbitrary filesystem path, shell option or cloud OCR
+  destination is accepted.
+- Success returns the existing durable retrieval shape and `text_id`. Parser,
+  capability, timeout, resource and access failures return `status:"failed"`
+  with a safe code and no partial source text. Invalid payloads, rights/hash
+  mismatch, changed citations, stale grants and lost leases remain service
+  errors. Reusing a committed idempotency key replays its recorded outcome;
+  another attempt requires a new explicit key.
+
+The extracted snapshot is the existing `research_text` resource. It includes the
+exact citation revision/snapshot; user-attested rights; normalized text hash;
+original PDF byte hash and size; tool versions; extraction options; page count;
+and per-page Unicode offsets, UTF-8 size, text hash and extraction method.
+Physical pages are sections (`page-1`, etc.), including empty pages. Text is
+normalized by converting CRLF/CR to LF, stripping boundary whitespace on each
+page and joining pages with two LFs. Original PDF bytes and rendered OCR images
+are temporary and are removed after the worker has stopped on normal and timed-out
+requests; they are not saved in the application store. A forcibly killed service
+or host crash can leave private temporary files for operator cleanup. This is
+not guaranteed secure erasure from operating system storage, swap or external backups.
+
+Existing list/read/search/inspect operations work on the PDF snapshot without
+network I/O. Search and inspect return overlapping physical-page evidence;
+proposal citations retain the original PDF hash, exact text hash and quote
+Unicode offsets, matching page hashes/ranges, and extractor provenance.
+Duplicate extractions with the same evidence revision, source bytes, options,
+tool versions and text are reused. Conflicting rights declarations for that
+same extraction are rejected. None of these hashes independently establishes
+publisher identity or scientific validity: the source remains
+`user_supplied_not_independently_verified`, rights remain `user_attested`, and
+`claim_verified` remains `false`.
+
+### Runtime and safety limits
+
+This optional extraction path currently fails closed outside Linux. It uses
+operator-installed `/usr/bin/pdfinfo` and `/usr/bin/pdftotext` from Poppler, plus
+`/usr/bin/pdftoppm` and `/usr/bin/tesseract` with English data when OCR is explicitly
+selected. No packages are downloaded/installed by an import, and no PDF password
+or access-restriction override is attempted. Tool versions are recorded per
+snapshot rather than silently claiming cross-version reproducibility.
+
+Defaults and hard upper bounds are 8 MiB raw PDF, 100 physical pages, 20 OCR pages,
+200,000 normalized UTF-8 text bytes and a 90-second extraction wall deadline.
+Operators may lower the raw-document cap using
+`MODELBUILDER_RESEARCH_MAX_DOCUMENT_BYTES` (integer 1,024–8,388,608); invalid
+configuration disables the capability. The native picker honors that reported
+cap. HTTP retains its existing 16 MiB actual-body cap. IDE and MCP document-import
+requests allow at least 120 seconds to receive the bounded extraction outcome.
+
+The standalone decoder is started in a private temporary directory with a
+sanitized environment and a private process group. Before parsing, it establishes
+Linux hard limits: 768 MiB address space, 60/61 CPU seconds, 16 MiB per output
+file, 64 descriptors and no core dumps. Tool output is file-bounded before any
+parent allocation, and the parent independently validates page ranges, Unicode
+text, text sizes, page hashes and tool-output structure. OCR rasterization is
+limited to 2,048 pixels on the longest side, grayscale, one page at a time.
+Timeout terminates the process group and waits for the worker; the normal
+termination path lets the worker kill/reap its active tool before temporary
+content is removed. Linux `waitid(WNOWAIT)` keeps the exact worker PID reserved
+until group cleanup, preventing a post-reap signal from targeting a reused PID. At most two imports per database and two decoders per
+service process are active. Short 120-second exact-grant/evidence leases keep
+extraction outside SQLite writer locks and fence revoked or superseded work. The
+IDE keeps its read-only run/checkpoint notification polling active during a PDF
+import while still fencing duplicate workbench actions.
+
+These are process/resource bounds, not an operating-system hostile-code sandbox.
+PDFs remain untrusted parser inputs. Poppler/Tesseract are external mature tools;
+this path does not establish containment of a compromised native parser. Their
+platform packaging, patch level, font and language data remain operator
+responsibilities. OCR can misread numbers, equations, words and reading order.
+The snapshot is not a publisher rendering: images, layout, formula layout,
+attachments and annotations are omitted. Digital signatures are not verified.
+Arbitrary publisher/DOI URL fetching, paywall bypass, non-English OCR, automatic
+scientific synthesis and semantic claim verification are still outside this
+implementation.
+
+### Verification
+
+`tests/research/test_research_documents.py` includes actual Poppler extraction
+from self-authored generated PDFs and actual Tesseract extraction from generated
+raster-only PDFs. It verifies page/Unicode/hash boundaries, empty-page inspection,
+explicit OCR, page limits, HTTP and official MCP SDK-to-ASGI proposal provenance,
+rights and hash guards, durable failures, idempotency, project/actor/revision
+fencing, cross-connection concurrency, effective child hard limits and actual
+worker/tool timeout cleanup. Other race/error cases deliberately use controlled
+extraction doubles. Set `MODELBUILDER_REQUIRE_DOCUMENTS=1` to fail rather than skip
+native extraction when the optional tools are absent.
+
+`packages/ide_feature/test/researchDocuments.test.cjs` verifies native host
+consent/cancel paths, changed project/service guards, local bounded reads and
+byte-free webview messages using explicit dialog and service doubles.
+`researchDocumentHttp.cjs` invokes the compiled existing Research host against a
+real isolated loopback service with actual Poppler/Tesseract; only native dialogs
+are doubled. It also starts an independent official SDK client and standalone
+MCP stdio server against the same real HTTP service, confirming the same immutable
+PDF text ID, page hash and text hash across the native host and MCP. `researchDocumentDom.cjs` is a separate controlled Chromium DOM
+acceptance script. The latest Chromium attempt stopped before page creation at
+an OS `socket() ... Operation not permitted` restriction. No security fallback
+was used, and no current native Code - OSS GUI acceptance is claimed.

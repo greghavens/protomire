@@ -1,4 +1,4 @@
-"""Explicit typed terminal conditions on the existing canonical recipe graph."""
+"""Typed branch dependencies on the existing canonical acyclic recipe graph."""
 from __future__ import annotations
 
 CONDITION_SCHEMA = {"type": "object", "additionalProperties": False,
@@ -34,12 +34,107 @@ def validate_conditions(recipe: dict) -> None:
             raise ConditionError("invalid_condition_source", "Choose a different declared node's boolean output for the condition.", node_id=node["id"])
         if not any(port["name"] == condition["source_port"] and port["type"] == "bool" for port in source.get("outputs", [])):
             raise ConditionError("condition_type_mismatch", "Condition gates must reference an explicitly typed bool output.", node_id=node["id"])
-        if any(edge["source_node"] == node["id"] for edge in recipe.get("edges", [])) or any(
-                other.get("condition", {}).get("source_node") == node["id"] for other in nodes.values()
-                if type(other.get("condition")) is dict):
-            raise ConditionError("unsupported_conditional_downstream", "Conditions currently support terminal stages only. Remove downstream data/control consumers or use an unconditional stage; skipped-output merging is not supported.", node_id=node["id"])
-    if any("condition" in node for node in nodes.values()) and recipe.get("evaluation", {}).get("live", {}).get("enabled"):
-        raise ConditionError("unsupported_conditional_live_evaluation", "Disable live evaluation before adding conditions. Live sidecars cannot honor conditional terminal gates.")
+    validate_live_conditions(recipe)
+    for node in nodes.values():
+        if (any("condition" in other for other in nodes.values())
+                and node.get("kind") not in {"code.python", "component.run"} and any(
+                port.get("required", True) is False for port in node.get("inputs", []))):
+            raise ConditionError("unsupported_optional_input", "Optional inputs require a source-bound Python or component stage; built-in lifecycle stages require their declared inputs.", node_id=node["id"])
+        if node.get("kind") == "code.python" and set(node.get("parameters", {})).intersection(
+                port["name"] for port in node.get("inputs", [])):
+            raise ConditionError("ambiguous_input_parameter", "Python parameters cannot replace declared native input ports.", node_id=node["id"])
+
+
+def validate_live_conditions(recipe: dict) -> None:
+    """A sidecar's gate must already be available before its trainer begins.
+
+    No hidden dependency, additional gate execution or speculative sidecar is
+    permitted. A gate produced by training can govern final evaluation only.
+    """
+    if not recipe.get("evaluation", {}).get("live", {}).get("enabled"):
+        return
+    nodes = {node["id"]: node for node in recipe.get("nodes", [])}
+    dependencies = [(edge["source_node"], edge["target_node"]) for edge in recipe.get("edges", [])] + control_dependencies(recipe)
+    for trainer in nodes.values():
+        if trainer.get("kind") != "model.train" and trainer.get("component", {}).get("role") != "training":
+            continue
+        ancestors, pending = set(), {trainer["id"]}
+        while pending:
+            next_nodes = {source for source, target in dependencies if target in pending} - ancestors
+            ancestors.update(next_nodes)
+            pending = next_nodes
+        for edge in recipe.get("edges", []):
+            evaluator = nodes.get(edge["target_node"], {})
+            if (edge["source_node"] != trainer["id"] or "condition" not in evaluator
+                    or evaluator.get("kind") != "model.evaluate" and evaluator.get("component", {}).get("role") != "evaluation"):
+                continue
+            if evaluator["condition"]["source_node"] not in ancestors - {trainer["id"]}:
+                raise ConditionError("unsupported_conditional_live_gate", "Live evaluation requires its boolean gate to be an explicit ancestor of the trainer. Use a pre-training gate or disable live evaluation for a post-training decision.", node_id=evaluator["id"], trainer_node_id=trainer["id"])
+
+
+def skipped_dependencies(recipe: dict, node: dict, chosen: set[str], skipped: set[str], *, optional=False) -> list[dict]:
+    """Return actual selected dependencies whose producers were recorded skipped.
+
+    This never classifies an absent/pending/failed producer as skipped. Optional
+    data inputs can be omitted; required inputs and control gates block a call.
+    """
+    ports = {port["name"] for port in node.get("inputs", []) if (port.get("required", True) is False) == optional}
+    result = [{"kind": "input", "source_node": edge["source_node"], "source_port": edge["source_port"],
+               "target_port": edge["target_port"]}
+              for edge in recipe.get("edges", []) if edge["target_node"] == node["id"]
+              and edge["target_port"] in ports and edge["source_node"] in chosen & skipped]
+    gate = node.get("condition")
+    if not optional and gate and gate["source_node"] in chosen & skipped:
+        result.append({"kind": "condition", "source_node": gate["source_node"], "source_port": gate["source_port"]})
+    return sorted(result, key=lambda item: (item["kind"], item.get("target_port", ""), item["source_node"], item["source_port"]))
+
+
+def recorded_decisions(recipe: dict, chosen: set[str], recorded: dict, native_steps: dict) -> dict:
+    """Project only native decisions backed by the exact selected dependency graph."""
+    import hashlib
+    import json
+    if not isinstance(recorded, dict):
+        return {}
+    nodes = {node["id"]: node for node in recipe["nodes"] if node["id"] in chosen}
+    accepted, skipped = {}, set()
+    for node_id, node in nodes.items():
+        outcome = recorded.get(node_id)
+        if not isinstance(outcome, dict) or outcome.get("status_source") != "native_run_metadata":
+            continue
+        gate = node.get("condition")
+        if (not gate or gate["source_node"] not in chosen or outcome.get("condition") != gate
+                or type(outcome.get("gate_value")) is not bool):
+            continue
+        value = outcome["gate_value"]
+        expected = "eligible" if condition_decision(gate, value) else "skipped"
+        producer = native_steps.get(gate["source_node"])
+        artifacts = producer.outputs.get(gate["source_port"], []) if producer else []
+        if (outcome.get("status") != expected or not any(str(artifact.id) == outcome.get("gate_artifact_id") for artifact in artifacts)
+                or outcome.get("gate_value_sha256") != hashlib.sha256(json.dumps(value).encode()).hexdigest()):
+            continue
+        accepted[node_id] = outcome
+        if expected == "skipped" and node_id not in native_steps:
+            skipped.add(node_id)
+    # A recorded transitive skip must terminate at a verified native gate
+    # decision. Bounded fixed-point projection tolerates arbitrary JSON ordering.
+    pending = set(nodes) - set(accepted)
+    while pending:
+        progress = set()
+        for node_id in pending:
+            outcome = recorded.get(node_id)
+            if (not isinstance(outcome, dict) or outcome.get("status_source") != "native_run_metadata"
+                    or outcome.get("status") != "skipped" or outcome.get("reason") != "upstream_skipped"
+                    or outcome.get("condition") != nodes[node_id].get("condition") or node_id in native_steps):
+                continue
+            blocked = skipped_dependencies(recipe, nodes[node_id], chosen, skipped)
+            if blocked and outcome.get("blocked_by") == blocked:
+                accepted[node_id] = outcome
+                skipped.add(node_id)
+                progress.add(node_id)
+        if not progress:
+            break
+        pending -= progress
+    return accepted
 
 
 def validate_selected_gates(recipe: dict, chosen: set[str]) -> None:

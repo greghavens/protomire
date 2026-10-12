@@ -60,16 +60,24 @@ def deadline_start() -> None:
         job = Path(os.environ["MODELBUILDER_JOB_DIR"])
         context = get_step_context()
         request = read_json(job / "request.json")
-        node = next(node for node in request["recipe"]["nodes"] if node["id"] == context.step_name)
+        from modelbuilder.backend.native_invocations import invocation
+        identity = invocation(context.step_name, context.step_run, request["recipe"])
+        node = next(node for node in request["recipe"]["nodes"] if node["id"] == identity["canonical_node_id"])
         if node_timeout(job):
             os._exit(124)
-        write_json(job / "active-node.json", {"node_id": node["id"], "token": str(uuid.uuid4()),
+        write_json(job / "active-node.json", {"node_id": node["id"], **identity, "token": str(uuid.uuid4()),
                    "started_monotonic": time.monotonic(), "timeout_seconds": node["timeout"]})
         write_json(job / "native.json", {"backend_run_id": str(context.pipeline_run.id),
                    "model_version_ref": str(context.model_version.id) if context.model_version else None,
                    "backend_project_id": str(context.pipeline_run.project.id)})
     except Exception:
-        os._exit(70)
+        # Preserve the original error before fail-closed process exit; ZenML
+        # swallows ordinary hook exceptions, and os._exit cannot flush logging.
+        import traceback
+        try:
+            os.write(2, traceback.format_exc().encode("utf-8", "replace"))
+        finally:
+            os._exit(70)
 
 
 def deadline_end() -> None:
@@ -78,5 +86,5 @@ def deadline_end() -> None:
     from zenml import get_step_context
     job = Path(os.environ["MODELBUILDER_JOB_DIR"])
     current = read_json(job / "active-node.json")
-    if current.get("node_id") == get_step_context().step_name and not node_timeout(job):
+    if current.get("invocation_id", current.get("node_id")) == get_step_context().step_name and not node_timeout(job):
         (job / "active-node.json").unlink(missing_ok=True)

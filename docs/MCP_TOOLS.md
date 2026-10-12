@@ -87,6 +87,8 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `recipe_source_pin_preview` | `recipe.source.pin.preview` | `read` | Review explicit committed source files from the model's approved checkout without changing its recipe or executing code. |
 | `recipe_update` | `recipe.update` | `modify` | Atomically replace the same recipe using its expected revision. |
 | `recipe_validate` | `recipe.validate` | `read` | Validate a recipe without executing any code. |
+| `research_document_capabilities` | `research.document.capabilities` | `read` | Inspect local PDF/OCR tool availability and bounded limits without opening a document or making a network request. |
+| `research_document_import` | `research.document.import` | `modify` | Extract an explicitly supplied, rights-attested PDF locally using Poppler and optional English Tesseract OCR. Pin document and page hashes to an immutable citation; no URLs, cloud OCR, source execution or scientific inference. |
 | `research_finding_list` | `research.finding.list` | `read` | Read watch findings with immutable citation and change provenance. |
 | `research_finding_review` | `research.finding.review` | `modify` | Record human or external-assistant triage without verifying a scientific claim. |
 | `research_proposal_apply` | `research.proposal.apply` | `modify` | Explicitly apply a reviewed proposal as the next revision of the same recipe; never execute training. |

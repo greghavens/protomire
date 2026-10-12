@@ -59,11 +59,12 @@ execution identity and original native producer provenance. Training,
 evaluation, export, Path artifacts and resource/environment isolation remain
 outside this cache capability. See [the supported contract and limitations](NATIVE_PIPELINE_CACHE.md).
 
-## Explicit terminal conditions
+## Explicit branches and joins
 
-[Native terminal conditions](NATIVE_CONDITIONAL_EXECUTION.md) add typed boolean
+[Native branches, joins and gated live evaluation](NATIVE_CONDITIONAL_EXECUTION.md) add typed boolean
 control dependencies to the same canonical recipe and editor. Selected gates
 are explicit; native metadata records skipped stages without invented outputs.
-This bounded sequential path does not implement loops, conditional downstream
-merges, conditional live sidecars, independent-stage concurrency or per-stage
+This sequential path supports nested branches, required-input skip propagation,
+optional-input joins and live evaluator gates available before training. It does
+not implement loops, independent-stage concurrency or per-stage
 isolation/resources.

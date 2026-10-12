@@ -1,0 +1,7 @@
+# Independent ZenML + CUDA 12.8 environment; official Linux Torch wheels.
+zenml[server]==0.97.0
+transformers==4.57.1
+torch==2.9.0+cu128
+numpy==2.2.6
+pytest==8.3.5
+socksio==1.0.0

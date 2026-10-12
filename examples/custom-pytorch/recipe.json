@@ -407,7 +407,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "decf680d96ed92e28170580c09bf388c17a1ff22",
+    "commit": "49c0f34daabc6d3a64a28bbb0ef0b241037efca3",
     "files": [
       {
         "path": "pyproject.toml",
@@ -416,6 +416,14 @@
       {
         "path": "requirements/backend.lock",
         "sha256": "2572035fad60af968a1b26f4f296869b7630328602f875d185a025b8a0a6ae15"
+      },
+      {
+        "path": "requirements/profiles/backend-cuda-cu128-linux-arm64.lock",
+        "sha256": "ab2c32c254e3f5811f40bf4b0eb3ca71f635b37656d8dc957b0b9d04a5eaa21f"
+      },
+      {
+        "path": "requirements/profiles/backend-cuda-cu128-linux-x64.lock",
+        "sha256": "4ad97d32bad25f2cd1a68f39f243776247190a8b763d28c4edf97c3d0b516933"
       },
       {
         "path": "requirements/profiles/backend-darwin-arm64.lock",
@@ -448,6 +456,10 @@
       {
         "path": "requirements/profiles/parquet-win32-x64.lock",
         "sha256": "d7d54dd9d79461fa477c07c2e9c96912892785453445a61263f63d0b5fa44d6c"
+      },
+      {
+        "path": "requirements/profiles/remote-modal-linux-x64.lock",
+        "sha256": "53bf1cbf08dd9617e6a24128268810850ece738daf3f131fde8c4a459960e3d1"
       },
       {
         "path": "requirements/profiles/service-darwin-arm64.lock",
@@ -486,12 +498,16 @@
         "sha256": "69d1afb50e0eaa4935d47a49e017b512006f1545f754ae5e4326b59eefec6c0d"
       },
       {
+        "path": "requirements/profiles/trainer.lock",
+        "sha256": "b3722dae45d18fc4093e6aa8f5f30ca9006c29cbf7c0f75a6e1e10f9eb2b0785"
+      },
+      {
         "path": "requirements/service.lock",
         "sha256": "02b3918fe148881089cf3ba31151ef1e387b2f4b902c34c74a1a70544b8477d7"
       },
       {
         "path": "scripts/replay_bundle.py",
-        "sha256": "5ad93876499d10f679454e0c4ec8747cb5f85fe6f80395b311ba6d72ecc088d1"
+        "sha256": "0c1ca7669647c05de401c4af551915b545c64f452181f71aa6b8c20ec95537a0"
       },
       {
         "path": "src/modelbuilder/__init__.py",
@@ -499,7 +515,7 @@
       },
       {
         "path": "src/modelbuilder/api.py",
-        "sha256": "ec4c30f3384d0f470e17d17291b6fcdf69d678772b5e1f952dd2302c72e2d181"
+        "sha256": "56c1f6a4535e3eeb1c625235e0a6edb5280f5daa48474e01d597e058cbbcd397"
       },
       {
         "path": "src/modelbuilder/auth.py",
@@ -511,11 +527,11 @@
       },
       {
         "path": "src/modelbuilder/backend/adapter.py",
-        "sha256": "0d06c83069d81978a4fbf99fafd28c55929658f4b3e71a2fc78716abfb7247fb"
+        "sha256": "25a2d4524bbe65cc2aa087d5ecf3c228d850baf0c6fbb476985526f64c7d69b5"
       },
       {
         "path": "src/modelbuilder/backend/admission.py",
-        "sha256": "1e54a36e83ec07025e7e13150e87f725bb16ae6d455ccef1d37dbacc26a654da"
+        "sha256": "a6792846b370fc9800abb64f056f26c306402ebde565fe2e313ee046d64524c9"
       },
       {
         "path": "src/modelbuilder/backend/calibration.py",
@@ -527,7 +543,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/__init__.py",
-        "sha256": "428a82e1aaf0ff2eb8ab0fbdf3db39a63f717353e76182802b7c3d6fe30d4f88"
+        "sha256": "965db3c30664aa365bccd63d074b8b208a1c0a2ecf325944b1248a77257048af"
       },
       {
         "path": "src/modelbuilder/backend/components/local_inference.py",
@@ -535,19 +551,35 @@
       },
       {
         "path": "src/modelbuilder/backend/components/runtime.py",
-        "sha256": "e76abc8b2a982a38163ca4f6531d2cb50734aeac94716d81c12685d98c58aa9b"
+        "sha256": "e0d9fef94dace57cb88d8237227a9ed364ad27c8811d4ffbc4bdb478c7eaa044"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/transformers_inference.py",
+        "sha256": "10a60db4a9df7648e436cd3c54f351fd2d26a05779f3533adfda99fbfa9c5e37"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/transformers_loader.py",
+        "sha256": "9117272ac33a18d04db9c9b9de960069409333a6e3f74c95ec1c703b025dc2ea"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/transformers_training.py",
+        "sha256": "2832e2c8c302ec6d25256d6fc9867ddb43bf103a1a2f7d11e7e1689ef1f4a39e"
       },
       {
         "path": "src/modelbuilder/backend/conditional_worker.py",
-        "sha256": "f8b3574a3db63c621a6a8b6d4b02c6e782fa354775c766a2397f1fa22b9a4299"
+        "sha256": "953fd3781e017b6e721143427a7d63253c07eb41db81498a4760a38435089c3f"
+      },
+      {
+        "path": "src/modelbuilder/backend/dependency_files.py",
+        "sha256": "bd732b549fd7aa735eb9722e2ea890551428106c24f4e14be4e5024c4ecbf661"
       },
       {
         "path": "src/modelbuilder/backend/evaluation_binding.py",
-        "sha256": "84fca9c7e791865018e76bb12137fc8ebf8c16997543c78091c9bb5086ae1aab"
+        "sha256": "6ff1e467ae0fd1de2f4a523eab5fa11d77d652c53f45ad2a191b1f81c969ed95"
       },
       {
         "path": "src/modelbuilder/backend/execution_limits.py",
-        "sha256": "8d843604f7d22108b996083f59ca7b8ea380f6fdf2797ec09fbf2296b14168f4"
+        "sha256": "8090bf38ac922d78cf2d0d628e46c7020139fd463dd6c41bae42f5eca3e5e4e1"
       },
       {
         "path": "src/modelbuilder/backend/fixtures.py",
@@ -563,31 +595,35 @@
       },
       {
         "path": "src/modelbuilder/backend/native_exports.py",
-        "sha256": "2ab760dc04535b5479bd1c715f92fab47c5ded48845962a7d16cf3d30ea3e56e"
+        "sha256": "d43c9a521c33c75e60f417d47e9d4b7701a2e9fbf009bdaff1bbab851143d245"
       },
       {
         "path": "src/modelbuilder/backend/native_inputs.py",
-        "sha256": "11e5b094e3b76cdde000f21c20f19046e56df65e083d8bfe204bcdd9ca9c860f"
+        "sha256": "86d51e85a56dfbecca3594b8a094e9203725790eb12be1b397e4e24b4edb15b0"
+      },
+      {
+        "path": "src/modelbuilder/backend/native_invocations.py",
+        "sha256": "b3b0d223a6dc83051cc003b42617bdc8ce9a0450c41983d768e46503eacd8cbf"
       },
       {
         "path": "src/modelbuilder/backend/operator_config.py",
-        "sha256": "9e1228d03666125749772c3f3a1845a9c180bc49e7a551ab175d6c31d32f2dbd"
+        "sha256": "811c52e082358f44c8151aed30e3ef7195bae98dc4bdf9b4a9fc130292241cf4"
       },
       {
         "path": "src/modelbuilder/backend/placement.py",
-        "sha256": "795a5df028d1db5ca43c2b5d2507e45b55b43c6ff01213af89090ae18dd3f846"
+        "sha256": "b4335c8f08369d80e7c86ef63ea52bf3f08d561c948f820cb30675f781be25b5"
       },
       {
         "path": "src/modelbuilder/backend/promotion.py",
-        "sha256": "063cfbbcba7a6ba3422e89b34f34423d8870f6621450f4eeb516cfe6a1b37aa5"
+        "sha256": "28a0033ab24f6f291a2569a5e7ebfa94cb308b2803eab936284342b88ebe5696"
       },
       {
         "path": "src/modelbuilder/backend/sdk.py",
-        "sha256": "ca82dd87ca1a4e8adadfd7f43777fad47292805b429430d1fc5dedb741d9b767"
+        "sha256": "21c244edae6268d1009f8815d4ed1c8073ee2eb69b0032d1baf56d7c72755815"
       },
       {
         "path": "src/modelbuilder/backend/supervisor.py",
-        "sha256": "c2e24e93abea6013deb8e8b19b297f6eb12e91b5c9237a064f0b74588b48b27b"
+        "sha256": "2e210a6a0a93bbfbadc9e88119344c1067301fe111e596be706da8bdc55decbd"
       },
       {
         "path": "src/modelbuilder/backend/tracking_bridge.py",
@@ -599,7 +635,7 @@
       },
       {
         "path": "src/modelbuilder/backend/worker.py",
-        "sha256": "ba037b84921a237c7d9df48a5dcfa7dc0691a6e61ccf7accc5e1400882e18ead"
+        "sha256": "56aaf0a364fb50f888db1b417058bfc99afb0d3a4a496567f604cfd5efff854c"
       },
       {
         "path": "src/modelbuilder/compute_discovery.py",
@@ -607,11 +643,11 @@
       },
       {
         "path": "src/modelbuilder/conditions.py",
-        "sha256": "2dae295f08d75965a0dc03eb0c9fd21ce936954a624acc2d5aa9472df01a6b2c"
+        "sha256": "dd0611ae7674ff2d958041ce2a0d55c0f9aa3f288586723f9b083d6e5ddc09fd"
       },
       {
         "path": "src/modelbuilder/dataset.py",
-        "sha256": "fc38d2da36e28cbabbc5c05902890730c65e6a4b9a718da608a6d9a955ad8966"
+        "sha256": "8804588ee196bb7d1b5e8789ddbed44d97a63095b943ff720172033692178f2d"
       },
       {
         "path": "src/modelbuilder/dataset_binding.py",
@@ -622,16 +658,24 @@
         "sha256": "bd239a7ed58cd4f1e483ec43a8e1077b203a5461a24e0a337eaafa4d5ad3c2a0"
       },
       {
+        "path": "src/modelbuilder/dataset_streaming.py",
+        "sha256": "29e0f9f6cfc49f59cc6ed6195dc13f536473e17dbd833a3beb3ab77fd9f8218e"
+      },
+      {
         "path": "src/modelbuilder/evaluation.py",
         "sha256": "a09ff1080fa75f4aa0e6823f170d9b5a4e4900391d77528cff29a73620df0847"
       },
       {
         "path": "src/modelbuilder/execution.py",
-        "sha256": "d995f00b8bd21628994dbd8e7d921f3c50db6caffed73b2ad8ddc62f8616a66f"
+        "sha256": "60859233a9858bf984770437b7cfd1020d4fb8b1dac70808888180860411d9ed"
       },
       {
         "path": "src/modelbuilder/export_packages.py",
         "sha256": "5ab8b2415c0b23d1b92ac169b5b6bd63e920a8f79fb7d78a25178c4fc46fa70b"
+      },
+      {
+        "path": "src/modelbuilder/iterations.py",
+        "sha256": "af86aa464d7efe581c449f96c5fdeb8a7e280ab6622f083028a7bf57581a5f7e"
       },
       {
         "path": "src/modelbuilder/literature.py",
@@ -643,7 +687,7 @@
       },
       {
         "path": "src/modelbuilder/mcp_server.py",
-        "sha256": "6ab7dc4c4e45e3e39c13b0f63a8891e66ed485a487aae9489d6fcfaa3dff1e9d"
+        "sha256": "d5630ca545680f19447a8c4f99a30a35fded885f10f13af53b7d404a6bc540a4"
       },
       {
         "path": "src/modelbuilder/models.py",
@@ -658,12 +702,20 @@
         "sha256": "68d4127dca49c2b928ba9bd9a87837da89b866207b66b2eb55de76e40f6a15b7"
       },
       {
+        "path": "src/modelbuilder/parquet_stream.py",
+        "sha256": "260281fe30be0e38874dc4d925e0079d2f0beee4b129c662c47fade79f429993"
+      },
+      {
+        "path": "src/modelbuilder/parquet_stream_decode.py",
+        "sha256": "93ac11a618b73b1d74c7c1126f0613ede5aa8eebfa39c9f8fba4cab7f7455f2d"
+      },
+      {
         "path": "src/modelbuilder/platform_file_access.py",
         "sha256": "f52e4d5466bae1ad31b55071cc8c93d0a5c6f55e8aa71817baa8f14c07a2d1da"
       },
       {
         "path": "src/modelbuilder/recipe.py",
-        "sha256": "0620109a228c272635f0a96f6106d0eee102b486b2b0b5b96d2048c1d85c1f63"
+        "sha256": "df013a99d8ba3bece27095401d17e55e608048e76fb3dd04445b4bbbabca2bdc"
       },
       {
         "path": "src/modelbuilder/recipe_registry.py",
@@ -675,7 +727,7 @@
       },
       {
         "path": "src/modelbuilder/remote/__init__.py",
-        "sha256": "a43ebba1ab2f6e224c8a6528e021970b7e07a9cce7e57354f37362b814473554"
+        "sha256": "a0f8a3d8558d720ecc385c18d21d90cde3afff2ac52b4c66e68bcac23d6dced9"
       },
       {
         "path": "src/modelbuilder/remote/contracts.py",
@@ -684,6 +736,26 @@
       {
         "path": "src/modelbuilder/remote/ledger.py",
         "sha256": "0d053eb66ba6a695386dfe860b16ab90ec3173ba1f69bc72c0da887ea3078d90"
+      },
+      {
+        "path": "src/modelbuilder/remote/modal_build_inputs.py",
+        "sha256": "bbaf424dddc0f4c927865cb2d676050f284214f3e70eaead33478ece5fabaebd"
+      },
+      {
+        "path": "src/modelbuilder/remote/modal_contract.py",
+        "sha256": "c65990ce3d26b1631c7a6c5579a29627c3628c46e152387f951e8140dc5a811b"
+      },
+      {
+        "path": "src/modelbuilder/remote/modal_journal.py",
+        "sha256": "2c730f7cacdc8e9742bd369a275715a5f6f18b865479ed224711786d65765401"
+      },
+      {
+        "path": "src/modelbuilder/remote/modal_provider.py",
+        "sha256": "3eb66f155a1c1bffa02eb9b4cf32356cc16f7523cfc509e16b88b96e7306a121"
+      },
+      {
+        "path": "src/modelbuilder/remote/modal_runtime.py",
+        "sha256": "bce269c522a9ddceed37c6e1668b30cc86da5394a0ca39b8cc7ff6338aae5f28"
       },
       {
         "path": "src/modelbuilder/remote/operation_contract.py",
@@ -695,7 +767,7 @@
       },
       {
         "path": "src/modelbuilder/remote/provider.py",
-        "sha256": "c39c8247571fe87e3e0e0071f2857aaf85ef187ece7a089f87c36185954d91a6"
+        "sha256": "fb60d7118be0446c4d832c0df2013be346f180186306b26fc79563391ed59835"
       },
       {
         "path": "src/modelbuilder/remote/service.py",
@@ -703,11 +775,11 @@
       },
       {
         "path": "src/modelbuilder/research.py",
-        "sha256": "ee6d94ec69dc763b7424b07fbf4dd26477f65aba18fed4734e07c547f4fa2dd5"
+        "sha256": "8b90063aa728ade1c6082086c2305e84feac41749372908bf83062edc612bc04"
       },
       {
         "path": "src/modelbuilder/research_content.py",
-        "sha256": "636c23fa8ac6eb6445a4c1658472a6336949aa1378d90c45b3aec713acf701af"
+        "sha256": "012db31d73ddf7f0b241c5528dcedbefe0607edb9d8d1fd6a984b603af4c7e0f"
       },
       {
         "path": "src/modelbuilder/research_content_fetch.py",
@@ -715,7 +787,15 @@
       },
       {
         "path": "src/modelbuilder/research_contract.py",
-        "sha256": "daa5896545aaaffae457621552750de1e41346c22a41c660c6d8cd97771fdac1"
+        "sha256": "8c4171fdbab740ffd89b1486b9de25cd64b8a13715ed90ac6dd13028dd06e26a"
+      },
+      {
+        "path": "src/modelbuilder/research_document_decode.py",
+        "sha256": "4cedb411ed2d12f1cf4e65fe6ff787a70eac32aab15acb1645ac70e00385ea5e"
+      },
+      {
+        "path": "src/modelbuilder/research_documents.py",
+        "sha256": "cafd4e109843c7d5296e94accaffba149c3885c626167769a6ea35d2fdb6ff75"
       },
       {
         "path": "src/modelbuilder/research_scheduler.py",
@@ -727,7 +807,7 @@
       },
       {
         "path": "src/modelbuilder/service.py",
-        "sha256": "5a89975dacb8e364f77d6586d0d7281c3e9b54524808464eee6bde4d673127a8"
+        "sha256": "00e5b366b900dd3dfd5472a7594cda920e4f045fab427377b9fcb190642804af"
       },
       {
         "path": "src/modelbuilder/source_pinning.py",

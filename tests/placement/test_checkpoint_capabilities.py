@@ -147,3 +147,13 @@ def test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim(
         assert result["descriptor"] == descriptor
     assert sdk.checkpoint(job, "last")["resume_modes"] == result["resume_modes"]
     assert len(saved) == 1  # Reading existing recovery must not duplicate recovery.
+
+
+def test_loop_scope_suppresses_exact_resume_without_rewriting_checkpoint_modes():
+    request = saved_request('cpu', component=True)
+    request['recipe']['bounded_iterations'] = [{'id': 'repeat', 'node_ids': ['train'], 'max_iterations': 2, 'state': []}]
+    declared = ['exact_state', 'warm_start']
+    assert sdk._checkpoint_resume_modes(request, declared) == ['warm_start']
+    assert declared == ['exact_state', 'warm_start']
+    request['execution'] = {'node_ids': ['other'], 'input_bindings': []}
+    assert sdk._checkpoint_resume_modes(request, declared) == ['exact_state', 'warm_start']

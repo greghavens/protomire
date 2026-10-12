@@ -41,9 +41,12 @@ def _snapshot(client, project, payload, root):
         request = read_json(jobs[0] / "request.json")
         nodes = {node["id"]: node for node in request["recipe"]["nodes"]}
         steps, artifacts = {}, {}
-        for node_id, step in run.steps.items():
-            steps[node_id] = {side: {port: [str(artifact.id) for artifact in versions] for port, versions in getattr(step, side, {}).items()}
+        from .native_invocations import invocations
+        for invocation, step in invocations(run, request["recipe"]):
+            node_id = invocation["canonical_node_id"]
+            steps[invocation["invocation_id"]] = {side: {port: [str(artifact.id) for artifact in versions] for port, versions in getattr(step, side, {}).items()}
                               for side in ("inputs", "outputs")}
+            steps[invocation["invocation_id"]]["invocation"] = invocation
             node = nodes.get(node_id, {})
             evaluator = node.get("kind") == "model.evaluate" or node.get("component", {}).get("role") == "evaluation"
             for side in ("inputs", "outputs"):

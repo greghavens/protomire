@@ -56,11 +56,14 @@ policy unit test or earlier evaluation is counted as a GUI/backend acceptance pa
    examples are test workloads, not a restriction to those model architectures.
 5. `MODELBUILDER_RUN_INTEGRATION=1 ./scripts/test_all.sh` runs contract, frontend,
    independent MCP and actual CPU/backend tests. GUI and clean-environment replay
-   have separate explicit commands and evidence.
+   have separate explicit commands and evidence. On Linux, the full integration
+   suite also requires Poppler (`pdfinfo`, `pdftotext`, `pdftoppm`) and Tesseract
+   with English language data for real PDF/OCR acceptance.
 
 ## Engineering references
 
 - [Architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md), [backend decision](docs/BACKEND_DECISION.md)
+- [Bounded native pipeline iteration](docs/NATIVE_BOUNDED_ITERATION.md)
 - [Native MCP tools](docs/MCP_TOOLS.md), [OpenAPI](docs/openapi.json)
 - [ZenML lifecycle and cancellation semantics](docs/ZENML_BACKEND.md)
 - [Local device placement and hardware-verification limits](docs/LOCAL_DEVICE_PLACEMENT.md)

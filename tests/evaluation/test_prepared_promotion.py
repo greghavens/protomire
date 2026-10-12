@@ -146,3 +146,25 @@ def test_oversized_preparation_is_rejected_before_writing_handle(prepared, monke
         promotion.prepare(payload, root)
     assert set((root / "promotion-evidence").iterdir()) == original
     assert not mutations
+
+
+def test_repeated_nonstandard_evaluator_outputs_receive_promotion_witnesses(tmp_path):
+    """Canonical role resolution must not disappear behind a native call ID."""
+    from modelbuilder.iterations import invocation_identity
+    from modelbuilder.backend.common import recipe_provenance
+    run, request, _ = native(tmp_path, 'repeated', copies=1)
+    block = {'id': 'repeat-evaluation', 'node_ids': ['evaluation-0'], 'max_iterations': 2, 'state': []}
+    request['recipe']['bounded_iterations'] = [block]
+    info = invocation_identity('evaluation-0', block, 1)
+    step = run.steps.pop('evaluation-0')
+    measurement = step.outputs.pop('metrics')[0]
+    step.outputs['scores'] = [measurement]
+    step.config = NS(extra=info)
+    run.steps[info['invocation_id']] = step
+    run.config.extra.update(recipe_provenance(request['recipe']))
+    write_json(tmp_path / 'jobs' / run.id / 'request.json', request)
+    write_json(tmp_path / 'jobs' / run.id / 'native.json', {'backend_run_id': run.id})
+    snapshot = promotion._snapshot(NS(get_pipeline_run=lambda *args, **kwargs: run), NS(id='native-project'),
+        {'project_id': 'project', 'candidate_run_ids': [run.id]}, tmp_path)[0]
+    assert measurement.id in snapshot['artifacts']
+    assert snapshot['steps'][info['invocation_id']]['invocation'] == info

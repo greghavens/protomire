@@ -389,7 +389,11 @@ def _checkpoint_resume_modes(request: dict, declared: list[str]) -> list[str]:
             raise ValueError("Saved checkpoint placement differs from its executed recipe")
     except (ValueError, TypeError, AttributeError, KeyError) as error:
         raise BackendError("dependency_mismatch", "Checkpoint execution placement is inconsistent") from error
-    return effective_resume_modes(device, declared)
+    modes = effective_resume_modes(device, declared)
+    selected = set(request.get("execution", {}).get("node_ids", [node["id"] for node in request["recipe"].get("nodes", [])]))
+    if any(set(block["node_ids"]) & selected for block in request["recipe"].get("bounded_iterations", [])):
+        modes = [mode for mode in modes if mode != "exact_state"]
+    return modes
 
 
 def checkpoint(job: Path, kind: str, requested: str | None = None) -> dict:

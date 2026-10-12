@@ -128,7 +128,9 @@ def _invoke(operation: str, payload: dict, root: Path, stack: ExitStack):
             descriptor = inspect_export(path, provenance)
             # Reverify the exact checkpoint declared by the export against connected
             # native inputs. Never silently substitute 'last' for selected/best.
-            step = run.steps[record["node_id"]]
+            from .native_invocations import output_step
+            invocation, step = output_step(run, request["recipe"], record["node_id"], record["port"], record["artifact_id"])
+            provenance.update(invocation)
             path_ports = {port["name"] for port in nodes[record["node_id"]]["inputs"] if port["type"] in {"Path", "checkpoint"}}
             connected = [(port, artifact) for port, inputs in step.inputs.items() if port in path_ports for artifact in inputs]
             identities = []

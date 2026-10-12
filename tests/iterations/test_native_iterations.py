@@ -190,6 +190,8 @@ def test_native_training_evaluation_feedback_exact_checkpoint_selectors_and_warm
     assert native[checkpoints[1]['invocation_id']]['inputs']['previous'] == [checkpoints[0]['artifact_id']]
     selected = backend.invoke('model.checkpoint.get', {**request, 'checkpoint_ref': checkpoints[0]['artifact_id'], 'checkpoint_kind': 'last'})
     assert selected['artifact_id'] == checkpoints[0]['artifact_id'] and selected['iteration'] == 1
+    assert selected['resume_modes'] == ['warm_start']
+    assert selected['descriptor']['resume_modes'] == ['exact_state', 'warm_start']
     with pytest.raises(BackendError) as error:
         backend.invoke('model.checkpoint.get', request)
     assert error.value.code == 'ambiguous_checkpoint'
@@ -355,3 +357,27 @@ async def test_official_mcp_iteration_matches_http_editor_schema_and_canonical_r
         if submitted:
             backend.invoke('run.cancel', {'project_id': project['project_id'], 'operation_id': submitted['operation_id']})
         service.store.close()
+
+
+def test_repeated_exports_select_exact_invocation_checkpoint_and_package(tmp_path):
+    backend, payload = training_setup(tmp_path)
+    body = payload['recipe']
+    exporter = copy.deepcopy(body['nodes'][1])
+    exporter.update(id='export', outputs=[{'name': 'exported', 'type': 'Path'}])
+    exporter['implementation_ref']['entrypoint'] = 'export'
+    exporter['component'].update(id='test.export', role='export')
+    exporter['component']['capabilities']['export_formats'] = ['pytorch-state-dict']
+    body['nodes'].append(exporter)
+    body['edges'].append({'source_node': 'train', 'source_port': 'trained', 'target_node': 'export', 'target_port': 'trained'})
+    body['bounded_iterations'][0]['node_ids'].append('export')
+    result, request = execute(backend, payload)
+    assert result['status'] == 'succeeded', result
+    listed = backend.invoke('model.export.list', {'project_id': payload['project_id'], 'backend_run_id': result['backend_run_id']})
+    assert not listed['diagnostics'] and len(listed['exports']) == 2, listed
+    selected = next(descriptor for descriptor in listed['exports'] if descriptor['provenance']['iteration'] == 1)
+    checkpoint = next(artifact for artifact in result['artifacts'] if artifact['node_id'] == 'train' and artifact['iteration'] == 1)
+    assert selected['provenance']['selected_checkpoints'][0]['artifact_id'] == checkpoint['artifact_id']
+    reference = {key: selected['provenance'][key] for key in ('project_id', 'backend_run_id', 'model_version_id', 'artifact_id')}
+    assert backend.invoke('model.export.inspect', reference) == selected
+    packaged = backend.invoke('model.export.package', {**reference, 'expected_export_digest': selected['export_digest']})
+    assert packaged['sha256'] and packaged['chunk_sha256']

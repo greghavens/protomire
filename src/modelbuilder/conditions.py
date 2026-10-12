@@ -36,7 +36,7 @@ def validate_conditions(recipe: dict) -> None:
             raise ConditionError("condition_type_mismatch", "Condition gates must reference an explicitly typed bool output.", node_id=node["id"])
     validate_live_conditions(recipe)
     for node in nodes.values():
-        if (any("condition" in other for other in nodes.values())
+        if ((recipe.get("bounded_iterations") or any("condition" in other for other in nodes.values()))
                 and node.get("kind") not in {"code.python", "component.run"} and any(
                 port.get("required", True) is False for port in node.get("inputs", []))):
             raise ConditionError("unsupported_optional_input", "Optional inputs require a source-bound Python or component stage; built-in lifecycle stages require their declared inputs.", node_id=node["id"])

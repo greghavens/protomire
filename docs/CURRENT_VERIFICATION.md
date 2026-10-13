@@ -1,5 +1,22 @@
 # Current verification and remaining gates
 
+## Shared-service Trainer continuation, 2026-10-13
+
+The strengthened real service test passed on Linux (**232.20 seconds**) and Mac
+(**106.89 seconds**). It submits a real run, cancels after completed epoch 2,
+discovers that checkpoint and resumes to the original four-epoch horizon.
+Model/optimizer/scheduler/RNG state, row order, held-out metrics and the exported
+selected model match the uninterrupted control. Exact per-case rejection and
+Trainer/optimizer entry markers establish that unsafe checkpoints fail before
+optimization. Every created operation and owned process group is checked during
+teardown. See [the scoped receipt](../evidence/product-completion-20261013/trainer-service-resume.json).
+
+This proves the tested static five-node CPU/eager DAG, not arbitrary DAGs,
+iteration state, streaming training or other accelerator continuation. The runtime
+remains `33397ea` with 163 pinned files. Full native and installed replay gates
+remain open. The Mac is now offline; the updated app build cannot start there
+until it reconnects. All completed Mac source/test artifacts were saved first.
+
 ## Streaming dataset safeguards, 2026-10-13
 
 Runtime source `33397ea30361b9c51dfb6bde219fd5f58c59dc10` combines the

@@ -1,0 +1,38 @@
+{
+  "linux": {
+    "failed": 0,
+    "junit_sha256": "e9b744c87e9fee87971fd94e0ed073e5fca9fe70226ab7344b0c0fb8bdf37154",
+    "passed": 1,
+    "seconds": 232.2
+  },
+  "mac": {
+    "errors": 0,
+    "failures": 0,
+    "passed": 1,
+    "seconds": 106.883,
+    "xml_sha256": "5af856e6a184912f5fb02831e2ca4d2a6355446015b4d01dd17fdc06a252028c"
+  },
+  "no_claims": [
+    "No general arbitrary-DAG/iteration-state continuation.",
+    "No streaming/distributed/GPU/MPS/MLX exact-state continuation.",
+    "No hosted CI, paid cloud or external rights approval inferred."
+  ],
+  "pending": [
+    "Complete combined standard aggregate rerun after RSS measurement correction.",
+    "Fresh full canonical native queue and installed-wheel replay.",
+    "Updated app packaging and native GUI acceptance; Mac currently offline."
+  ],
+  "recorded_at": "2026-10-13T20:00:00.025863+00:00",
+  "runtime_source_commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
+  "runtime_source_files": 163,
+  "scope": "Real shared-service submit/cancel/checkpoint discovery/exact resume on a static five-node CPU/eager DAG: registered train and validation imports, Trainer v2, evaluation and export.",
+  "status": "SCOPED_SERVICE_ACCEPTANCE_PASSED",
+  "verified": [
+    "Completed epoch2 checkpoint resumes to original epoch4/scheduler horizon.",
+    "Model, optimizer, scheduler, Python/NumPy/Torch RNG, row order, heldout evaluation and selected export match uninterrupted control.",
+    "Edited current recipe does not replace the original parent contract.",
+    "Partial state, changed contract and missing optimizer require specific validation rejection; real Trainer/optimizer entry markers are absent.",
+    "Each export binds to its own selected checkpoint.",
+    "All created operations terminate; owned process-group teardown and archive restoration are checked, including failure paths."
+  ]
+}

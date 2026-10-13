@@ -1,5 +1,5 @@
 {
-  "recorded_at": "2026-10-13T23:28:34.425889+00:00",
+  "recorded_at": "2026-10-13T23:54:24.860813+00:00",
   "status": "SCOPED_INSTALLED_REPLAY_PASSED_AGGREGATE_INCOMPLETE",
   "installed_replay": {
     "additional_driver": {
@@ -36,7 +36,7 @@
   "fixture_correction": "Production already supplies job_dir. Direct-entrypoint fixture corrected;2focused backend tests passed. Full corrected component group not accepted.",
   "remaining": [
     "Complete aggregate native acceptance; public pretrained rights admission remains unresolved.",
-    "Installed streaming scientific acceptance.",
+    "Additional installed streaming modes: Parquet, warm start, exact-state continuation and in-flight preparation cancellation remain outside completed scope.",
     "Current Mac GUI acceptance, signing and clean-machine installation.",
     "Other platform and external integration gates remain as recorded."
   ],
@@ -47,5 +47,6 @@
     "evidence/rules-20261013/native-group-reruns-2124/completion.json": "47df2024c3a2fbf0a8d55958a40fc6c921508bc2d516a6ba0eeec9ad61e21cb5",
     "evidence/rules-20261013/component-recovered-memory-2241/completion.json": "680cdb453a3a31887e7535ad229e7dbdfa1d1f39ed8d5a927b4409b54ab55cbe"
   },
-  "installed_trainer_scientific_acceptance": "SCOPED_PASS; see installed-trainer-33397ea.json. Both roles,14jobs,126sealedreceipts,64574installedentries verified; harness exit0."
+  "installed_trainer_scientific_acceptance": "SCOPED_PASS; see installed-trainer-33397ea.json. Both roles,14jobs,126sealedreceipts,64574installedentries verified; harness exit0.",
+  "installed_streaming_scientific_acceptance": "SCOPED_PASS; see installed-streaming-33397ea.json. Both roles,8preparation cases,4positive streaming runs,2cancellation runs,8total jobs terminated,126sealed receipts and64574installedentries verified. Harness exit0."
 }

@@ -15,7 +15,7 @@ separates scoped passes from incomplete acceptance.
   Strict comparison stays **FAIL, 34/35**: three original manifests differ only
   under `/rights`. The structural audit passes without rewriting provenance.
   Installed Trainer has now separately passed the workload-specific review below;
-  installed streaming acceptance remains pending.
+  installed CSV/JSONL streaming has also passed the scoped review below.
 - Separate native groups: integration 65 passed; lifecycle 30 passed with one
   public pretrained rights-admission refusal; concurrency 18 passed (4 deselected).
   Components first completed with 649 passes, 11 skips and one fixture failure.
@@ -32,6 +32,31 @@ separates scoped passes from incomplete acceptance.
   initially had five passes and one external-fixture failure; the corrected
   fixture passed separately. Native GUI acceptance remains blocked on unlock.
   Signing, clean-machine installation and other platform/integration gates remain.
+
+## Installed streaming acceptance, 2026-10-13 23:54 UTC
+
+Both fresh installed roles passed [scoped CSV/JSONL streaming acceptance](../evidence/product-completion-20261013/installed-streaming-33397ea.json).
+Eight preparation cases independently verified proportional/equal quotas,
+selected IDs/content/order and lineage on 120,000-row inputs. Four real five-node
+native runs consumed exactly **4 of 12 selected rows**; two cancellation cases
+retained one step-1 checkpoint with **2 consumed rows**. Prepared, selected and
+consumed counts are deliberately distinct. All model tensors changed and remained
+finite, selected-checkpoint evaluation/export matched, and fresh-process export
+prediction parity was exact on the authored fixture input.
+
+Public rights review, source/index tamper rejection, stricter cache caps,
+preexisting cancellation, restart/cache checks and native cleanup passed.
+All eight total jobs (six streaming plus two baseline jobs) terminated. Four
+installed environments' 64,574 entries, all 163 runtime files and 126 sealed
+receipts remained verified. Actual harness exit was 0. The generic hook stays
+`REPORTED_UNVERIFIED`; the independent scientific review supplies this scoped
+PASS without altering the original rights-only strict comparison failure.
+
+This does not cover Parquet in installed environments, streaming warm start or
+exact-state continuation, in-flight ingestion/ranking cancellation, cross-role
+checkpoint equality, GUI or installers. Ten-second sampling observed maximum
+disk growth of approximately 3.373 GiB and minimum free disk of 1.844 GiB; these
+are sampled observations, not guaranteed instantaneous peaks.
 
 ## Installed Trainer acceptance, 2026-10-13 23:28 UTC
 
@@ -65,7 +90,7 @@ teardown. See [the scoped receipt](../evidence/product-completion-20261013/train
 
 This proves the tested static five-node CPU/eager DAG, not arbitrary DAGs,
 iteration state, streaming training or other accelerator continuation. The runtime
-remains `33397ea` with 163 pinned files. Full native aggregate and installed streaming replay gates remain open. The Mac
+remains `33397ea` with 163 pinned files. Full native aggregate, untested streaming modes and graphical acceptance gates remain open. The Mac
 execution connection recovered and the v19 unsigned app was built. The latest
 GUI preflight found the screen locked and launched no IDE window.
 

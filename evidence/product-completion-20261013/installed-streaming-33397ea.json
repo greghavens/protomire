@@ -1,0 +1,102 @@
+{
+  "checkout_commit": "18a2b9488402d5e4e9903d5e775d5972936ac301",
+  "completed_utc": "2026-10-13T23:53:34.055143+00:00",
+  "copied_evidence": "/workspace/scratch/f9ccb8889bfe/installed-streaming-evidence-20261013T2351",
+  "copy_verification": {
+    "copied_original_bytes": 39026107,
+    "copied_original_files": 128,
+    "path": "copy-verification.json",
+    "sha256": "7561b6f495f30a7b3a9e334bab92b3ac2205ebb06a37fe1ba2fd90c93b839cb1"
+  },
+  "driver_sha256": "50e41df093bd00d1b0cf0790f62c3c353d7eae749acfd41051cc39886873f9bf",
+  "harness_returncode": 0,
+  "independent_review": {
+    "blockers": [],
+    "path": "independent-scientific-review.txt",
+    "sha256": "d66aa7ae2b5542b20e5c25ca36027b22e15bddeeddc396630e86ed47d64844bb",
+    "verdict": "PASS"
+  },
+  "integrity": {
+    "after_capture_errors": [],
+    "frozen_source_after_sha256": "b475cdd15a0bd76f8c2b811f9774925c81b752cb0e9a102f01defd39a8b1dc8f",
+    "frozen_source_before_sha256": "b475cdd15a0bd76f8c2b811f9774925c81b752cb0e9a102f01defd39a8b1dc8f",
+    "harness_seal_sha256": "ae84826f2a8288768cdb944fa09c4770efe35c1dcb3c5ff4e8a5b84096db58a4",
+    "installed_after_sha256": "95333d732815516207b8727170404fe64099d9b838f7a10d6a5ef8bc1610c5cb",
+    "installed_before_sha256": "95333d732815516207b8727170404fe64099d9b838f7a10d6a5ef8bc1610c5cb",
+    "root_bytecode_after_sha256": "341be8c4031aa412af3c1930d9439def1a3ce3bc1baef4c24849b3e9036cd1bc",
+    "root_bytecode_before_sha256": "341be8c4031aa412af3c1930d9439def1a3ce3bc1baef4c24849b3e9036cd1bc"
+  },
+  "original_work": "/workspace/scratch/f9ccb8889bfe/installed-streaming-native-33397ea-20261013T2335",
+  "pinned_files": 163,
+  "preservation": {
+    "all_originals_retained": true,
+    "archival_cleanup_requires_separate_coordination": true,
+    "cleanup_of_environment_copies_performed": false,
+    "dependency_downloads": false,
+    "root_edits": false,
+    "runtime_changes": false
+  },
+  "remaining_coverage": [
+    "Parquet",
+    "warm-start execution",
+    "streaming exact-state continuation",
+    "in-flight ingestion/ranking cancellation",
+    "cross-role checkpoint equality",
+    "GUI",
+    "installer"
+  ],
+  "resource_summary": {
+    "minimum_sampled_available_ram_bytes": 3604856832,
+    "minimum_sampled_free_disk_bytes": 1980256256,
+    "path": "resource-summary.json",
+    "sampled_maximum_disk_growth_bytes": 3621810176,
+    "sampling_seconds": 10,
+    "sha256": "0f6cdc50f3b0a0b48bd393b2b51536ef7f991288fa02322d507370955aac3b49"
+  },
+  "roles": {
+    "origin": {
+      "cleanup": "PASS",
+      "coordinator_cleanup_jobs": 4,
+      "driver_jobs": 3,
+      "driver_reported_status": "PASS",
+      "driver_result_sha256": "cd2d1ce18a3ff96b1c7081d1a7a05b2a65153bf8cb7c13903609418c93e150bb",
+      "scientific_review": "PASS"
+    },
+    "replay": {
+      "cleanup": "PASS",
+      "coordinator_cleanup_jobs": 4,
+      "driver_jobs": 3,
+      "driver_reported_status": "PASS",
+      "driver_result_sha256": "9f45b41dec239b34cb019350ce89d22e2ad0628036c60d01a36bde231b8f7647",
+      "scientific_review": "PASS"
+    }
+  },
+  "runtime_commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
+  "schema": "modelbuilder.installed-streaming-acceptance-review/v1",
+  "scope": {
+    "all_native_jobs_terminated": 8,
+    "cancelled_native_runs": 2,
+    "consumed_rows_cancelled": 2,
+    "consumed_rows_success": 4,
+    "encodings": [
+      "csv",
+      "jsonl"
+    ],
+    "native_streaming_jobs_terminated": 6,
+    "platform": "same-host Linux x86-64 CPU float32",
+    "preparation_cases": 8,
+    "selected_rows": 12,
+    "successful_native_runs": 4,
+    "train_rows_per_encoding": 120000
+  },
+  "status": "PASS_SCOPED_INSTALLED_STREAMING_ACCEPTANCE",
+  "unchanged_harness_interpretation": {
+    "baseline_rights_only_structural_audit": "PASS",
+    "baseline_strict_comparison": "FAIL",
+    "baseline_strict_failed_checks": [
+      "output_hashes_equal"
+    ],
+    "generic_driver_status": "REPORTED_UNVERIFIED"
+  },
+  "original_receipt_sha256": "5de43fae761701abaab4b9b7343712811373ab742c86e82a0b154dfb038a9221"
+}

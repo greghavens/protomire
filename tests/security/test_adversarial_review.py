@@ -278,11 +278,29 @@ def test_unimplemented_kl_reference_or_scope_cannot_be_silently_ignored(tmp_path
                       "target_port": "data"} for node in ["initial", "unconnected-initial", "train"]]
     body["edges"].append({"source_node": "initial", "source_port": "initial",
                           "target_node": "train", "target_port": "initial"})
-    assert backend._validate_execution({"trusted": True, "recipe": body}) == body
+    # Explicit test-owned synthetic-source review lets this negative case reach
+    # the KL contract. It grants no third-party or production asset rights.
+    from tests.components.rights_test_support import local_source_review, USAGE_CONTEXT, write_reviewed_policies
+    root = backend.repository
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(root), "-c", "user.name=KL fixture test", "-c",
+                    "user.email=test@example.invalid", "commit", "-qm", "Exact synthetic test source"], check=True)
+    body["source"]["commit"] = subprocess.check_output(
+        ["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+    policy, rights = local_source_review(root, body["source"], body["project_id"])
+    body.setdefault("extensions", {}).update(artifact_rights=rights, usage_context=deepcopy(USAGE_CONTEXT))
+    policies = {policy["policy_id"]: policy}
+    store = write_reviewed_policies(tmp_path / "test-reviewed-policy.sqlite3", policies)
+    backend = backend.with_execution_rights(project_id=body["project_id"], policies=policies, policy_store_path=store)
+    payload = {"project_id": body["project_id"], "trusted": True, "recipe": body}
+    assert backend._validate_execution(payload) == body
     train["parameters"]["kl"].update(kl_change)
     with pytest.raises(BackendError) as error:
-        backend._validate_execution({"trusted": True, "recipe": body})
+        backend._validate_execution(payload)
     assert error.value.code == "capability_unavailable"
+    assert "Fixture KL supports logits anchored" in str(error.value)
+    assert not (backend.root / "jobs").exists()
 
 
 def test_imported_unresolved_dependency_never_claims_execution_ready():
@@ -382,7 +400,7 @@ def test_cancellation_waits_for_owned_process_group_not_just_leader(tmp_path, mo
     original_popen = subprocess.Popen
     processes = []
     def controlled_popen(command, **kwargs):
-        assert command[1:3] == ["-m", "modelbuilder.backend.worker"]
+        assert command[1:4] == ["-B", "-m", "modelbuilder.backend.worker"]
         process = original_popen([sys.executable, str(worker)], **kwargs)
         processes.append(process)
         return process

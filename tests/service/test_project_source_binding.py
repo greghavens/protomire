@@ -277,7 +277,7 @@ def test_historical_rpc_uses_safe_startup_without_original_source_directory(tmp_
     shutil.rmtree(original)
     calls = []
     def run(command, **kwargs):
-        assert command[1:3] == ["-P", "-m"]
+        assert command[1:4] == ["-P", "-B", "-m"]
         assert kwargs["cwd"] == backend.root
         assert kwargs["env"]["PYTHONSAFEPATH"] == "1"
         request = read_json(Path(command[-1]))

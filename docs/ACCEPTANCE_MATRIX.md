@@ -11,7 +11,11 @@ the worksheet. First-run routing preserves existing tabs and workspaces; legacy
 restored stock Welcome migration remains unresolved. Final affected integration
 checks passed: type/build, 582 frontend tests, real HTTP project creation/recovery,
 and eight independent read-only draft-lifecycle checks. Native graphical acceptance
-is **UNRUN pending Mac unlock**, and v12 DMG evidence below predates this correction.
+is **UNRUN pending Mac unlock**. The new unsigned v15 DMG contains `f683e28`;
+build-host-reported strict inventories/imports and 6 selected mounted core tests
+passed (7 deselected, 110.54 seconds), with no GUI launch. The pinned editor binary
+was reused, not fully rebuilt. [Reported artifact evidence](../evidence/product-completion-20261013/mac-f683e28-build-host-report.json)
+is distinct from independent raw-evidence inspection. V12 evidence below is historical.
 The integration-host DOM attempt was blocked by sandbox socket permissions; no
 security settings were weakened. Encrypted obsolete-snapshot garbage collection
 is deferred. No new upstream Code - OSS edits or backend source changes were made.

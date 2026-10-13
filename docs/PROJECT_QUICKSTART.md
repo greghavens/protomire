@@ -211,6 +211,8 @@ history-bearing integration checkout's 2026-10-13 standard local aggregate:
 2,780 Python passed, 141 skipped, 89 deselected; 18 offline Hub SDK and 582
 frontend passed. Type/build, actual loopback quickstart recovery, and eight
 independent lifecycle-review checks passed. Native graphical/OS SecretStorage
-acceptance remains pending Mac unlock; the existing v12 DMG predates this change.
+acceptance remains pending Mac unlock. The updated unsigned v15 DMG contains
+`f683e28`; build-host strict inventory/imports and six selected mounted core tests
+passed without opening the IDE. This does not establish graphical acceptance.
 See [current verification](CURRENT_VERIFICATION.md) for the distinct native
 backend and full-product gates, which have not been promoted to passing.

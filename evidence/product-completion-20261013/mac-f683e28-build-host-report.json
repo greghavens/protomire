@@ -1,0 +1,57 @@
+{
+  "repository_commit": "f683e280994801e8d8ca007230711392115c7b49",
+  "runtime_source_commit": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92",
+  "target": "darwin-arm64",
+  "sealed_runtime_files": 45381,
+  "fresh_checkout_clean": true,
+  "source_archive": {
+    "library_file_id": "libfile_5e363442adb88191b7820fb2182974cb",
+    "version": 15,
+    "file_id": "file_000000002c64820eaeb12994f2c03228",
+    "bytes": 5594805,
+    "sha256": "242907225100f98741241ce35d2359bb1d5417e4f4c53394fda721822a3b2476",
+    "shallow_aware_restore_verified": true
+  },
+  "dmg": {
+    "path": "/Users/venom/Documents/Codex/2026-10-12/task/merged-v15/build/artifacts/modelbuilder-ide-0.1.0-darwin-arm64-dev-unsigned.dmg",
+    "bytes": 1163397720,
+    "sha256": "1a33a4982efcb633e80c601ab099904d5b37f0675a0e54d82e9b71a760db3a2c",
+    "hdiutil_verify": "passed"
+  },
+  "native_bundle_id": "org.modelbuilder.IDE",
+  "native_executable_sha256": "459265f66ad93e8d9bba320e652edb834dbcb619a347db0e683496528f7081bd",
+  "compiled_extension_sha256": "68264ad342af3af78a3515fce7c9b5057a6e70b3a59862254c410dde276af5a5",
+  "staged_strict_inventory": "passed",
+  "mounted_strict_inventory": "passed",
+  "relocated_imports": [
+    "service",
+    "backend",
+    "hub",
+    "mlx"
+  ],
+  "mounted_core": {
+    "passed": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 7,
+    "seconds": 110.54
+  },
+  "detach_exit": 0,
+  "gui_launched": false,
+  "native_gui_acceptance": "UNVERIFIED; pending unlock",
+  "legacy_welcome_migration": "pending",
+  "editor_build": "Reused reviewed pinned native Code OSS binary; refreshed committed extension; no new complete editor build",
+  "upstream_code_oss_commit": "03c265b1adee71ac88f833e065f7bb956b60550a",
+  "signed": false,
+  "published": false,
+  "commits": false,
+  "pushes": false,
+  "v12_preserved_sha256": "04695dbb092599ec3868480f675e27d6c5dd4b0f72b236f161a6f1a368b59178",
+  "evidence_archive": {
+    "path": "/Users/venom/Documents/Codex/2026-10-12/task/handoff-v15/modelbuilder-mac-f683e28-evidence.tar.gz",
+    "bytes": 5313,
+    "sha256": "6342630ee792787b0f6c819bf765c77a299025c268c4f452dd01e3f257f5b8d8"
+  },
+  "evidence_provenance": "Reported by authorized Mac build task; raw Mac archive not independently retrieved by root. GUI is unverified."
+}

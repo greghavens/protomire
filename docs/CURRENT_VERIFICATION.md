@@ -30,8 +30,17 @@ The native backend remains the frozen 154-file `6323bfd` runtime below.
 instances were closed normally. Mac DOM/host-mocked checks do not establish native
 Code - OSS behavior; the integration-host Chromium attempt was blocked at launch
 by sandbox socket permissions. No browser security or Workspace Trust was disabled.
-The existing v12 DMG predates these extension changes and is not a verified wizard
-release. Full-product/release gates below remain open.
+The updated **v15 unsigned Mac DMG** contains committed extension source `f683e28`
+with the unchanged runtime. The Mac build task reports clean source restoration,
+45,381 sealed runtime files, staged and read-only mounted strict inventory,
+service/backend/Hub/MLX imports, and **6 core tests passed, 7 deselected, in
+110.54 seconds**. DMG verification and detach passed without launching the GUI.
+The reviewed pinned Code - OSS binary was reused; this was not another complete
+editor build. [Build-host report](../evidence/product-completion-20261013/mac-f683e28-build-host-report.json)
+records the 1,163,397,720-byte DMG and exact hashes. Raw Mac evidence remains local
+to that machine and is not independently retrieved by the integration host.
+The v12 artifact is preserved as historical evidence. Native wizard/clean-machine,
+signing/notarization and full-product/release gates remain open.
 
 ## Current frozen candidate 34fe6c7 / 6323bfd
 

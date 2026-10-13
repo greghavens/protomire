@@ -15,9 +15,16 @@ aggregate passed **2,845**, with **141 skipped** and **101 deselected**, and the
 offline Hub SDK suite passed **18**. A blocked npm update request interrupted the
 aggregate script; its remaining workbench stages were rerun offline and passed:
 **582 frontend tests**, type checks, compilation and real loopback HTTP checks.
-The full native queue is still running. Fresh installed-wheel replay, real Trainer
-epoch continuation, streaming sampling and native graphical acceptance are not
-claimed complete. Earlier runtime receipts below remain historical evidence.
+The full native queue exited **124** at its **2,100-second deadline**; descendant
+cleanup completed. Lifecycle had four failures, integration one, and components
+two; concurrency was canceled at the deadline. The known pretrained rights
+rejection remains. Invalid mocked component descriptors have been corrected
+without relaxing production validation (**2 focused and 90 placement unit tests
+passed**). The remaining timeouts are undergoing quiet sequential reruns; their
+cause and full acceptance are not yet established. Fresh installed-wheel replay,
+real Trainer epoch continuation, streaming sampling and native graphical
+acceptance are not claimed complete. Earlier runtime receipts below remain
+historical evidence.
 
 ## Guided quickstart correction, 2026-10-13
 

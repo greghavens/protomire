@@ -40,18 +40,72 @@
     "log_sha256": "7647dad4cf695ee5aed1e55c8be55ed080bd81632640ad710139f451332bdafb",
     "passed": 582
   },
+  "native_aggregate": {
+    "cleanup": {
+      "complete": true,
+      "signaled_processes": 3
+    },
+    "concurrency": "Canceled at overall deadline; quiet complete-group rerun pending.",
+    "deadline_seconds": 2100,
+    "diagnosis": "Known pretrained rights rejection remains. Two mocked component descriptors were invalid and have been corrected without relaxing production validation. Other failures were timeouts; their cause is not yet established. Quiet sequential reruns are active.",
+    "elapsed_seconds": 2100.071,
+    "exit_code": 124,
+    "groups": {
+      "cpu-components": {
+        "errors": 0,
+        "failed_tests": [
+          "test_mocked_mps_component_context_and_checkpoint_resume_gate[claimed0-False]",
+          "test_mocked_mps_component_context_and_checkpoint_resume_gate[claimed1-True]"
+        ],
+        "failures": 2,
+        "junit_sha256": "4ece790692f71dd6695b8d31acd472a40f0b22cb85db15493f80b25f83934c1c",
+        "skipped": 11,
+        "tests": 599
+      },
+      "cpu-lifecycle": {
+        "errors": 0,
+        "failed_tests": [
+          "test_pretrained_validation_selection_parent_and_export",
+          "test_native_calibrated_reference_resume_and_selected_export",
+          "test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[none]",
+          "test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[parquet]"
+        ],
+        "failures": 4,
+        "junit_sha256": "9ed0bb55b09d298cd05a33d95491ec954d74ad7cdd8502ad2af1dc64e156c0b0",
+        "skipped": 0,
+        "tests": 31
+      },
+      "integration": {
+        "errors": 0,
+        "failed_tests": [
+          "test_native_conditional_live_evaluation_honors_gate_before_first_checkpoint[True-True-False]"
+        ],
+        "failures": 1,
+        "junit_sha256": "f5d9151c35de45790af5531a6ea609bc60acaa81114378d4eef4cd14a0394ad8",
+        "skipped": 1,
+        "tests": 65
+      }
+    },
+    "status": "deadline_exceeded"
+  },
   "no_claims": [
     "No hosted CI or paid cloud run.",
     "No user dataset or model rights approval inferred.",
     "This receipt does not claim full product completion."
   ],
   "pending": [
-    "Full canonical native queue is running; outcome not yet known.",
+    "Quiet sequential calibrated/discovery/conditional/concurrency reruns are running after the failed full native queue.",
     "Fresh installed-wheel replay for this runtime has not run.",
     "Real Transformers Trainer exact epoch continuation is in development.",
     "Streaming stratified sampling is not implemented.",
     "Native GUI and OS Keychain acceptance remain unrun while Mac is locked."
   ],
+  "placement_fixture_correction": {
+    "focused_passed": 2,
+    "hardware_deselected": 5,
+    "placement_unit_passed": 90,
+    "production_changes": false
+  },
   "recorded_at": "2026-10-13T18:10:37.593443+00:00",
   "runtime_source_commit": "4e458d632ba23c42145d3afbe507a7cea4a43e76",
   "runtime_source_files": 160,
@@ -67,5 +121,5 @@
     "python_skipped": 141,
     "whole_script_exit_zero": false
   },
-  "status": "SCOPED_ACCEPTANCE_PASSED_FULL_NATIVE_PENDING"
+  "status": "FOCUSED_ACCEPTANCE_PASSED_FULL_NATIVE_FAILED"
 }

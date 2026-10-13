@@ -167,8 +167,11 @@ def test_mocked_mps_component_context_and_checkpoint_resume_gate(tmp_path,monkey
     from modelbuilder.backend.components import runtime
     from modelbuilder.backend import worker
     output=tmp_path/'output'
-    component={'protocol':'modelbuilder.component/v1','role':'training',
-               'capabilities':{'resume_modes':['exact_state','warm_start']}}
+    component={'id':'test.mocked-mps-training','version':'1',
+               'protocol':'modelbuilder.component/v1','role':'training',
+               'parameter_schema':{'type':'object'},
+               'capabilities':{'resume_modes':['exact_state','warm_start'],
+                               'export_formats':[],'frameworks':['pytorch']}}
     node={'component':component,'outputs':[{'name':'checkpoint','type':'Path'}],'implementation_ref':{}}
     captured={}
     def function(*,inputs,parameters,context):
@@ -176,8 +179,9 @@ def test_mocked_mps_component_context_and_checkpoint_resume_gate(tmp_path,monkey
         return {'checkpoint':output}
     function.__source_snapshot_root__=str(tmp_path)
     monkeypatch.setattr(worker,'context',lambda spec: ({},output))
-    monkeypatch.setattr(runtime,'validate_component',lambda node: component)
-    monkeypatch.setattr(runtime,'runtime_environment',lambda: {'mocked_runtime':True})
+    # Exercise the real descriptor contract while retaining the controlled runtime.
+    monkeypatch.setattr(runtime,'runtime_environment',lambda: {
+        'mocked_runtime':True,'modelbuilder_runtime_source':hashlib.sha256(b'mocked-runtime').hexdigest()})
     monkeypatch.setattr(runtime,'load_callable',lambda *a: function)
     monkeypatch.setattr(placement,'runtime_device_identity',lambda device: {'device':device,'mocked_hardware':True})
     monkeypatch.setattr(runtime,'read_checkpoint',lambda path: {'identities':captured['identities'],'resume_modes':claimed})

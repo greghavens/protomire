@@ -1,0 +1,25 @@
+{
+  "recorded_at": "2026-10-13T21:52:06.972102+00:00",
+  "runtime_commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
+  "runtime_files": 163,
+  "scope": "Test tooling and direct-entrypoint fixture correction; production runtime unchanged.",
+  "tooling_tests": {
+    "passed": 128,
+    "deselected": 1
+  },
+  "reference_tests": {
+    "passed": 2,
+    "warnings": 6
+  },
+  "initial_reference_invocation": "Collection failed because PYTHONPATH=src was omitted; original failure retained. Corrected invocation passed.",
+  "native_groups": "Separate native groups completed: integration65 passed; lifecycle30 passed and1 rights refusal; components649 passed,11 skipped,1 incomplete-fixture failure; concurrency18 passed,4 deselected. No complete aggregate pass.",
+  "installed_replay": "Not yet executed with the new harness.",
+  "files": {
+    "tooling.log": "7aaf9adbe4fe5e7c8e6fe5e9e28f2d119554374a90475f91dd179a84383e47c9",
+    "reference.log": "aba89e457ce5e96b86a41edefe9044de450d5a82e573aef6795612f6a0684907",
+    "tooling.xml": "e0142d32e41a3c82a06d45a1e5e881ca278494d1a7ac87edb3aedac130c2863c",
+    "reference-corrected.log": "00936cd08d6f416393a9d734ec3aab6381a96ce7b7a6ba2f3acaafb565e95d67",
+    "reference.xml": "a49fcbf28b7cc327aa6a66bebc72998e1194bb8de038789c8ff77e22bcce54c3",
+    "reference-corrected.xml": "7c0bd89bac9117cb938c585939231da597e14c8420b7d08e7fc6349be80e2bfb"
+  }
+}

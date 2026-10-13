@@ -9,15 +9,19 @@ from __future__ import annotations
 import argparse
 import ctypes
 from dataclasses import dataclass
+from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
 import time
+import uuid
 
 # HTTP transport tests use the existing service interpreter's httpx dependency;
 # importing TestClient in the pinned backend environment is unsupported.
@@ -54,6 +58,8 @@ COMPONENT_TESTS = (
 # The integration marker leaves their light contracts to the service unit phase.
 CONCURRENCY_TESTS = ("tests/concurrency",)
 MAX_SECONDS = 2700
+HEARTBEAT_SECONDS = 30
+MAX_JUNIT_EVIDENCE_BYTES = 16 * 1024**2
 
 
 @dataclass(frozen=True)
@@ -161,16 +167,73 @@ def _cleanup(processes, *, grace=2.0, deadline=8.0):
         time.sleep(.05)
 
 
-def run_groups(groups, root, report, *, timeout=MAX_SECONDS, continue_on_failure=False):
+def _write_report(report, value):
+    """Publish a whole, durable JSON document; readers see the old or new receipt."""
+    report.parent.mkdir(parents=True, exist_ok=True)
+    serialized = json.dumps(value, indent=2, allow_nan=False) + "\n"
+    descriptor, name = tempfile.mkstemp(prefix="." + report.name + ".", suffix=".tmp", dir=report.parent)
+    temporary = Path(name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(serialized)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, report)
+        directory = os.open(report.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _junit_evidence(path):
+    """Identify observed completed-group evidence without copying test contents.
+
+    Collection is bounded and diagnostic only: the existing nonempty-file/exit
+    rule, not XML contents or these extra fields, still determines group status.
+    """
+    try:
+        # A finished test may have left a FIFO or another nonregular path.
+        # Nonblocking/no-follow open plus fstat avoids hanging before cleanup.
+        descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_NOFOLLOW", 0))
+        with os.fdopen(descriptor, "rb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                return {"status": "unavailable", "error": "nonregular_file"}
+            content = stream.read(MAX_JUNIT_EVIDENCE_BYTES + 1)
+            if len(content) > MAX_JUNIT_EVIDENCE_BYTES:
+                return {"status": "present", "sha256": None,
+                        "hash_unavailable": "size_limit", "size_bytes": os.fstat(stream.fileno()).st_size}
+        return {"status": "present" if content else "empty", "size_bytes": len(content),
+                "sha256": hashlib.sha256(content).hexdigest()}
+    except FileNotFoundError:
+        return {"status": "missing"}
+    except OSError as error:
+        return {"status": "unavailable", "error": type(error).__name__}
+
+
+def _receipt_fields(run_id, *, finalized=False):
+    return {"schema_version": "modelbuilder.native-test-queue/v1", "run_id": run_id,
+            "updated_at": datetime.now(timezone.utc).isoformat(), "finalized": finalized,
+            "exit_code": None, "cleanup": None}
+
+
+def run_groups(groups, root, report, *, timeout=MAX_SECONDS, continue_on_failure=False, run_id=None, run_state=None):
     """Each group is a complete existing pytest selection; run no more than two."""
     # Clear every planned receipt before launch, including groups that may never
     # start after an earlier failure. CI must not upload an older passing receipt.
     report.parent.mkdir(parents=True, exist_ok=True)
+    run_state = run_state if run_state is not None else {}
+    run_state.update(launched=False, cleanup=None)
     for group in groups:
         group.xml.unlink(missing_ok=True)
         group.log.unlink(missing_ok=True)
-    report.write_text(json.dumps({"status": "starting", "concurrency": 2,
-        "groups": [{"name": group.name, "status": "not_started"} for group in groups]}, indent=2) + "\n")
+    run_id = run_id or uuid.uuid4().hex
+    run_state["snapshot"] = {**_receipt_fields(run_id), "status": "starting", "concurrency": 2,
+        "groups": [{"name": group.name, "status": "not_started", "log": str(group.log), "xml": str(group.xml)}
+                   for group in groups]}
+    _write_report(report, run_state["snapshot"])
     if not 0 < timeout <= MAX_SECONDS or len({group.name for group in groups}) != len(groups):
         raise ValueError(f"Native queue requires unique groups and a deadline of at most {MAX_SECONDS} seconds")
     _subreaper()
@@ -185,6 +248,24 @@ def run_groups(groups, root, report, *, timeout=MAX_SECONDS, continue_on_failure
         previous_handlers[signum] = signal.signal(signum, stop)
     exit_code, reason, cleanup = 0, "completed", None
     next_heartbeat = started
+    def publish(status="running", *, finalized=False):
+        snapshot = {**_receipt_fields(run_id, finalized=finalized),
+            "concurrency": 2, "deadline_seconds": timeout, "status": status,
+            "elapsed_seconds": round(time.monotonic() - started, 3),
+            "groups": records + [{"name": group.name, "status": "not_started",
+                                   "log": str(group.log), "xml": str(group.xml)} for group in pending],
+            "continue_on_failure": continue_on_failure,
+            "cleanup": cleanup if finalized else None, "exit_code": exit_code if finalized else None}
+        run_state["snapshot"] = snapshot
+        try:
+            _write_report(report, snapshot)
+        except OSError as error:
+            if finalized:
+                raise
+            # Progress is observational: an unavailable snapshot must not alter
+            # scheduling, test deadlines or owned-child cleanup. Final writes
+            # remain mandatory; the previous nonfinal receipt cannot pass.
+            print(f"Native progress receipt unavailable: {type(error).__name__}", file=sys.stderr, flush=True)
     try:
         while pending or running:
             now = time.monotonic()
@@ -201,6 +282,7 @@ def run_groups(groups, root, report, *, timeout=MAX_SECONDS, continue_on_failure
                 record = {"name": group.name, "pid": None, "status": "starting", "returncode": None,
                           "log": str(group.log), "xml": str(group.xml), "started_seconds": round(now - started, 3)}
                 records.append(record)
+                publish()
                 stream = group.log.open("wb")
                 try:
                     process = subprocess.Popen(group.command, cwd=root, env=group.environment,
@@ -210,9 +292,11 @@ def run_groups(groups, root, report, *, timeout=MAX_SECONDS, continue_on_failure
                     raise
                 finally:
                     stream.close()
+                run_state["launched"] = True
                 processes.append(process)
                 record.update(pid=process.pid, status="running")
                 running[process.pid] = (process, group, record)
+                publish()
                 print(f"Native group started: {group.name}; log: {group.log}", flush=True)
             failed = False
             for pid, (process, group, record) in list(running.items()):
@@ -223,6 +307,9 @@ def run_groups(groups, root, report, *, timeout=MAX_SECONDS, continue_on_failure
                               finished_seconds=round(time.monotonic() - started, 3))
                 if code == 0 and (not group.xml.is_file() or not group.xml.stat().st_size):
                     record.update(status="failed", error="missing_junit_report")
+                publish()  # Preserve the observed exit before reading evidence.
+                record["junit"] = _junit_evidence(group.xml)
+                publish()
                 print(f"Native group finished: {group.name}; status: {record['status']}; exit: {code}", flush=True)
                 del running[pid]
                 failed |= record["status"] != "passed"
@@ -232,27 +319,35 @@ def run_groups(groups, root, report, *, timeout=MAX_SECONDS, continue_on_failure
                     break
             if now >= next_heartbeat:
                 print(f"Native queue: {len(running)} running, {len(pending)} waiting; elapsed {int(now - started)}s", flush=True)
-                next_heartbeat = now + 30
+                publish()
+                next_heartbeat = now + HEARTBEAT_SECONDS
             time.sleep(.1)
     except Exception as error:
         exit_code, reason = 1, "runner_error"
         print(f"Native test runner failed: {type(error).__name__}: {error}", file=sys.stderr, flush=True)
     finally:
-        cleanup = _cleanup(processes)
-        for process, _, record in running.values():
-            record.update(status="canceled", returncode=process.returncode,
-                          finished_seconds=round(time.monotonic() - started, 3))
-        records.extend({"name": group.name, "status": "not_started", "log": str(group.log), "xml": str(group.xml)}
-                       for group in pending)
-        if not cleanup["complete"]:
-            exit_code, reason = 1, "cleanup_incomplete"
-        report.parent.mkdir(parents=True, exist_ok=True)
-        report.write_text(json.dumps({"concurrency": 2, "deadline_seconds": timeout, "status": reason,
-            "elapsed_seconds": round(time.monotonic() - started, 3), "groups": records,
-            "continue_on_failure": continue_on_failure,
-            "cleanup": cleanup, "exit_code": exit_code}, indent=2) + "\n")
-        for signum, handler in previous_handlers.items():
-            signal.signal(signum, handler)
+        try:
+            try:
+                try:
+                    publish("finalizing")
+                except Exception as error:
+                    exit_code, reason = 1, "runner_error"
+                    print(f"Native progress receipt failed: {type(error).__name__}", file=sys.stderr, flush=True)
+            finally:
+                # Even receipt/logging failures (including closed pipes) cannot
+                # bypass owned-child cleanup or outer signal restoration.
+                cleanup = _cleanup(processes)
+                run_state["cleanup"] = cleanup
+            for process, group, record in running.values():
+                record.update(status="canceled", returncode=process.returncode,
+                              finished_seconds=round(time.monotonic() - started, 3),
+                              junit=_junit_evidence(group.xml))
+            if not cleanup["complete"]:
+                exit_code, reason = 1, "cleanup_incomplete"
+            publish(reason, finalized=True)
+        finally:
+            for signum, handler in previous_handlers.items():
+                signal.signal(signum, handler)
     return exit_code
 
 
@@ -304,23 +399,37 @@ def main(argv=None):
     for name in ("integration", "cpu-lifecycle", "cpu-components", "cpu-concurrency", "cpu-fixtures"):
         for suffix in ("log", "xml"):
             (evidence / f"{name}.{suffix}").unlink(missing_ok=True)
-    report.write_text(json.dumps({"status": "starting", "concurrency": 2}) + "\n")
+    run_id = uuid.uuid4().hex
+    _write_report(report, {**_receipt_fields(run_id), "status": "starting", "concurrency": 2, "groups": []})
     temporary = Path(tempfile.mkdtemp(prefix="modelbuilder-native-tests-"))
+    run_state = {"launched": False, "cleanup": None}
     try:
         return run_groups(build_groups(root, args.python, temporary), root, report, timeout=args.timeout_seconds,
-                          continue_on_failure=args.continue_on_failure)
+                          continue_on_failure=args.continue_on_failure, run_id=run_id, run_state=run_state)
     except Exception as error:
-        report.write_text(json.dumps({"status": "setup_failed", "exit_code": 1,
-            "error": type(error).__name__, "message": str(error), "groups": []}, indent=2) + "\n")
-        print(f"Native queue setup failed: {error}", file=sys.stderr)
+        receipt = run_state.get("snapshot") or json.loads(report.read_text())
+        launched = run_state["launched"] or any(group.get("pid") is not None for group in receipt.get("groups", []))
+        # A failure while finalizing is not a setup failure. Preserve every
+        # observed group and leave cleanup/acceptance unconfirmed.
+        receipt.update(**_receipt_fields(run_id, finalized=not launched),
+                       status="runner_error" if launched else "setup_failed",
+                       error=type(error).__name__)
+        receipt["exit_code"] = None if launched else 1
+        _write_report(report, receipt)
+        phase = "finalization" if launched else "setup"
+        print(f"Native queue {phase} failed: {error}", file=sys.stderr)
         return 1
     finally:
-        receipt = json.loads(report.read_text())
-        if receipt.get("cleanup", {}).get("complete") is False:
+        receipt = run_state.get("snapshot") or json.loads(report.read_text())
+        # Progress writes are best-effort: stale on-disk PID/cleanup fields
+        # cannot authorize deletion of state still used by launched children.
+        completed_cleanup = (run_state["cleanup"] or receipt.get("cleanup") or {}).get("complete")
+        launched = run_state["launched"] or any(group.get("pid") is not None for group in receipt.get("groups", []))
+        if completed_cleanup is False or (launched and completed_cleanup is not True):
             # Never delete state still potentially used by an uncontained child.
             # Keep only the local path in the receipt; do not upload test state.
             receipt["retained_temporary_directory"] = str(temporary)
-            report.write_text(json.dumps(receipt, indent=2) + "\n")
+            _write_report(report, receipt)
         else:
             shutil.rmtree(temporary)
 

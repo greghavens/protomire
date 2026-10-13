@@ -27,6 +27,7 @@ def setup_reference(tmp_path, monkeypatch, content):
                                               "metadata": {"rights": rights}}],
               "extensions": {"usage_context": USAGE_CONTEXT}}
     spec = {"node_id": node["id"], "component_node": node, "parameters": parameters,
+            "job_dir": str(tmp_path),
             "dependency_paths": {"reference": str(reference)},
             "dependencies": recipe["resources"],
             "recipe_provenance": {"application_project_id": "project"},
@@ -65,6 +66,7 @@ def test_reference_parses_same_hashed_bytes_without_second_read(tmp_path, monkey
         return original_open(path, *args, **kwargs)
 
     def load(value, paths, split, **kwargs):
+        assert kwargs["cancel_file"] == str(tmp_path / "cancel.json")
         observed.append(value)
         return {"rows": [], "checked": True}
 

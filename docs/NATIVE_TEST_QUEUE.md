@@ -46,7 +46,30 @@ Each group owns its outputs; no concurrent append to another group's log occurs.
 The serial backend output remains `cpu-fixtures.{log,xml}`. Stale JUnit reports
 are removed before starting a group, and a successful process without a fresh
 nonempty JUnit report fails the queue. The summary explicitly records groups
-that failed, were canceled or were never started. No raw test data is copied into
+that failed, were canceled or were never started. `native-runner.json` is also an
+atomic progress receipt: it is replaced on group transitions and the existing
+30-second heartbeat using a same-directory temporary file, file fsync, rename,
+and directory fsync. Completed group rows preserve exit codes and the observed
+JUnit byte count/SHA256 (hashing is bounded to 16 MiB; larger or unreadable evidence
+is explicitly labeled). XML contents, command arguments and environment values
+are not copied into the receipt. JUnit identity is diagnostic evidence, not an
+additional test-result parser or a changed pass/fail rule.
+
+Every queue invocation has a fresh `run_id` and UTC `updated_at`. A progress
+receipt has `finalized: false`, `exit_code: null`, and `cleanup: null`, even when
+all observed groups passed. Its `running` or `finalizing` state describes the last
+observation, not proof that the supervisor is still alive. If the supervisor is
+killed, the last valid snapshot remains explicitly unfinished; its timestamp can
+be stale, and it cannot establish aggregate acceptance or confirmed cleanup.
+Acceptance requires both a successful supervisor process exit and its matching
+current-run finalized receipt with exit code zero and confirmed cleanup. A final
+replacement can become visible before a subsequent directory-fsync error, so the
+receipt alone cannot prove successful final publication. Setup failures are
+finalized failures and claim no cleanup.
+No unfinished group is silently resumed. Progress I/O failures are reported to
+stderr without changing scheduling; failure to publish the final receipt remains
+an error. Completed evidence survives a finalization error, and temporary state
+is retained when launched children have no confirmed cleanup. No raw test data is copied into
 these reports; temporary dataset/checkpoint state stays outside the artifact
 upload directory and is removed after child cleanup. If cleanup cannot be confirmed,
 temporary state is retained and only its local path is recorded in the receipt.

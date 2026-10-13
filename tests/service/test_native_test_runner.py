@@ -638,3 +638,367 @@ def test_diagnostic_collection_still_obeys_deadline_and_reaps_children(tmp_path)
     assert code == 124 and report["status"] == "deadline_exceeded"
     assert report["cleanup"]["complete"]
     assert not Path(f"/proc/{int((tmp_path / 'detached.pid').read_text())}").exists()
+
+
+def test_atomic_receipt_orders_file_sync_replace_and_directory_sync(tmp_path, monkeypatch):
+    import stat
+    report = tmp_path / "report.json"
+    report.write_text('{"old": true}')
+    calls = []
+    real_sync, real_replace = runner.os.fsync, runner.os.replace
+    def sync(descriptor):
+        calls.append("directory_sync" if stat.S_ISDIR(os.fstat(descriptor).st_mode) else "file_sync")
+        real_sync(descriptor)
+    def replace(source, destination):
+        assert Path(source).parent == report.parent
+        assert json.loads(report.read_text()) == {"old": True}
+        assert json.loads(Path(source).read_text()) == {"new": True}
+        calls.append("replace")
+        real_replace(source, destination)
+    monkeypatch.setattr(runner.os, "fsync", sync)
+    monkeypatch.setattr(runner.os, "replace", replace)
+    runner._write_report(report, {"new": True})
+    assert calls == ["file_sync", "replace", "directory_sync"]
+    assert json.loads(report.read_text()) == {"new": True}
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["report.json"]
+
+
+@pytest.mark.parametrize("phase", ["serialization", "file_sync", "replace", "directory_sync"])
+def test_atomic_receipt_failure_never_leaves_partial_json(tmp_path, monkeypatch, phase):
+    report = tmp_path / "report.json"
+    original = {"finalized": False, "groups": [{"name": "completed", "returncode": 0}]}
+    runner._write_report(report, original)
+    replacement = {"finalized": False, "groups": [{"name": "completed", "returncode": 7}]}
+    real_sync = runner.os.fsync
+    calls = 0
+    def sync(descriptor):
+        nonlocal calls
+        calls += 1
+        if phase == ("file_sync" if calls == 1 else "directory_sync"):
+            raise OSError("injected receipt I/O failure")
+        real_sync(descriptor)
+    def replace(*_args):
+        raise OSError("injected replacement failure")
+    if phase == "serialization":
+        replacement["invalid"] = float("nan")
+    elif phase == "replace":
+        monkeypatch.setattr(runner.os, "replace", replace)
+    else:
+        monkeypatch.setattr(runner.os, "fsync", sync)
+    with pytest.raises((ValueError, OSError)):
+        runner._write_report(report, replacement)
+    # Once replace succeeds, a later directory-fsync failure cannot roll back.
+    assert json.loads(report.read_text()) == (replacement if phase == "directory_sync" else original)
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["report.json"]
+
+
+def test_concurrent_receipt_reader_sees_only_complete_documents(tmp_path):
+    from threading import Event, Thread
+    report = tmp_path / "report.json"
+    runner._write_report(report, {"generation": 0, "rows": [0] * 2000})
+    stop, observations, errors = Event(), [], []
+    def read():
+        while not stop.is_set():
+            try:
+                value = json.loads(report.read_text())
+                assert value["rows"] == [value["generation"]] * 2000
+                observations.append(value["generation"])
+            except Exception as error:
+                errors.append(error)
+                break
+    thread = Thread(target=read)
+    thread.start()
+    try:
+        for generation in range(1, 25):
+            runner._write_report(report, {"generation": generation, "rows": [generation] * 2000})
+    finally:
+        stop.set()
+        thread.join(timeout=5)
+    assert not thread.is_alive() and observations and not errors
+    assert json.loads(report.read_text())["generation"] == 24
+
+
+def test_junit_identity_is_bounded_diagnostic_and_contains_no_xml(tmp_path, monkeypatch):
+    import hashlib
+    path = tmp_path / "group.xml"
+    assert runner._junit_evidence(path) == {"status": "missing"}
+    content = b'<testsuite tests="1"><failure>private test content</failure></testsuite>'
+    path.write_bytes(content)
+    assert runner._junit_evidence(path) == {
+        "status": "present", "size_bytes": len(content), "sha256": hashlib.sha256(content).hexdigest()}
+    monkeypatch.setattr(runner, "MAX_JUNIT_EVIDENCE_BYTES", 8)
+    value = runner._junit_evidence(path)
+    assert value == {"status": "present", "sha256": None, "hash_unavailable": "size_limit", "size_bytes": len(content)}
+    assert "private" not in json.dumps(value)
+
+
+def test_heartbeat_preserves_completed_groups_and_marks_unfinished_state(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    clock, snapshots = [0.0], []
+    monkeypatch.setattr(runner, "time", SimpleNamespace(
+        monotonic=lambda: clock[0], sleep=lambda _seconds: clock.__setitem__(0, clock[0] + 31)))
+    monkeypatch.setattr(runner, "_subreaper", lambda: None)
+    monkeypatch.setattr(runner, "_cleanup", lambda _processes: {"complete": True, "signaled_processes": 0})
+    class Process:
+        def __init__(self, command, **_kwargs):
+            self.name, self.pid = command[0], {"fast": 100, "slow": 101, "pending": 102}[command[0]]
+            self.returncode = None
+            (tmp_path / (self.name + ".xml")).write_text('<testsuite tests="1"/>')
+        def poll(self):
+            if self.name == "fast" or clock[0] >= 62:
+                self.returncode = 0
+            return self.returncode
+    monkeypatch.setattr(runner, "subprocess", SimpleNamespace(Popen=Process, DEVNULL=-1, STDOUT=-2))
+    original = runner._write_report
+    def write(path, value):
+        snapshots.append(json.loads(json.dumps(value)))
+        original(path, value)
+    monkeypatch.setattr(runner, "_write_report", write)
+    groups = [runner.Group(name, (name,), {}, tmp_path / (name + ".log"), tmp_path / (name + ".xml"))
+              for name in ("fast", "slow", "pending")]
+    assert runner.run_groups(groups, tmp_path, tmp_path / "report.json", timeout=200) == 0
+    heartbeats = [item for item in snapshots if item.get("elapsed_seconds") in {0, 31}
+                  and item["status"] == "running"
+                  and item["groups"][0].get("junit", {}).get("status") == "present"]
+    assert {item["elapsed_seconds"] for item in heartbeats} == {0, 31}
+    assert all(not item["finalized"] and item["exit_code"] is None and item["cleanup"] is None for item in heartbeats)
+    assert all(item["groups"][0] == heartbeats[0]["groups"][0] for item in heartbeats)
+    assert any(item["groups"][-1]["status"] == "not_started" for item in heartbeats)
+    assert any(item["groups"][1]["status"] == "running" for item in heartbeats)
+    assert len({item["run_id"] for item in snapshots}) == 1
+    assert all(item["updated_at"].endswith("+00:00") for item in snapshots)
+    final = snapshots[-1]
+    assert final["finalized"] and final["exit_code"] == 0 and final["cleanup"]["complete"]
+    assert all(row["status"] == "passed" for row in final["groups"])
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Actual Linux supervisor interruption")
+@pytest.mark.parametrize("returncode", [0, 7])
+def test_killed_supervisor_keeps_completed_evidence_without_final_acceptance(tmp_path, returncode):
+    import hashlib
+    # The actual tiny group exits and is reaped before the cleanup seam pauses.
+    # Killing this supervisor therefore leaves no fixture worker to orphan.
+    bootstrap = tmp_path / "pause_before_cleanup.py"
+    bootstrap.write_text('''import importlib.util,os,sys,time
+from pathlib import Path
+spec=importlib.util.spec_from_file_location("progress_runner",sys.argv[1]);m=importlib.util.module_from_spec(spec);sys.modules[spec.name]=m;spec.loader.exec_module(m)
+root=Path(sys.argv[2])
+def cleanup(processes):
+    assert all(process.poll() is not None for process in processes)
+    (root/'before-cleanup').write_text('all test children exited and reaped')
+    while True: time.sleep(.1)
+m._cleanup=cleanup
+code="from pathlib import Path;Path('completed.xml').write_text('<testsuite tests=\\\"1\\\"/>')"
+code += ';raise SystemExit(' + sys.argv[3] + ')'
+group=m.Group('completed',(sys.executable,'-c',code),dict(os.environ),root/'completed.log',root/'completed.xml')
+raise SystemExit(m.run_groups([group],root,root/'report.json',timeout=5))
+''')
+    process = subprocess.Popen([sys.executable, "-I", str(bootstrap), str(ROOT / "scripts/native_test_runner.py"), str(tmp_path), str(returncode)],
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        deadline = time.monotonic() + 5
+        while not (tmp_path / "before-cleanup").is_file() and process.poll() is None and time.monotonic() < deadline:
+            time.sleep(.01)
+        assert (tmp_path / "before-cleanup").is_file(), process.poll()
+        before = (tmp_path / "report.json").read_bytes()
+        process.kill()
+        output, error = process.communicate(timeout=5)
+        assert process.returncode == -signal.SIGKILL, output + error
+        assert (tmp_path / "report.json").read_bytes() == before
+        receipt = json.loads(before)
+        assert receipt["status"] == "finalizing" and not receipt["finalized"]
+        assert receipt["exit_code"] is None and receipt["cleanup"] is None
+        row = receipt["groups"][0]
+        assert row["status"] == ("passed" if returncode == 0 else "failed") and row["returncode"] == returncode
+        assert row["junit"]["sha256"] == hashlib.sha256((tmp_path / "completed.xml").read_bytes()).hexdigest()
+        assert row["junit"]["size_bytes"] == (tmp_path / "completed.xml").stat().st_size
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.communicate(timeout=5)
+
+
+def test_progress_io_failure_does_not_change_cleanup_or_exit(tmp_path, monkeypatch, empty_budget_runner):
+    original = runner._write_report
+    calls = 0
+    def write(path, value):
+        nonlocal calls
+        calls += 1
+        if value["status"] == "finalizing":
+            raise OSError("injected temporary progress write failure")
+        original(path, value)
+    monkeypatch.setattr(runner, "_write_report", write)
+    report = tmp_path / "report.json"
+    assert runner.run_groups([], tmp_path, report) == 0
+    assert empty_budget_runner == [[]] and calls == 3
+    assert json.loads(report.read_text())["finalized"] is True
+
+
+def test_final_receipt_failure_cannot_skip_cleanup_or_handler_restoration(tmp_path, monkeypatch, empty_budget_runner):
+    original = runner._write_report
+    handlers = {signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)}
+    def write(path, value):
+        if value["finalized"]:
+            raise OSError("injected final receipt failure")
+        original(path, value)
+    monkeypatch.setattr(runner, "_write_report", write)
+    report = tmp_path / "report.json"
+    with pytest.raises(OSError):
+        runner.run_groups([], tmp_path, report)
+    assert empty_budget_runner == [[]]
+    assert {signum: signal.getsignal(signum) for signum in handlers} == handlers
+    assert json.loads(report.read_text())["finalized"] is False
+
+
+def test_cli_finalization_error_preserves_progress_and_unconfirmed_state(tmp_path, monkeypatch):
+    temporary = tmp_path / "temporary"
+    temporary.mkdir()
+    monkeypatch.setattr(runner.tempfile, "mkdtemp", lambda **_kwargs: str(temporary))
+    monkeypatch.setattr(runner, "build_groups", lambda *_args: [])
+    completed = {"name": "completed", "pid": 123, "status": "passed", "returncode": 0,
+                 "junit": {"status": "present", "sha256": "a" * 64, "size_bytes": 30}}
+    def fail(_groups, _root, report, **kwargs):
+        runner._write_report(report, {**runner._receipt_fields(kwargs["run_id"]), "status": "finalizing",
+                                     "groups": [completed, {"name": "pending", "status": "not_started"}]})
+        raise RuntimeError("private error details must not be copied into the receipt")
+    monkeypatch.setattr(runner, "run_groups", fail)
+    assert runner.main(["--root", str(tmp_path)]) == 1
+    receipt = json.loads((tmp_path / "evidence/tests/native-runner.json").read_text())
+    assert receipt["status"] == "runner_error" and receipt["error"] == "RuntimeError"
+    assert receipt["groups"][0] == completed and receipt["groups"][1]["status"] == "not_started"
+    assert not receipt["finalized"] and receipt["exit_code"] is None and receipt["cleanup"] is None
+    assert receipt["retained_temporary_directory"] == str(temporary) and temporary.is_dir()
+    assert "private error" not in json.dumps(receipt)
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Nonblocking FIFO evidence on native runner")
+def test_junit_fifo_cannot_block_queue_cleanup(tmp_path):
+    path = tmp_path / "group.xml"
+    os.mkfifo(path)
+    code = '''import importlib.util,sys
+from pathlib import Path
+spec=importlib.util.spec_from_file_location('fifo_runner',sys.argv[1]);m=importlib.util.module_from_spec(spec);sys.modules[spec.name]=m;spec.loader.exec_module(m)
+assert m._junit_evidence(Path(sys.argv[2])) == {'status':'unavailable','error':'nonregular_file'}
+'''
+    result = subprocess.run([sys.executable, "-I", "-c", code, str(ROOT / "scripts/native_test_runner.py"), str(path)],
+                            capture_output=True, text=True, timeout=5)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("error_write_fails", [False, True])
+def test_unpersisted_launch_state_cannot_be_mistaken_for_setup_failure(tmp_path, monkeypatch, error_write_fails):
+    from types import SimpleNamespace
+    temporary = tmp_path / "temporary"
+    temporary.mkdir()
+    monkeypatch.setattr(runner.tempfile, "mkdtemp", lambda **_kwargs: str(temporary))
+    group = runner.Group("completed", ("worker",), {}, tmp_path / "group.log", tmp_path / "group.xml")
+    monkeypatch.setattr(runner, "build_groups", lambda *_args: [group])
+    monkeypatch.setattr(runner, "_subreaper", lambda: None)
+    class Process:
+        pid = 321
+        returncode = 0
+        def __init__(self, *_args, **_kwargs):
+            group.xml.write_text('<testsuite tests="1"/>')
+        def poll(self):
+            return self.returncode
+    monkeypatch.setattr(runner, "subprocess", SimpleNamespace(Popen=Process, DEVNULL=-1, STDOUT=-2))
+    def cleanup(_processes):
+        raise RuntimeError("injected unconfirmed cleanup")
+    monkeypatch.setattr(runner, "_cleanup", cleanup)
+    original = runner._write_report
+    def write(path, value):
+        if value["status"] in {"running", "finalizing"}:
+            raise OSError("all progress writes fail after initial snapshot")
+        if error_write_fails and value["status"] == "runner_error" and "retained_temporary_directory" not in value:
+            raise OSError("error report unavailable until retention write")
+        original(path, value)
+    monkeypatch.setattr(runner, "_write_report", write)
+    handlers = {signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)}
+    if error_write_fails:
+        with pytest.raises(OSError, match="until retention write"):
+            runner.main(["--root", str(tmp_path)])
+    else:
+        assert runner.main(["--root", str(tmp_path)]) == 1
+    receipt = json.loads((tmp_path / "evidence/tests/native-runner.json").read_text())
+    assert receipt["status"] == "runner_error" and not receipt["finalized"]
+    assert receipt["cleanup"] is None and receipt["exit_code"] is None
+    assert receipt["groups"][0]["status"] == "passed" and receipt["groups"][0]["returncode"] == 0
+    assert receipt["groups"][0]["junit"]["status"] == "present"
+    assert temporary.is_dir() and receipt["retained_temporary_directory"] == str(temporary)
+    assert {signum: signal.getsignal(signum) for signum in handlers} == handlers
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Actual tiny Linux queue receipt lifecycle")
+def test_running_snapshot_replaces_stale_acceptance_and_preserves_completed_work_on_signal(tmp_path):
+    report = tmp_path / "report.json"
+    report.write_text(json.dumps({"run_id": "old-run", "finalized": True, "exit_code": 0,
+                                  "cleanup": {"complete": True}, "groups": [{"name": "old", "status": "passed"}]}))
+    process = launch(tmp_path, [("fast", "pass", 0), ("slow", "pass", 3), ("waiting", "pass", 3)])
+    try:
+        deadline = time.monotonic() + 4
+        while time.monotonic() < deadline and process.poll() is None:
+            receipt = json.loads(report.read_text())
+            rows = {row["name"]: row for row in receipt.get("groups", [])}
+            if rows.get("fast", {}).get("junit", {}).get("status") == "present":
+                break
+            time.sleep(.01)
+        assert rows["fast"]["status"] == "passed" and rows["fast"]["returncode"] == 0
+        assert any(row["status"] in {"running", "not_started", "starting"} for name, row in rows.items() if name != "fast")
+        assert receipt["run_id"] != "old-run" and "old" not in rows
+        assert not receipt["finalized"] and receipt["exit_code"] is None and receipt["cleanup"] is None
+        process.send_signal(signal.SIGTERM)
+        code, final, _ = finish(process, tmp_path)
+        assert code == 143 and final["status"] == "interrupted" and final["finalized"]
+        assert final["cleanup"]["complete"] and final["run_id"] == receipt["run_id"]
+        assert next(row for row in final["groups"] if row["name"] == "fast") == rows["fast"]
+    finally:
+        if process.poll() is None:
+            process.send_signal(signal.SIGTERM)
+            process.communicate(timeout=12)
+
+
+def test_progress_and_stderr_failures_cannot_bypass_cleanup(tmp_path, monkeypatch, empty_budget_runner):
+    from types import SimpleNamespace
+    original = runner._write_report
+    handlers = {signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)}
+    def write(path, value):
+        if value["status"] == "finalizing":
+            raise OSError("receipt unavailable")
+        original(path, value)
+    def broken(*_args):
+        raise BrokenPipeError("closed diagnostic pipe")
+    monkeypatch.setattr(runner, "_write_report", write)
+    monkeypatch.setattr(runner.sys, "stderr", SimpleNamespace(write=broken, flush=broken))
+    with pytest.raises(BrokenPipeError):
+        runner.run_groups([], tmp_path, tmp_path / "report.json")
+    assert empty_budget_runner == [[]]
+    assert {signum: signal.getsignal(signum) for signum in handlers} == handlers
+    assert json.loads((tmp_path / "report.json").read_text())["finalized"] is False
+
+
+def test_post_replace_final_sync_failure_requires_successful_supervisor_exit(
+        tmp_path, monkeypatch, empty_budget_runner):
+    original = runner._write_report
+    real_sync = runner.os.fsync
+    def write(path, value):
+        if not value["finalized"]:
+            return original(path, value)
+        calls = 0
+        def sync(descriptor):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError("final directory fsync failed after replacement")
+            real_sync(descriptor)
+        with monkeypatch.context() as patch:
+            patch.setattr(runner.os, "fsync", sync)
+            original(path, value)
+    monkeypatch.setattr(runner, "_write_report", write)
+    report = tmp_path / "report.json"
+    with pytest.raises(OSError, match="after replacement"):
+        runner.run_groups([], tmp_path, report)
+    assert empty_budget_runner == [[]]
+    # This is a fully formed replacement, but the supervisor did not succeed.
+    # Consumers need both actual process exit success and the final receipt.
+    receipt = json.loads(report.read_text())
+    assert receipt["finalized"] and receipt["exit_code"] == 0 and receipt["cleanup"]["complete"]

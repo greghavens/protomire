@@ -114,7 +114,7 @@ def verify_runtime(root: Path, manifest: dict) -> None:
 def service_environment() -> dict[str, str]:
     # No Python injection, alternate Modelbuilder configuration, bearer tokens,
     # Git overrides, proxy redirect or inherited assistant credentials.
-    allowed = {"PATH", "LANG", "LC_ALL", "TZ", "SYSTEMROOT", "WINDIR", "TMPDIR", "TMP", "TEMP"}
+    allowed = {"PATH", "LANG", "LC_ALL", "TZ", "SYSTEMROOT", "WINDIR", "TMPDIR", "TMP", "TEMP", "HOME", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "DBUS_SESSION_BUS_ADDRESS", "XDG_RUNTIME_DIR"}
     return {key: value for key, value in os.environ.items() if key in allowed}
 
 
@@ -277,7 +277,10 @@ def optional_mlx_available(manifest: dict, system: str | None = None, version: s
 
 def make_application(root: Path, state: Path, manifest: dict, token: str):
     from modelbuilder.api import create_app
-    from modelbuilder.service import OperationService
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from reviewed_requests import ReviewGrants, ReviewQueue, ReviewedOperationService
+    OperationService = ReviewedOperationService
+    grants = ReviewGrants()
     from modelbuilder.auth import TokenAuth
     from modelbuilder.models import Actor
     class DesktopAuth(TokenAuth):
@@ -289,9 +292,14 @@ def make_application(root: Path, state: Path, manifest: dict, token: str):
             with self.guard:
                 return super().authenticate(authorization)
         def authorize_research(self, actor_id, project_id):
+            reviewed = grants.authorize_research(actor_id, project_id)
+            if reviewed is not None:
+                return reviewed
             with self.guard:
                 return super().authorize_research(actor_id, project_id)
         def authorize_operation(self, operation, actor, project_id):
+            if grants.find(actor) is not None:
+                return grants.authorize(operation, actor, project_id)
             with self.guard:
                 return super().authorize_operation(operation, actor, project_id)
         def issue_bridge(self, lease_id, project_id):
@@ -318,7 +326,12 @@ def make_application(root: Path, state: Path, manifest: dict, token: str):
                                source_root=workspace, source_roots=source_roots or None)
     _, identities = registered_sources(state)
     service.source_workspaces = source_workspace_manager(source_roots, identities)
-    return create_app(service, DesktopAuth())
+    app = create_app(service, DesktopAuth())
+    if manifest.get("hub_python"):
+        from managed_hub import HubSettings
+        app.state.hub_settings = HubSettings(service, relative_file(root, manifest["hub_python"]), state)
+    app.state.review_queue = ReviewQueue(service, grants)
+    return app
 
 
 def rpc(session: dict, path: str, payload: dict | None = None) -> dict:
@@ -457,6 +470,54 @@ def serve(root: Path, state: Path, *, idle_grace: float = IDLE_GRACE) -> int:
             app.state.service.invoke("project.get", {"project_id": project}, actor)
             credential = app.state.auth.issue_bridge(identity, project)
             return {"token": credential, "scopes": ["read"], "project_ids": [project]}
+        def consumer(authorization: str | None = Header(default=None)):
+            actor = app.state.auth.authenticate(authorization)
+            if not actor.id.startswith("desktop-assistant:"):
+                from modelbuilder.models import ServiceError
+                raise ServiceError("forbidden", "This endpoint requires a managed project consumer", status_code=403)
+            return actor
+        @app.post("/_assistant/reviews")
+        def request_review(payload: dict = Body(...), actor=Depends(consumer)):
+            from modelbuilder.models import ServiceError
+            if set(payload) != {"project_id", "operation", "payload"}:
+                raise ServiceError("validation_error", "Review requests cannot supply native approval flags")
+            return app.state.review_queue.submit(actor, payload["project_id"], payload["operation"], payload["payload"])
+        @app.get("/_assistant/reviews/{identity}")
+        def review_status(identity: str, actor=Depends(consumer)):
+            return app.state.review_queue.status(actor, identity)
+        @app.post("/_assistant/reviews/{identity}/cancel")
+        def cancel_review(identity: str, actor=Depends(consumer)):
+            return app.state.review_queue.cancel(actor, identity)
+        @app.get("/_desktop/reviews", dependencies=[Depends(owner)])
+        def native_reviews(actor=Depends(owner)):
+            return {"requests": app.state.review_queue.pending(actor)}
+        @app.get("/_desktop/reviews/{identity}")
+        def native_review_status(identity: str, actor=Depends(owner)):
+            return app.state.review_queue.status(actor, identity)
+        @app.post("/_desktop/reviews")
+        def native_request_review(payload: dict = Body(...), actor=Depends(owner)):
+            return app.state.review_queue.submit(actor, payload["project_id"], payload["operation"], payload["payload"])
+        @app.post("/_desktop/reviews/{identity}/decision")
+        def native_decision(identity: str, payload: dict = Body(...), actor=Depends(owner)):
+            from modelbuilder.models import ServiceError
+            if set(payload) != {"review_digest", "decision"}:
+                raise ServiceError("validation_error", "Native decisions cannot replace the reviewed payload")
+            return app.state.review_queue.decide(actor, identity, payload["review_digest"], payload["decision"])
+        def hub_settings():
+            from modelbuilder.models import ServiceError
+            settings = getattr(app.state, "hub_settings", None)
+            if settings is None:
+                raise ServiceError("hub_provider_unavailable", "This runtime has no reviewed bundled Hub worker", status_code=503)
+            return settings
+        @app.get("/_desktop/hub/settings/{project}")
+        def native_hub_status(project: str, actor=Depends(owner)):
+            return hub_settings().status(actor, project)
+        @app.post("/_desktop/hub/settings/preview")
+        def native_hub_preview(payload: dict = Body(...), actor=Depends(owner)):
+            return hub_settings().preview(actor, payload)
+        @app.post("/_desktop/hub/settings/apply")
+        def native_hub_apply(payload: dict = Body(...), actor=Depends(owner)):
+            return hub_settings().apply(actor, payload)
         source_guard = threading.RLock()
         @app.post("/_desktop/source")
         def register_source(payload: dict = Body(...), actor=Depends(owner)):
@@ -511,7 +572,7 @@ def serve(root: Path, state: Path, *, idle_grace: float = IDLE_GRACE) -> int:
                         if now - touched >= LEASE_TTL:
                             leases.pop(identity, None)
                             app.state.auth.revoke_bridge(identity)
-                    live = bool(leases)
+                    live = bool(leases) or app.state.review_queue.has_active_transfers()
                     # Submitted execution has its own supervised durable lifetime.
                     # Do not cancel or signal those jobs when the UI closes.
                     if live:
@@ -571,9 +632,11 @@ def main() -> int:
                     if lease.failed.is_set():
                         raise CoreError("Managed core session ended")
             else:
-                from modelbuilder.mcp_server import Configuration, serve as serve_mcp
+                from modelbuilder.mcp_server import Configuration
+                sys.path.insert(0, str(Path(__file__).resolve().parent))
+                from reviewed_mcp import serve as serve_mcp
                 grant = rpc(session, "/_desktop/bridge", {"id": lease.identity, "project_id": args.project_id})
-                asyncio.run(serve_mcp(Configuration(api_url=f"http://127.0.0.1:{session['port']}", token=grant["token"])))
+                asyncio.run(serve_mcp(Configuration(api_url=f"http://127.0.0.1:{session['port']}", token=grant["token"]), args.project_id))
         finally:
             lease.close()
         return 0

@@ -12,7 +12,7 @@ def load_operator_config(path: str | Path | None = None) -> dict:
         return {}
     source = Path(path).expanduser().resolve()
     value = json.loads(source.read_text())
-    allowed = {"source_root", "python_executable", "mlx_python_executable", "pretrained_path", "trusted_code_roots", "dependency_paths", "dataset_roots", "source_roots", "dataset_limits"}
+    allowed = {"source_root", "python_executable", "mlx_python_executable", "pretrained_path", "trusted_code_roots", "dependency_paths", "dataset_roots", "source_roots", "dataset_limits", "runner_environments", "hub"}
     if not isinstance(value, dict) or set(value) - allowed:
         raise ValueError("Operator configuration must be an object with supported backend settings only")
     def local_path(item, *, preserve_symlink=False):
@@ -24,6 +24,20 @@ def load_operator_config(path: str | Path | None = None) -> dict:
         # interpreter and silently discards the explicitly chosen environment.
         return os.path.abspath(candidate) if preserve_symlink else str(candidate.resolve())
     result = {}
+    runners = value.get("runner_environments", {})
+    if (not isinstance(runners, dict) or any(not isinstance(key, str) or key == "default"
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", key) for key in runners)):
+        raise ValueError("runner_environments must map non-default aliases to operator interpreter paths")
+    if runners:
+        result["runner_environments"] = {}
+        for key, item in runners.items():
+            if (not isinstance(item, dict) or set(item) != {"python_executable", "profile_sha256"}
+                    or not isinstance(item["profile_sha256"], str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", item["profile_sha256"])):
+                raise ValueError("Runner registration requires an interpreter and an approved profile SHA256")
+            result["runner_environments"][key] = {
+                "python_executable": local_path(item["python_executable"], preserve_symlink=True),
+                "profile_sha256": item["profile_sha256"]}
     for key in ("source_root", "python_executable", "mlx_python_executable", "pretrained_path"):
         if key in value:
             result[key] = local_path(value[key], preserve_symlink=key in {"python_executable", "mlx_python_executable"})
@@ -65,4 +79,15 @@ def load_operator_config(path: str | Path | None = None) -> dict:
                 "dependency_paths": {key: local_path(item) for key, item in dependencies.items()}}
         from ..source_workspace import SourceWorkspaces
         SourceWorkspaces(result["source_roots"])
+    if "hub" in value:
+        hub = value["hub"]
+        if not isinstance(hub, dict):
+            raise ValueError("Hub configuration must be an object")
+        result["hub"] = {**hub}
+        for key in ("root", "python_executable"):
+            if key in hub:
+                result["hub"][key] = local_path(hub[key], preserve_symlink=key == "python_executable")
+        if "publication_roots" in hub:
+            result["hub"]["publication_roots"] = {project: {alias: local_path(path) for alias, path in roots.items()}
+                                                    for project, roots in hub["publication_roots"].items()}
     return result

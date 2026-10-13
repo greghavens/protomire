@@ -286,7 +286,7 @@ def test_registered_project_mlx_native_pipeline(tmp_path, mode):
                 "resource_request": {"gpu": 0},
                 "cache_policy": "disabled",
                 "environment_ref": "default",
-                "provenance": {},
+                "provenance": {"intended_use": "generate"} if name == "generate" else {},
             }
         )
     body = {
@@ -326,6 +326,15 @@ def test_registered_project_mlx_native_pipeline(tmp_path, mode):
         "permissions": {"network": False, "execute_on_import": False},
         "licenses": [],
     }
+    from tests.components.rights_test_support import USAGE_CONTEXT, local_review
+    from tests.integration.native_fixture_support import register_project_review
+    inventory = [{"path": Path(path).name, "sha256": dependency_sha256(path), "size_bytes": Path(path).stat().st_size}
+                 for path in model_paths.values()]
+    model_review, model_rights = local_review("pending", commit=identity(inventory), policy_id="mlx-authored-model",
+        source_files=inventory, repo_id="urn:modelbuilder:test-authored-mlx-model")
+    body["extensions"] = {"usage_context": USAGE_CONTEXT}
+    for dependency in body["external_dependencies"]:
+        dependency["metadata"] = {"rights": model_rights}
     roots = {"authored": {"path": str(source), "trusted": True, "dependency_paths": model_paths}}
     backend = ZenMLBackend(tmp_path / "native", python_executable=str(BACKEND), mlx_python_executable=python)
     service = OperationService(tmp_path / "service.sqlite", backend, source_roots=roots)
@@ -344,6 +353,7 @@ def test_registered_project_mlx_native_pipeline(tmp_path, mode):
         OWNER,
     )
     pid = project["project_id"]
+    register_project_review(service, model_review, pid)
     rid = project["recipe_id"]
     data = tmp_path / "data"
     data.mkdir()
@@ -353,6 +363,10 @@ def test_registered_project_mlx_native_pipeline(tmp_path, mode):
     ]
     path = data / "rows.jsonl"
     path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    data_review, _ = local_review(pid, policy_id="mlx-authored-dataset", repo_type="dataset",
+        source_files=[{"path": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "size_bytes": path.stat().st_size}],
+        repo_id="urn:modelbuilder:test-authored-mlx-data")
+    register_project_review(service, data_review, pid)
     manifest = {
         "name": "Independent token splits",
         "benchmark": "mlx-authored-v1",
@@ -400,6 +414,9 @@ def test_registered_project_mlx_native_pipeline(tmp_path, mode):
             idempotency_key="local-mlx-policy",
         )
         version = call("dataset.register", project_id=pid, manifest=manifest, idempotency_key="dataset")
+        call("hub.dataset.policy.bind", project_id=pid, dataset_id=version["dataset_id"], dataset_revision=1,
+             source_policies={"rows": data_review["policy_id"]}, intended_use="train", usage_context=USAGE_CONTEXT,
+             idempotency_key="dataset-rights")
         recipe = call("recipe.get", project_id=pid, recipe_id=rid)
         for split, name, target, port, purpose in [
             ("train", "training_data", "train", "train", "training"),

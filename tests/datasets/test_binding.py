@@ -10,6 +10,8 @@ from modelbuilder.api import create_app
 from modelbuilder.dataset import load_portable_split
 from modelbuilder.models import Actor, ServiceError
 from modelbuilder.service import OperationService
+from modelbuilder.recipe import default_recipe
+from tests.components.rights_test_support import USAGE_CONTEXT, review_local_dataset
 from test_registry import make_manifest
 
 OWNER = Actor("binding-owner", {"read", "modify", "execute"})
@@ -19,6 +21,12 @@ class InspectBackend:
     def __init__(self, root):
         self.root, self.dependency_paths = root, {}
         self.calls = []
+
+    def with_execution_rights(self, *, project_id, policies, policy_store_path):
+        from modelbuilder.backend.execution_rights import bind_authority
+        result = copy.copy(self)
+        result._execution_rights_authority = bind_authority(project_id, policies, policy_store_path)
+        return result
 
     def with_dataset_dependencies(self, paths, guards):
         result = copy.copy(self)
@@ -35,6 +43,8 @@ class InspectBackend:
         return self.invoke(*prepared, None)
 
     def invoke(self, operation, payload, actor):
+        from modelbuilder.backend.execution_rights import prepare_authorization
+        prepare_authorization(self, payload, payload["recipe"], durable=operation != "run.plan")
         self.calls.append((operation, copy.deepcopy(payload), self.dependency_paths, self.guards))
         return {"executable": True}
 
@@ -42,7 +52,9 @@ class InspectBackend:
 @pytest.fixture
 def bound(tmp_path):
     service = OperationService(tmp_path / "service.sqlite3")
-    project = service.invoke("project.create", {"slug": "binding", "model_name": "Bound data", "idempotency_key": "project"}, OWNER)
+    seed = default_recipe("pending", "pending", "Reviewed synthetic dataset fixture")
+    seed["extensions"] = {"usage_context": USAGE_CONTEXT}
+    project = service.invoke("project.create", {"slug": "binding", "model_name": "Bound data", "idempotency_key": "project", "recipe": seed}, OWNER)
     service.store.close()
     root = tmp_path / "external"
     root.mkdir()
@@ -51,6 +63,7 @@ def bound(tmp_path):
                                dataset_roots={project["project_id"]: {"data": str(root)}})
     version = service.invoke("dataset.register", {"project_id": project["project_id"], "manifest": make_manifest(root),
                              "idempotency_key": "register"}, OWNER)
+    review_local_dataset(service, version, root, OWNER)
     payload = {"project_id": project["project_id"], "recipe_id": project["recipe_id"], "expected_revision": 1,
                "dataset_id": version["dataset_id"], "dataset_revision": 1, "split_id": "train", "purpose": "training",
                "node_id": "train_data", "idempotency_key": "bind"}
@@ -194,6 +207,7 @@ def test_rebinding_new_identity_refuses_same_benchmark_comparison(bound, change)
         manifest["sources"][0].update(path=target.name, sha256=hashlib.sha256(target.read_bytes()).hexdigest())
     second_version = service.invoke("dataset.version", {"project_id": project["project_id"], "dataset_id": version["dataset_id"],
         "expected_revision": 1, "manifest": manifest, "idempotency_key": "new-version"}, OWNER)
+    review_local_dataset(service, second_version, root, OWNER, intended_use="evaluate")
     second = service.invoke("dataset.bind", {**payload, "split_id": "dev", "purpose": "evaluation", "dataset_revision": 2,
         "expected_revision": 2, "idempotency_key": "rebind"}, OWNER)
     assert second["binding"]["version_id"] == second_version["version_id"] != first["binding"]["version_id"]
@@ -234,6 +248,7 @@ def test_clean_bundle_import_preserves_portable_metadata_until_explicit_local_re
         assert not blocked["executable"] and blocked["blocked_reasons"][0]["code"] == "dataset_reference_invalid"
         registered = fresh.invoke("dataset.register", {"project_id": target["project_id"], "manifest": version["manifest"],
                                   "idempotency_key": "local-data"}, OWNER)
+        review_local_dataset(fresh, registered, relocated, OWNER)
         rebound = fresh.invoke("dataset.bind", {**payload, **request, "expected_revision": 2,
                                "dataset_id": registered["dataset_id"], "idempotency_key": "local-bind"}, OWNER)
         assert rebound["recipe_id"] == target["recipe_id"] and rebound["revision"] == 3

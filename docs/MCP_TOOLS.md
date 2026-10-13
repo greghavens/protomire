@@ -41,6 +41,38 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `evidence_get` | `evidence.get` | `read` | Read a cited evidence record. |
 | `evidence_search` | `evidence.search` | `read` | Search saved evidence or retrieve public OpenAlex metadata without persisting it. |
 | `execution_targets` | `execution.targets` | `read` | List actual supported targets and capabilities. |
+| `hub_asset_bind` | `hub.asset.bind` | `modify` | Add verified inert Hub file resources to the current recipe; never choose an initializer or execute remote code. |
+| `hub_asset_get` | `hub.asset.get` | `read` | Inspect a verified Hub asset and portable resource descriptors. |
+| `hub_asset_list` | `hub.asset.list` | `read` | List verified project Hub assets; this does not select a base model or change the recipe. |
+| `hub_asset_manifest` | `hub.asset.manifest` | `read` | Export a portable credential-free immutable Hub asset reference for source Git. |
+| `hub_dataset_policy_bind` | `hub.dataset.policy.bind` | `modify` | Bind an immutable registered dataset revision to explicit reviewed per-source policies after verifying every source byte hash; never infer rights from labels. |
+| `hub_download_plan` | `hub.download.plan` | `modify` | Pin exact Hub files, license and byte budget before starting a download. |
+| `hub_download_start` | `hub.download.start` | `execute, modify` | Start a pinned bounded resumable download; register no asset until all hashes verify. |
+| `hub_inspect` | `hub.inspect` | `read` | Resolve a Hub revision to an immutable commit and inspect bounded file hashes, access and license. |
+| `hub_license_get` | `hub.license.get` | `read` | Read captured immutable license evidence and document hashes. |
+| `hub_license_inspect` | `hub.license.inspect` | `modify` | Capture exact immutable upstream card and bounded license/notice text as evidence; never infer usage rights or accept gated terms. |
+| `hub_license_local_inspect` | `hub.license.local.inspect` | `modify` | Capture exact local model, dataset or pinned source bytes and explicitly selected terms; does not infer authorship or rights. |
+| `hub_license_policy_get` | `hub.license.policy.get` | `read` | Read the current project-scoped reviewed policy or revocation. |
+| `hub_license_policy_list` | `hub.license.policy.list` | `read` | List current project-scoped reviewed license policies and revocations; no credential values. |
+| `hub_license_review` | `hub.license.review` | `publish` | Record an explicit authorized review of intended uses, preserved notices, attribution and permitted destination licenses; labels alone grant nothing. |
+| `hub_license_revoke` | `hub.license.revoke` | `publish` | Revoke a reviewed policy for future admission; preserve its immutable history and completed work. |
+| `hub_local_files` | `hub.local.files` | `read` | List bounded relative files in an operator-approved project publication source alias. |
+| `hub_local_register` | `hub.local.register` | `modify` | Materialize exact local artifact files only after source-bound rights review; register no asset until hashes verify. |
+| `hub_providers` | `hub.providers` | `read` | Read configured Hub capabilities, opaque account and local source aliases. |
+| `hub_publish_approve` | `hub.publish.approve` | `publish` | Approve this exact publication payload digest; approval is actor/project-bound and one-use. |
+| `hub_publish_discard` | `hub.publish.discard` | `modify` | Discard this actor's unused derived publication snapshot; source files and audit receipts remain. |
+| `hub_publish_preview` | `hub.publish.preview` | `modify` | Snapshot exact model or dataset files and preview destination, visibility, license and change effects; never upload. |
+| `hub_publish_receipt` | `hub.publish.receipt` | `read` | Export a verified immutable publication receipt for source Git; no account alias or local paths. |
+| `hub_publish_reconcile` | `hub.publish.reconcile` | `publish` | Read remote commit history to reconcile an uncertain publication without submitting it again. |
+| `hub_publish_start` | `hub.publish.start` | `publish, execute` | Consume exact approval and publish only its frozen files; verify the resulting immutable commit. |
+| `hub_repository_compare` | `hub.repository.compare` | `read` | Compare bounded local files with an immutable Hub revision; report added, modified, unchanged and remote-only paths without publishing or deleting. |
+| `hub_search` | `hub.search` | `read` | Search bounded Hub model or dataset metadata; never download weights or execute code. |
+| `hub_source_policy_bind` | `hub.source.policy.bind` | `modify` | Bind a current reviewed pinned-source origin to future scratch lineage; preserves all existing parents and unresolved inputs without registering model weights. |
+| `hub_source_policy_replace` | `hub.source.policy.replace` | `publish` | Explicitly replace selected direct source-origin policies for future outputs after exact old/new review; preserve immutable history, actual input parents and unresolved lineage. |
+| `hub_transfer_cancel` | `hub.transfer.cancel` | `execute` | Request transfer cancellation; already committed uploads cannot be undone. |
+| `hub_transfer_get` | `hub.transfer.get` | `read` | Read durable transfer progress; interrupted publication requires reconciliation, not blind retry. |
+| `hub_transfer_list` | `hub.transfer.list` | `read` | List durable project Hub transfers. |
+| `hub_transfer_retry` | `hub.transfer.retry` | `execute, modify` | Resume a stopped download using its original immutable plan and verified staged files. |
 | `hypothesis_create` | `hypothesis.create` | `modify` | Create an evidence-linked measurable hypothesis. |
 | `hypothesis_get` | `hypothesis.get` | `read` | Read a hypothesis. |
 | `hypothesis_list` | `hypothesis.list` | `read` | List hypotheses including negative and abandoned outcomes. |
@@ -83,10 +115,14 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `recipe_registry_imported_bundle` | `recipe.registry.imported_bundle` | `read` | Read the original verified source bundle retained by a specific imported recipe revision; no source files are written. |
 | `recipe_registry_list` | `recipe.registry.list` | `read` | List actual configured recipe-only registry capabilities; public publication is unavailable. |
 | `recipe_resolve_dependencies` | `recipe.resolve_dependencies` | `read` | Inspect immutable dependency references and readiness. |
+| `recipe_smoke_prepare` | `recipe.smoke.prepare` | `modify` | Save the declared-budget smoke draft as the next immutable revision of this same recipe; execution remains run.submit. |
 | `recipe_source_pin` | `recipe.source.pin` | `modify, read` | Apply a reviewed source closure as the next immutable revision of this model's one recipe; never commit, install or execute source. |
 | `recipe_source_pin_preview` | `recipe.source.pin.preview` | `read` | Review explicit committed source files from the model's approved checkout without changing its recipe or executing code. |
 | `recipe_update` | `recipe.update` | `modify` | Atomically replace the same recipe using its expected revision. |
 | `recipe_validate` | `recipe.validate` | `read` | Validate a recipe without executing any code. |
+| `research_context_build` | `research.context.build` | `read` | Assemble bounded project research as inert evidence with exact revisions, hashes, citation spans and review states. Local lexical ranking is not embeddings or graph RAG. |
+| `research_context_capabilities` | `research.context.capabilities` | `read` | Inspect local lexical context retrieval and adapter/resource contracts; no model load or network call. |
+| `research_context_inspect` | `research.context.inspect` | `read` | Reopen an exact historical research passage and verify its record hash; source instructions remain inert evidence. |
 | `research_document_capabilities` | `research.document.capabilities` | `read` | Inspect local PDF/OCR tool availability and bounded limits without opening a document or making a network request. |
 | `research_document_import` | `research.document.import` | `modify` | Extract an explicitly supplied, rights-attested PDF locally using Poppler and optional English Tesseract OCR. Pin document and page hashes to an immutable citation; no URLs, cloud OCR, source execution or scientific inference. |
 | `research_finding_list` | `research.finding.list` | `read` | Read watch findings with immutable citation and change provenance. |
@@ -119,9 +155,15 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `run_logs` | `run.logs` | `read` | Read actual backend logs. |
 | `run_plan` | `run.plan` | `read` | Validate an execution plan; never launch from this operation. |
 | `run_resume` | `run.resume` | `execute, modify` | Resume an actual checkpoint and advance this recipe revision; requires execute and modify. Exact state differs from warm start. |
+| `run_smoke_plan` | `run.smoke.plan` | `read` | Prepare a non-production smoke recipe draft using only declared component budget semantics; does not execute or save. |
 | `run_status` | `run.status` | `read` | Reconcile status with the authoritative backend. |
 | `run_submit` | `run.submit` | `execute` | Submit an explicitly permitted source-bound local pipeline to the real backend. |
+| `scientific_methods` | `scientific.methods` | `read` | List verified built-in scientific methods; custom methods run in reviewed source-bound components. |
+| `scientific_policy_activate` | `scientific.policy.activate` | `modify` | Require this immutable scientific policy for accepted decisions and model promotion. |
+| `scientific_policy_get` | `scientific.policy.get` | `read` | Read a pinned scientific policy. |
+| `scientific_policy_register` | `scientific.policy.register` | `modify` | Register an immutable, content-addressed scientific policy; registration does not activate it. |
+| `scientific_sample_plan` | `scientific.sample.plan` | `read` | Calculate prospective paired-normal known-SD sample adequacy from explicit effect, power, alpha and assumptions; never infer scientific assumptions. |
 
-Private recipe publication/discovery and reviewed imports use the local SQLite registry. Public/external registry publication and remote execution/spending remain unavailable.
+Private recipe publication/discovery and reviewed imports use the local SQLite registry. External model/dataset Hub publication requires a separately configured isolated provider runtime, exact payload preview and publisher-scoped approval. Private recipe registry publication remains local.
 A configured ZenML backend is required for execution and model records. The service never returns fabricated native runs.
 Resume advances the same canonical recipe identity to a new immutable revision and digest; parent runs retain their historical revision.

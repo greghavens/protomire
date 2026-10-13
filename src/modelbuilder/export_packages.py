@@ -109,7 +109,7 @@ def inspect_export(root: Path, provenance: dict):
     return {**descriptor, "export_digest": digest(descriptor), "verified": True}
 
 
-def package_export(root: Path, cache: Path, descriptor: dict, expected_digest: str):
+def package_export(root: Path, cache: Path, descriptor: dict, expected_digest: str, *, rights_admission=None):
     if descriptor["export_digest"] != expected_digest:
         raise BackendError("export_changed", "Export identity changed; inspect it again before saving")
     cache.mkdir(parents=True, exist_ok=True)
@@ -141,6 +141,8 @@ def package_export(root: Path, cache: Path, descriptor: dict, expected_digest: s
         transfer = {"schema_version": "modelbuilder.export-transfer/v1", "export_digest": expected_digest,
                     "provenance": descriptor["provenance"], "size_bytes": path.stat().st_size,
                     "sha256": full.hexdigest(), "chunk_bytes": CHUNK_BYTES, "chunk_sha256": chunks}
+        if rights_admission is not None:
+            transfer["rights_admission"] = rights_admission
         identity = digest(transfer)
         os.replace(path, cache / f"{identity}.zip")
         metadata = cache / f"{identity}.json"
@@ -154,7 +156,7 @@ def package_export(root: Path, cache: Path, descriptor: dict, expected_digest: s
         path.unlink(missing_ok=True)
 
 
-def read_package(cache: Path, payload: dict):
+def read_package(cache: Path, payload: dict, *, review=None):
     identity = payload["package_id"]
     if not re.fullmatch(r"[0-9a-f]{64}", identity):
         raise BackendError("validation_error", "Invalid package identity")
@@ -170,6 +172,8 @@ def read_package(cache: Path, payload: dict):
         for field in ("project_id", "backend_run_id", "model_version_id", "artifact_id"):
             if payload.get(field) != provenance.get(field):
                 raise BackendError("not_found", "Package does not belong to this project, run, version and artifact")
+        if review is not None:
+            review(provenance, transfer)
         index = payload["chunk_index"]
         if type(index) is not int or not 0 <= index < len(transfer["chunk_sha256"]):
             raise BackendError("validation_error", "Chunk index is out of bounds")

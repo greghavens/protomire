@@ -27,7 +27,7 @@ from managed_core import CoreError, relative_file, restore_source, runtime_manif
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from dependency_profiles import backend_reason  # noqa: E402
+from dependency_profiles import backend_reason, HUB_TARGETS, lock_path  # noqa: E402
 
 
 def digest(path: Path) -> str:
@@ -106,6 +106,51 @@ def probe_python(root: Path, executable: str, modules: list[str], expected_versi
     return {"version": probe["version"], "modules": {name: str(Path(path).relative_to(root)) for name, path in probe["modules"].items()}}
 
 
+def validate_hub_profile(root: Path, manifest: dict, target: str) -> Path | None:
+    if target not in HUB_TARGETS:
+        if manifest.get("hub_python") or manifest.get("hub_status") != "unsupported_target":
+            raise ValueError("No reviewed Hub/keyring runtime for this target")
+        return None
+    if manifest.get("hub_status") != "bundled":
+        raise ValueError("Mandatory bundled Hub worker is missing")
+    relative_file(root, manifest.get("hub_python"))
+    expected = lock_path(ROOT, "hub", target)
+    if manifest.get("hub_profile") != "profiles/" + expected.name:
+        raise ValueError("Hub profile must match the exact native target")
+    profile = relative_file(root, manifest["hub_profile"])
+    if digest(profile) != digest(expected) or manifest.get("hub_lock_sha256") != digest(expected):
+        raise ValueError("Bundled Hub profile differs from its reviewed hash lock")
+    return profile
+
+
+def probe_hub(root: Path, manifest: dict, worker: str) -> dict:
+    """Probe the moved interpreter, complete locked closure and real offline SDK worker."""
+    result = probe_python(root, manifest["hub_python"], ["huggingface_hub", "keyring"], manifest["python_version"])
+    lock = relative_file(root, manifest["hub_profile"])
+    pins = dict(re.findall(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9.+!-]+)(?:\s|$)", lock.read_text(), re.M))
+    if pins.get("huggingface-hub") != "0.36.2" or pins.get("keyring") != "25.6.0":
+        raise ValueError("Hub profile does not contain the reviewed SDK and keyring pins")
+    python = relative_file(root, manifest["hub_python"])
+    code = ("import json,importlib.metadata as m; names=" + repr(list(pins)) + "; "
+            "print(json.dumps({n:{'version':m.version(n),'root':str(m.distribution(n).locate_file(''))} for n in names}))")
+    with tempfile.TemporaryDirectory(prefix="modelbuilder-hub-offline-probe-") as home:
+        env = {key: value for key, value in os.environ.items() if key in {"PATH", "SYSTEMROOT", "WINDIR", "LANG"}}
+        env.update(HOME=home, USERPROFILE=home, APPDATA=home, LOCALAPPDATA=home,
+                   HF_HOME=home, HF_HUB_OFFLINE="1", HF_HUB_DISABLE_TELEMETRY="1", HF_HUB_DISABLE_IMPLICIT_TOKEN="1")
+        found = json.loads(subprocess.run([str(python), "-I", "-B", "-c", code], capture_output=True, text=True,
+                                         timeout=120, check=True, env=env).stdout)
+        if any(found[name]["version"] != version or not Path(found[name]["root"]).resolve().is_relative_to(root.resolve()) for name, version in pins.items()):
+            raise ValueError("Hub dependency closure differs from its sealed profile or uses external packages")
+        output = Path(home) / "result.json"
+        request = {"action": "card.inspect", "payload": {"card": "---\nlicense: apache-2.0\n---\nOffline packaging fixture\n"},
+                   "credential": None, "result_path": str(output)}
+        subprocess.run([str(python), "-I", "-B", str(relative_file(root, worker))], input=json.dumps(request),
+                       capture_output=True, text=True, timeout=120, check=True, env=env)
+        if not output.is_file() or json.loads(output.read_text()) != {"license": "apache-2.0"}:
+            raise ValueError("The relocated bundled Hub SDK worker failed its offline operation")
+    return {**result, "locked_packages": pins, "offline_worker": "passed"}
+
+
 def seal_runtime(root: Path, target: str) -> dict:
     """Seal builder-supplied, reviewed native runtime trees; no network resolution."""
     target = validate_target(target)
@@ -124,7 +169,10 @@ def seal_runtime(root: Path, target: str) -> dict:
     if manifest.get("python_version") != expected_version:
         raise ValueError("Runtime interpreter declaration must match the repository's exact Python pin")
     safe_version(manifest.get("application_version"))
+    hub_profile = validate_hub_profile(root, manifest, target)
     provenance_fields = ["service_python_provenance", "git_provenance"]
+    if hub_profile:
+        provenance_fields.append("hub_python_provenance")
     if backend_reason(target) is None:
         provenance_fields.append("backend_python_provenance")
     if manifest.get("mlx_python"):
@@ -147,9 +195,11 @@ def seal_runtime(root: Path, target: str) -> dict:
     moved = root.with_name(root.name + " relocated " + secrets.token_hex(6))
     root.rename(moved)
     try:
-        probes = {"service": probe_python(moved, manifest["service_python"], ["modelbuilder.api", "modelbuilder.mcp_server", "psutil"], expected_version)}
+        probes = {"service": probe_python(moved, manifest["service_python"], ["modelbuilder.api", "modelbuilder.mcp_server", "psutil"] + (["modelbuilder.hub_sdk_worker"] if hub_profile else []), expected_version)}
         if backend_reason(target) is None:
             probes["backend"] = probe_python(moved, manifest["backend_python"], ["modelbuilder.backend.sdk", "zenml", "torch"], expected_version)
+        if hub_profile:
+            probes["hub"] = probe_hub(moved, manifest, probes["service"]["modules"]["modelbuilder.hub_sdk_worker"])
         if manifest.get("mlx_python"):
             required = manifest.get("mlx_minimum_os")
             if not isinstance(required, str) or not re.fullmatch(r"[0-9]+\.[0-9]+", required):
@@ -174,6 +224,10 @@ def seal_runtime(root: Path, target: str) -> dict:
         moved.rename(root)
     shutil.copyfile(ROOT / "distribution/managed_core.py", root / "managed_core.py")
     shutil.copyfile(ROOT / "distribution/windows_storage.py", root / "windows_storage.py")
+    shutil.copyfile(ROOT / "distribution/reviewed_requests.py", root / "reviewed_requests.py")
+    shutil.copyfile(ROOT / "distribution/reviewed_mcp.py", root / "reviewed_mcp.py")
+    shutil.copyfile(ROOT / "distribution/managed_hub.py", root / "managed_hub.py")
+    shutil.copyfile(ROOT / "distribution/hub_credentials.py", root / "hub_credentials.py")
     manifest["files"] = inventory(root)
     manifest["probes"] = probes
     manifest["sealed"] = True
@@ -203,6 +257,7 @@ def validate_payload(payload: Path, target: str) -> dict:
     safe_version(manifest.get("application_version"))
     if manifest.get("python_version") != (ROOT / ".python-version").read_text().strip():
         raise ValueError("Runtime does not declare the exact pinned interpreter version")
+    validate_hub_profile(payload, manifest, target)
     verify_runtime(payload, manifest)
     if manifest["files"] != inventory(payload):
         raise ValueError("Runtime contains unlisted or missing files; reseal after review")
@@ -210,8 +265,9 @@ def validate_payload(payload: Path, target: str) -> dict:
         relative_file(payload, manifest.get(field))
     if backend_reason(target) is None:
         relative_file(payload, manifest.get("backend_python"))
-    if digest(payload / "managed_core.py") != digest(ROOT / "distribution/managed_core.py"):
-        raise ValueError("Runtime lifecycle is stale; reseal using the current distribution scripts")
+    for name in ("managed_core.py", "windows_storage.py", "reviewed_requests.py", "reviewed_mcp.py", "managed_hub.py", "hub_credentials.py"):
+        if not (payload / name).is_file() or digest(payload / name) != digest(ROOT / "distribution" / name):
+            raise ValueError("Runtime lifecycle is stale; reseal using the current distribution scripts")
     return manifest
 
 
@@ -220,7 +276,7 @@ def stage(app: Path, payload: Path, output: Path, target: str) -> dict:
     manifest = validate_payload(payload, target)
     source_root = application_root(app, target)
     feature = source_root / "extensions/modelbuilder-workbench"
-    for name in ("package.json", "out/extension.js", "out/managedCore.js"):
+    for name in ("package.json", "out/extension.js", "out/managedCore.js", "out/nativeReview.js"):
         if not (feature / name).is_file():
             raise ValueError("Native application is missing the compiled mandatory core integration")
     product = json.loads((source_root / "product.json").read_text())

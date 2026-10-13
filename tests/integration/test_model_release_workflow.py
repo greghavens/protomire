@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 import time
 import zipfile
 
@@ -19,22 +20,26 @@ pytestmark = pytest.mark.integration
 
 
 def test_two_independent_runs_decision_promotion_save_fresh_reload(tmp_path):
-    backend_python = ROOT / ".venv-backend/bin/python"
+    backend_python = Path(sys.executable)
     if not backend_python.is_file():
         pytest.skip("Pinned native backend required")
     owner = Actor("owner", {"read", "modify", "execute"})
-    service = OperationService(tmp_path / "service.sqlite", ZenMLBackend(tmp_path, python_executable=str(backend_python), source_root=ROOT), source_root=ROOT)
+    from tests.integration.native_fixture_support import pinned_builtin_source, synthetic_review, register_project_review
+    source = pinned_builtin_source(tmp_path)
+    service = OperationService(tmp_path / "service.sqlite", ZenMLBackend(tmp_path, python_executable=str(backend_python), source_root=source), source_root=source)
     def call(op, **payload):
         return service.invoke(op, payload, owner)
     path = "src/modelbuilder/backend/fixtures.py"
-    commit = subprocess.check_output(["git", "log", "-1", "--format=%H", "--", path], cwd=ROOT, text=True).strip()
-    assert subprocess.check_output(["git", "show", f"{commit}:{path}"], cwd=ROOT) == (ROOT / path).read_bytes()
+    commit = subprocess.check_output(["git", "log", "-1", "--format=%H", "--", path], cwd=source, text=True).strip()
+    assert subprocess.check_output(["git", "show", f"{commit}:{path}"], cwd=source) == (source / path).read_bytes()
     body = json.loads((ROOT / "examples/custom-pytorch/recipe.json").read_text())
-    body["source"].update(commit=commit, files=[{"path": path, "sha256": hashlib.sha256((ROOT / path).read_bytes()).hexdigest()}])
+    body["source"].update(commit=commit, files=[{"path": path, "sha256": hashlib.sha256((source / path).read_bytes()).hexdigest()}])
     body.pop("digest", None)
     next(node for node in body["nodes"] if node["kind"] == "model.train")["parameters"]["steps"] = 3
+    review = synthetic_review(body, "pending", source)
     project = call("project.create", slug="release", model_name="Release model", recipe=body, idempotency_key="project")
     project_id = project["project_id"]
+    register_project_review(service, review, project_id)
     request = {"project_id": project_id, "recipe_id": project["recipe_id"]}
     runs = []
     recipe = call("recipe.get", **request)

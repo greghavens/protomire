@@ -54,6 +54,8 @@ def validate_execution(backend, payload: dict) -> dict:
         raise BackendError(error.code, error.message, error.details) from error
     except ValueError as error:
         raise BackendError("capability_unavailable", str(error), {"field": "evaluation.live"}) from error
+    from .execution_rights import prepare_authorization
+    prepare_authorization(backend, payload, recipe)
     selected_payload = {**payload, "recipe": recipe}
     if any(node.get("kind") in {"code.python", "component.run"} for node in recipe.get("nodes", [])) and not backend.trusted_code_roots:
         raise BackendError("untrusted_execution_blocked", "Arbitrary Python requires an operator-configured trusted source root")
@@ -184,6 +186,11 @@ def validate_execution(backend, payload: dict) -> dict:
         elif kind not in BUILTINS | PLATFORM_BUILTINS or reference != f"builtin:{kind}":
             raise BackendError("capability_unavailable", f"Executable node implementation is unsupported: {kind}")
     verify_environment(backend, recipe)
+    from .runner import resolve_environments
+    try:
+        resolve_environments(backend, recipe)
+    except (ValueError, OSError, ValidationError) as error:
+        raise BackendError("capability_unavailable", str(error), {"field": "environment_ref"}) from error
     return payload["recipe"]
 
 
@@ -236,8 +243,9 @@ def validate_dataset_import(backend, payload: dict, node: dict) -> None:
 def validate_node_settings(node: dict) -> None:
     """Fail closed on settings the local sequential executor cannot honor."""
     details = {"node_id": node.get("id")}
-    if node.get("environment_ref", "default") != "default":
-        raise BackendError("capability_unavailable", "Per-node environments are unsupported; use the verified default environment", details)
+    if node.get("environment_ref", "default") != "default" and not (
+            node.get("kind") == "component.run" and node.get("component", {}).get("runner")):
+        raise BackendError("capability_unavailable", "Per-node environments require an explicit pinned runner component", details)
     policy = node.get("cache_policy", "disabled")
     if policy not in {"disabled", "enabled"}:
         raise BackendError("validation_error", "Unknown native cache policy", details)
@@ -344,9 +352,10 @@ def validate_recipe_settings(recipe: dict) -> int:
 def capabilities(backend) -> dict:
     from ..execution import MAX_PARALLEL_STAGES
     parallel_available = sys.platform == "linux"
+    from .runner_compatibility import compatibility_catalog
     return {"schema_version": "1", "executable_kinds": sorted(BUILTINS | PLATFORM_BUILTINS | {"code.python", "component.run"}),
             "unsupported_schema_kinds": {"training.kl_anchor": "Use model.train.parameters.kl anchored to the connected initial model"},
-            "node_settings": {"environment_ref": ["default"], "cache_policy": ["disabled", "enabled"],
+            "node_settings": {"environment_ref": ["default", *sorted(getattr(backend, "runner_environments", {}))], "cache_policy": ["disabled", "enabled"],
                               "cache_scope": "explicitly opted-in JSON-value code.python and dataset/utility components; exact recipe revision, project, native input IDs and actual runtime identity",
                               "resource_request": {"gpu": [0], "cpu": "unsupported", "memory_mb": "unsupported"},
                               "timeout": {"minimum_exclusive": 0, "maximum": 86400, "behavior": "node deadline aborts the entire local run through process supervision"},
@@ -367,7 +376,12 @@ def capabilities(backend) -> dict:
                              "iteration_resume": "explicit warm_start only; restarts at iteration 1; exact loop cursor resume unavailable",
                              "iteration_live_evaluation": False, "independent_stage_concurrency": parallel_available, "conditional_live_evaluation": True,
                              "conditional_live_gate_policy": "evaluator gate must already be a canonical ancestor of its trainer; false/skipped gates launch no sidecar"},
-            "environment": {"requirements": "exact installed versions with target markers", "oci": False},
+            "runner_compatibility": compatibility_catalog(),
+            "environment": {"requirements": "exact installed versions with target markers", "oci": False,
+                "runner_protocol": "modelbuilder.runner/v1", "runner_devices": ["cpu"],
+                "runner_platforms": ["linux"], "runner_launchers": ["python"],
+                "runner_environment_verification": "complete exact distribution metadata; not framework smoke acceptance",
+                "runner_installation": False, "runner_live_evaluation": False, "runner_exact_resume": False},
             "placement": {"recipe_field": "environment.device", "reservations": False, "live_evaluation_device": "cpu",
                           "non_training_builtins_device": "cpu", "component_enforcement": "trusted component must honor declared device context",
                           "accelerator_exact_resume": False, "cuda_profile": "cuda-cu128",

@@ -37,7 +37,7 @@
       },
       {
         "command": "modelbuilder.createProject",
-        "title": "ModelBuilder: Create Model Project"
+        "title": "ModelBuilder: New Model Project"
       },
       {
         "command": "modelbuilder.refresh",
@@ -75,6 +75,44 @@
         "command": "modelbuilder.publishPrivateRecipe",
         "title": "ModelBuilder: Publish Recipe Privately\u2026",
         "enablement": "modelbuilder.projectOpen"
+      },
+      {
+        "command": "modelbuilder.registerProjectSource",
+        "title": "ModelBuilder: Register Trusted Project Source",
+        "enablement": "modelbuilder.projectOpen"
+      },
+      {
+        "command": "modelbuilder.openHub",
+        "title": "ModelBuilder: Open Hugging Face Repository",
+        "enablement": "modelbuilder.projectOpen",
+        "icon": "$(cloud)"
+      },
+      {
+        "command": "modelbuilder.hubStage",
+        "title": "ModelBuilder: Stage Hub File",
+        "enablement": "modelbuilder.projectOpen",
+        "icon": "$(add)"
+      },
+      {
+        "command": "modelbuilder.hubUnstage",
+        "title": "ModelBuilder: Unstage Hub File",
+        "enablement": "modelbuilder.projectOpen",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "modelbuilder.hubPublishStaged",
+        "title": "ModelBuilder: Preview Staged Hub Publication",
+        "enablement": "modelbuilder.projectOpen",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "modelbuilder.reviewAgentRequests",
+        "title": "ModelBuilder: Review Agent Requests"
+      },
+      {
+        "command": "modelbuilder.configureHub",
+        "title": "Configure project Hub account and publication folder",
+        "category": "ModelBuilder"
       }
     ],
     "viewsContainers": {
@@ -91,6 +129,11 @@
         {
           "id": "modelbuilder.explorer",
           "name": "Model Explorer"
+        },
+        {
+          "id": "modelbuilder.hubRepository",
+          "name": "Hugging Face Repository",
+          "when": "modelbuilder.projectOpen"
         }
       ]
     },
@@ -98,6 +141,10 @@
       {
         "view": "modelbuilder.explorer",
         "contents": "One model project, one model, one evolving recipe.\n[Open or create model project](command:modelbuilder.openWorkbench)\n[Connect to service](command:modelbuilder.configureConnection)"
+      },
+      {
+        "view": "modelbuilder.hubRepository",
+        "contents": "Models and datasets are separate from source Git.\n[Inspect repository and local files](command:modelbuilder.openHub)\nStaging never uploads. Each publication needs an exact approved preview.\n[Configure Hub account and publication folder](command:modelbuilder.configureHub)"
       }
     ],
     "menus": {
@@ -106,6 +153,26 @@
           "command": "modelbuilder.refresh",
           "when": "view == modelbuilder.explorer",
           "group": "navigation"
+        },
+        {
+          "command": "modelbuilder.openHub",
+          "when": "view == modelbuilder.hubRepository",
+          "group": "navigation"
+        },
+        {
+          "command": "modelbuilder.hubPublishStaged",
+          "when": "view == modelbuilder.hubRepository",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "modelbuilder.hubStage",
+          "when": "false"
+        },
+        {
+          "command": "modelbuilder.hubUnstage",
+          "when": "false"
         }
       ]
     },
@@ -148,7 +215,9 @@
     "test:history-http": "npm run compile && node test/recipeHistoryHttp.cjs",
     "test:history-browser": "npm run compile && node test/recipeHistoryDom.cjs",
     "test:research-document-http": "npm run compile && node test/researchDocumentHttp.cjs",
-    "test:research-document-browser": "npm run compile && node test/researchDocumentDom.cjs"
+    "test:research-document-browser": "npm run compile && node test/researchDocumentDom.cjs",
+    "test:quickstart-http": "npm run compile && node test/newProjectHttp.cjs",
+    "test:quickstart-browser": "npm run compile && node test/newProjectDom.cjs"
   },
   "devDependencies": {
     "@types/node": "22.10.2",

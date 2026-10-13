@@ -145,7 +145,7 @@ def _reconcile(job: Path):
                     recovered_records.append({"artifact_id": str(artifact.id), "node_id": node["id"], **info})
             if recovered_records:
                 log_metadata({"recovery_checkpoint_refs": recovered_records, "recovery_checkpoint_ref": recovered_records[-1]["artifact_id"]}, run_id_name_or_prefix=run.id)
-                journal = ({"artifact_id": recovered_records[0]["artifact_id"]} if len(recovered_records) == 1 and "iteration" not in recovered_records[0]
+                journal = (dict(recovered_records[0]) if len(recovered_records) == 1 and "iteration" not in recovered_records[0]
                            else {"checkpoints": recovered_records})
                 write_json(job / "recovery.json", journal)
         if not supervisor_alive and not state.get("worker_reaped"):
@@ -308,7 +308,12 @@ def compare_evaluations(records, payload):
         if result.get("compatible"):
             from ..evaluation import digest
             result["comparison_digest"] = digest({key: value for key, value in result.items() if key != "comparison_digest"})
-    return result
+    result["checkpoint_rights"] = {row["backend_run_id"]: [entry.get("rights") for entry in (row.get("checkpoint_verification") or {}).get("inputs", [])] for row in chosen}
+    if result.get("compatible"):
+        from ..evaluation import digest
+        result["comparison_digest"] = digest({key: value for key, value in result.items() if key != "comparison_digest"})
+    from .scientific_evidence import apply_policy
+    return apply_policy(result, records, payload)
 
 
 def status(job: Path, *, verify_evaluations=False) -> dict:
@@ -362,6 +367,7 @@ def status(job: Path, *, verify_evaluations=False) -> dict:
             "submitted_at": request["submitted_at"], "last_reconciled_at": now(),
             "metrics": metrics_for(run, evaluations), "evaluations": evaluations, "artifacts": artifacts_for(job, run),
             "execution": {**execution, "input_bindings": request.get("resolved_input_bindings", [])},
+            "execution_purpose": request["recipe"].get("execution", {}).get("purpose", "production"),
             "executed_node_ids": sorted({row["canonical_node_id"] for row in invocation_statuses.values() if row["status"] in {"running", "completed", "cached", "failed"}}),
             "cached_node_ids": sorted({row["canonical_node_id"] for row in invocation_statuses.values() if row["status"] == "cached"}),
             "node_statuses": {**{node: "skipped" for node in skipped}, **{node: step.status.value for node, step in native_steps.items()}},
@@ -403,7 +409,7 @@ def checkpoint(job: Path, kind: str, requested: str | None = None) -> dict:
     request = read_json(job / "request.json")
     training_nodes = {node["id"]: node for node in request["recipe"]["nodes"]
                       if node["kind"] == "model.train" or
-                      (node["kind"] == "component.run" and node.get("component", {}).get("role") == "training")}
+                      (node["kind"] == "component.run" and node.get("component", {}).get("role") in {"training", "derivation"})}
     training_ids = set(training_nodes)
     candidates = [a for a in artifacts_for(job, run) if a["port"] == "recovery_checkpoint" or
                   (a.get("node_id") in training_ids and (a["port"] == "checkpoint" or
@@ -426,6 +432,16 @@ def checkpoint(job: Path, kind: str, requested: str | None = None) -> dict:
         if (Path(path) / "checkpoint.manifest.json").is_file():
             from .components import read_checkpoint, identity
             descriptor = read_checkpoint(Path(path))
+            if training_nodes.get(selected.get("node_id"), {}).get("kind") == "model.train":
+                from .fixture_artifacts import selected_identity
+                try:
+                    selected_digest = selected_identity(descriptor, kind)
+                except ValueError:
+                    mismatches.append(descriptor["purpose"])
+                    continue
+                return {**selected, "path": str(path), "checkpoint_kind": kind, "sha256": selected_digest,
+                        "resume_modes": _checkpoint_resume_modes(request, descriptor["resume_modes"]),
+                        "descriptor": descriptor, "descriptor_scope": "immutable_builtin_declaration_not_effective_capabilities"}
             purposes = {"last": {"last", "resumable"}, "best": {"best", "selected"}}
             if descriptor["purpose"] not in purposes.get(kind, {kind}):
                 mismatches.append(descriptor["purpose"])
@@ -491,11 +507,25 @@ def promotion_comparison(client, project, version, payload, root):
         raise BackendError("validation_error", "Promotion requires the actual candidate run IDs and a measured selection rule")
     comparison = compare_evaluations(records, {"metric": metric, "direction": direction,
         "comparison_contract": payload.get("comparison_contract", rule.get("comparison_contract")),
-        "evaluations": payload.get("evaluations", rule.get("evaluations"))})
+        "evaluations": payload.get("evaluations", rule.get("evaluations")),
+        "scientific_policy": payload.get("scientific_policy"), "scientific_evaluations": payload.get("scientific_evaluations"), "scientific_gate": payload.get("scientific_gate"), "_scientific_root": str(root), "project_id": payload["project_id"]})
     if not comparison["compatible"]:
         raise BackendError("incompatible_evaluation", "Promotion requires scientifically comparable evaluation evidence", comparison)
+    if rule.get("scientific_policy_digest") and (not comparison.get("scientific_result", {}).get("passed") or comparison["scientific_result"]["digest"] != rule.get("scientific_result_digest")):
+        raise BackendError("scientific_gate_blocked", "Promotion requires the exact passing scientific policy result")
     if rule.get("comparison_digest") and rule["comparison_digest"] != comparison["comparison_digest"]:
         raise BackendError("comparison_changed", "Decision evaluation evidence changed; record a fresh decision")
+    chosen = select_evaluations(records, payload.get("evaluations", rule.get("evaluations")), metric)
+    if any(row.get("model_version_ref") == str(version.id) and (row.get("checkpoint_verification") or {}).get("production_eligible") is False for row in chosen):
+        raise BackendError("smoke_promotion_denied", "Smoke checkpoints and their derived descendants are non-production and cannot be promoted")
+    from .execution_rights import verify_artifact_authorization
+    for row in chosen:
+        if row.get("model_version_ref") == str(version.id):
+            checkpoints = (row.get("checkpoint_verification") or {}).get("inputs", [])
+            if not checkpoints:
+                raise BackendError("license_rights_unreviewed", "Promotion has no verified checkpoint rights lineage")
+            for checkpoint in checkpoints:
+                verify_artifact_authorization(payload.get("_execution_rights_authorization"), checkpoint.get("rights"), "promote")
     if comparison["selected_model_version_ref"] != str(version.id):
         raise BackendError("validation_error", "Requested model version does not win the declared measured validation criterion")
     return comparison
@@ -548,7 +578,7 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
         return {"backend_run_id": str(run.id) if run else None, "artifacts": artifacts}
     if operation == "run.compare":
         records = [status(Path(job), verify_evaluations=True) for job in payload["job_dirs"]]
-        return compare_evaluations(records, payload)
+        return compare_evaluations(records, {**payload, "_scientific_root": str(root)})
     if operation == "model.checkpoint.get":
         if payload.get("job_dir"):
             result = checkpoint(Path(payload["job_dir"]), payload.get("checkpoint_kind", "last"), payload.get("checkpoint_ref") or payload.get("checkpoint_id"))
@@ -583,8 +613,29 @@ def invoke(operation: str, payload: dict, root: Path) -> dict:
     if operation == "model.version.lineage":
         links = client.list_model_version_pipeline_run_links(model_version_id=version.id, size=1000).items
         artifact_links = client.list_model_version_artifact_links(model_version_id=version.id, size=1000).items
+        derivations = []
+        for job in (root / "jobs").glob("*"):
+            request, native = read_json(job / "request.json"), read_json(job / "native.json")
+            if request.get("project_id") != payload["project_id"] or native.get("model_version_ref") != str(version.id):
+                continue
+            _, run = native_run(job)
+            if not run:
+                continue
+            from .native_invocations import invocations
+            from .checkpoint_derivation import verify_native_output
+            nodes = {node["id"]: node for node in request["recipe"]["nodes"]}
+            for info, step in invocations(run, request["recipe"]):
+                node = nodes[info["canonical_node_id"]]
+                if node.get("component", {}).get("role") != "derivation":
+                    continue
+                for port, artifacts in step.outputs.items():
+                    for artifact in artifacts:
+                        if artifact.data_type.import_path not in {"pathlib.Path", "pathlib.PosixPath", "pathlib.WindowsPath"}:
+                            continue
+                        derivations.append({"artifact_id": str(artifact.id), "output_port": port,
+                            **verify_native_output(run, request, node, info, step, artifact)})
         return {**version_record(version), "pipeline_run_links": [x.model_dump(mode="json") for x in links],
-                "artifact_links": [x.model_dump(mode="json") for x in artifact_links]}
+                "artifact_links": [x.model_dump(mode="json") for x in artifact_links], "checkpoint_derivations": derivations}
     if operation == "model.version.promote":
         from .promotion import prepared_comparison, prepare
         handle = payload.get("_prepared_promotion")

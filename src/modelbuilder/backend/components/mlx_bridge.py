@@ -74,6 +74,18 @@ def stage_checkpoint(path, context, output):
     return destination, record
 
 
+def training_rights(inputs, context):
+    """Union exact declared model/data/resume parents before isolated MLX execution."""
+    from ...artifact_rights import combine_parent_rights
+    from . import identity, read_checkpoint
+    parents = [{"artifact_id": "declared-model-inputs", "rights": context.get("declared_artifact_rights")},
+               {"artifact_id": "training-data:" + identity(inputs["train"]), "rights": inputs["train"].get("rights")}]
+    if context.get("resume"):
+        parent = read_checkpoint(Path(context["resume"]["path"]))
+        parents.append({"artifact_id": "warm-start:" + identity(parent), "rights": parent.get("rights")})
+    return combine_parent_rights(parents)
+
+
 def execute(operation, *, inputs, parameters, context):
     python = os.environ.get("MODELBUILDER_MLX_PYTHON")
     if not python or not Path(python).is_file():
@@ -110,6 +122,8 @@ def execute(operation, *, inputs, parameters, context):
         for name in ["identities", "resume", "cancel_file", "dependencies"]
         if name in context
     }
+    if operation == "train":
+        serial_context["output_artifact_rights"] = training_rights(inputs, context)
     if serial_context.get("resume"):
         serial_context["resume"] = {
             **serial_context["resume"],

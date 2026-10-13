@@ -32,6 +32,7 @@ from modelbuilder.dataset_binding import reference_bytes, reference_dependency, 
 from modelbuilder.mcp_server import OperationGateway  # noqa: E402
 from modelbuilder.models import Actor, ServiceError  # noqa: E402
 from modelbuilder.service import OperationService  # noqa: E402
+from tests.components.rights_test_support import USAGE_CONTEXT, review_local_dataset  # noqa: E402
 
 OWNER = Actor("parquet-owner", {"read", "modify", "execute"})
 
@@ -216,13 +217,16 @@ async def test_http_mcp_binding_real_admission_and_worker_local_dependency(setup
     recipe = service.invoke("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"]}, OWNER)
     recipe["source"] = {"repository": "urn:sha256:" + "1" * 64, "commit": commit,
                         "files": [{"path": "project.txt", "sha256": hashlib.sha256((source / "project.txt").read_bytes()).hexdigest()}]}
+    recipe["extensions"] = {**recipe.get("extensions", {}), "usage_context": USAGE_CONTEXT}
     current = service.invoke("recipe.update", {"project_id": pid, "recipe_id": project["recipe_id"], "recipe": recipe,
                              "expected_revision": 1, "idempotency_key": "source"}, OWNER)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=create_app(service, tokens={"test": OWNER})),
+    app = create_app(service, tokens={"test": OWNER})
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),
                                 base_url="http://localhost", headers={"Authorization": "Bearer test"}) as client:
         gateway = OperationGateway(client)
         record = await gateway.invoke("dataset.register", {"project_id": pid, "manifest": manifest, "idempotency_key": "data"})
         assert await gateway.invoke("dataset.get", {"project_id": pid, "dataset_id": record["dataset_id"]}) == record
+        review_local_dataset(service, record, root, app.state.auth.authenticate("Bearer test"))
         binding = await gateway.invoke("dataset.bind", {"project_id": pid, "recipe_id": project["recipe_id"],
             "expected_revision": current["revision"], "dataset_id": record["dataset_id"], "dataset_revision": 1,
             "split_id": "train", "purpose": "training", "node_id": "train", "idempotency_key": "bind"})
@@ -232,6 +236,7 @@ async def test_http_mcp_binding_real_admission_and_worker_local_dependency(setup
     backend = ZenMLBackend(tmp_path / "state", python_executable=sys.executable, source_root=source)
     payload = {"project_id": pid, "recipe": binding["recipe"], "trusted": True}
     prepared = resolve_backend(service, backend, payload)
+    prepared = service.hub.resolve_backend(prepared, payload)
     plan = prepared.invoke("run.plan", payload)
     assert plan["executable"], plan
     node = binding["recipe"]["nodes"][0]

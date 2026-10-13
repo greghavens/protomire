@@ -77,6 +77,9 @@ def catalog_entries():
                 "resume_modes": ["warm_start"] if name == "train" else [],
                 "checkpoint_events": name == "train", "frameworks": ["pytorch", "transformers", "accelerate"],
                 "export_formats": ["transformers-safetensors"] if name == "export" else []}}
+        if name == "train":
+            descriptor["capabilities"]["smoke_budget"] = {"schema": "modelbuilder.smoke-budget/v1", "limits": [
+                {"id": "optimizer_steps", "unit": "optimizer_steps", "parameter_path": ["max_steps"], "semantics": "absolute_integer_cap", "minimum": 1}]}
         ports = [{"name": name, "type": kind} for name, kind in inputs]
         if name == "train":
             ports.append({"name": "validation", "type": "dict", "required": False})
@@ -342,7 +345,7 @@ def _snapshot(model, tokenizer, settings, state, context, data_identity, output)
             "data": data_identity, "training": {"trainer": "transformers.Trainer", "optimizer_state_saved": False},
             "execution": {"device": str(next(model.parameters()).device), "dtype": "float32",
                           "hardware_acceptance": "cpu_regression_tested" if context.get("device", "cpu") == "cpu" else "not_verified"},
-            "history": state.log_history}
+            "history": state.log_history, "rights": context["output_artifact_rights"]}
         _json(staging / "checkpoint.manifest.json", descriptor)
         staging.rename(destination)
     except BaseException:
@@ -368,6 +371,13 @@ def train(*, inputs, parameters, context):
         raise ValueError("Streaming batch/accumulation/lookahead window exceeds the declared token resource limit")
     if context.get("resume") and context.get("resume_mode") != "warm_start":
         raise ValueError("Trainer v1 supports explicit model-only warm start, not exact continuation")
+    from ...artifact_rights import combine_parent_rights
+    parents = [{"artifact_id": "declared-model-inputs", "rights": context.get("declared_artifact_rights")},
+               {"artifact_id": "training-data:" + identity(inputs["train"]), "rights": inputs["train"].get("rights")}]
+    if context.get("resume"):
+        parent = read_checkpoint(Path(context["resume"]["path"]))
+        parents.append({"artifact_id": "warm-start:" + identity(parent), "rights": parent.get("rights")})
+    context = {**context, "output_artifact_rights": combine_parent_rights(parents)}
     from transformers import Trainer, TrainerCallback, default_data_collator
     output = Path(context["output_dir"])
     output.mkdir(parents=True, exist_ok=True)
@@ -543,5 +553,6 @@ def export(*, inputs, parameters, context):
             "signature": {"input": "list[str]", "output": "float32 logits", "task": settings["task"], "preprocessing": settings},
             "dependencies": versions, "source": context.get("source", checkpoint["identities"]["source"]),
             "verification": verification, "assets": _assets(output)}
+        descriptor["rights"] = checkpoint.get("rights")
         _json(output / "export.manifest.json", descriptor)
     return {"exported": output}

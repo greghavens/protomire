@@ -24,6 +24,7 @@ import time
 SERVICE_ONLY_TESTS = (
     "tests/live_evaluation/test_selected_live_native.py",
     "tests/iterations/test_native_iterations.py",
+    "tests/components/test_runner_native.py",
 )
 SERVICE_TESTS = (
     "tests/service/test_real_backend.py", "tests/integration/test_mcp_training.py",
@@ -43,6 +44,7 @@ LIFECYCLE_TESTS = (
 )
 COMPONENT_TESTS = (
     "tests/components", "tests/evaluation", "tests/live_evaluation",
+    "tests/scientific/test_derivation.py", "tests/scientific/test_native_derivation.py",
     "tests/datasets/test_reference_atomic_read.py", "tests/tracking/test_cpu_live_tracking.py",
     "tests/placement/test_placement.py", "tests/placement/test_checkpoint_capabilities.py",
     "tests/placement/test_cuda_execution.py", "tests/integration/test_mlx_service.py",

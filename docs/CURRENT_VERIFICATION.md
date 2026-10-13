@@ -1,6 +1,34 @@
 # Current verification and remaining gates
 
-## 2026-10-13 frozen merged runtime: local aggregate and Mac runtime gates passed
+## 2026-10-13 expanded implementation: acceptance in progress
+
+The newest source adds guided project creation, native Hub repository workflows,
+managed Hub credentials/runtime packaging, exact asset/source rights review,
+reviewed MCP mutations, extensible training runners, scientific operations and
+citation-bound research retrieval. These are implemented source paths, but the
+complete product and installer acceptance remain unfinished.
+
+Local combined frontend: **480 passed**, zero failures/skips, with TypeScript
+and build checks. The preceding combined light diagnostic had **2,525 passed,
+141 skipped, 86 deselected** and two stale shipping-source-pin failures; source
+repinning and the full new-candidate aggregate are still pending. Focused native
+CPU training, evaluation, warm-start, scientific blend/gate and export tests ran
+in isolated integration stages; they do not replace a new frozen aggregate.
+
+The anonymous locked Hub SDK public probe failed at DNS resolution before any
+provider bytes arrived. Socket-blocked SDK tests are not online provider
+acceptance. The pinned public `prajjwal1/bert-tiny` fixture is blocked by unresolved
+rights review: its card declares MIT while linked upstream model material states
+Apache-2.0, and the pinned repository has no standalone license/notice. No rights
+approval was fabricated to make the fixture pass.
+
+Mac build inputs survived and were hash-verified on October 13. The Mac is locked;
+current native GUI, full managed app lifecycle and DMG acceptance remain pending.
+Earlier MLX/MPS and aggregate results below apply only to their named old runtime.
+Hub transfer budgets are configurable with conservative 16 GiB defaults; the
+separate native export packager still has its existing 16 GiB limit.
+
+## Historical accepted runtime: local aggregate and Mac runtime gates passed
 
 The full product remains incomplete. Candidate
 `5b38d9602b6f8ae36fc0dcaf28f0a6da8c8f7d4a` pins runtime

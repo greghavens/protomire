@@ -229,3 +229,46 @@ def test_pretrained_dataset_and_export_close_tokenizer_assets(tmp_path, monkeypa
     exported = fixtures.export_model(data, checkpoint, {}, tmp_path / "with-sidecars")
     assert {path.name: path.read_bytes() for path in exported.iterdir()} == {
         path.name: path.read_bytes() for path in baseline.iterdir()}
+
+
+def test_builtin_rights_manifests_preserve_exact_selected_bytes_and_parent_union(tmp_path):
+    from modelbuilder.backend.components import read_checkpoint, read_export
+    from modelbuilder.backend.fixture_artifacts import input_rights, selected_identity
+    from modelbuilder.hub_rights import validate_artifact_rights
+    from modelbuilder.models import ServiceError
+    from tests.components.rights_test_support import USAGE_CONTEXT, local_review
+
+    first, first_rights = local_review(policy_id="dataset-origin")
+    second, second_rights = local_review(policy_id="model-origin", commit="2" * 40)
+    data = fixtures.dataset({"fixture": "custom"})
+    original_digest = data["sha256"]
+    data["rights"] = first_rights
+    assert fixtures.verify_data(data) == original_digest
+    spec = {"node_id": "initial", "rights_extensions": {"artifact_rights": second_rights}}
+    initial_rights = input_rights(spec, data)
+    initial = fixtures.initialize(data, {"fixture": "custom", "_artifact_rights": initial_rights}, tmp_path / "initial")
+    training_rights = input_rights({**spec, "node_id": "train"}, data, [initial])
+    trained = fixtures.train(data, initial, {"steps": 3, "_artifact_rights": training_rights}, tmp_path / "trained")
+    manifest = read_checkpoint(trained)
+    assert manifest["rights"] == training_rights
+    assert {source["license_policy_id"] for source in manifest["rights"]["sources"]} == {"dataset-origin", "model-origin"}
+    assert manifest["rights"]["parent_rights_digests"] and not manifest["rights"]["unresolved"]
+    assert manifest["resume_modes"] == ["exact_state", "warm_start"]
+    for kind, filename in (("last", "checkpoint.pt"), ("best", "best.pt")):
+        assert selected_identity(manifest, kind) == hashlib.sha256((trained / filename).read_bytes()).hexdigest()
+    policies = {policy["policy_id"]: policy for policy in (first, second)}
+    assert validate_artifact_rights(manifest["rights"], "train", policies, USAGE_CONTEXT)["policy_ids"]
+    exported = read_export(fixtures.export_model(data, trained, {}, tmp_path / "export"))
+    assert exported["rights"] == manifest["rights"]
+    assert exported["selected_checkpoint"] == selected_identity(manifest, "best")
+    unreviewed = fixtures.initialize(fixtures.dataset({}), {"fixture": "custom"}, tmp_path / "unreviewed")
+    missing = read_checkpoint(unreviewed)["rights"]
+    assert missing["unresolved"]
+    with pytest.raises(ServiceError) as failed:
+        validate_artifact_rights(missing, "train", policies, USAGE_CONTEXT)
+    assert failed.value.code == "license_rights_unreviewed"
+    with pytest.raises(ValueError, match="exact verified asset"):
+        selected_identity({**manifest, "selections": {"best": manifest["selections"]["last"]}}, "best")
+    (trained / "best.pt").write_bytes(b"tampered")
+    with pytest.raises(ValueError, match="integrity mismatch"):
+        read_checkpoint(trained)

@@ -199,7 +199,7 @@ def registered_tokens(data, roles, max_rows, max_length):
         {"id": identifier, "tokens": row["tokens"], "prompt_offset": row["prompt_offset"]}
         for identifier, row in zip(lineage["split"]["sample_ids"], rows)
     ]
-    return {"identity": identity(lineage), "samples": samples, "lineage": lineage}
+    return {"identity": identity(lineage), "samples": samples, "lineage": lineage, "rights": data.get("rights")}
 
 
 def train(*, inputs, parameters, context):

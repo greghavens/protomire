@@ -1,0 +1,141 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "calibration": {
+      "const": {
+        "requires_refit": true,
+        "status": "invalidated"
+      }
+    },
+    "configuration": {
+      "type": "object"
+    },
+    "implementation": {
+      "type": "object"
+    },
+    "operation": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "parent_rights_evidence": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "checkpoint_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "rights": {
+            "type": [
+              "object",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "artifact_id",
+          "checkpoint_digest",
+          "rights"
+        ],
+        "type": "object"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "type": "array"
+    },
+    "parents": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "backend_project_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "checkpoint_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "content_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "input_port": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "input_port",
+          "artifact_id",
+          "backend_project_id",
+          "content_sha256",
+          "checkpoint_digest"
+        ],
+        "type": "object"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "type": "array"
+    },
+    "producer": {
+      "additionalProperties": false,
+      "properties": {
+        "backend_project_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "backend_run_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "invocation_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "model_version_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "node_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "project_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "project_id",
+        "backend_project_id",
+        "backend_run_id",
+        "model_version_ref",
+        "node_id",
+        "invocation_id"
+      ],
+      "type": "object"
+    },
+    "schema": {
+      "const": "modelbuilder.checkpoint-derivation/v1"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "implementation",
+    "configuration",
+    "parents",
+    "producer",
+    "parent_rights_evidence",
+    "calibration"
+  ],
+  "type": "object"
+}

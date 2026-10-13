@@ -29,7 +29,12 @@ def _snapshot(client, project, payload, root):
     if not run_ids or len(run_ids) != len(set(run_ids)):
         raise BackendError("validation_error", "Promotion requires distinct native candidate runs")
     snapshots = []
+    run_ids = list(run_ids)
+    if payload.get("scientific_gate") and payload["scientific_gate"]["backend_run_id"] not in run_ids:
+        run_ids.append(payload["scientific_gate"]["backend_run_id"])
     for run_id in run_ids:
+        if len(run_ids) > 1000:
+            raise BackendError("capability_unavailable", "Promotion lineage exceeds its native run bound")
         run = client.get_pipeline_run(run_id, project=project.id, include_full_metadata=True)
         if str(run.project.id) != str(project.id) or run.status.value != "completed":
             raise BackendError("validation_error", "Selection candidates must be completed runs in this project")
@@ -39,6 +44,11 @@ def _snapshot(client, project, payload, root):
         if len(jobs) != 1:
             raise BackendError("incompatible_evaluation", "Candidate has no unique owned immutable request")
         request = read_json(jobs[0] / "request.json")
+        for binding in request.get("resolved_input_bindings", []):
+            if not binding.get("backend_run_id"):
+                raise BackendError("incompatible_evaluation", "Checkpoint parent lacks a native producer run identity")
+            if binding["backend_run_id"] not in run_ids:
+                run_ids.append(binding["backend_run_id"])
         nodes = {node["id"]: node for node in request["recipe"]["nodes"]}
         steps, artifacts = {}, {}
         from .native_invocations import invocations
@@ -48,14 +58,14 @@ def _snapshot(client, project, payload, root):
                               for side in ("inputs", "outputs")}
             steps[invocation["invocation_id"]]["invocation"] = invocation
             node = nodes.get(node_id, {})
-            evaluator = node.get("kind") == "model.evaluate" or node.get("component", {}).get("role") == "evaluation"
+            evaluator = node.get("kind") == "model.evaluate" or node.get("component", {}).get("role") in {"evaluation", "scientific_gate"}
             for side in ("inputs", "outputs"):
                 for port, versions in getattr(step, side, {}).items():
                     for artifact in versions:
                         # All native checkpoint inputs/outputs and evaluation
                         # dictionaries used by selection receive a witness.
                         path = artifact.data_type.import_path in {"pathlib.Path", "pathlib.PosixPath", "pathlib.WindowsPath"}
-                        if not path and not (side == "outputs" and (port == "metrics" or evaluator)):
+                        if not path and not (side == "outputs" and (port == "metrics" or evaluator)) and not (evaluator and side == "inputs" and node.get("component", {}).get("role") == "scientific_gate"):
                             continue
                         if str(artifact.project.id) != str(project.id):
                             raise BackendError("incompatible_evaluation", "Selection artifact belongs to another project")
@@ -106,6 +116,9 @@ def prepared_comparison(payload, root: Path, handle):
         version = find_version(client, project, payload)
         if str(version.id) != body["model_version_id"] or _snapshot(client, project, payload, root) != body["snapshot"]:
             raise ValueError("Native input bytes, ownership, or source provenance changed after preparation")
+        from .execution_rights import verify_artifact_authorization
+        for rights in body["comparison"].get("checkpoint_rights", {}).get(body["comparison"]["selected_run_id"], []):
+            verify_artifact_authorization(payload.get("_execution_rights_authorization"), rights, "promote")
         return body["comparison"]
     except (OSError, ValueError, TypeError, KeyError) as error:
         raise BackendError("comparison_changed", "Prepared native selection evidence is no longer valid", {"reason": str(error)}) from error

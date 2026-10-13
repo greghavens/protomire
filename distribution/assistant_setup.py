@@ -289,11 +289,9 @@ def install(plan: dict, approval: str | None) -> dict:
 def config_path(client: str, override: Path | None, workspace: Path | None) -> Path:
     if override:
         return absolute(override)
-    if client == "codex":
-        return absolute(Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")) / "config.toml")
     if not workspace:
-        raise SetupError("workspace_required", "Select --workspace or an explicit --config .mcp.json for Claude.")
-    return absolute(workspace / ".mcp.json")
+        raise SetupError("workspace_required", "Select an explicit local project --workspace. Global configuration is never the default.")
+    return absolute(workspace / (".codex/config.toml" if client == "codex" else ".mcp.json"))
 
 
 def config_bytes(path: Path) -> bytes | None:
@@ -396,10 +394,12 @@ def render_codex(raw: bytes, entry: dict) -> bytes:
             remove.update(range(start, end))
     preserved = "".join(line for i, line in enumerate(lines) if i not in remove)
     j = json.dumps
-    block = ("\n[mcp_servers.modelbuilder]\ncommand = " + j(entry["command"]) + "\nargs = "
-             + j(entry["args"]) + "\nenv_vars = [\"MODELBUILDER_TOKEN\"]\n"
-             + "[mcp_servers.modelbuilder.env]\nMODELBUILDER_API_URL = "
-             + j(entry["env"]["MODELBUILDER_API_URL"]) + "\n")
+    block = "\n[mcp_servers.modelbuilder]\ncommand = " + j(entry["command"]) + "\nargs = " + j(entry["args"]) + "\n"
+    if entry.get("env_vars"):
+        block += "env_vars = " + j(entry["env_vars"]) + "\n"
+    if entry.get("env"):
+        block += "[mcp_servers.modelbuilder.env]\n"
+        block += "".join(j(key) + " = " + j(value) + "\n" for key, value in entry["env"].items())
     candidate = preserved.rstrip("\r\n") + "\n" + block
     parsed = tomllib.loads(candidate)
     if (without_server(parsed, "mcp_servers") != without_server(original, "mcp_servers")
@@ -699,9 +699,37 @@ def main(argv=None) -> int:
             cmd.add_argument("--workspace", type=Path)
         if action == "configure":
             cmd.add_argument("--approval", required=True)
+    for action in ("preview-project", "apply-project", "preview-rollback", "rollback-project"):
+        cmd = commands.add_parser(action)
+        cmd.add_argument("--client", choices=[*CLIENTS, "triggerfish"], required=True)
+        cmd.add_argument("--workspace", type=Path, required=True)
+        if action in {"preview-project", "apply-project"}:
+            cmd.add_argument("--project-id", required=True)
+            cmd.add_argument("--python")
+            cmd.add_argument("--service-url")
+            cmd.add_argument("--mcp-command-json")
+        if action in {"apply-project", "rollback-project"}:
+            cmd.add_argument("--approval", required=True)
     args = parser.parse_args(argv)
     try:
-        if args.action == "catalog":
+        if args.action in {"preview-project", "apply-project", "preview-rollback", "rollback-project"}:
+            import assistant_project
+            if args.action in {"preview-project", "apply-project"}:
+                command = json.loads(args.mcp_command_json) if args.mcp_command_json else None
+                preview, files = assistant_project.preview_project(args.client, args.workspace, args.project_id,
+                    command=command, python=args.python, service_url=args.service_url)
+                if args.action == "apply-project" and preview["plan"]["change"] == "unchanged":
+                    receipt, _ = assistant_project.load_receipt(assistant_project.checked_root(args.workspace), args.client)
+                    if receipt.get("approval") == args.approval:
+                        result = {"ok": True, "status": "unchanged", "credentials_stored": False}
+                    else:
+                        result = assistant_project.apply_project(preview, files, args.approval)
+                else:
+                    result = preview if args.action == "preview-project" else assistant_project.apply_project(preview, files, args.approval)
+            else:
+                preview, files = assistant_project.preview_rollback(args.client, args.workspace)
+                result = preview if args.action == "preview-rollback" else assistant_project.rollback_project(preview, files, args.approval)
+        elif args.action == "catalog":
             result = catalog(args.extensions_dir)
         elif args.action in {"preview-install", "install"}:
             preview = preview_install(args.client, args.version, args.ide_cli, args.extensions_dir,
@@ -726,4 +754,6 @@ def main(argv=None) -> int:
 
 
 if __name__ == "__main__":
+    # The companion helper must share this exact exception class when run as a script.
+    sys.modules["assistant_setup"] = sys.modules[__name__]
     raise SystemExit(main())

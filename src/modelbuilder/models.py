@@ -67,6 +67,18 @@ class SourceBinding(DomainModel):
     trust_acknowledged: Literal[True]
 
 
+class ProjectIntent(DomainModel):
+    """Owner-supplied quickstart choices, never inferred from research documents.
+
+    These are planning metadata, not execution, download, sign-in or spending
+    authorization. The project revision/history is the sole persistence contract.
+    """
+    schema_version: Literal["1"] = "1"
+    goal: str = Field(default="", max_length=8000)
+    starting_point: Literal["blank", "research", "base_model", "scratch"] = "blank"
+    assistant: Literal["none", "codex", "claude", "triggerfish"] = "none"
+
+
 class ModelProject(DomainModel):
     schema_version: Literal["0"] = "0"
     project_id: str
@@ -74,6 +86,7 @@ class ModelProject(DomainModel):
     slug: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,79}$")
     model_name: str = Field(min_length=1, max_length=200)
     description: str = ""
+    intent: ProjectIntent | None = None
     created_at: str
     updated_at: str
     source_binding: SourceBinding | None = None
@@ -84,6 +97,7 @@ class ModelProject(DomainModel):
     recipe_migration: dict = Field(default_factory=dict)
     active_model_version_ref: str | None = None
     research_watch_config: dict | None = None
+    scientific_policy_digest: str | None = None
     tracking: TrackingConfig = Field(default_factory=TrackingConfig)
     status: Literal["active", "archived"] = "active"
     revision: int = Field(ge=1)
@@ -202,6 +216,7 @@ def _spec(name, scope, description, properties=None, required=(), mutating=False
 
 
 from .execution import EXECUTION_SCHEMA, EVALUATIONS_SCHEMA  # noqa: E402
+from .scientific_operations import BINDINGS, GATE_SELECTOR, SHA as SCIENTIFIC_SHA  # noqa: E402
 
 SOURCE_ALIAS = {"type": "string", "pattern": r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"}
 SOURCE_REPOSITORY_ID = {"type": "string", "pattern": r"^sha256:[0-9a-f]{64}$"}
@@ -220,6 +235,7 @@ HYPOTHESIS_FIELDS = {"claim_ids": A, "evidence_ids": A, "proposed_change": S, "e
                      "acceptance_metric": OBJECT, "scope": {"type": "string"}, "status": S}
 TRACKING_FIELDS = {"tracking": TrackingConfig.model_json_schema(), "tracking_online_consent": B}
 PROJECT_FIELDS = {"slug": S, "model_name": S, "description": {"type": "string"},
+                  "intent": {"anyOf": [ProjectIntent.model_json_schema(), {"type": "null"}]},
                   "git_remote": NULLABLE_STRING, "head_commit": NULLABLE_STRING,
                   "active_recipe_id": NULLABLE_STRING, "active_model_version_ref": NULLABLE_STRING,
                   "research_watch_config": {"type": ["object", "null"]}, "status": S,
@@ -351,7 +367,7 @@ OPERATIONS = {s.name: s for s in [
     _spec("run.artifacts", "read", "Read authoritative artifact identifiers and optional explicit binding content descriptors.", {**RUN, "include_binding_descriptors": B}, ("project_id",)),
     _spec("run.compare", "read", "Compare metrics from actual backend runs by a declared criterion.",
           {**P, "run_ids": {"type": "array", "items": S, "minItems": 2}, "metric": S,
-           "direction": {"enum": ["minimize", "maximize"]}, "comparison_contract": OBJECT, "evaluations": EVALUATIONS_SCHEMA}, ("project_id", "run_ids", "metric", "direction")),
+           "direction": {"enum": ["minimize", "maximize"]}, "comparison_contract": OBJECT, "evaluations": EVALUATIONS_SCHEMA, "scientific_policy_digest": SCIENTIFIC_SHA, "scientific_evaluations": BINDINGS, "scientific_gate": GATE_SELECTOR}, ("project_id", "run_ids", "metric", "direction")),
     _spec("model.export.list", "read", "List verified existing native exports for one run or model version; never execute code.",
           {**P, "backend_run_id": S, "model_version_id": S}, ("project_id",)),
     _spec("model.export.inspect", "read", "Inspect a declared native export, checkpoint identity and provenance without running it.",
@@ -371,12 +387,14 @@ OPERATIONS = {s.name: s for s in [
           ("project_id", "decision_id", "expected_revision"), True),
     _spec("model.version.lineage", "read", "Read actual model-version parents and artifacts.", VERSION, ("project_id",)),
     _spec("model.checkpoint.get", "read", "Read a checkpoint and its verified resume capabilities.",
-          {**RUN, "checkpoint_ref": S, "checkpoint_id": S, "checkpoint_kind": {"enum": ["last", "best"]}}, ("project_id",)),
+          {**RUN, "checkpoint_ref": S, "checkpoint_id": S, "checkpoint_kind": {"enum": ["last", "best", "inference"]}}, ("project_id",)),
 ]}
 
 
 from .research_contract import operation_specs as research_operation_specs  # noqa: E402
 OPERATIONS.update({spec.name: spec for spec in research_operation_specs(_spec)})
+from .research_context_contract import operation_specs as research_context_operation_specs  # noqa: E402
+OPERATIONS.update({spec.name: spec for spec in research_context_operation_specs(_spec)})
 
 
 from .recipe_registry_contract import operation_specs as registry_operation_specs  # noqa: E402
@@ -389,6 +407,18 @@ OPERATIONS.update({spec.name: spec for spec in remote_cost_operation_specs(_spec
 
 from .source_pinning_contract import operation_specs as source_pin_specs  # noqa: E402
 OPERATIONS.update({spec.name: spec for spec in source_pin_specs(_spec)})
+
+
+from .scientific_operations import operation_specs as scientific_specs  # noqa: E402
+OPERATIONS.update({spec.name: spec for spec in scientific_specs(_spec)})
+
+
+from .smoke import operation_specs as smoke_specs  # noqa: E402
+OPERATIONS.update({spec.name: spec for spec in smoke_specs(_spec)})
+
+
+from .hub_contract import operation_specs as hub_operation_specs  # noqa: E402
+OPERATIONS.update({spec.name: spec for spec in hub_operation_specs(_spec)})
 
 
 def operation_catalog() -> list[dict]:

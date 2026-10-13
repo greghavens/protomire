@@ -25,7 +25,8 @@ from .backend.placement import is_local_target, device_from_recipe, target_for_d
 class OperationService:
     def __init__(self, store: SQLiteStore | str | Path | None = None, backend=None, *,
                  db_path: str | Path | None = None, source_root: str | Path | None = None,
-                 dataset_roots: dict | None = None, source_roots: dict | None = None, dataset_limits: dict | None = None):
+                 dataset_roots: dict | None = None, source_roots: dict | None = None, dataset_limits: dict | None = None,
+                 hub_config: dict | None = None, hub_providers: dict | None = None):
         self.store = store if isinstance(store, SQLiteStore) else SQLiteStore(db_path or store or "modelbuilder.sqlite3")
         self.research_authorizer = None
         self.operation_authorizer = None
@@ -44,6 +45,8 @@ class OperationService:
                                         "dependency_paths": backend.dependency_paths}}
         self.source_workspaces = SourceWorkspaces(source_roots)
         self._migrate_single_recipe()
+        from .hub import HubTransfers
+        self.hub = HubTransfers(self, config=hub_config, providers=hub_providers)
 
     def _migrate_single_recipe(self):
         """Bind one editable identity; retain every legacy manifest and run reference byte-for-byte."""
@@ -134,10 +137,15 @@ class OperationService:
             errors = sorted(Draft202012Validator(spec.input_schema).iter_errors(payload), key=lambda e: list(map(str, e.path)))
             if errors:
                 raise ServiceError("validation_error", "Operation payload does not match its schema", {
-                    "errors": [{"path": ".".join(map(str, error.path)), "message": "Invalid tracking configuration" if "tracking" in error.path else error.message} for error in errors]})
+                    "errors": [{"path": ".".join(map(str, error.path)), "message": "Invalid Hub request field" if operation.startswith("hub.") else "Invalid tracking configuration" if "tracking" in error.path else error.message} for error in errors]})
             self._reject_secrets(payload)
             hashed_payload = {key: value for key, value in payload.items() if key != "request_id"}
             payload_hash = hashlib.sha256(json.dumps(hashed_payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+            if operation.startswith("hub."):
+                try:
+                    return self.hub.invoke(operation, payload, actor, payload_hash, request_id)
+                except OSError:
+                    raise ServiceError("hub_file_unavailable", "Hub file is missing, unsafe or unreadable", status_code=409) from None
             if operation.startswith("cost.") and operation != "cost.estimate":
                 from .remote.operations import authorize_cost_operation
                 authorize_cost_operation(operation, payload, actor)
@@ -312,6 +320,12 @@ class OperationService:
             json.dumps(after, indent=2, sort_keys=True).splitlines(), fromfile="client", tofile="server", lineterm=""))
 
     def _dispatch(self, op, p, actor, *, prepared_evidence=None):
+        if op in {"run.smoke.plan", "recipe.smoke.prepare"}:
+            from .smoke import dispatch
+            return dispatch(self, op, p)
+        if op.startswith("scientific."):
+            from .scientific_operations import dispatch
+            return dispatch(self, op, p)
         if op in {"recipe.source.pin.preview", "recipe.source.pin"}:
             from .source_pinning import dispatch
             return dispatch(self, op, p)
@@ -626,6 +640,12 @@ class OperationService:
                     raise ServiceError("incompatible_evaluation", "An accepted decision requires compatible evaluation evidence", comparison)
                 if comparison.get("comparison_digest") != body["selection_rule"]["comparison_digest"]:
                     raise ServiceError("comparison_changed", "Comparison evidence changed; compare again before recording the decision", status_code=409)
+            from .scientific_operations import require_decision_policy
+            require_decision_policy(self, project_id, body["selection_rule"], body["outcome"])
+            if body["selection_rule"].get("scientific_policy_digest") and body["outcome"] == "accepted":
+                result = (prepared_comparison or {}).get("scientific_result", {})
+                if not result.get("passed") or result.get("digest") != body["selection_rule"].get("scientific_result_digest"):
+                    raise ServiceError("scientific_gate_blocked", "Accepted decision requires the exact passing native scientific result")
             body.update(actor=actor.id, timestamp=now, run_provenance=provenance)
             body = Decision(**body).model_dump()
         else:
@@ -701,7 +721,8 @@ class OperationService:
                                        if key not in {"revision", "status", "last_reconciled_at", "errors", "dispatch_state"}},
                 "configuration": {key: manifest.get(key) for key in
                     ("nodes", "edges", "source", "environment", "external_dependencies", "evaluation")}})
-        enriched = {**payload, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"]}
+        from .scientific_operations import enrich_comparison
+        enriched = enrich_comparison(self, {**payload, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"]})
         return enriched, configurations
 
     def _require_current_authority(self, operation, actor, project_id):
@@ -710,6 +731,14 @@ class OperationService:
                 or (self.operation_authorizer is not None
                     and not self.operation_authorizer(operation, actor, project_id))):
             raise ServiceError("forbidden", "Operation authority changed during evidence preparation", status_code=403)
+
+    def _rights_policy_snapshot(self, project_id):
+        hub = getattr(self, "hub", None)
+        return hub.policy_snapshot(project_id) if hub else {row["policy_id"]: row for row in self.store.list("hub_license_policy", project_id)}
+
+    def _rights_usage_context(self, project):
+        recipe = self._get("recipe", project["recipe_id"], project["project_id"])
+        return copy.deepcopy(recipe.get("extensions", {}).get("usage_context"))
 
     def _evidence_snapshot(self, operation, payload):
         """Only stable project/research inputs and immutable run provenance cross I/O."""
@@ -720,13 +749,18 @@ class OperationService:
             decision = self._get("decision", payload["decision_id"], project_id)
             if decision["outcome"] != "accepted":
                 raise ServiceError("validation_error", "Only an accepted decision can promote a model version")
+            from .scientific_operations import require_decision_policy, enrich_comparison
+            require_decision_policy(self, project_id, decision["selection_rule"], "accepted")
             enriched = {**payload, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"],
                         "decision": decision, "metric": decision["selection_rule"]["metric"],
                         "direction": decision["selection_rule"]["direction"], "candidate_run_ids": decision["run_ids"]}
             if decision["selection_rule"].get("evaluations"):
                 enriched["evaluations"] = decision["selection_rule"]["evaluations"]
+            enriched.update({key: decision["selection_rule"][key] for key in ("scientific_policy_digest", "scientific_evaluations", "scientific_gate") if key in decision["selection_rule"]})
+            enriched = enrich_comparison(self, enriched)
             _, provenance = self._comparison_snapshot({"project_id": project_id, "run_ids": decision["run_ids"]})
-            return {"project": project, "decision": decision, "enriched": enriched, "provenance": provenance}
+            enriched["_rights_usage_context"] = self._rights_usage_context(project)
+            return {"project": project, "decision": decision, "enriched": enriched, "provenance": provenance, "license_policies": self._rights_policy_snapshot(project_id)}
         hypothesis = self._get("hypothesis", payload["hypothesis_id"], project_id)
         recipe = self._get("recipe", payload["recipe_id"], project_id, payload["recipe_revision"])
         rule = payload["selection_rule"]
@@ -737,7 +771,8 @@ class OperationService:
         comparison_payload, provenance = self._comparison_snapshot({"project_id": project_id,
             "run_ids": payload["run_ids"], "metric": rule["metric"], "direction": rule["direction"],
             "comparison_contract": rule.get("comparison_contract", {}),
-            **({"evaluations": rule["evaluations"]} if rule.get("evaluations") else {})})
+            **({"evaluations": rule["evaluations"]} if rule.get("evaluations") else {}),
+            **{key: rule[key] for key in ("scientific_policy_digest", "scientific_evaluations", "scientific_gate") if key in rule}})
         if not any(item["recipe_id"] == payload["recipe_id"] and item["recipe_revision"] == payload["recipe_revision"]
                    for item in provenance):
             raise ServiceError("validation_error", "Decision recipe revision was not executed by any linked run")
@@ -805,9 +840,12 @@ class OperationService:
         try:
             try:
                 backend = self._source_backend(operation, payload)
+                if operation in {"model.version.promote", "model.export.package", "model.export.read"} and hasattr(backend, "with_execution_rights"):
+                    backend = backend.with_execution_rights(project_id=payload["project_id"], policies=self._rights_policy_snapshot(payload["project_id"]), policy_store_path=self.store.path)
                 if operation in {"run.plan", "run.submit", "run.resume"}:
                     from .dataset_binding import resolve_backend
                     backend = resolve_backend(self, backend, payload)
+                    backend = self.hub.resolve_backend(backend, payload)
             except ServiceError as error:
                 if operation == "execution.targets":
                     result = self.backend.invoke(operation, payload, actor)
@@ -955,10 +993,15 @@ class OperationService:
             decision = self._get("decision", p["decision_id"], project_id)
             if decision["outcome"] != "accepted":
                 raise ServiceError("validation_error", "Only an accepted decision can promote a model version")
+            enriched["_rights_usage_context"] = self._rights_usage_context(project)
             enriched["decision"] = decision
             enriched["metric"] = decision["selection_rule"]["metric"]
             enriched["direction"] = decision["selection_rule"]["direction"]
             enriched["candidate_run_ids"] = decision["run_ids"]
+            from .scientific_operations import require_decision_policy, enrich_comparison
+            require_decision_policy(self, project_id, decision["selection_rule"], "accepted")
+            enriched.update({key: decision["selection_rule"][key] for key in ("scientific_policy_digest", "scientific_evaluations", "scientific_gate") if key in decision["selection_rule"]})
+            enriched = enrich_comparison(self, enriched)
             if decision["selection_rule"].get("evaluations"):
                 enriched["evaluations"] = decision["selection_rule"]["evaluations"]
         if prepare_only:

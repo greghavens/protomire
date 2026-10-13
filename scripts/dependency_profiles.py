@@ -11,6 +11,7 @@ UV_PLATFORMS = {
     'win32-x64': 'x86_64-pc-windows-msvc',
     'win32-arm64': 'aarch64-pc-windows-msvc',
 }
+HUB_TARGETS = frozenset(UV_PLATFORMS)
 BACKEND_TARGETS = frozenset({'linux-x64', 'linux-arm64', 'darwin-arm64'})
 PARQUET_TARGETS = frozenset({'linux-x64', 'linux-arm64', 'darwin-x64', 'darwin-arm64', 'win32-x64'})
 CPU_INDEX = 'https://download.pytorch.org/whl/cpu'
@@ -38,8 +39,10 @@ def backend_reason(target: str, variant: str = "default") -> str | None:
 
 
 def lock_path(root: Path, component: str, target: str, *, backend_variant: str = "default") -> Path:
-    if component not in {'service', 'backend', 'parquet'}:
+    if component not in {'service', 'backend', 'parquet', 'hub'}:
         raise ValueError(f'Unknown dependency component: {component}')
+    if component == 'hub' and target not in HUB_TARGETS:
+        raise ValueError(f'No reviewed binary Hub/keyring profile for {target}; Hub integration is unavailable.')
     if component == 'parquet' and target not in PARQUET_TARGETS:
         raise ValueError(f'No official pinned PyArrow CPython 3.12 wheel profile for {target}.')
     if component == 'backend' and (reason := backend_reason(target, backend_variant)):

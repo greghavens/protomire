@@ -255,6 +255,7 @@ def snapshot(model, tokenizer, config, output, step, parameters, context, execut
         "base": {"dependency_id": parameters["model_dependency"], "assets": parameters["assets"]},
         "resource_limits": parameters["limits"],
         "data": context.get("mlx_consumption", {}),
+        "rights": context["output_artifact_rights"],
         "assets": manifest_files(path),
     }
     write_json(path / "checkpoint.manifest.json", record)
@@ -693,6 +694,7 @@ def export(*, inputs, parameters, context):
             "dependencies": PINS,
             "source": context["identities"]["source"],
             "verification": verification,
+            "rights": record.get("rights"),
             "execution": runtime(parameters["device"]),
             "assets": manifest_files(path),
         },

@@ -43,7 +43,8 @@ def context(spec: dict) -> tuple[dict, Path]:
 @scoped_builtin
 def dataset_step(spec: dict) -> Annotated[dict, "data"]:
     parameters, _ = context(spec)
-    return fixtures.dataset(parameters)
+    from .fixture_artifacts import declared_rights
+    return {**fixtures.dataset(parameters), "rights": declared_rights(spec)}
 
 
 @step(enable_cache=False)
@@ -57,7 +58,8 @@ def import_data_step(spec: dict) -> Annotated[dict, "data"]:
         raise ValueError("Imported dataset exceeds limit or fails declared SHA256")
     data = json.loads(path.read_text())
     fixtures.verify_data(data)
-    return data
+    from .fixture_artifacts import attach_declared_rights
+    return attach_declared_rights(data, spec)
 
 
 @step(enable_cache=False)
@@ -76,12 +78,14 @@ def import_dataset_version_step(spec: dict) -> Annotated[dict, "data"]:
         raise ValueError("Dataset portable reference is oversized")
     if hashlib.sha256(content).hexdigest() != declared[identifier]["sha256"]:
         raise ValueError("Dataset portable reference changed after admission")
-    return load_portable_split(json.loads(content),
+    data = load_portable_split(json.loads(content),
         {identifier: path for identifier, path in spec["dependency_paths"].items() if identifier in declared},
         parameters["split_id"], purpose=parameters.get("purpose", "training"),
         expected_project_id=spec["recipe_provenance"]["application_project_id"],
         source_guards=(spec.get("dataset_source_guards") or None)
         if declared[identifier].get("metadata", {}).get("dataset_reference") else None)
+    from .fixture_artifacts import attach_declared_rights
+    return attach_declared_rights(data, spec)
 
 
 @step(enable_cache=False)
@@ -96,7 +100,8 @@ def validate_data_step(data: dict, spec: dict) -> Annotated[dict, "data"]:
 @scoped_builtin
 def initialize_step(data: dict, spec: dict) -> Annotated[Path, ArtifactConfig(name="initial", is_model_artifact=True)]:
     parameters, out = context(spec)
-    return fixtures.initialize(data, parameters, out)
+    from .fixture_artifacts import input_rights
+    return fixtures.initialize(data, {**parameters, "_artifact_rights": input_rights(spec, data)}, out)
 
 
 @step(enable_cache=False)
@@ -111,13 +116,16 @@ def train_step(data: dict, initial: Path, spec: dict) -> Annotated[Path, Artifac
         live = spec["live_evaluation"]
         settings = live["settings"]
         coordinator = LiveEvaluationCoordinator(Path(spec["job_dir"]), spec["node_id"],
-            {"kind": "fixture", "data": data, "parameters": live["node"]["parameters"]},
+            {"kind": "fixture", "data": data, "parameters": live["node"]["parameters"],
+             "spec": {**spec, "component_node": live["node"], "node_id": live["node"]["id"], "resume_path": None}},
             max_concurrency=settings.get("max_concurrency", 1), timeout_seconds=settings.get("timeout_seconds", 300))
         parameters["_checkpoint_ready"] = coordinator.checkpoint_ready
     try:
         resume = Path(spec["resume_path"]) if spec.get("resume_path") else None
         if spec.get("iteration_resume_input"):
             resume, parameters["resume_mode"] = initial, "warm_start"
+        from .fixture_artifacts import input_rights
+        parameters["_artifact_rights"] = input_rights(spec, data, [initial, resume])
         result = fixtures.train(data, initial, parameters, out, resume=resume)
     except BaseException:
         if coordinator:
@@ -219,6 +227,10 @@ def prepare_run(job: Path) -> dict:
     provenance["execution"] = execution_provenance
     provenance["placement"] = request.get("placement", {"device": "cpu"})
     active_recipe = selected_recipe(recipe, execution)
+    from .execution_rights import recheck_authorization
+    recheck_authorization(request["rights_authorization"], project_id=request["project_id"])
+    provenance["rights_admission"] = {key: request["rights_authorization"]["receipt"][key]
+                                    for key in ("protocol", "scope", "digest", "policy_snapshot_digest")}
     ordered = [node for node in topological_nodes(recipe) if node["id"] in execution["node_ids"]]
     functions = {n["id"]: (compile_python(n, job) if n["kind"] == "code.python" else compile_component(n, job) if n["kind"] == "component.run" else STEPS[n["kind"]]) for n in ordered}
 
@@ -297,8 +309,11 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
             function = function.with_options(retry=StepRetryConfig(max_retries=retries, delay=int(retry.get("backoff_seconds", 0))))
         if node["kind"] == "code.python":
             kwargs.update(node.get("parameters", {}))
-        kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "invocation": invocation, "max_parallel_stages": concurrency, "parameters": node.get("parameters", {}),
+        kwargs["spec"] = {"project_id": request["project_id"], "job_dir": str(job), "node_id": node["id"], "invocation": invocation, "max_parallel_stages": concurrency, "parameters": node.get("parameters", {}),
                               "placement": request.get("placement", {"device": "cpu"}),
+                              "runner_environment": request.get("runner_environments", {}).get(node["id"]),
+                              "rights_authorization": request.get("rights_authorization"),
+                              "rights_extensions": request.get("rights_extensions", {}),
                               "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
                               "dataset_source_guards": request.get("dataset_source_guards", {}),
                               "dependencies": active_recipe.get("resources", []) + active_recipe.get("external_dependencies", []),

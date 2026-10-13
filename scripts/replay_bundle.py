@@ -150,7 +150,10 @@ def build_wheel(root: Path, destination: Path, kind: str, *, target: str | None 
                     "src/modelbuilder/export_packages.py", "src/modelbuilder/execution.py",
                     "src/modelbuilder/conditions.py", "src/modelbuilder/iterations.py",
                     "src/modelbuilder/compute_discovery.py",
-                    "src/modelbuilder/models.py", "src/modelbuilder/store.py",
+                    "src/modelbuilder/models.py", "src/modelbuilder/store.py", "src/modelbuilder/hub_rights.py",
+                    "src/modelbuilder/hub_contract.py", "src/modelbuilder/research_context_contract.py",
+                    "src/modelbuilder/scientific.py", "src/modelbuilder/scientific_operations.py",
+                    "src/modelbuilder/smoke.py", "src/modelbuilder/artifact_rights.py",
                     "src/modelbuilder/research_contract.py", "src/modelbuilder/recipe_registry_contract.py",
                     "src/modelbuilder/source_workspace.py", "src/modelbuilder/source_pinning_contract.py"}
                     or path.startswith(("src/modelbuilder/backend/", "src/modelbuilder/remote/"))):

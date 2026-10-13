@@ -1,0 +1,60 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),Module=require('node:module');
+const mock={ProgressLocation:{Notification:15},window:{},workspace:{}};
+const load=Module._load;Module._load=function(name){if(name==='vscode')return mock;return load.apply(this,arguments);};
+const {openHubWorkflow}=require('../out/hubWorkflow');Module._load=load;
+const usage={purpose:'synthetic fixture test',commercial:false,deployment:'test',conditions:[]};
+const commit='a'.repeat(40),hash='b'.repeat(64);
+function setup(options={}){
+ const calls=[],reviews=[];let stage=0,current=true;
+ mock.window.showQuickPick=async(items,settings)=>{
+  if(options.cancelAt===settings.title)return;
+  if(options.changeAt===settings.title)current=false;
+  if(settings.canPickMany)return items;
+  if(settings.title==='Model and dataset Hub')return items.find(item=>item.value===(options.action??'model'));
+  if(settings.title==='Destination repository')return items.find(item=>item.value==='existing');
+  if(settings.title==='Publication type')return items[0];
+  return items[0];
+ };
+ mock.window.showInputBox=async settings=>({'Search base models':'tiny','Search datasets':'tiny','Repository revision':'main','Destination repository':'owner/model','License identifier':'mit','Declared local license label':'mit'}[settings.title]);
+ mock.window.showWarningMessage=async(text,settings,choice)=>options.rejectConfirmation?undefined:choice;
+ mock.window.showInformationMessage=async(text,settings,choice)=>choice??(typeof settings==='string'?settings:undefined);
+ mock.window.withProgress=async(settings,work)=>work({report(){}},{isCancellationRequested:Boolean(options.cancelTransfer)});
+ mock.workspace.openTextDocument=async data=>{reviews.push(JSON.parse(data.content));return {getText:()=>JSON.stringify(JSON.parse(data.content).source_policies?{...JSON.parse(data.content),intended_use:'train'}:{license_document_paths:['README.md'],permitted_uses:['download','publish'],intended_context:'synthetic test',reviewed_usage_context:usage,required_files:[],required_attributions:[],allowed_destination_licenses:['mit'],gated_terms_acknowledged:false})};};
+ mock.window.showTextDocument=async()=>{};
+ const payload={total_bytes:3,license:'mit',files:[{path:'README.md',size_bytes:3,sha256:hash}],visibility:'private',deletes:[]};
+ const client={async invoke(op,p){calls.push({op,p});
+  if(op==='hub.providers')return {providers:[{id:'huggingface',download:true,publish:true}],accounts:['secure-alias'],publication_sources:['output']};
+  if(op==='hub.license.inspect'||op==='hub.license.local.inspect')return {evidence_id:'evidence',evidence_digest:hash,evidence:{documents:[{path:'README.md',sha256:hash,text:'Synthetic test terms'}]}};
+  if(op==='hub.license.review')return {policy_id:'policy',reviewed_usage_context:usage};
+  if(op==='hub.local.register')return {asset_id:'asset'};
+  if(op==='hub.search')return {items:[{repo_id:'owner/model',repo_type:'model'}]};
+  if(op==='hub.inspect')return {commit,access_state:'available',files:payload.files};
+  if(op==='hub.download.plan')return {plan_id:'plan',plan_digest:hash,payload};
+  if(op==='hub.local.files')return {files:payload.files};
+  if(op==='dataset.list')return {datasets:[{dataset_id:'dataset',name:'Local test',revision:1,manifest:{sources:[{id:'rows',sha256:hash}]}}]};
+  if(op==='hub.license.policy.list')return {policies:[{policy_id:'policy',status:'reviewed',revision:1,source:{provider:'local',repo_id:'output'},reviewed_usage_context:usage}]};
+  if(op==='hub.dataset.policy.bind')return {binding_id:'binding',...p};
+  if(op==='hub.asset.list')return {assets:[]};
+  if(op==='hub.publish.preview')return {project_id:'project',preview_id:'preview',payload_digest:hash,payload};
+  if(op==='hub.publish.discard')return {discarded:true};
+  if(op==='hub.publish.approve')return {approval_id:'approval'};
+  if(op==='hub.download.start'||op==='hub.publish.start')return {transfer_id:'transfer',kind:op.includes('publish')?'publish':'download',state:'running',phase:'preparing',total_bytes:3};
+  if(op==='hub.transfer.cancel')return {cancel_requested:true};
+  if(op==='hub.transfer.get')return {transfer_id:'transfer',kind:options.action==='publish'?'publish':'download',state:options.cancelTransfer?'cancelled':'succeeded',total_bytes:3,result:{commit}};
+  throw new Error(op);
+ }};
+ return {calls,reviews,client,check(){if(!current)throw new Error('Project changed');}};
+}
+test('native download pins inspected commit and confirms exact file plan before transfer',async()=>{const h=setup();const result=await openHubWorkflow(h.client,'project',h.check);assert.equal(result.state,'succeeded');const plan=h.calls.find(c=>c.op==='hub.download.plan');assert.equal(plan.p.remote_revision,commit);assert.deepEqual(plan.p.files,['README.md']);assert.equal(plan.p.max_bytes,3);assert(h.reviews.some(r=>r.plan_digest===hash));assert(h.calls.find(c=>c.op==='hub.download.start').p.accept_license);assert(!JSON.stringify(h.calls).includes('token'));});
+test('native publication previews then approves exact digest and only then starts',async()=>{const h=setup({action:'publish'});await openHubWorkflow(h.client,'project',h.check);const actions=h.calls.map(c=>c.op);assert(actions.indexOf('hub.publish.preview')<actions.indexOf('hub.publish.approve'));assert(actions.indexOf('hub.publish.approve')<actions.indexOf('hub.publish.start'));const start=h.calls.find(c=>c.op==='hub.publish.start');assert.equal(start.p.payload_digest,hash);assert.equal(start.p.approval_id,'approval');assert.equal(h.calls.find(c=>c.op==='hub.publish.preview').p.account_alias,'secure-alias');assert(h.reviews.some(r=>r.payload_digest===hash));});
+test('rejecting publication confirmation never creates an approval or starts transmission',async()=>{const h=setup({action:'publish',rejectConfirmation:true});assert.equal(await openHubWorkflow(h.client,'project',h.check),undefined);assert(!h.calls.some(c=>c.op==='hub.publish.approve'||c.op==='hub.publish.start'));});
+test('cancelled file picker performs no download mutation',async()=>{const h=setup({cancelAt:`Select exact files at ${commit}`});assert.equal(await openHubWorkflow(h.client,'project',h.check),undefined);assert(!h.calls.some(c=>c.op==='hub.download.plan'||c.op==='hub.download.start'));});
+test('project navigation invalidates in-flight dialog before mutation',async()=>{const h=setup({changeAt:'Choose repository'});await assert.rejects(openHubWorkflow(h.client,'project',h.check),/Project changed/);assert(!h.calls.some(c=>c.op==='hub.download.plan'));});
+test('progress cancellation issues one durable cancellation request',async()=>{const h=setup({cancelTransfer:true});const result=await openHubWorkflow(h.client,'project',h.check);assert.equal(result.state,'cancelled');assert.equal(h.calls.filter(c=>c.op==='hub.transfer.cancel').length,1);});
+test('repeated workflow clicks are fenced and cancellation releases the fence',async()=>{const h=setup();let release;mock.window.showQuickPick=()=>new Promise(resolve=>release=resolve);const pending=openHubWorkflow(h.client,'same-project',h.check);await assert.rejects(openHubWorkflow(h.client,'same-project',h.check),/already open/);release(undefined);await pending;const second=setup({cancelAt:'Model and dataset Hub'});assert.equal(await openHubWorkflow(second.client,'same-project',second.check),undefined);});
+test('managed native rights and compound publication grants never use bearer publish calls',async()=>{const h=setup({action:'publish'}),reviews=[];const native=async(op,p)=>{reviews.push({op,p});if(op==='hub.license.review')return {policy_id:'reviewed',reviewed_usage_context:usage};if(op==='desktop.publish.reviewed')return {transfer_id:'managed-transfer',kind:'publish',state:'succeeded',phase:'verified',total_bytes:3,result:{commit}};throw new Error(op);};await openHubWorkflow(h.client,'project',h.check,native);assert.deepEqual(reviews.map(r=>r.op),['hub.license.review','desktop.publish.reviewed']);assert.equal(reviews[1].p.payload_digest,hash);assert(!h.calls.some(c=>['hub.publish.approve','hub.publish.start','hub.license.review'].includes(c.op)));});
+test('cancelled managed exact publication review discards derived snapshot and never uploads',async()=>{const h=setup({action:'publish'});const result=await openHubWorkflow(h.client,'project',h.check,async(op)=>op==='hub.license.review'?{policy_id:'reviewed',reviewed_usage_context:usage}:undefined);assert.equal(result,undefined);assert(h.calls.some(c=>c.op==='hub.publish.discard'));assert(!h.calls.some(c=>c.op==='hub.publish.start'));});
+
+test('managed publication receives live navigation guard and rejects project switch before dispatch',async()=>{const h=setup({action:'publish'});let current=true,dispatched=false;const check=()=>{if(!current)throw new Error('Project changed before native dispatch');};const native=async(op,p,beforeDecision)=>{assert.equal(typeof beforeDecision,'function');if(op==='hub.license.review'){beforeDecision();return {policy_id:'policy',reviewed_usage_context:usage};}current=false;beforeDecision();dispatched=true;};await assert.rejects(openHubWorkflow(h.client,'project',check,native),/before native dispatch/);assert.equal(dispatched,false);assert(!h.calls.some(c=>c.op==='hub.publish.start'));});
+
+test('native registered dataset links explicit reviewed source policies and action',async()=>{const h=setup({action:'datasetrights'});const result=await openHubWorkflow(h.client,'project',h.check);assert.equal(result.binding_id,'binding');const call=h.calls.find(c=>c.op==='hub.dataset.policy.bind');assert.deepEqual(call.p.source_policies,{rows:'policy'});assert.equal(call.p.intended_use,'train');assert.equal(call.p.dataset_revision,1);assert(!h.calls.some(c=>c.op==='hub.publish.start'));});

@@ -71,6 +71,7 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
         db_path = os.environ.get("MODELBUILDER_DB_PATH", ".modelbuilder/modelbuilder.sqlite3")
         from .backend.operator_config import load_operator_config
         operator_config = load_operator_config()
+        hub_config = operator_config.pop("hub", None)
         dataset_roots = operator_config.pop("dataset_roots", {})
         dataset_limits = operator_config.pop("dataset_limits", None)
         source_roots = operator_config.pop("source_roots", None)
@@ -83,7 +84,7 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
             else:
                 backend = ZenMLBackend(data_dir=Path(db_path).parent, **operator_config)
         service = OperationService(db_path=db_path, backend=backend, dataset_roots=dataset_roots, source_roots=source_roots, dataset_limits=dataset_limits,
-                                   source_root=str(backend.repository) if backend else os.environ.get("MODELBUILDER_SOURCE_ROOT"))
+                                   source_root=str(backend.repository) if backend else os.environ.get("MODELBUILDER_SOURCE_ROOT"), hub_config=hub_config)
     auth = tokens if isinstance(tokens, TokenAuth) else (TokenAuth(tokens) if tokens is not None else TokenAuth.from_environment())
     from .research_scheduler import ResearchScheduler
     service.research_authorizer = auth.authorize_research
@@ -97,6 +98,7 @@ def create_app(service: OperationService | None = None, tokens: dict | TokenAuth
             yield
         finally:
             await asyncio.to_thread(scheduler.stop)
+            await asyncio.to_thread(service.hub.close)
 
     app = FastAPI(title="ModelBuilder shared operation service", version="0.1.0", lifespan=lifespan,
                   description="GUI and native MCP use the same revisioned operation catalog.")

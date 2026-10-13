@@ -9,7 +9,7 @@ from modelbuilder.backend import sdk, promotion
 from modelbuilder.backend.admission import BackendError
 from modelbuilder.backend.common import write_json
 from modelbuilder.backend.native_inputs import storage_fingerprint
-from test_native_selection import native
+from test_native_selection import native, policy, USAGE
 
 
 @pytest.fixture
@@ -33,6 +33,14 @@ def prepared(tmp_path, monkeypatch):
     monkeypatch.setattr(sdk, "log_metadata", lambda metadata, **kwargs: version.run_metadata.update(metadata))
     payload = {"project_id": "project", "model_version_id": "model-a", "candidate_run_ids": ["a", "b"],
                "metric": "rmse", "direction": "minimize", "stage": "staging"}
+    from modelbuilder.store import SQLiteStore
+    from modelbuilder.backend.execution_rights import artifact_authorization, bind_authority
+    store = SQLiteStore(tmp_path / "rights.sqlite")
+    review = policy("project")
+    store.put("hub_license_policy", review["policy_id"], "project", review)
+    authority = NS(_execution_rights_authority=bind_authority("project", {review["policy_id"]: review}, store.path))
+    payload["_execution_rights_authorization"] = artifact_authorization(authority, "project", USAGE)
+    store.close()
     handle = promotion.prepare(payload, tmp_path)
     return tmp_path, values, payload, handle, mutations
 
@@ -168,3 +176,19 @@ def test_repeated_nonstandard_evaluator_outputs_receive_promotion_witnesses(tmp_
         {'project_id': 'project', 'candidate_run_ids': [run.id]}, tmp_path)[0]
     assert measurement.id in snapshot['artifacts']
     assert snapshot['steps'][info['invocation_id']]['invocation'] == info
+
+
+def test_revoked_rights_after_preparation_cannot_promote(prepared):
+    from modelbuilder.store import SQLiteStore
+    from modelbuilder.evaluation import digest
+    root, _, payload, handle, mutations = prepared
+    store = SQLiteStore(root / "rights.sqlite")
+    review = policy("project")
+    changed = {**review, "revision": 2, "status": "revoked"}
+    changed["review_digest"] = digest({key: value for key, value in changed.items() if key != "review_digest"})
+    store.put("hub_license_policy", review["policy_id"], "project", changed, 1)
+    store.close()
+    with pytest.raises(BackendError) as error:
+        sdk.invoke("model.version.promote", {**payload, "_prepared_promotion": handle}, root)
+    assert error.value.code == "license_policy_changed"
+    assert not mutations

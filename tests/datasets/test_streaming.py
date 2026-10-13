@@ -10,6 +10,7 @@ from modelbuilder.dataset import DatasetRegistry, load_portable_split
 from modelbuilder.dataset_streaming import StreamingConsumption, iter_stream_rows, validate_stream_data
 from modelbuilder.models import Actor, ServiceError
 from modelbuilder.service import OperationService
+from tests.components.rights_test_support import USAGE_CONTEXT, review_local_dataset
 
 OWNER = Actor("streaming-owner", {"read", "modify", "execute"})
 
@@ -357,7 +358,11 @@ def test_streaming_binding_and_plan_use_same_public_operation_contract(setup, mo
         return original(*args, **kwargs)
     monkeypatch.setattr(dataset_streaming, "verify_source", guarded)
     record = register(service, pid, write_manifest(root, [("train", "train", rows(8))]))
+    review_local_dataset(service, record, root, OWNER)
     recipe = service.invoke("project.open", {"project_id": pid}, OWNER)["recipe"]
+    recipe["extensions"] = {**recipe.get("extensions", {}), "usage_context": USAGE_CONTEXT}
+    recipe = service.invoke("recipe.update", {"project_id": pid, "recipe_id": recipe["recipe_id"], "recipe": recipe,
+        "expected_revision": recipe["revision"], "idempotency_key": "reviewed-purpose"}, OWNER)
     bound = service.invoke("dataset.bind", {"project_id": pid, "recipe_id": recipe["recipe_id"],
         "expected_revision": recipe["revision"], "dataset_id": record["dataset_id"], "dataset_revision": 1,
         "split_id": "train", "purpose": "training", "node_id": "data", "idempotency_key": "bind"}, OWNER)

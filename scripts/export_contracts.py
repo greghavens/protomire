@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path
 
 from modelbuilder.api import create_app
 from modelbuilder.models import ModelProject, OPERATIONS, operation_catalog
+from modelbuilder.recipe import RECIPE_SCHEMA
 from modelbuilder.service import OperationService
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,6 +17,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def json_text(value):
     return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+
+
+def project_asset_schema(canonical):
+    """Specialize the registered Hub contract without discarding provenance fields.
+
+    Custom provider support requires its explicit adapter/schema, not a generic
+    label. The built-in New Project template admits Hugging Face only.
+    """
+    result = copy.deepcopy(canonical)
+    provider = result.get("properties", {}).get("provider")
+    if not isinstance(provider, dict):
+        raise ValueError("Canonical Hub schema must declare its provider contract")
+    result["properties"]["provider"] = {"allOf": [provider, {"const": "huggingface"}]}
+    result["description"] = (result.get("description", "") + " Built-in New Project specialization: "
+                             "Hugging Face only; other providers require a registered schema adapter.").strip()
+    return result
 
 
 def generated_files():
@@ -37,7 +55,7 @@ def generated_files():
     ]
     for operation in catalog:
         documentation.append(f"| `{operation['name'].replace('.', '_')}` | `{operation['name']}` | `{', '.join(operation['required_scopes'])}` | {operation['description']} |")
-    documentation += ["", "Private recipe publication/discovery and reviewed imports use the local SQLite registry. Public/external registry publication and remote execution/spending remain unavailable.",
+    documentation += ["", "Private recipe publication/discovery and reviewed imports use the local SQLite registry. External model/dataset Hub publication requires a separately configured isolated provider runtime, exact payload preview and publisher-scoped approval. Private recipe registry publication remains local.",
                       "A configured ZenML backend is required for execution and model records. The service never returns fabricated native runs.",
                       "Resume advances the same canonical recipe identity to a new immutable revision and digest; parent runs retain their historical revision.", ""]
     request_schema = {
@@ -46,13 +64,23 @@ def generated_files():
                    "required": ["operation", "payload"], "additionalProperties": False}
                   for name, spec in sorted(OPERATIONS.items())],
     }
-    return {
+    files = {
         "docs/openapi.json": json_text(openapi),
         "docs/operation-catalog.json": json_text({"schema_version": "0", "operations": catalog}),
+        "distribution/assistant_templates/v1/operation-catalog.json": json_text({"schema_version": "0", "operations": catalog}),
         "docs/MCP_TOOLS.md": "\n".join(documentation),
         "schemas/operation.v0.schema.json": json_text(request_schema),
         "schemas/project.v0.schema.json": json_text({"$schema": "https://json-schema.org/draft/2020-12/schema", **ModelProject.model_json_schema()}),
+        "schemas/recipe.v0.schema.json": json_text(RECIPE_SCHEMA),
+        "packages/ide_feature/schemas/recipe.v0.schema.json": json_text(RECIPE_SCHEMA),
     }
+    # Hub is an independently integrated feature. When present, keep all of its
+    # actual license text/source/hash/scope and other provenance schema extensions.
+    canonical_hub_schema = ROOT / "schemas/hub-asset.v1.schema.json"
+    if canonical_hub_schema.is_file():
+        files["distribution/project_templates/v1/artifact-reference.v1.schema.json"] = json_text(
+            project_asset_schema(json.loads(canonical_hub_schema.read_text())))
+    return files
 
 
 def main():

@@ -96,6 +96,12 @@ class ResearchWorkflow:
 
     def dispatch(self, operation, payload, actor):
         _, kind, action = operation.split(".")
+        if kind == "context":
+            from .research_context import ResearchContext
+            self.service._require_current_authority(operation, actor, payload["project_id"])
+            result = ResearchContext(self.service).dispatch(action, payload)
+            self.service._require_current_authority(operation, actor, payload["project_id"])
+            return result
         if kind == "watch":
             return self._watch(action, payload, actor)
         if kind == "finding":

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from modelbuilder.backend import live_evaluation as live
 from modelbuilder.backend.components import runtime
-from test_live_evaluation import checkpoint, evaluator
+from test_live_evaluation import checkpoint, evaluator, authorize_evaluator
 
 
 def test_live_context_reads_pinned_snapshot_after_checkout_changes(tmp_path, monkeypatch):
@@ -24,6 +24,7 @@ def test_live_context_reads_pinned_snapshot_after_checkout_changes(tmp_path, mon
         {"path": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
         for path in (code, config)
     ]
+    authorize_evaluator(tmp_path, configured)
     published = live._snapshot(job, "train", checkpoint(tmp_path), 1, "last", "component")
     record = {"schema": live.SCHEMA, "evaluation_id": "source-context-probe",
               "checkpoint_id": published["checkpoint_id"], "checkpoint_digest": published["checkpoint_digest"],

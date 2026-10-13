@@ -8,6 +8,7 @@ export function serviceUrl(raw: string): string {
 export function escapeHtml(value: string): string { return value.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!)); }
 export const UI_OPERATIONS = new Set([
   'component.list', 'component.get',
+  'scientific.methods', 'scientific.policy.register', 'scientific.policy.get', 'scientific.policy.activate', 'scientific.sample.plan', 'run.smoke.plan', 'recipe.smoke.prepare',
   'dataset.register', 'dataset.version', 'dataset.bind', 'dataset.get', 'dataset.list', 'dataset.validate', 'dataset.preview',
   'research.watch.create', 'research.watch.get', 'research.watch.list', 'research.watch.update', 'research.watch.refresh', 'research.watch.refresh_due', 'research.watch.schedule_enable', 'research.watch.schedule_disable',
   'research.finding.list', 'research.finding.review', 'research.text.import', 'research.text.get', 'research.text.fetch', 'research.text.list', 'research.text.search', 'research.text.inspect',

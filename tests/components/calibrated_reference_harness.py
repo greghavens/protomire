@@ -43,12 +43,18 @@ def load(root):
     return value
 
 
-def save_checkpoint(root, context, step, modes, extra=()):
+def save_checkpoint(root, context, step, modes, extra=(), parents=()):
     names = ["weights.pt", *extra]
     descriptor = {"schema_version": "modelbuilder.checkpoint/v1", "identities": context["identities"],
         "step": step, "purpose": "last" if modes else "inference", "resume_modes": modes,
         "state": ["model", "optimizer", "scheduler", "rng", "data_cursor"] if modes else [],
         "assets": [asset(root, name) for name in names]}
+    from modelbuilder.artifact_rights import combine_parent_rights
+    origins = [{"artifact_id": "test-authored-source", "rights": context.get("declared_artifact_rights")}]
+    for parent in parents:
+        descriptor_parent = read_checkpoint(Path(parent))
+        origins.append({"artifact_id": identity(descriptor_parent), "rights": descriptor_parent.get("rights")})
+    descriptor["rights"] = combine_parent_rights(origins)
     path = root / "checkpoint.manifest.partial"
     path.write_text(json.dumps(descriptor))
     path.replace(root / "checkpoint.manifest.json")
@@ -154,7 +160,8 @@ def train(*, inputs, parameters, context):
             "same_distribution_kl": same_kl, "reference_gradients_absent": True,
             "reference_parameters_unchanged": True, "history": history}
         (root / "training-report.json").write_text(json.dumps(report))
-        save_checkpoint(root, context, step + 1, ["exact_state", "warm_start"], ["training-state.pt", "training-report.json"])
+        save_checkpoint(root, context, step + 1, ["exact_state", "warm_start"], ["training-state.pt", "training-report.json"],
+                        [reference_root, *([context["resume"]["path"]] if context.get("resume") else [])])
         time.sleep(parameters.get("delay", 0))
     return {"checkpoint": root}
 
@@ -222,6 +229,7 @@ def export(*, inputs, parameters, context):
         "calibration": {"identity": calibration["digest"], "asset": "calibration.json", "model_identity": calibration["model_identity"]},
         "verification": {"passed": True, "atol": 0., "max_abs_difference": 0.},
         "assets": [asset(root, name) for name in ("weights.pt", "calibration.json", "loader.py", "parity.json")]}
+    manifest["rights"] = read_checkpoint(checkpoint)["rights"]
     (root / "export.manifest.json").write_text(json.dumps(manifest))
     # Real fresh-process verification is required, before an export can succeed.
     import subprocess

@@ -92,7 +92,7 @@ class OperationGateway:
         try:
             # The PDF decoder has its own 90-second hard deadline. Do not lose
             # its durable result to the generic 30-second transport default.
-            options = {"timeout": max(120.0, self.client.timeout.read or 120.0)} if path == "/v1/operations/research.document.import" else {}
+            options = {"timeout": max(120.0, self.client.timeout.read or 120.0)} if path in {"/v1/operations/research.document.import", "/v1/operations/hub.repository.compare", "/v1/operations/hub.publish.preview", "/v1/operations/hub.license.inspect", "/v1/operations/hub.license.local.inspect", "/v1/operations/hub.local.register"} else {}
             response = await self.client.request(method, path, json=payload, **options)
         except httpx.RequestError:
             # Do not serialize exceptions: they can contain request headers/URLs.

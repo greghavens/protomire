@@ -57,7 +57,7 @@ class ZenMLBackend:
     def __init__(self, data_dir: str | Path, python_executable: str | None = None,
                  trusted_code_roots: list[str] | None = None, dependency_paths: dict[str, str] | None = None,
                  source_root: str | Path | None = None, pretrained_path: str | Path | None = None,
-                 mlx_python_executable: str | None = None):
+                 mlx_python_executable: str | None = None, runner_environments: dict[str, dict] | None = None):
         self._preparation_owner = object()
         self.root = Path(data_dir).resolve() / "backend"
         self.root.mkdir(parents=True, exist_ok=True)
@@ -69,6 +69,10 @@ class ZenMLBackend:
         self.python = shutil.which(configured) or str(Path(configured).expanduser().resolve())
         mlx_python = mlx_python_executable or os.environ.get('MODELBUILDER_MLX_PYTHON')
         self.mlx_python = os.path.abspath(os.path.expanduser(mlx_python)) if mlx_python else None
+        # Preserve venv symlinks. These paths come exclusively from operator configuration.
+        self.runner_environments = {key: {**value,
+            "python_executable": os.path.abspath(os.path.expanduser(value["python_executable"]))}
+            for key, value in (runner_environments or {}).items()}
         self.hardware_discovery = HardwareDiscovery(self.python)
         self.repository = repository
         self.package_root = package_root
@@ -82,6 +86,13 @@ class ZenMLBackend:
         backend.repository = Path(source_root).resolve()
         backend.trusted_code_roots = [str(backend.repository)] if trusted else []
         backend.dependency_paths = dict(dependency_paths)
+        return backend
+
+    def with_execution_rights(self, *, project_id, policies, policy_store_path):
+        """Service-only immutable authority on a request-local view, never caller fields."""
+        from .execution_rights import bind_authority
+        backend = copy.copy(self)
+        backend._execution_rights_authority = bind_authority(project_id, policies, policy_store_path)
         return backend
 
     def with_dataset_dependencies(self, paths, guards):
@@ -170,6 +181,9 @@ class ZenMLBackend:
         return path, request
 
     def _validate_execution(self, payload: dict) -> dict:
+        # Only the owned native descriptor reader may populate these authority projections.
+        payload.pop("resolved_input_bindings", None)
+        payload.pop("input_binding_jobs", None)
         recipe = validate_execution(self, payload)
         from ..execution import selection
         payload["execution"] = selection(payload["recipe"], payload.get("execution"))
@@ -201,17 +215,37 @@ print(json.dumps(result))"""
             payload["input_binding_jobs"] = jobs
         else:
             payload["resolved_input_bindings"], payload["input_binding_jobs"] = [], []
+        from .execution_rights import prepare_authorization
+        from ..execution import selected_recipe
+        prepare_authorization(self, payload, selected_recipe(recipe, payload["execution"]))
         return recipe
 
+    def _artifact_rights_payload(self, payload, *, export=False):
+        from .execution_rights import artifact_authorization
+        if "_execution_rights_authorization" in payload:
+            raise BackendError("license_authority_unavailable", "Rights authority is an internal backend argument")
+        context = payload.get("_rights_usage_context")
+        if export:
+            matches = [read_json(job / "request.json") for job in (self.root / "jobs").glob("*")
+                       if read_json(job / "request.json").get("project_id") == payload["project_id"]
+                       and (not payload.get("backend_run_id") or read_json(job / "native.json").get("backend_run_id") == payload["backend_run_id"])
+                       and (not payload.get("model_version_id") or read_json(job / "native.json").get("model_version_ref") == payload["model_version_id"])]
+            if len(matches) != 1:
+                raise BackendError("not_found", "Export rights require one exact owned native run/version")
+            context = matches[0]["recipe"].get("extensions", {}).get("usage_context")
+        return {**payload, "_execution_rights_authorization": artifact_authorization(self, payload["project_id"], context)}
+
     def prepare_promotion(self, payload: dict, actor=None):
-        return self._rpc("model.version.promotion.prepare", payload)
+        return self._rpc("model.version.promotion.prepare", self._artifact_rights_payload(payload))
 
     def invoke(self, operation: str, payload: dict, actor=None, *, prepared_promotion=None) -> dict:
+        if "_execution_rights_authorization" in payload:
+            raise BackendError("license_authority_unavailable", "Rights authority is an internal backend argument")
         if "_prepared_promotion" in payload:
             raise BackendError("validation_error", "Promotion evidence is an internal backend argument")
         if operation == "model.version.promote":
             handle = prepared_promotion if prepared_promotion is not None else self.prepare_promotion(payload, actor)
-            return self._rpc(operation, {**payload, "_prepared_promotion": handle})
+            return self._rpc(operation, {**self._artifact_rights_payload(payload), "_prepared_promotion": handle})
         if operation == "execution.targets":
             from .placement import targets
             return {"targets": targets(self),
@@ -270,7 +304,17 @@ print(json.dumps(result))"""
         if operation == "model.export.read":
             from ..export_packages import read_package
             self._job(payload)  # Independent project/run ownership check on every chunk.
-            return read_package(self.root / "export-packages", payload)
+            from .execution_rights import verify_artifact_authorization
+            authorization = self._artifact_rights_payload(payload, export=True)["_execution_rights_authorization"]
+            def review(provenance, transfer):
+                if provenance.get("rights_usage_context") != authorization["usage_context"]:
+                    raise BackendError("license_policy_changed", "Packaged export usage context differs from the native recipe")
+                current = verify_artifact_authorization(authorization, provenance.get("rights"), "export")
+                if transfer.get("rights_admission") != current["admission"]:
+                    raise BackendError("license_policy_changed", "Packaged export rights review changed; inspect and package again")
+            return read_package(self.root / "export-packages", payload, review=review)
+        if operation == "model.export.package":
+            return self._rpc(operation, self._artifact_rights_payload(payload, export=True))
         if operation.startswith("model."):
             return self._rpc(operation, payload)
         raise BackendError("capability_unavailable", f"Backend operation is unavailable: {operation}")
@@ -319,6 +363,8 @@ print(json.dumps(result))"""
         if operation == "run.resume":
             payload = self._materialize_resume(payload)
         self._validate_execution(payload)
+        from ..execution import selection
+        payload["execution"] = selection(payload["recipe"], payload.get("execution"))
         from .placement import validate_placement, placement_environment
         payload["placement"] = validate_placement(self, payload, allocate=True)
         if not Path(self.python).is_file():
@@ -345,7 +391,15 @@ print(json.dumps(result))"""
                 supervisor_env["MODELBUILDER_WANDB_API_KEY"] = os.environ["MODELBUILDER_WANDB_API_KEY"]
         operation_id = str(uuid.UUID(payload.get("operation_id") or str(uuid.uuid4())))
         job = self.root / "jobs" / operation_id
-        request = {**payload, "operation_id": operation_id, "root": str(self.root), "job_dir": str(job),
+        from .runner import resolve_environments
+        from ..execution import selected_recipe
+        active_recipe = selected_recipe(payload["recipe"], payload["execution"])
+        runner_environments = resolve_environments(self, active_recipe)
+        from .execution_rights import prepare_authorization
+        rights_authorization = prepare_authorization(self, payload, active_recipe, durable=True)
+        request = {**payload, "rights_authorization": rights_authorization,
+                   "rights_extensions": rights_authorization["receipt"]["declarations"]["extensions"],
+                   "runner_environments": runner_environments, "operation_id": operation_id, "root": str(self.root), "job_dir": str(job),
                    "run_name": f"modelbuilder-{operation_id}", "dependency_paths": copy.deepcopy(self.dependency_paths),
                    "dataset_source_guards": copy.deepcopy(getattr(self, "dataset_source_guards", {})),
                    "source_root": str(self.repository), "trusted_code_roots": list(self.trusted_code_roots),
@@ -414,6 +468,8 @@ print(json.dumps(result))"""
                 _durable_launch_record(job / "request.json", request)
             if authorize is not None:
                 authorize()
+            from .execution_rights import recheck_authorization
+            recheck_authorization(request["rights_authorization"], project_id=request["project_id"])
             attempt = {"operation_id": operation_id, "attempt_id": str(uuid.uuid4()), "attempted_at": now(),
                        "runtime_identity": runtime_identity()}
             write_json(job / "state.json", {"supervisor_state": "starting", "submitted_at": request["submitted_at"]})
@@ -477,6 +533,9 @@ print(json.dumps(result))"""
         return {**result, "cancellation_acknowledged": result["status"] == "cancelled" and result.get("worker_alive") is False}
 
     def _materialize_resume(self, payload: dict) -> dict:
+        from .execution_rights import RESERVED_FIELDS
+        if RESERVED_FIELDS & payload.keys():
+            raise BackendError("license_authority_unavailable", "Resume cannot accept caller-supplied policy authority")
         job, parent = self._job({**payload, "operation_id": payload.get("parent_operation_id")})
         parent_status = self._rpc("run.status", {"project_id": payload["project_id"], "job_dir": str(job)})
         if (parent_status.get("status") not in {"succeeded", "failed", "cancelled"}
@@ -516,7 +575,7 @@ print(json.dumps(result))"""
                 or "iteration" in checkpoint):
             raise BackendError("unsupported_iteration_resume", "Exact loop continuation needs a preserved iteration cursor and full carried-state contract. Use explicit warm_start to restart from iteration 1; exact continuation outside iteration blocks remains supported.")
         request["execution"] = requested_execution
-        for key in ("resolved_input_bindings", "input_binding_jobs"):
+        for key in ("resolved_input_bindings", "input_binding_jobs", "rights_authorization", "rights_extensions"):
             request.pop(key, None)
         parent_identity = recipe_provenance(parent["recipe"])
         current_identity = recipe_provenance(request["recipe"])

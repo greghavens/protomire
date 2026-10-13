@@ -14,6 +14,8 @@ import re
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
+from ..runner import RUNNER_SCHEMA
+from ...smoke import BUDGET_SCHEMA
 
 PROTOCOL = "modelbuilder.component/v1"
 PORT_TYPES = {"dict": dict, "Path": Path, "str": str, "int": int, "float": float, "bool": bool,
@@ -23,11 +25,13 @@ COMPONENT_SCHEMA = {
     "required": ["id", "version", "protocol", "role", "parameter_schema", "capabilities"],
     "properties": {
         "id": {"type": "string", "minLength": 1}, "version": {"type": "string", "minLength": 1},
-        "protocol": {"const": PROTOCOL}, "role": {"enum": ["training", "evaluation", "export", "dataset", "model", "utility"]},
+        "protocol": {"const": PROTOCOL}, "role": {"enum": ["training", "evaluation", "export", "dataset", "model", "utility", "derivation", "scientific_gate"]},
         "description": {"type": "string"}, "parameter_schema": {"type": "object"},
+        "runner": RUNNER_SCHEMA,
         "capabilities": {"type": "object", "additionalProperties": False,
             "required": ["resume_modes", "export_formats", "frameworks"], "properties": {
                 "checkpoint_events": {"type": "boolean"},
+                "smoke_budget": BUDGET_SCHEMA,
                 "devices": {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"enum": ["cpu", "cuda", "mps", "mlx-cpu", "mlx-metal"]}},
                 "resume_modes": {"type": "array", "uniqueItems": True, "items": {"enum": ["exact_state", "warm_start"]}},
                 "export_formats": {"type": "array", "items": {"type": "string"}},
@@ -70,6 +74,8 @@ def validate_component(node: dict) -> dict:
             raise ValueError("Component port names must be Python identifiers and not reserved ABI names")
     if not node.get("outputs"):
         raise ValueError("Components must declare at least one output")
+    from ..runner import validate_runner
+    validate_runner(node)
     return descriptor
 
 
@@ -86,6 +92,10 @@ def component_catalog(recipe: dict | None = None) -> list[dict]:
     catalog.extend(trainer_catalog_entries())
     catalog.extend(inference_catalog_entries())
     catalog.extend(mlx_catalog_entries())
+    from .weight_blend import catalog_entries as blend_catalog_entries
+    catalog.extend(blend_catalog_entries())
+    from .scientific_gate import catalog_entries as gate_catalog_entries
+    catalog.extend(gate_catalog_entries())
     for node in (recipe or {}).get("nodes", []):
         if node.get("kind") == "component.run":
             descriptor = validate_component(node)
@@ -143,12 +153,12 @@ def read_checkpoint(root: Path) -> dict:
     if manifest_path.stat().st_size > 4 * 1024 * 1024 or manifest_path.is_symlink():
         raise ValueError("Checkpoint manifest is oversized or symlinked")
     descriptor = _read_descriptor(manifest_path)
-    if descriptor.get("schema_version") != "modelbuilder.checkpoint/v1":
+    if descriptor.get("schema_version") not in {"modelbuilder.checkpoint/v1", "modelbuilder.checkpoint/v2"}:
         raise ValueError("Unsupported checkpoint descriptor")
     for field in ("identities", "resume_modes", "assets", "step", "purpose"):
         if field not in descriptor:
             raise ValueError("Checkpoint descriptor missing " + field)
-    for field in ("architecture", "source", "dependencies", "training", "environment"):
+    for field in ("architecture", "source", "dependencies", "environment") + (() if descriptor.get("producer_kind") == "derivation" else ("training",)):
         if not descriptor["identities"].get(field):
             raise ValueError("Checkpoint identity missing " + field)
     if type(descriptor["step"]) is not int or descriptor["step"] < 0:
@@ -163,6 +173,11 @@ def read_checkpoint(root: Path) -> dict:
         required = {"model", "optimizer", "scheduler", "rng", "data_cursor"}
         if not required.issubset(set(descriptor.get("state", []))):
             raise ValueError("Exact resume requires declared optimizer, scheduler, RNG and data cursor state")
+    if descriptor.get("schema_version") == "modelbuilder.checkpoint/v2":
+        from ..checkpoint_derivation import validate_derivation
+        validate_derivation(descriptor)
+    elif descriptor.get("derivation") or descriptor.get("producer_kind") == "derivation":
+        raise ValueError("Checkpoint derivation requires the v2 contract")
     verify_assets(root, descriptor["assets"])
     return descriptor
 

@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import signal
+import sys
 import subprocess
 import time
 import uuid
@@ -18,14 +19,26 @@ from modelbuilder.backend.fixtures import load_checkpoint  # noqa: E402
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
+SOURCE_ROOT = ROOT
+
+
+@pytest.fixture(autouse=True)
+def exact_builtin_source(tmp_path, monkeypatch):
+    from tests.integration.native_fixture_support import pinned_builtin_source
+    monkeypatch.setitem(globals(), "SOURCE_ROOT", pinned_builtin_source(tmp_path))
+
+
+def native_backend(directory, **kwargs):
+    return ZenMLBackend(directory, python_executable=sys.executable, source_root=SOURCE_ROOT, **kwargs)
+
 
 
 def recipe(fixture="custom", steps=12, coefficient=0.0, width=12, delay=0.0):
     body = json.loads((ROOT / "examples" / ("pretrained-small" if fixture == "pretrained" else "custom-pytorch") / "recipe.json").read_text())
     # Acceptance workload source is the exact committed fixture implementation.
     path = "src/modelbuilder/backend/fixtures.py"
-    body["source"]["commit"] = subprocess.check_output(["git", "log", "-1", "--format=%H", "--", path], cwd=ROOT, text=True).strip()
-    body["source"]["files"] = [{"path": path, "sha256": hashlib.sha256((ROOT / path).read_bytes()).hexdigest()}]
+    body["source"]["commit"] = subprocess.check_output(["git", "log", "-1", "--format=%H", "--", path], cwd=SOURCE_ROOT, text=True).strip()
+    body["source"]["files"] = [{"path": path, "sha256": hashlib.sha256((SOURCE_ROOT / path).read_bytes()).hexdigest()}]
     body.pop("digest", None)
     for node in body["nodes"]:
         if node["kind"] == "model.initialize":
@@ -46,7 +59,8 @@ def submit(backend, body, project_id=None):
     body["revision"] = max(previous, default=0) + 1
     payload = {"project_id": project_id, "project_recipe_id": body["recipe_id"], "operation_id": str(uuid.uuid4()), "recipe": body,
                "trusted": True, "idempotency_key": str(uuid.uuid4()), "target": "local-cpu", "max_runtime_seconds": 180}
-    result = backend.invoke("run.submit", payload)
+    from tests.integration.native_fixture_support import authorized_backend
+    result = authorized_backend(backend, payload).invoke("run.submit", payload)
     assert result["operation_id"] == payload["operation_id"]
     return payload
 
@@ -63,6 +77,7 @@ def wait(backend, request, predicate=None, timeout=120):
 
 def save_evidence(name, value):
     target = ROOT / "evidence/backend" / f"{name}.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(value, indent=2))
 
 
@@ -81,7 +96,7 @@ def same(a, b):
 
 
 def test_native_custom_dag_variants_negative_and_models(tmp_path):
-    backend = ZenMLBackend(tmp_path)
+    backend = native_backend(tmp_path)
     project = str(uuid.uuid4())
     records = []
     for body in [recipe(steps=30), recipe(steps=30, width=20), recipe(steps=30, coefficient=5.0)]:
@@ -106,7 +121,7 @@ def test_native_custom_dag_variants_negative_and_models(tmp_path):
 
 
 def test_real_failed_run_remains_queryable(tmp_path):
-    backend = ZenMLBackend(tmp_path)
+    backend = native_backend(tmp_path)
     body = recipe(steps=10)
     next(n for n in body["nodes"] if n["kind"] == "model.train")["parameters"]["intentional_failure_step"] = 4
     request = submit(backend, body)
@@ -114,7 +129,7 @@ def test_real_failed_run_remains_queryable(tmp_path):
     assert result["status"] == "failed" and result["backend_status"] == "failed"
     assert result["backend_run_id"]
     # Fresh adapter instance reads the native ID and failure from the same store.
-    restarted = ZenMLBackend(tmp_path).invoke("run.status", request)
+    restarted = native_backend(tmp_path).invoke("run.status", request)
     assert restarted["backend_run_id"] == result["backend_run_id"]
     assert restarted["status"] == "failed"
     logs = backend.invoke("run.logs", request)["logs"]
@@ -125,7 +140,7 @@ def test_real_failed_run_remains_queryable(tmp_path):
 
 
 def test_actual_cancel_recovered_checkpoint_exact_resume(tmp_path):
-    backend = ZenMLBackend(tmp_path)
+    backend = native_backend(tmp_path)
     body = recipe(steps=200, delay=0.15)
     request = submit(backend, body)
     running = wait(backend, request, lambda r: r["status"] == "running" and bool(r["backend_run_id"]))
@@ -148,7 +163,8 @@ def test_actual_cancel_recovered_checkpoint_exact_resume(tmp_path):
     resumed_request = {**request, "parent_operation_id": request["operation_id"], "operation_id": str(uuid.uuid4()),
                        "idempotency_key": str(uuid.uuid4()), "recipe": resumed_recipe, "steps": final_steps,
                        "mode": "exact_state", "checkpoint_id": ref["artifact_id"]}
-    backend.invoke("run.resume", resumed_request)
+    from tests.integration.native_fixture_support import authorized_backend
+    authorized_backend(backend, resumed_request).invoke("run.resume", resumed_request)
     resumed = wait(backend, resumed_request)
     assert resumed["status"] == "succeeded", resumed
     full_request = submit(backend, recipe(steps=final_steps), request["project_id"])
@@ -169,7 +185,7 @@ def test_actual_cancel_recovered_checkpoint_exact_resume(tmp_path):
 
 
 def test_worker_sigkill_failure_is_reconciled(tmp_path):
-    backend = ZenMLBackend(tmp_path)
+    backend = native_backend(tmp_path)
     request = submit(backend, recipe(steps=200, delay=0.2))
     wait(backend, request, lambda r: r["status"] == "running" and bool(r["backend_run_id"]))
     job = backend.root / "jobs" / request["operation_id"]
@@ -186,7 +202,7 @@ def test_worker_sigkill_failure_is_reconciled(tmp_path):
 
 
 def test_pretrained_validation_selection_parent_and_export(tmp_path):
-    backend = ZenMLBackend(tmp_path)
+    backend = native_backend(tmp_path)
     project, records, requests = str(uuid.uuid4()), [], []
     for coefficient in (0.0, 0.2):
         request = submit(backend, recipe("pretrained", steps=18, coefficient=coefficient), project)
@@ -235,7 +251,7 @@ def test_explicitly_trusted_python_uses_public_native_step_boundary(tmp_path):
     body.update(nodes=[node], edges=[], resources=[], external_dependencies=[])
     # Trust the owned repository closure; a nested module directory cannot
     # authorize the repository root used to stage immutable source snapshots.
-    backend = ZenMLBackend(tmp_path, trusted_code_roots=[str(ROOT)])
+    backend = native_backend(tmp_path, trusted_code_roots=[str(SOURCE_ROOT)])
     request = submit(backend, body)
     result = wait(backend, request)
     assert result["status"] == "succeeded", result

@@ -61,6 +61,15 @@ def configured(tmp_path, monkeypatch):
         "dependencies": paths,
         "output_dir": str(tmp_path / "train"),
     }
+    from tests.components.rights_test_support import local_review
+    data_evidence = tmp_path / "standalone-data.json"
+    data_evidence.write_text(json.dumps(data, sort_keys=True))
+    inventory = [{**asset, "size_bytes": (model / asset["path"]).stat().st_size} for asset in assets]
+    inventory.append({"path": data_evidence.name, "sha256": hashlib.sha256(data_evidence.read_bytes()).hexdigest(),
+                      "size_bytes": data_evidence.stat().st_size})
+    _, rights = local_review(commit=identity(inventory), source_files=inventory, repo_id="urn:modelbuilder:test-authored-mlx")
+    ctx["declared_artifact_rights"] = rights
+    data["rights"] = rights
     monkeypatch.setenv("MODELBUILDER_MLX_PYTHON", python)
     return {"tmp": tmp_path, "python": python, "params": params, "data": data, "ctx": ctx, "model": model}
 

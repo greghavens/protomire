@@ -1,5 +1,47 @@
 {
   "$defs": {
+    "ProjectIntent": {
+      "additionalProperties": false,
+      "description": "Owner-supplied quickstart choices, never inferred from research documents.\n\nThese are planning metadata, not execution, download, sign-in or spending\nauthorization. The project revision/history is the sole persistence contract.",
+      "properties": {
+        "assistant": {
+          "default": "none",
+          "enum": [
+            "none",
+            "codex",
+            "claude",
+            "triggerfish"
+          ],
+          "title": "Assistant",
+          "type": "string"
+        },
+        "goal": {
+          "default": "",
+          "maxLength": 8000,
+          "title": "Goal",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1",
+          "default": "1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "starting_point": {
+          "default": "blank",
+          "enum": [
+            "blank",
+            "research",
+            "base_model",
+            "scratch"
+          ],
+          "title": "Starting Point",
+          "type": "string"
+        }
+      },
+      "title": "ProjectIntent",
+      "type": "object"
+    },
     "SourceBinding": {
       "additionalProperties": false,
       "properties": {
@@ -162,6 +204,17 @@
       "title": "Id",
       "type": "string"
     },
+    "intent": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProjectIntent"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "model_name": {
       "maxLength": 200,
       "minLength": 1,
@@ -204,6 +257,18 @@
       "default": "0",
       "title": "Schema Version",
       "type": "string"
+    },
+    "scientific_policy_digest": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scientific Policy Digest"
     },
     "slug": {
       "pattern": "^[a-z0-9][a-z0-9-]{0,79}$",

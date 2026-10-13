@@ -67,6 +67,26 @@ def assets(directory, names):
     return [{"path": name, "sha256": hashlib.sha256((directory / name).read_bytes()).hexdigest()} for name in names]
 
 
+def lineage(context):
+    # Explicit reviewed declarations and resumed parents; no inferred ownership.
+    parents = [context.get("declared_artifact_rights")]
+    if context.get("resume"):
+        parents.append(json.loads((Path(context["resume"]["path"]) / "checkpoint.manifest.json").read_text()).get("rights"))
+    sources, unresolved, digests = {}, [], set()
+    for index, parent in enumerate(parents):
+        if parent is None:
+            unresolved.append({"artifact_id": "independent-origin-" + str(index), "reason": "No reviewed local-origin evidence"})
+            continue
+        def canonical(value):
+            return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        digests.add(canonical(parent))
+        digests.update(parent["parent_rights_digests"])
+        unresolved.extend(parent["unresolved"])
+        sources.update({canonical(source): source for source in parent["sources"]})
+    return {"schema_version": "modelbuilder.artifact-rights/v1", "sources": [sources[key] for key in sorted(sources)],
+            "unresolved": unresolved, "parent_rights_digests": sorted(digests)}
+
+
 def train(*, inputs, parameters, context):
     config = parameters["architecture"]
     model, xs, ys = setup(config)
@@ -102,7 +122,7 @@ def train(*, inputs, parameters, context):
         manifest = {"schema_version": "modelbuilder.checkpoint/v1", "purpose": "last", "step": i + 1,
                     "resume_modes": ["exact_state", "warm_start"], "state": ["model", "optimizer", "scheduler", "rng", "data_cursor"],
                     "identities": context["identities"], "assets": assets(output, ["inference-tensors.bin", "configuration.json", "complete-state.bin"]),
-                    "metrics": {"final_loss": losses[-1], "parameter_change": changed}, "history": losses}
+                    "rights": lineage(context), "metrics": {"final_loss": losses[-1], "parameter_change": changed}, "history": losses}
         temporary = output / "checkpoint.manifest.partial"
         temporary.write_text(json.dumps(manifest))
         temporary.replace(output / "checkpoint.manifest.json")
@@ -171,6 +191,7 @@ def export(*, inputs, parameters, context):
                   "signature": {"input": "float32 tensor", "output": "float32 tensor"},
                   "dependencies": {"torch": torch.__version__}, "source": context["source"], "verification": verification,
                   "assets": assets(output, ["loader.py", "inference-tensors.bin", "configuration.json", "expected.json", "verification.json"])}
+    descriptor["rights"] = json.loads((selected / "checkpoint.manifest.json").read_text())["rights"]
     (output / "export.manifest.json").write_text(json.dumps(descriptor))
     return {"exported": output}
 

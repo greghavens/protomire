@@ -2,7 +2,7 @@
 import hashlib
 from pathlib import Path
 from modelbuilder.backend.live_evaluation import LiveEvaluationCoordinator, list_evaluations
-from test_live_evaluation import checkpoint, evaluator
+from test_live_evaluation import checkpoint, evaluator, authorize_evaluator
 
 
 def test_live_child_explicitly_uses_cpu_environment_and_context(tmp_path, monkeypatch):
@@ -20,6 +20,7 @@ def test_live_child_explicitly_uses_cpu_environment_and_context(tmp_path, monkey
     digest = hashlib.sha256(source.read_bytes()).hexdigest()
     configured['spec']['component_node']['implementation_ref']['sha256'] = digest
     configured['spec']['source']['files'] = [{'path': 'harness.py', 'sha256': digest}]
+    authorize_evaluator(tmp_path, configured)
     monkeypatch.setenv('MODELBUILDER_EXECUTION_DEVICE', 'cpu')
     monkeypatch.setenv('CUDA_VISIBLE_DEVICES', '4')
     monkeypatch.setenv('HIP_VISIBLE_DEVICES', '2')

@@ -1,0 +1,433 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "provider": {
+            "const": "huggingface"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "commit": {
+            "pattern": "^[a-f0-9]{40}$"
+          },
+          "repo_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}/[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+          }
+        }
+      }
+    }
+  ],
+  "description": "Only explicitly registered provider adapters may resolve or publish these references. Opaque custom-provider identities require their adapter validation; no generic other provider is enabled. Exact upstream card metadata, bounded UTF-8 license/notice texts and immutable hashes are retained. Rights references are declarations, not transferable permission: receiving services must resolve current project-authoritative reviewed policies and explicit usage context. Labels never grant usage or redistribution rights. Built-in New Project specialization: Hugging Face only; other providers require a registered schema adapter.",
+  "properties": {
+    "asset_id": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "commit": {
+      "maxLength": 512,
+      "minLength": 1,
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "git_blob_sha1": {
+            "pattern": "^[a-f0-9]{40}$",
+            "type": "string"
+          },
+          "path": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "size_bytes": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "size_bytes",
+          "sha256",
+          "git_blob_sha1"
+        ],
+        "type": "object"
+      },
+      "maxItems": 10000,
+      "minItems": 1,
+      "type": "array"
+    },
+    "license": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "license_evidence_digest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "license_provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "type": "string"
+        },
+        "card_metadata": {
+          "type": "object"
+        },
+        "commit": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "type": "string"
+        },
+        "declared_license": {},
+        "documents": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "git_blob_sha1": {
+                "pattern": "^[a-f0-9]{40}$",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "path": {
+                "maxLength": 1024,
+                "minLength": 1,
+                "type": "string"
+              },
+              "sha256": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              "size_bytes": {
+                "maximum": 1048576,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "source_url": {
+                "maxLength": 1024,
+                "minLength": 1,
+                "type": "string"
+              },
+              "text": {
+                "maxLength": 1048576,
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "size_bytes",
+              "sha256",
+              "git_blob_sha1",
+              "text",
+              "source_url"
+            ],
+            "type": "object"
+          },
+          "maxItems": 32,
+          "type": "array"
+        },
+        "gated": {
+          "type": "boolean"
+        },
+        "gated_terms_state": {
+          "enum": [
+            "not_gated",
+            "separate_acknowledgment_required"
+          ]
+        },
+        "label_state": {
+          "enum": [
+            "unknown",
+            "declared",
+            "ambiguous",
+            "custom_or_unrecognized",
+            "user_declared_uninterpreted"
+          ]
+        },
+        "permissions_inferred_from_label": {
+          "const": false
+        },
+        "provider": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "type": "string"
+        },
+        "repo_id": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "type": "string"
+        },
+        "repo_type": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "modelbuilder.license-evidence/v1"
+        },
+        "source_file_manifest": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "git_blob_sha1": {
+                "pattern": "^[a-f0-9]{40}$",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "path": {
+                "maxLength": 1024,
+                "minLength": 1,
+                "type": "string"
+              },
+              "sha256": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "size_bytes": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "size_bytes",
+              "sha256",
+              "git_blob_sha1"
+            ],
+            "type": "object"
+          },
+          "maxItems": 10000,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "provider",
+        "repo_id",
+        "repo_type",
+        "commit",
+        "declared_license",
+        "label_state",
+        "card_metadata",
+        "documents",
+        "gated",
+        "gated_terms_state",
+        "permissions_inferred_from_label",
+        "captured_at",
+        "source_file_manifest"
+      ],
+      "type": "object"
+    },
+    "private": {
+      "type": "boolean"
+    },
+    "provider": {
+      "allOf": [
+        {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$",
+          "type": "string"
+        },
+        {
+          "const": "huggingface"
+        }
+      ]
+    },
+    "repo_id": {
+      "maxLength": 400,
+      "minLength": 1,
+      "type": "string"
+    },
+    "repo_type": {
+      "enum": [
+        "model",
+        "dataset"
+      ]
+    },
+    "resources": {
+      "items": {
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "revision"
+            ]
+          },
+          {
+            "required": [
+              "sha256"
+            ]
+          }
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "dataset",
+              "model",
+              "checkpoint",
+              "source",
+              "artifact",
+              "environment"
+            ]
+          },
+          "license": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "redistribution_allowed": {
+            "type": "boolean"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "revision": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "url": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "url",
+          "license"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "rights": {
+      "additionalProperties": false,
+      "properties": {
+        "parent_rights_digests": {
+          "items": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "modelbuilder.artifact-rights/v1"
+        },
+        "sources": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "commit": {
+                "maxLength": 1024,
+                "minLength": 1,
+                "type": "string"
+              },
+              "license_evidence_digest": {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              "license_policy_id": {
+                "maxLength": 1024,
+                "minLength": 1,
+                "type": "string"
+              },
+              "provider": {
+                "maxLength": 1024,
+                "minLength": 1,
+                "type": "string"
+              },
+              "repo_id": {
+                "maxLength": 1024,
+                "minLength": 1,
+                "type": "string"
+              },
+              "repo_type": {
+                "maxLength": 1024,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "provider",
+              "repo_type",
+              "repo_id",
+              "commit",
+              "license_evidence_digest",
+              "license_policy_id"
+            ],
+            "type": "object"
+          },
+          "maxItems": 10000,
+          "type": "array"
+        },
+        "unresolved": {
+          "items": {
+            "type": "object"
+          },
+          "maxItems": 10000,
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "sources",
+        "unresolved",
+        "parent_rights_digests"
+      ],
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "modelbuilder.hub-asset/v1"
+    }
+  },
+  "required": [
+    "schema_version",
+    "asset_id",
+    "provider",
+    "repo_type",
+    "repo_id",
+    "commit",
+    "license",
+    "private",
+    "files",
+    "resources",
+    "license_provenance",
+    "license_evidence_digest",
+    "rights"
+  ],
+  "title": "Immutable Hub asset reference",
+  "type": "object"
+}

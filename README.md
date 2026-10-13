@@ -41,7 +41,21 @@ This is a development implementation. The [acceptance matrix](docs/ACCEPTANCE_MA
 distinguishes verified results from remaining gates; no scaffold, simulated API,
 policy unit test or earlier evaluation is counted as a GUI/backend acceptance pass.
 
-## Start here
+## App installation
+
+The required product delivery is one desktop installation: AppImage on Linux,
+a DMG containing the app on macOS, and a native Windows installer. The native
+MCP server is mandatory and managed by the app alongside its service and isolated
+runtime payloads. It is not an optional plugin or a separate end-user setup step.
+
+Installer assembly and current native GUI acceptance are still in progress;
+there is no verified downloadable release yet. See
+[packaging and installation status](distribution/INSTALLATION.md).
+
+## Developer source build
+
+The following commands are for development and testing, not the intended user
+installation experience.
 
 1. `./scripts/bootstrap.sh --backend --trainer` installs two deliberately separate Python
    environments and builds the workbench feature. Python 3.12.14 and the pinned
@@ -61,6 +75,13 @@ policy unit test or earlier evaluation is counted as a GUI/backend acceptance pa
    with English language data for real PDF/OCR acceptance.
 
 ## Engineering references
+
+- [New project and project structure](docs/PROJECT_QUICKSTART.md)
+- [Hub repository interface and transfers](docs/HUB_TRANSFERS.md)
+- [Exact local asset and source rights review](docs/LOCAL_RIGHTS_REVIEW.md)
+- [Reproducible scientific operations](docs/SCIENTIFIC_WORKFLOWS.md)
+- [Training runner compatibility](docs/TRAINING_RUNNERS.md)
+- [Research retrieval and harness context](docs/RESEARCH_CONTEXT.md)
 
 - [Architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md), [backend decision](docs/BACKEND_DECISION.md)
 - [Bounded native pipeline iteration](docs/NATIVE_BOUNDED_ITERATION.md)

@@ -40,7 +40,8 @@ def test_supervisor_launch_inherits_safe_startup_before_user_import(tmp_path, mo
         write_json(Path(command[-2]) / "native.json", {"backend_run_id": "test-native"})
         return SimpleNamespace(pid=123)
     monkeypatch.setattr("modelbuilder.backend.adapter.subprocess.Popen", launch)
-    result = backend.submit({"project_id": "project", "recipe": {"recipe_id": "recipe", "revision": 1, "environment": {}},
+    result = backend.submit({"project_id": "project", "recipe": {"recipe_id": "recipe", "revision": 1, "environment": {},
+        "nodes": [{"id": "utility", "kind": "code.python", "inputs": [], "outputs": []}]},
                              "operation_id": str(uuid.uuid4()), "idempotency_key": "test"})
     assert result["backend_run_id"] == "test-native" and len(calls) == 1
 

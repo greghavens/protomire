@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { mkdir, copyFile, access } from 'node:fs/promises';
+import { mkdir, copyFile, access, cp } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], {stdio:'inherit'});
 execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p','tsconfig.webview.json','--noEmit'], {stdio:'inherit'});
@@ -7,6 +7,9 @@ await mkdir('schemas',{recursive:true});
 await access('../../schemas/recipe.v0.schema.json');
 await copyFile('../../schemas/recipe.v0.schema.json','schemas/recipe.v0.schema.json');
 await copyFile('../../schemas/dataset.v1.schema.json','schemas/dataset.v1.schema.json');
-await build({entryPoints:['src/extension.ts','src/managedCore.ts','src/client.ts','src/document.ts','src/conditions.ts','src/iterations.ts','src/executionSettings.ts','src/componentAuthoring.ts','src/componentLibrary.ts','src/security.ts','src/sourcePane.ts','src/liveEvaluations.ts','src/notifications.ts','src/operationDefaults.ts','src/liveRecipe.ts','src/admission.ts','src/assistantSetup.ts','src/researchView.ts','src/researchDocuments.ts','src/citations.ts','src/datasetView.ts','src/busyControls.ts','src/parameterControls.ts','src/sourceWorkspace.ts','src/costDiagnostics.ts','src/computeDiagnostics.ts','src/registryFiles.ts','src/modelExport.ts','src/releaseView.ts','src/recipeHistory.ts'],bundle:true,platform:'node',format:'cjs',target:'node20',external:['vscode'],outdir:'out',sourcemap:true});
+await build({entryPoints:['src/hubSettings.ts','src/hubController.ts','src/hubWorkflow.ts','src/hubRepository.ts','src/projectDraftRecovery.ts','src/projectSourceSetup.ts','src/projectProjection.ts','src/projectScaffold.ts','src/projectQuickstart.ts','src/newProject.ts','src/extension.ts','src/managedCore.ts','src/nativeReview.ts','src/scientificWorkflow.ts','src/client.ts','src/document.ts','src/conditions.ts','src/iterations.ts','src/executionSettings.ts','src/componentAuthoring.ts','src/componentLibrary.ts','src/security.ts','src/sourcePane.ts','src/liveEvaluations.ts','src/notifications.ts','src/operationDefaults.ts','src/liveRecipe.ts','src/admission.ts','src/assistantSetup.ts','src/researchView.ts','src/researchContext.ts','src/researchDocuments.ts','src/citations.ts','src/datasetView.ts','src/busyControls.ts','src/parameterControls.ts','src/sourceWorkspace.ts','src/costDiagnostics.ts','src/computeDiagnostics.ts','src/registryFiles.ts','src/modelExport.ts','src/releaseView.ts','src/recipeHistory.ts'],bundle:true,platform:'node',format:'cjs',target:'node20',external:['vscode'],outdir:'out',sourcemap:true});
 await copyFile('../../distribution/assistant_setup.py','out/assistant_setup.py');
+await copyFile('../../distribution/assistant_project.py','out/assistant_project.py');
+await cp('../../distribution/assistant_templates','out/assistant_templates',{recursive:true});
+await cp('../../distribution/project_templates','out/project_templates',{recursive:true});
 await build({entryPoints:['src/webview.ts'],bundle:true,platform:'browser',format:'iife',target:'es2022',outfile:'media/workbench.js',sourcemap:true});

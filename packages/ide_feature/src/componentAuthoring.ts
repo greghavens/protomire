@@ -2,7 +2,7 @@ import { Recipe, RecipeNode, RecordValue } from './types';
 import { parameterSchema } from './parameterControls';
 
 export const COMPONENT_PROTOCOL='modelbuilder.component/v1';
-export const COMPONENT_ROLES=['training','evaluation','export','dataset','model','utility'];
+export const COMPONENT_ROLES=['training','evaluation','export','dataset','model','utility','derivation','scientific_gate'];
 export const COMPONENT_PORT_TYPES=['dict','Path','str','int','float','bool','DatasetArtifact','CheckpointArtifact','EvaluationArtifact','ExportArtifact'];
 const reserved=new Set('False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield spec inputs parameters context'.split(' '));
 const object=(value:unknown):value is RecordValue=>value!==null&&typeof value==='object'&&!Array.isArray(value);

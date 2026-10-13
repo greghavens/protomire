@@ -291,13 +291,20 @@ def inspect_text(body, payload):
             "claim_verified": False}
 
 
+def literal_matches(content, query, *, case_sensitive=False, start=0):
+    """Shared literal matcher; Unicode offsets always refer to the original text."""
+    if not query.strip():
+        raise ServiceError("validation_error", "Local search needs a nonblank literal query")
+    return re.compile(re.escape(query), 0 if case_sensitive else re.IGNORECASE).finditer(content, start)
+
+
 def search_text(body, payload):
     query = payload["query"]
     if not query.strip():
         raise ServiceError("validation_error", "Within-paper search needs a nonblank literal query")
     content, limit, matches = body["text"], payload.get("limit", 20), []
-    pattern = re.compile(re.escape(query), 0 if payload.get("case_sensitive", False) else re.IGNORECASE)
-    for match in pattern.finditer(content, payload.get("start", 0)):
+    for match in literal_matches(content, query, case_sensitive=payload.get("case_sensitive", False),
+                                 start=payload.get("start", 0)):
         if len(matches) == limit:
             break
         start, end = match.span()

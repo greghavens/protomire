@@ -41,8 +41,13 @@ def test_native_independent_harness(tmp_path, task, width, live):
               "evaluation": {"live": {"enabled": live, "max_concurrency": 1, "timeout_seconds": 30}},
               "source": {"commit": commit, "files": [{"path": "harness.py", "sha256": digest}]},
               "edges": [{"source_node": "train", "source_port": "trained", "target_node": name, "target_port": "trained"} for name in ("evaluate", "export")]}
+    from tests.integration.native_fixture_support import synthetic_review
+    from tests.components.rights_test_support import authorize_test_recipe
+    project_id = "independent-" + task
+    review = synthetic_review(recipe, project_id, source)
+    authorization = authorize_test_recipe(tmp_path, recipe, {review["policy_id"]: review}, project_id=project_id)
     job = tmp_path / "job"
-    write_json(job / "request.json", {"recipe": recipe, "project_id": "independent-" + task, "operation_id": "test-" + str(width),
+    write_json(job / "request.json", {**authorization, "recipe": recipe, "project_id": "independent-" + task, "operation_id": "test-" + str(width),
                "run_name": "independent-" + task + "-" + str(width), "source_root": str(source), "trusted_code_roots": [str(source)]})
     env = {**os.environ, "ZENML_CONFIG_PATH": str(tmp_path / "zenml-config"), "ZENML_LOCAL_STORES_PATH": str(tmp_path / "zenml-stores"),
            "ZENML_ANALYTICS_OPT_IN": "false", "ZENML_LOGGING_VERBOSITY": "ERROR", "OMP_NUM_THREADS": "1"}
@@ -142,10 +147,13 @@ def test_service_component_cancel_recover_resume_export(tmp_path, interrupt_mid_
               "source": {"repository": "urn:sha256:" + digest, "commit": commit, "files": [{"path": "harness.py", "sha256": digest}]},
               "nodes": nodes, "edges": [{"source_node": "train", "source_port": "trained", "target_node": name, "target_port": "trained"} for name in ("evaluate", "export")],
               "resources": [], "external_dependencies": [], "environment": {"python": "3.12", "requirements": ["zenml==0.97.0"]}, "evaluation": {}, "outputs": []}
+    from tests.integration.native_fixture_support import synthetic_review, register_project_review
+    review = synthetic_review(recipe, "pending", source)
     backend = ZenMLBackend(tmp_path / "state", python_executable=sys.executable, source_root=source, trusted_code_roots=[str(source)])
     service = OperationService(tmp_path / "service.sqlite3", backend=backend, source_root=source)
     actor = Actor("owner", {"read", "modify", "execute"})
     project = service.invoke("project.create", {"slug": "segmentation", "model_name": "User model", "recipe": recipe, "idempotency_key": "create"}, actor)
+    register_project_review(service, review, project["project_id"])
     request = {"project_id": project["project_id"], "recipe_id": project["recipe_id"]}
     plan = service.invoke("run.plan", {**request, "trusted": True}, actor)
     assert plan["executable"], plan

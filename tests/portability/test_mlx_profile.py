@@ -445,3 +445,30 @@ def test_native_deadline_fixture_generates_a_valid_synchronized_export_pause(tmp
     loader = json.loads(result.stdout)["code"]
     assert str(marker) in loader and "native_logits_completed" in loader and "time.sleep(600)" in loader
     assert loader.index("result=json.dumps(predict(") < loader.index("time.sleep(600)")
+
+
+def test_mlx_rights_union_is_inert_and_preserves_all_actual_parents(tmp_path):
+    from modelbuilder.backend.components import identity
+    from modelbuilder.backend.components.mlx_bridge import training_rights
+    from tests.components.rights_test_support import local_review
+    first, base = local_review(policy_id="local-base")
+    second, data = local_review(policy_id="local-data", commit="2" * 40)
+    _, parent_rights = local_review(policy_id="local-resume", commit="3" * 40)
+    checkpoint = tmp_path / "checkpoint"
+    checkpoint.mkdir()
+    asset = checkpoint / "weights.safetensors"
+    asset.write_bytes(b"test-authored inert checkpoint asset")
+    descriptor = {"schema_version": "modelbuilder.checkpoint/v1", "purpose": "last", "step": 1,
+                  "identities": {key: key for key in ("architecture", "source", "dependencies", "training", "environment")},
+                  "resume_modes": ["warm_start"], "assets": [{"path": asset.name, "sha256": hashlib.sha256(asset.read_bytes()).hexdigest()}],
+                  "rights": parent_rights}
+    (checkpoint / "checkpoint.manifest.json").write_text(json.dumps(descriptor))
+    result = training_rights({"train": {"rights": data}}, {"declared_artifact_rights": base, "resume": {"path": str(checkpoint)}})
+    assert {entry["license_policy_id"] for entry in result["sources"]} == {"local-base", "local-data", "local-resume"}
+    assert {identity(base), identity(data), identity(parent_rights)} <= set(result["parent_rights_digests"])
+    assert not result["unresolved"]
+    missing = training_rights({"train": {}}, {})
+    assert len(missing["unresolved"]) == 2 and not missing["sources"]
+    asset.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="integrity mismatch"):
+        training_rights({"train": {"rights": data}}, {"declared_artifact_rights": base, "resume": {"path": str(checkpoint)}})

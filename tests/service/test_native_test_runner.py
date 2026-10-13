@@ -129,11 +129,15 @@ def test_group_environment_and_junit_paths_are_isolated(tmp_path, monkeypatch):
 def test_new_native_features_are_selected_and_backend_cannot_import_service_transports():
     assert "tests/iterations/test_native_iterations.py" in runner.SERVICE_TESTS
     assert "tests/iterations/test_native_iterations.py" in runner.SERVICE_ONLY_TESTS
+    assert "tests/components/test_runner_native.py" in runner.SERVICE_TESTS
+    assert "tests/components/test_runner_native.py" in runner.SERVICE_ONLY_TESTS
     files = {str(path.relative_to(ROOT)) for name in runner.LIFECYCLE_TESTS + runner.COMPONENT_TESTS + runner.CONCURRENCY_TESTS
              for path in ((ROOT / name).rglob("test_*.py") if (ROOT / name).is_dir() else [ROOT / name])
              if str(path.relative_to(ROOT)) not in runner.SERVICE_ONLY_TESTS}
     assert {
         "tests/components/test_transformers_training.py", "tests/components/test_transformers_inference.py",
+        "tests/components/test_runner_contract.py", "tests/components/test_runner_accelerate.py",
+        "tests/components/test_execution_rights.py",
         "tests/components/test_local_inference.py", "tests/placement/test_cuda_execution.py",
         "tests/components/test_mlx_boundaries.py", "tests/integration/test_mlx_service.py",
         "tests/concurrency/test_native_parallel.py", "tests/concurrency/test_parallel_lifecycle.py",
@@ -523,3 +527,26 @@ def test_native_admission_harness_preserves_venv_invocation_path(tmp_path, monke
     monkeypatch.setattr(acceptance, "ZenMLBackend", capture)
     with pytest.raises(CapturedBackend):
         acceptance.test_native_checkpoint_ingestion_during_held_admission(tmp_path / "fixture", monkeypatch)
+
+
+def test_scientific_native_node_ids_have_exact_serial_concurrent_routes():
+    native_path = "tests/scientific/test_native_derivation.py"
+    tensor_path = "tests/scientific/test_derivation.py"
+    for path in (native_path, tensor_path):
+        assert runner.COMPONENT_TESTS.count(path) == 1
+        assert serial_paths("-m pytest tests/integration/test_cpu_fixtures.py").count(path) == 1
+        assert path not in runner.SERVICE_TESTS and path not in runner.SERVICE_ONLY_TESTS
+    tree = ast.parse((ROOT / native_path).read_text())
+    definitions = {node.name: node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")}
+    plain = "test_actual_native_blend_and_evaluation_owner"
+    compared = "test_cross_run_derived_comparison_policy_promotion_and_integrity"
+    assert set(definitions) == {plain, compared}
+    for node in definitions.values():
+        assert any(isinstance(marker, ast.Attribute) and marker.attr == "integration" for marker in node.decorator_list)
+    marker = next(item for item in definitions[compared].decorator_list if isinstance(item, ast.Call) and getattr(item.func, "attr", None) == "parametrize")
+    cases = ast.literal_eval(marker.args[1])
+    node_ids = {f"{native_path}::{plain}", *(f"{native_path}::{compared}[{'-'.join(map(str, case))}]" for case in cases)}
+    assert node_ids == {
+        f"{native_path}::{plain}", f"{native_path}::{compared}[False-False]",
+        f"{native_path}::{compared}[True-False]", f"{native_path}::{compared}[False-True]",
+    }

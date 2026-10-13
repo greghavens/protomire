@@ -1,6 +1,7 @@
 """Thin trusted-source adapter to the existing ZenML artifact/step runtime."""
 from __future__ import annotations
 import hashlib
+from copy import deepcopy
 import importlib.util
 import json
 import sys
@@ -90,7 +91,7 @@ def runtime_source_identity(package_root: Path | None = None) -> str:
     profile = root / "backend/components/mlx-darwin-arm64.lock"
     if profile.is_file():
         files.append(profile)
-    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py") if (root / name).is_file()]
+    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py", "scientific.py", "scientific_operations.py", "smoke.py", "artifact_rights.py", "hub_rights.py", "hub_contract.py", "research_context_contract.py") if (root / name).is_file()]
     return identity({str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in sorted(files)})
 
@@ -127,24 +128,41 @@ def input_identity(value):
 def dispatch(inputs: dict, spec: dict):
     from ..process_execution import context
     from ..process_execution import enabled, execute
+    from ..process_execution import in_child
+    if spec["component_node"].get("component", {}).get("role") == "derivation" and not in_child():
+        from ..checkpoint_derivation import native_context
+        spec = {**spec, "derivation_context": native_context(spec, inputs)}
+    if spec["component_node"].get("component", {}).get("role") == "scientific_gate" and not in_child():
+        from ..scientific_gate_artifacts import native_context
+        spec = {**spec, "scientific_context": native_context(spec)}
     if enabled(spec):
         context(spec)
         from ..native_cache import record_outputs
         return record_outputs(spec, execute("component", inputs, spec))
+    from ..execution_rights import verify_dispatch
+    rights_admission = verify_dispatch(spec, inputs)
     node = spec["component_node"]
     component = validate_component(node)
+    runner = None
+    if component.get("runner"):
+        from ..runner import verify_runtime
+        runner = verify_runtime(spec)
     for value in inputs.values():
         if isinstance(value, Path) and (value / "checkpoint.manifest.json").is_file():
             read_checkpoint(value)
         elif isinstance(value, Path) and (value / "export.manifest.json").is_file():
             read_export(value)
     parameters, output = context(spec)
+    if spec.get("rights_authorization"):
+        from ..process_execution import metadata
+        metadata({"rights_admission": rights_admission})
     output.mkdir(parents=True, exist_ok=True)
     for dependency in spec.get("dependencies", []):
         path = spec.get("dependency_paths", {}).get(dependency["id"])
         if not path or dependency_sha256(path) != dependency["sha256"]:
             raise ValueError("Component dependency changed after admission: " + dependency["id"])
     actual_environment = runtime_environment()
+    actual_environment["rights_policy_identity"] = {key: rights_admission.get(key) for key in ("policy_revisions", "usage_context")}
     from ..placement import runtime_device_identity, effective_resume_modes
     from .mlx import selected_device_for_component, architecture_identity, probe
     selected_device = selected_device_for_component(component, spec.get("placement", {}).get("device", "cpu"))
@@ -154,23 +172,34 @@ def dispatch(inputs: dict, spec: dict):
         if not selected_placement.get('available'):
             raise ValueError(selected_placement.get('reason', 'MLX worker unavailable'))
         actual_environment['framework_worker'] = selected_placement
+    elif runner:
+        selected_placement = {"device": selected_device, "requested_device": selected_device,
+                              "component_execution_observed": False, "framework_neutral": True}
+        actual_environment["runner"] = runner
     else:
         selected_placement = runtime_device_identity(selected_device)
     resume_modes = effective_resume_modes(selected_device, component["capabilities"]["resume_modes"])
     actual_environment["placement"] = selected_placement
     identities = {
+        "rights_admission": identity(rights_admission),
         "architecture": architecture_identity(parameters) if is_mlx and component['role']=='training' else identity(parameters.get("architecture", parameters)),
         "source": identity(spec["source"]), "dependencies": identity(spec.get("dependencies", [])),
         "environment": identity({"declared": spec.get("environment", {}), "actual": actual_environment}),
         "training": identity({"component": component, "parameters": parameters}),
         "data": identity({k: input_identity(v) for k, v in inputs.items()})}
+    from ..fixture_artifacts import declared_rights
     run_context = {"protocol": component["protocol"], "output_dir": str(output),
+                   "rights_admission": rights_admission,
+                   "declared_artifact_rights": declared_rights(spec),
                    "job_dir": spec["job_dir"], "node_id": spec["node_id"], "invocation": spec.get("invocation", {}), "identities": identities, "environment": actual_environment,
                    "device": selected_device, "placement": selected_placement, "resume_modes": resume_modes,
                    "source_root": spec["source_root"], "source": spec["source"],
                    "dependencies": spec.get("dependency_paths", {}),
                    "cancel_file": str(Path(spec["job_dir"]) / "cancel.json"),
                    "resume": None, "resume_mode": None}
+    if component["role"] == "derivation":
+        run_context["derivation"] = spec["derivation_context"]
+        run_context["derivation_implementation"] = {"component_digest": identity(component), "implementation_ref": node["implementation_ref"]}
     if component["role"] == "training" and spec.get("resume_path"):
         mode = spec.get("resume_mode", "exact_state")
         descriptor = validate_resume(Path(spec["resume_path"]), mode, identities,
@@ -180,6 +209,7 @@ def dispatch(inputs: dict, spec: dict):
         previous = inputs[spec["iteration_resume_input"]]
         descriptor = validate_resume(previous, "warm_start", identities, {**component["capabilities"], "resume_modes": resume_modes})
         run_context.update(resume={"path": str(previous), "descriptor": descriptor, "artifact_id": spec["iteration_checkpoint_ref"]}, resume_mode="warm_start")
+    scientific_contract = (deepcopy(node), deepcopy(inputs), deepcopy(spec["source"])) if component["role"] == "scientific_gate" else None
     function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
     run_context["source_root"] = function.__source_snapshot_root__
     coordinator = None
@@ -205,8 +235,14 @@ def dispatch(inputs: dict, spec: dict):
         if coordinator:
             coordinator.close()
 
+    if scientific_contract is not None:
+        from ..scientific_gate_artifacts import seal_results
+        results = seal_results(results, scientific_contract[0], spec["scientific_context"], scientific_contract[1], scientific_contract[2])
     if not isinstance(results, dict) or set(results) != {p["name"] for p in node["outputs"]}:
         raise ValueError("Component results must exactly match declared output ports")
+    if runner:
+        from ..runner import validate_evaluation_outputs
+        validate_evaluation_outputs(results, node)
     values = []
     for port in node["outputs"]:
         value = results[port["name"]]
@@ -224,6 +260,9 @@ def dispatch(inputs: dict, spec: dict):
                     raise ValueError("Checkpoint identities differ from actual component execution")
                 if not set(ck["resume_modes"]).issubset(resume_modes):
                     raise ValueError("Checkpoint claims unsupported device/component resume capability; accelerator exact_state is unverified")
+            if component["role"] == "derivation":
+                from ..checkpoint_derivation import verify_output
+                verify_output(read_checkpoint(value), run_context["derivation"], node, expected_identities=identities)
             if component["role"] == "export":
                 manifest = read_export(value)
                 selected = [identity(read_checkpoint(path)) for path in inputs.values()
@@ -286,8 +325,13 @@ def dispatch_python(arguments: dict, spec: dict):
         context(spec)
         from ..native_cache import record_outputs
         return record_outputs(spec, execute("python", arguments, spec))
+    from ..execution_rights import verify_dispatch
+    rights_admission = verify_dispatch(spec, arguments)
     node = spec["component_node"]
     context(spec)
+    if spec.get("rights_authorization"):
+        from ..process_execution import metadata
+        metadata({"rights_admission": rights_admission})
     function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
     from ..native_cache import record_outputs
     from ..process_execution import in_child

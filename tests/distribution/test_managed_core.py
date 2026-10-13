@@ -171,10 +171,25 @@ def test_stdio_mcp_is_per_consumer_and_exits_on_eof(runtime, state):
     mcp.stdin.flush()
     tools = exchange({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
     assert any(tool["name"] == "project_get" for tool in tools["result"]["tools"])
-    denied = exchange({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
+    queued = exchange({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
         "name": "project_create", "arguments": {"model_name": "Denied", "slug": "denied", "idempotency_key": "blocked"}}})
-    assert denied["result"]["isError"] is True
-    assert denied["result"]["structuredContent"]["http_status"] == 403
+    review = queued["result"]["structuredContent"]
+    assert not queued["result"]["isError"] and review["status"] == "pending"
+    assert len(call(owner, "project.list", {})["projects"]) == 1
+    session = core.private_read(state / core.SESSION)
+    decision = core.rpc(session, "/_desktop/reviews/" + review["id"] + "/decision", {"review_digest": review["review_digest"], "decision": "approve"})
+    assert decision["status"] == "succeeded"
+    result = exchange({"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {
+        "name": "modelbuilder_review_status", "arguments": {"request_id": review["id"]}}})
+    assert result["result"]["structuredContent"]["status"] == "succeeded"
+    assert len(call(owner, "project.list", {})["projects"]) == 2
+    assert owner["token"] not in json.dumps(result)
+    second = exchange({"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {
+        "name": "project_create", "arguments": {"model_name": "Withdrawn", "slug": "withdrawn", "idempotency_key": "withdrawn"}}})
+    withdrawn = exchange({"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {
+        "name": "modelbuilder_review_cancel", "arguments": {"request_id": second["result"]["structuredContent"]["id"]}}})
+    assert withdrawn["result"]["structuredContent"]["status"] == "withdrawn"
+    assert len(call(owner, "project.list", {})["projects"]) == 2
     close(mcp)
     assert core.discover(state) is not None
     close(process)
@@ -275,3 +290,51 @@ def test_optional_mlx_is_disabled_without_import_on_older_macos():
     assert not core.optional_mlx_available(manifest, "Darwin", "15.7")
     assert not core.optional_mlx_available(manifest, "Linux", "26.0")
     assert not core.optional_mlx_available({"mlx_python": "anything"}, "Darwin", "26.0")
+
+
+def test_real_http_review_denial_cancel_changed_payload_and_stale_context(runtime, state):
+    process, owner = lease(runtime, state)
+    bridge = None
+    try:
+        project = call(owner, 'project.create', {'model_name': 'HTTP review', 'slug': 'http-review', 'idempotency_key': 'review-create'})
+        session = core.private_read(state / core.SESSION)
+        bridge = core.Lease(session)
+        token = core.rpc(session, '/_desktop/bridge', {'id': bridge.identity, 'project_id': project['project_id']})['token']
+        consumer = {**session, 'token': token}
+        payload = {'project_id': project['project_id'], 'expected_revision': project['revision'], 'changes': {'description': 'approved'}, 'idempotency_key': 'review-update'}
+        envelope = {'project_id': project['project_id'], 'operation': 'project.update', 'payload': payload}
+        for path, body in [('/_assistant/reviews', {**envelope, 'human_approved': True}), ('/_desktop/reviews', envelope)]:
+            with pytest.raises(urllib.error.HTTPError) as denied:
+                core.rpc(consumer, path, body)
+            assert denied.value.code in {400, 403}
+        pending = core.rpc(consumer, '/_assistant/reviews', envelope)
+        route = '/_desktop/reviews/' + pending['id'] + '/decision'
+        for actor, body, expected in [
+            (consumer, {'review_digest': pending['review_digest'], 'decision': 'approve'}, 403),
+            (session, {'review_digest': 'b'*64, 'decision': 'approve'}, 409),
+            (session, {'review_digest': pending['review_digest'], 'decision': 'approve', 'payload': {}}, 400),
+        ]:
+            with pytest.raises(urllib.error.HTTPError) as denied:
+                core.rpc(actor, route, body)
+            assert denied.value.code == expected
+        assert call(owner, 'project.get', {'project_id': project['project_id']})['revision'] == 1
+        denied = core.rpc(session, route, {'review_digest': pending['review_digest'], 'decision': 'deny'})
+        assert denied['status'] == 'denied'
+        assert core.rpc(session, '/_desktop/reviews/' + pending['id'])['status'] == 'denied'
+        with pytest.raises(urllib.error.HTTPError) as replay:
+            core.rpc(session, route, {'review_digest': pending['review_digest'], 'decision': 'approve'})
+        assert replay.value.code == 409
+        withdrawn = core.rpc(consumer, '/_assistant/reviews', {**envelope, 'payload': {**payload, 'idempotency_key': 'withdraw'}})
+        assert core.rpc(consumer, '/_assistant/reviews/' + withdrawn['id'] + '/cancel', {})['status'] == 'withdrawn'
+        stale = core.rpc(consumer, '/_assistant/reviews', {**envelope, 'payload': {**payload, 'idempotency_key': 'stale'}})
+        call(owner, 'project.update', {**payload, 'idempotency_key': 'owner-change', 'changes': {'description': 'owner'}})
+        with pytest.raises(urllib.error.HTTPError) as changed:
+            core.rpc(session, '/_desktop/reviews/' + stale['id'] + '/decision', {'review_digest': stale['review_digest'], 'decision': 'approve'})
+        assert changed.value.code == 409
+        visible = core.rpc(consumer, '/_assistant/reviews/' + stale['id'])
+        assert token not in json.dumps(visible) and owner['token'] not in json.dumps(visible)
+        assert call(owner, 'project.get', {'project_id': project['project_id']})['description'] == 'owner'
+    finally:
+        if bridge:
+            bridge.close()
+        close(process)

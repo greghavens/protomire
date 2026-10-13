@@ -177,6 +177,29 @@ def validate_native_type(artifact, declared_type):
         raise BackendError("artifact_type_mismatch", "Native artifact datatype or materializer does not match its declared typed port")
 
 
+def artifact_rights_descriptor(artifact, root: Path, declared_type: str):
+    """Inert rights projection from exact native bytes, never producer imports."""
+    validate_native_type(artifact, declared_type)
+    before = storage_identity(artifact, root)
+    value, protected = None, False
+    if artifact.data_type.import_path in {"pathlib.Path", "pathlib.PosixPath", "pathlib.WindowsPath"}:
+        from .native_exports import native_directory
+        from .components import read_checkpoint, read_export
+        with native_directory(artifact, root) as directory:
+            if (directory / "checkpoint.manifest.json").is_file():
+                value, protected = read_checkpoint(directory).get("rights"), True
+            elif (directory / "export.manifest.json").is_file():
+                value, protected = read_export(directory).get("rights"), True
+            elif declared_type == "checkpoint":
+                protected = True
+    elif declared_type in {"CheckpointArtifact", "DatasetArtifact", "ExportArtifact"}:
+        body = artifact.load()
+        value, protected = body.get("rights") if isinstance(body, dict) else None, True
+    if storage_identity(artifact, root) != before:
+        raise BackendError("artifact_binding_denied", "Native rights evidence changed during inspection")
+    return {"rights_required": True, "rights": value} if protected else {}
+
+
 def output_descriptor(job: Path, run, node_id: str, output_port: str, artifact_id: str) -> tuple[dict, object]:
     request = read_json(job / "request.json")
     recipe = request["recipe"]
@@ -207,7 +230,12 @@ def output_descriptor(job: Path, run, node_id: str, output_port: str, artifact_i
                   "producer_recipe_id": recipe["recipe_id"], "producer_recipe_revision": recipe["revision"],
                   "producer_recipe_digest": recipe_provenance(recipe)["recipe_digest"],
                   "producer_model_version_ref": str(run.model_version.id) if run.model_version else None,
+                  "producer_production_eligible": recipe.get("execution", {}).get("purpose") != "smoke",
                   "producer_role": node.get("component", {}).get("role") or ("training" if node["kind"] == "model.train" else node["kind"])}
+    if node.get("component", {}).get("role") == "derivation" and port["type"] == "Path":
+        from .checkpoint_derivation import verify_native_output
+        descriptor["producer_production_eligible"] = verify_native_output(run, request, node, info, step, artifact)["production_eligible"]
+    descriptor.update(artifact_rights_descriptor(artifact, Path(request["root"]), port["type"]))
     from .native_cache import output_provenance
     descriptor["cache"] = output_provenance(step, run)
     return descriptor, artifact

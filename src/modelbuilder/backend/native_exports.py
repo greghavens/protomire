@@ -142,7 +142,14 @@ def _invoke(operation: str, payload: dict, root: Path, stack: ExitStack):
                     continue
                 checkpoint_path = Path(checkpoint_path)
                 if (checkpoint_path / "checkpoint.manifest.json").is_file():
-                    selected = identity(read_checkpoint(checkpoint_path))
+                    checkpoint_manifest = read_checkpoint(checkpoint_path)
+                    if checkpoint_manifest.get("rights") is not None and descriptor["manifest"].get("rights") != checkpoint_manifest["rights"]:
+                        raise ValueError("Export must preserve the selected checkpoint's complete upstream rights envelope")
+                    if nodes[record["node_id"]]["kind"] == "model.export":
+                        from .fixture_artifacts import selected_identity
+                        selected = selected_identity(checkpoint_manifest, nodes[record["node_id"]].get("parameters", {}).get("checkpoint_kind", "best"))
+                    else:
+                        selected = identity(checkpoint_manifest)
                 elif nodes[record["node_id"]]["kind"] == "model.export":
                     kind = nodes[record["node_id"]].get("parameters", {}).get("checkpoint_kind", "best")
                     filename = "best.pt" if kind == "best" else "checkpoint.pt"
@@ -155,9 +162,23 @@ def _invoke(operation: str, payload: dict, root: Path, stack: ExitStack):
             if not identities:
                 raise ValueError("Export selected checkpoint does not match a connected native checkpoint")
             provenance["selected_checkpoints"] = identities
+            provenance["rights"] = descriptor["manifest"].get("rights")
+            provenance["rights_usage_context"] = request["recipe"].get("extensions", {}).get("usage_context")
+            if operation == "model.export.package":
+                from .execution_rights import verify_artifact_authorization
+                authorization = payload.get("_execution_rights_authorization")
+                if not isinstance(authorization, dict) or authorization.get("usage_context") != provenance["rights_usage_context"]:
+                    raise ValueError("Export usage context differs from the actual native recipe")
+                checked = verify_artifact_authorization(authorization, provenance["rights"], "export")
+                from ..hub_rights import validate_notice_obligations
+                from ..models import ServiceError
+                try:
+                    validate_notice_obligations(checked["policies"], checked["admission"]["policy_ids"], descriptor["assets"], path)
+                except ServiceError as error:
+                    raise BackendError(error.code, error.message, error.details) from error
             descriptor = inspect_export(path, provenance)
             if operation == "model.export.package":
-                return package_export(path, root / "export-packages", descriptor, payload["expected_export_digest"])
+                return package_export(path, root / "export-packages", descriptor, payload["expected_export_digest"], rights_admission=checked["admission"])
             results.append(descriptor)
         except (OSError, ValueError, KeyError, TypeError, tarfile.TarError) as error:
             if operation != "model.export.list":

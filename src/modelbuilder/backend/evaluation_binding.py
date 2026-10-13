@@ -23,13 +23,15 @@ def pending_verification():
             "message": "Checkpoint identity and ownership are verified on explicit comparison or promotion"}
 
 
-def checkpoint_candidates(run, request, node_id, *, invocation_id=None):
+def checkpoint_candidates(run, request, node_id, *, invocation_id=None, derivation_depth=0):
     """Return proven connected checkpoint identities and their native owners.
 
     Only native Path checkpoints using the published manifest, plus the explicit
     built-in fixture format, are supported. No custom materializers or pickle.
     Boundary bindings must agree with immutable native execution provenance.
     """
+    if derivation_depth > 32:
+        raise ValueError("Derived checkpoint lineage exceeds its depth bound")
     recipe = request["recipe"]
     extra = getattr(getattr(run, "config", None), "extra", {})
     if (any(extra.get(key) != value for key, value in recipe_provenance(recipe).items())
@@ -52,7 +54,7 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None):
         raise ValueError("Evaluator was not in the executed node selection")
     root = Path(request["root"])
 
-    semantic_cache = {}
+    semantic_cache, rights_cache = {}, {}
 
     def semantic(artifact):
         key = (str(artifact.id), artifact.uri)
@@ -62,7 +64,13 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None):
         before = storage_identity(artifact, root)
         with native_directory(artifact, root) as directory:
             if (directory / "checkpoint.manifest.json").is_file():
-                checkpoint = identity(read_checkpoint(directory))
+                descriptor = read_checkpoint(directory)
+                if node["kind"] == "model.evaluate":
+                    from .fixture_artifacts import selected_identity
+                    checkpoint = selected_identity(descriptor, node.get("parameters", {}).get("checkpoint_kind", "best"))
+                else:
+                    checkpoint = identity(descriptor)
+                rights_cache[key] = descriptor.get("rights")
             elif node["kind"] == "model.evaluate":
                 kind = node.get("parameters", {}).get("checkpoint_kind", "best")
                 if kind not in {"best", "last"}:
@@ -87,11 +95,15 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None):
             binding = bound[0]
             # A checkpoint relay's run version is not necessarily the original
             # training owner. Until that lineage is available, do not guess.
-            if binding.get("producer_role") != "training" or not binding.get("producer_model_version_ref"):
-                raise ValueError("Bound checkpoint has no unambiguous training model owner")
+            if binding.get("producer_role") not in {"training", "derivation"} or not binding.get("producer_model_version_ref"):
+                raise ValueError("Bound checkpoint has no unambiguous native model owner")
             if storage_identity(artifact, root) != binding["content_sha256"]:
                 raise ValueError("Bound native checkpoint storage changed after admission")
-            return binding["producer_model_version_ref"], [binding]
+            eligible = binding.get("producer_production_eligible", True)
+            if binding.get("producer_role") == "derivation":
+                from .checkpoint_derivation import verify_bound_output
+                eligible = eligible and verify_bound_output(binding, request, artifact, depth=derivation_depth)["production_eligible"]
+            return binding["producer_model_version_ref"], [binding], eligible
         edges = [state] if state else [edge for edge in recipe["edges"] if edge["target_node"] == target and edge["target_port"] == port
                  and edge["source_node"] in selected]
         if len(edges) != 1:
@@ -106,10 +118,21 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None):
         produced = source_step.outputs.get(edge["source_port"], [])
         if len(produced) != 1 or str(produced[0].id) != str(artifact.id):
             raise ValueError("Native checkpoint input differs from its connected producer output")
+        if source["kind"] == "model.initialize":
+            if not run.model_version or getattr(getattr(source_step, "status", None), "value", None) == "cached":
+                raise ValueError("Initialization checkpoint native ownership is absent or cached")
+            return str(run.model_version.id), [], recipe.get("execution", {}).get("purpose") != "smoke"
         if source["kind"] == "model.train" or source.get("component", {}).get("role") == "training":
             if not run.model_version or getattr(getattr(source_step, "status", None), "value", None) == "cached":
                 raise ValueError("Checkpoint training version is absent or cached ownership is unsupported")
-            return str(run.model_version.id), []
+            ancestors, ancestor_errors = checkpoint_candidates(run, request, source["id"], invocation_id=source_info["invocation_id"], derivation_depth=derivation_depth + 1)
+            if ancestor_errors:
+                raise ValueError("Training checkpoint ancestry is unverified: " + "; ".join(ancestor_errors))
+            return str(run.model_version.id), [], recipe.get("execution", {}).get("purpose") != "smoke" and all(p.get("production_eligible", True) for p in ancestors)
+        if source.get("component", {}).get("role") == "derivation":
+            from .checkpoint_derivation import verify_native_output
+            lineage = verify_native_output(run, request, source, source_info, source_step, artifact, depth=derivation_depth)
+            return str(run.model_version.id), [], lineage["production_eligible"]
         if source["kind"] == "model.checkpoint":
             incoming = source_step.inputs.get("checkpoint", [])
             if len(incoming) != 1:
@@ -119,7 +142,7 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None):
             if str(incoming[0].project.id) != str(run.project.id) or semantic(incoming[0]) != semantic(artifact):
                 raise ValueError("Checkpoint relay content differs from its input")
             return owner(source["id"], "checkpoint", incoming[0], source_info, (*seen, target_info["invocation_id"]))
-        raise ValueError("Checkpoint producer does not establish a training model owner")
+        raise ValueError("Checkpoint producer does not establish a native model owner")
 
     candidates, errors = [], []
     for port in node.get("inputs", []):
@@ -134,7 +157,7 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None):
             # Calibration/export/dataset Paths are not checkpoints. Only skip
             # positively identified non-training producers; missing/ambiguous
             # lineage and explicit checkpoint types must still fail closed.
-            if len(roles) == 1 and roles[0] and roles[0] not in {"training", "model.train", "model.checkpoint"}:
+            if len(roles) == 1 and roles[0] and roles[0] not in {"training", "derivation", "model.train", "model.checkpoint"}:
                 continue
         artifacts = evaluator_step.inputs.get(port["name"], [])
         if len(artifacts) > 1:
@@ -145,10 +168,10 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None):
                 if str(artifact.project.id) != str(run.project.id):
                     raise ValueError("Checkpoint artifact belongs to another native project")
                 validate_native_type(artifact, "Path")
-                version, checkpoint_bindings = owner(node_id, port["name"], artifact, evaluator_info)
+                version, checkpoint_bindings, production_eligible = owner(node_id, port["name"], artifact, evaluator_info)
                 checkpoint = semantic(artifact)
                 candidates.append({"artifact_id": str(artifact.id), "input_port": port["name"], "identity": checkpoint,
-                                   "model_version_ref": version, "checkpoint_bindings": checkpoint_bindings})
+                                   "model_version_ref": version, "checkpoint_bindings": checkpoint_bindings, "production_eligible": production_eligible, "rights": rights_cache.get((str(artifact.id), artifact.uri))})
             except (BackendError, OSError, ValueError, KeyError, TypeError, AttributeError, tarfile.TarError) as error:
                 errors.append(str(error))
     return candidates, errors
@@ -160,7 +183,7 @@ def verify_checkpoint(record, candidates, errors):
     matching = [entry for entry in candidates if entry["identity"] == checkpoint]
     owners = {entry["model_version_ref"] for entry in matching}
     if len(owners) == 1 and not errors:
-        return {"verified": True, "identity": checkpoint,
+        return {"verified": True, "identity": checkpoint, "production_eligible": all(entry.get("production_eligible", True) for entry in matching),
                 "inputs": [{key: value for key, value in entry.items() if key != "checkpoint_bindings"} for entry in matching]}, next(iter(owners)), [binding for entry in matching for binding in entry["checkpoint_bindings"]]
     reason = ("Connected checkpoint ownership or identity could not be verified: " + "; ".join(errors) if errors else
               "Evaluation checkpoint does not match a connected native checkpoint" if not matching else

@@ -77,7 +77,7 @@ def authored_recipe(source):
             "inputs": [{"name": port, "type": "Path"} for port in inputs],
             "outputs": [{"name": output, "type": "dict" if role == "evaluation" else "Path"}],
             "parameters": parameters, "environment_ref": "default", "resource_request": {"gpu": 0},
-            "cache_policy": "disabled", "timeout": 90, "retry": {"max_attempts": 1, "backoff_seconds": 0}, "provenance": {},
+            "cache_policy": "disabled", "timeout": 90, "retry": {"max_attempts": 1, "backoff_seconds": 0}, "provenance": {"intended_use": "evaluate"} if role == "utility" else {},
             "component": {"id": "independent.calibrated." + entrypoint, "version": "1", "protocol": "modelbuilder.component/v1",
                 "role": role, "parameter_schema": {"type": "object"}, "capabilities": {"resume_modes": ["exact_state", "warm_start"] if role == "training" else [],
                     "checkpoint_events": False, "export_formats": ["pytorch"] if role == "export" else [], "frameworks": ["pytorch"]}}})
@@ -110,11 +110,14 @@ def authored_recipe(source):
 def test_native_calibrated_reference_resume_and_selected_export(tmp_path):
     source = tmp_path / "authored-repository"
     recipe = authored_recipe(source)
+    from tests.integration.native_fixture_support import synthetic_review, register_project_review
+    review = synthetic_review(recipe, "pending", source)
     backend = ZenMLBackend(tmp_path / "native", python_executable=sys.executable, source_root=source, trusted_code_roots=[str(source)])
     service = OperationService(tmp_path / "service.sqlite3", backend=backend, source_root=source)
     def call(operation, **payload):
         return service.invoke(operation, payload, OWNER)
     project = call("project.create", slug="calibrated-reference", model_name="One three-class model", recipe=recipe, idempotency_key="project")
+    register_project_review(service, review, project["project_id"])
     common = {"project_id": project["project_id"], "recipe_id": project["recipe_id"]}
     records = []
     def current():

@@ -280,3 +280,12 @@ PDF text ID, page hash and text hash across the native host and MCP. `researchDo
 acceptance script. The latest Chromium attempt stopped before page creation at
 an OS `socket() ... Operation not permitted` restriction. No security fallback
 was used, and no current native Code - OSS GUI acceptance is claimed.
+
+## Project research context
+
+The existing Research screen and shared HTTP/MCP service now expose bounded
+project context assembly and exact historical passage inspection. See
+[RESEARCH_CONTEXT.md](RESEARCH_CONTEXT.md) for the local lexical baseline,
+source/review/hash/rights contract, extensible indexer/retriever interfaces and
+remaining semantic, graph and external-harness acceptance gates. Retrieval
+never approves a proposal or executes a method.

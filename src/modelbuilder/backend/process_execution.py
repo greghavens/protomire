@@ -39,7 +39,7 @@ def context(spec: dict):
 
 
 def enabled(spec: dict) -> bool:
-    return spec.get("max_parallel_stages", 1) > 1 and not _CHILD
+    return (spec.get("max_parallel_stages", 1) > 1 or bool(spec.get("runner_environment"))) and not _CHILD
 
 
 def encode(value):
@@ -196,7 +196,11 @@ def execute(kind: str, inputs: dict, spec: dict):
     interrupted = False
     cancellation_started = None
     descendants = []
-    child = subprocess.Popen(isolated_command("modelbuilder.backend.process_execution", request, response),
+    launch = isolated_command("modelbuilder.backend.process_execution", request, response)
+    if spec.get("runner_environment"):
+        from .runner import command
+        launch = command(spec["runner_environment"]["python"], "modelbuilder.backend.process_execution", request, response)
+    child = subprocess.Popen(launch,
                              stdin=subprocess.DEVNULL, env=environment, start_new_session=False)
     try:
         ownership.update(pid=child.pid, identity=process_identity(child.pid))
@@ -259,6 +263,10 @@ def scoped_builtin(function):
         arguments = inspect.signature(function).bind(*args, **kwargs).arguments
         spec = arguments["spec"]
         if not enabled(spec):
+            from .execution_rights import verify_dispatch
+            rights_admission = verify_dispatch(spec, {key: value for key, value in arguments.items() if key != "spec"})
+            if spec.get("rights_authorization"):
+                metadata({"rights_admission": rights_admission})
             return function(*args, **kwargs)
         from .worker import context
         context(spec)

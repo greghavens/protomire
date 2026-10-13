@@ -178,7 +178,9 @@ def test_safe_urls(url):
 
 def test_profile_paths_follow_client_conventions(tmp_path, monkeypatch):
     monkeypatch.setenv("CODEX_HOME", str(tmp_path / "custom-codex"))
-    assert setup.config_path("codex", None, None) == tmp_path / "custom-codex/config.toml"
+    with pytest.raises(setup.SetupError, match="Global configuration"):
+        setup.config_path("codex", None, None)
+    assert setup.config_path("codex", None, tmp_path) == tmp_path / ".codex/config.toml"
     assert setup.config_path("claude", None, tmp_path) == tmp_path / ".mcp.json"
     with pytest.raises(setup.SetupError):
         setup.config_path("claude", None, None)

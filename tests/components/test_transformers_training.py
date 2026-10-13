@@ -95,8 +95,15 @@ def local(tmp_path):
     context = {"dependencies": paths, "source": source_identity, "device": "cpu",
         "identities": {key: key for key in ["architecture", "source", "dependencies", "training", "environment", "data"]},
         "output_dir": str(tmp_path / "trained")}
+    from tests.components.rights_test_support import local_review
+    inventory = [{"path": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                  "size_bytes": path.stat().st_size} for path in [*(Path(value) for value in paths.values()), data]]
+    policy, rights = local_review(project["project_id"], commit=identity(inventory), source_files=inventory,
+                                 repo_id="urn:modelbuilder:test-authored-tiny-transformers")
+    context["declared_artifact_rights"] = rights
+    splits = {key: {**value, "rights": rights} for key, value in splits.items()}
     try:
-        yield {"tmp": tmp_path, "context": context, "parameters": parameters, "inputs": splits,
+        yield {"rights": rights, "policy": policy, "tmp": tmp_path, "context": context, "parameters": parameters, "inputs": splits,
                "model": model, "source": source, "registry": registry, "record": record, "project": project, "service": service}
     finally:
         service.store.close()
@@ -117,6 +124,8 @@ def test_actual_trainer_weights_metrics_and_fresh_export(local, monkeypatch):
     checkpoint = read_checkpoint(trained)
     assert checkpoint["step"] == 3 and checkpoint["state"] == ["model"]
     assert checkpoint["resume_modes"] == ["warm_start"]
+    assert checkpoint["rights"]["sources"] == local["rights"]["sources"]
+    assert checkpoint["rights"]["parent_rights_digests"] and not checkpoint["rights"]["unresolved"]
     model, _, _ = transformers_loader.load(trained)
     assert any(not torch.equal(value, model.state_dict()[key]) for key, value in local["model"].state_dict().items())
     evaluated = adapters.evaluate(inputs={"trained": trained, "data": local["inputs"]["data"]},
@@ -246,7 +255,11 @@ def test_registered_data_native_zenml_train_evaluate_export(local, streaming, li
         stream_reference = local["tmp"] / "stream-reference.json"
         stream_reference.write_text(json.dumps(streamed["stream"]["reference"]))
         dependency_paths["stream-reference"] = str(stream_reference)
-    dependencies = [{"id": key, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest()} for key, path in dependency_paths.items()]
+    dependencies = [{"id": key, "kind": "model" if key in local["context"]["dependencies"] else "dataset",
+                     "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+                     "metadata": {"rights": local["rights"], **({"dataset_reference": json.loads(Path(path).read_text())}
+                                  if key in {"dataset-reference", "stream-reference"} else {})}}
+                    for key, path in dependency_paths.items() if not (streaming and key == "dataset-reference")]
     nodes, edges = [], []
     for name, split, target, port in [("training_data", "train", "train", "train"), ("evaluation_data", "dev", "evaluate", "data")]:
         nodes.append({"id": name, "kind": "dataset.version.import", "timeout": 120, "inputs": [], "outputs": [{"name": "data", "type": "dict"}],
@@ -267,8 +280,13 @@ def test_registered_data_native_zenml_train_evaluate_export(local, streaming, li
     recipe = {"recipe_id": "native-trainer", "revision": 1, "source": local["context"]["source"], "nodes": nodes,
               "edges": edges, "external_dependencies": dependencies,
               "evaluation": {"live": {"enabled": live, "max_concurrency": 1, "timeout_seconds": 60}}}
+    from tests.components.rights_test_support import authorize_test_recipe
+    from tests.integration.native_fixture_support import synthetic_review
+    source_review = synthetic_review(recipe, pid, local["source"])
+    policies = {review["policy_id"]: review for review in (source_review, local["policy"])}
+    authorization = authorize_test_recipe(local["tmp"], recipe, policies, project_id=pid)
     job = local["tmp"] / "job"
-    write_json(job / "request.json", {"recipe": recipe, "project_id": pid, "operation_id": "native-trainer", "run_name": "native-trainer",
+    write_json(job / "request.json", {**authorization, "recipe": recipe, "project_id": pid, "operation_id": "native-trainer", "run_name": "native-trainer",
         "source_root": str(local["source"]), "trusted_code_roots": [str(local["source"])], "dependency_paths": dependency_paths, "dataset_source_guards": guards})
     env = {**os.environ, "ZENML_CONFIG_PATH": str(local["tmp"] / "zenml"), "ZENML_LOCAL_STORES_PATH": str(local["tmp"] / "stores"),
            "ZENML_ANALYTICS_OPT_IN": "false", "ZENML_LOGGING_VERBOSITY": "ERROR", "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "OMP_NUM_THREADS": "1"}
@@ -279,6 +297,8 @@ def test_registered_data_native_zenml_train_evaluate_export(local, streaming, li
     checkpoints = list((job / "outputs/train/checkpoints").glob("*/checkpoint.manifest.json"))
     assert len(checkpoints) == 3
     manifest = read_export(job / "outputs/export")
+    assert all(source in manifest["rights"]["sources"] for source in local["rights"]["sources"])
+    assert not manifest["rights"]["unresolved"]
     assert manifest["verification"]["fresh_process"]
     inspect = local["tmp"] / "inspect_native.py"
     inspect.write_text("""import json,sys
@@ -314,8 +334,9 @@ def stream_input(local, split="train"):
     if "stream_record" not in local:
         local["stream_record"] = local["registry"].register(local["project"]["project_id"], manifest)
     registered = local["stream_record"]
-    return local["registry"].read_split(local["project"]["project_id"], registered["dataset_id"], 1, split,
+    value = local["registry"].read_split(local["project"]["project_id"], registered["dataset_id"], 1, split,
         purpose="training" if split == "train" else "evaluation")
+    return {**value, "rights": local["rights"]}
 
 
 def test_streamed_trainer_observes_actual_batch_lineage_without_prefetch(local):

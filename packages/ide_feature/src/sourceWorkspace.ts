@@ -16,8 +16,9 @@ export async function matchLocalSource(folder:vscode.Uri,sources:SourceChoice[])
 export async function chooseLocalSource(client:ServiceTransport,projectId?:string):Promise<{source:SourceChoice;folder:vscode.Uri}|undefined> {
   const {sources}=await client.invoke('project.source.list',projectId?{project_id:projectId}:{});
   const opened=vscode.workspace.workspaceFolders??[];
-  if(opened.length>1)throw new Error('Open one source folder for this model project before binding it.');
-  const folder=opened[0]?.uri??(await vscode.window.showOpenDialog({title:'Open model source folder',openLabel:'Use source folder',canSelectMany:false,canSelectFiles:false,canSelectFolders:true}))?.[0];
+  const selected=opened.length>1?(await vscode.window.showQuickPick(opened.map(folder=>({label:folder.name,description:folder.uri.fsPath,uri:folder.uri})),{title:'Choose the model source folder'}))?.uri:opened[0]?.uri;
+  if(opened.length>1&&!selected)return;
+  const folder=selected??(await vscode.window.showOpenDialog({title:'Open model source folder',openLabel:'Use source folder',canSelectMany:false,canSelectFiles:false,canSelectFolders:true}))?.[0];
   if(!folder)return;
   return {source:await matchLocalSource(folder,sources??[]),folder};
 }

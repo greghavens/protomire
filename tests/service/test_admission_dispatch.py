@@ -4,7 +4,7 @@ The gates below represent slow preflight and the last pre-spawn boundary. No
 native models, runtime probes, subprocess workers, or publication run here.
 """
 from concurrent.futures import ThreadPoolExecutor
-from copy import deepcopy
+from copy import copy, deepcopy
 from threading import Event, Lock
 
 import pytest
@@ -130,6 +130,43 @@ def pending_record(service, project_id):
     assert records[0]["status"] == "pending"
     assert records[0].get("backend_run_id") is None
     return records[0]
+
+
+@pytest.mark.parametrize("operation", ["run.plan", "run.submit", "run.resume"])
+def test_each_admission_path_receives_request_local_rights_authority(tmp_path, operation):
+    """Nonexecuting routing proof: submit/resume must not bypass the Hub resolver."""
+    resolutions = []
+
+    class RightsAwareBackend(ControlledBackend):
+        def with_execution_rights(self, *, project_id, policies, policy_store_path):
+            scoped = copy(self)
+            scoped.rights_authority = (project_id, deepcopy(policies), policy_store_path)
+            resolutions.append(scoped.rights_authority)
+            return scoped
+
+        def check_authority(self, payload):
+            assert self.rights_authority == (payload["project_id"], {}, self.service.store.path)
+
+        def prepare_execution(self, operation, payload):
+            self.check_authority(payload)
+            return super().prepare_execution(operation, payload)
+
+        def invoke(self, operation, payload, actor):
+            if operation == "run.plan":
+                self.check_authority(payload)
+            return super().invoke(operation, payload, actor)
+
+    backend = RightsAwareBackend(block_at=None)
+    service = OperationService(tmp_path / "service.sqlite3", backend=backend)
+    backend.service = service
+    try:
+        payload = seed(service, operation)
+        result = service.invoke(operation, payload, OWNER)
+        assert result["project_id"] == payload["project_id"]
+        assert resolutions == [(payload["project_id"], {}, service.store.path)]
+        assert not hasattr(backend, "rights_authority")
+    finally:
+        service.store.close()
 
 
 @pytest.mark.parametrize("operation", ["run.plan", "run.submit", "run.resume"])

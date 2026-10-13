@@ -35,9 +35,27 @@ across restarts. A symlink/replacement is rejected or loses execution trust.
 MCP is a mandatory bundled interface. An optional coding assistant is a separate
 choice. Each assistant starts its own stdio bridge for one selected project;
 its short-lived credential is read-only and project-scoped. Tokens never go into
-assistant config files. Assistant mutation/execution is deliberately unavailable
-until service-enforced human approval grants exist. This is not equivalent to
-the IDE's owner grant or to authenticated vendor-assistant acceptance.
+assistant config files. Mutation/execution requests enter an exact-request queue.
+The native owner reviews the project, requester, payload and authoritative linked
+material, then approves or denies that one request. Approval uses an internal,
+one-use Actor capability; it never upgrades the assistant bearer. Changed project
+state, changed review material, expiry, withdrawal and replay fail closed. A
+bounded asynchronous Hub capability remains revocable until that exact transfer
+ends. One native publication review authorizes a checked internal approval and
+start; approval-only operations never imply an upload. Already submitted native
+jobs require their ordinary cancellation operation, and transmitted data cannot
+be assumed undone. Restart never automatically replays an uncertain operation.
+
+This increment does not grant standing recurring-watch authority. That requires
+a separately reviewed policy; a one-shot bridge request fails closed. Vendor
+assistant authentication and end-to-end paid model acceptance remain separate.
+See [exact request review](REVIEWED_REQUESTS.md) for lifetime and audit details.
+
+These controls constrain requests through the managed MCP/API bridge. They do
+not sandbox an installed coding assistant with unrestricted same-user shell or
+filesystem access. Owner-only file modes protect against other OS users, not
+another process running under the same user ID. Vendor trust and permissions
+remain part of the deployment boundary.
 
 Windows native local training remains unsupported by the current backend.
 The Windows installer recipe and storage DACL implementation require real
@@ -99,6 +117,10 @@ Builder input JSON uses these fields (paths are relative to the JSON file):
   path; later launches never reset an existing user's checkout.
 - `service`: `python` archive description and application `wheel` description
 - `backend`: the same pair for targets with a pinned local backend profile
+- `hub`: a separate Python archive (no application wheel), required on Linux,
+  macOS and Windows x64/arm64. It installs the complete exact target Hub/keyring
+  hash lock from the offline wheelhouse. Linux armhf has no reviewed Hub binary
+  profile and reports Hub unavailable; there is no architecture fallback.
 - Optional `mlx` on Apple Silicon: a separate Python archive, installed from the
   frozen MLX hash-lock. It never modifies the service/backend environment.
 - `git`: archive description for self-contained native Git
@@ -106,7 +128,7 @@ Builder input JSON uses these fields (paths are relative to the JSON file):
   (relative to the extracted archive), and `notice` (relative to runtime output,
   for example `notices/CPython-LICENSE.txt`). Python archives also declare
   `version`, matching `.python-version` exactly. macOS archives also declare
-  `minimum_os`; the builder computes mandatory service/backend minima independently and stamps
+  `minimum_os`; the builder computes mandatory service/backend/Hub minima independently and stamps
   that base floor in Info.plist. Optional MLX keeps its own minimum OS and is
   not configured or imported on older hosts. The reviewed MLX metal profile
   needs macOS 26; that does not raise the base app minimum to macOS 26.
@@ -146,3 +168,49 @@ hosted build or public artifact upload is configured by these scripts.
 For existing source-checkout development, the previous manual service connection
 remains available. `MODELBUILDER_DEVELOPMENT=1` is an explicit launcher-level
 escape hatch for engineers; it is not an end-user first-run requirement.
+
+
+### Native Hub settings
+
+The managed application wires its bundled Hub worker automatically. Public Hub
+inspection needs no account. Use **ModelBuilder: Configure project Hub account
+and publication folder** from the command palette or the Hub sidebar link.
+Select a native publication folder or connect an account with a native password
+input. The confirmation explains persistent OS-keyring storage, project scope,
+and exact folder identity. Only supported OS-backed keyrings are accepted;
+missing, locked or plaintext-fallback stores block setup. Linking an existing
+keyring service/username reference is also supported.
+
+A token goes directly from the native host to a one-shot bundled keyring helper
+on stdin, never through MCP, HTTP, command arguments, recipes, logs or the
+settings database. The app stores only an opaque account reference and a
+canonical folder's device/inode identity in private local app state. Each newly
+stored credential gets a fresh lookup name. Token validity is not checked with
+Hugging Face during setup. A failed or uncertain keyring write is not linked;
+if storage succeeds but settings fail, the app reports the partial outcome.
+Disconnecting removes the project's app reference, not the OS-keyring item;
+the confirmation explains how to remove that retained item in the OS manager.
+
+Changing settings invalidates existing project publication previews and
+approvals and requests cancellation of active transfers. It cannot undo files
+already transmitted. Exact publication review and service-side grants remain
+required. Directory replacement or symlink redirection requires another native
+folder review. These controls constrain the managed bridge, not other programs
+with unrestricted access under the same OS user.
+
+The Hub lock, interpreter provenance and helper files are sealed into the
+runtime inventory. Sealing physically moves the payload, checks the exact full
+installed Hub/keyring closure, then launches the actual SDK worker for a local
+card inspection with network/implicit authentication disabled. This is separate
+from native clean-machine installer acceptance, OS-keyring acceptance and real
+provider acceptance, which remain required platform-specific gates.
+
+Native Hub settings also expose a project-scoped per-transfer size limit. The
+conservative default remains 16 GiB; explicit native review may select an exact
+integer limit up to 1 PiB, using bytes or whole binary units such as `64 GiB` or
+`2 TiB`. Another project's limit is unchanged. Raising this ceiling allocates
+no disk space and authorizes no transfer. Every operation still checks its exact
+planned bytes and available/reserved space at start and retry. Lowering or
+changing the setting invalidates old publication previews/approvals and requests
+cancellation of active project transfers, with the same reconciliation caveat as
+account changes.

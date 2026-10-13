@@ -156,6 +156,7 @@ def _prepare(service, op, payload, actor, payload_hash, request_id):
                 if backend is None:
                     raise ServiceError("capability_unavailable", "No execution backend has been configured", status_code=503)
                 backend = resolve_backend(service, backend, enriched)
+                backend = service.hub.resolve_backend(backend, enriched)
                 method = getattr(backend, "prepare_execution", None)
                 if not callable(method):
                     raise ServiceError("capability_unavailable", "Execution backend requires separated preparation and fenced dispatch", status_code=503)

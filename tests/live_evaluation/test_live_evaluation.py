@@ -3,10 +3,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 import time
 
 import psutil
 import pytest
+
+from tests.components.rights_test_support import local_review, USAGE_CONTEXT, authorize_test_recipe
 
 from modelbuilder.backend.common import write_json
 from modelbuilder.backend.live_evaluation import (
@@ -41,19 +44,36 @@ def evaluate(*, inputs, parameters, context):
 '''
 
 
+def fixture_review():
+    data = Path(__file__).read_bytes()
+    sha = hashlib.sha256(data).hexdigest()
+    return local_review(commit=sha, repo_id="urn:modelbuilder:test:live-evaluation",
+        source_files=[{"path": "test_live_evaluation.py", "sha256": sha, "size_bytes": len(data)}])
+
+
+def authorize_evaluator(tmp_path, configured):
+    policy, _ = fixture_review()
+    spec = configured["spec"]
+    recipe = {"source": spec["source"], "nodes": [spec["component_node"]], "resources": [],
+              "extensions": {"usage_context": USAGE_CONTEXT}}
+    spec.update(authorize_test_recipe(tmp_path, recipe, {policy["policy_id"]: policy}))
+    return configured
+
+
 def evaluator(tmp_path, **parameters):
     source = tmp_path / "source"
     source.mkdir(exist_ok=True)
     path = source / "harness.py"
     path.write_text(HARNESS)
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    return {"kind": "component", "checkpoint_port": "checkpoint", "inputs": {}, "spec": {
+    configured = {"kind": "component", "checkpoint_port": "checkpoint", "inputs": {}, "spec": {
         "parameters": parameters, "source_root": str(source), "trusted_code_roots": [str(source)],
         "source": {"files": [{"path": "harness.py", "sha256": digest}]},
-        "component_node": {"id": "eval", "outputs": [{"name": "metrics", "type": "dict"}],
-                           "component": {"protocol": "modelbuilder.component/v1"},
+        "component_node": {"id": "eval", "kind": "component.run", "outputs": [{"name": "metrics", "type": "dict"}],
+                           "component": {"protocol": "modelbuilder.component/v1", "role": "evaluation"},
                            "implementation_ref": {"path": "harness.py", "sha256": digest,
                                                   "module": "live_test_harness", "entrypoint": "evaluate"}}}}
+    return authorize_evaluator(tmp_path, configured)
 
 
 def checkpoint(tmp_path, step=1, value=1.0):
@@ -62,7 +82,7 @@ def checkpoint(tmp_path, step=1, value=1.0):
     write_json(root / "state.json", {"step": step, "value": value})
     write_json(root / "checkpoint.manifest.json", {
         "schema_version": "modelbuilder.checkpoint/v1", "step": step, "purpose": "last",
-        "resume_modes": ["warm_start"], "state": ["model"],
+        "resume_modes": ["warm_start"], "state": ["model"], "rights": fixture_review()[1],
         "identities": {k: "test" for k in ("architecture", "source", "dependencies", "training", "environment")},
         "assets": [{"path": "state.json", "sha256": hashlib.sha256((root / "state.json").read_bytes()).hexdigest()}]})
     return root

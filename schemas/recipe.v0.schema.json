@@ -223,6 +223,76 @@
           "maximum": 8,
           "minimum": 1,
           "type": "integer"
+        },
+        "purpose": {
+          "enum": [
+            "production",
+            "smoke"
+          ]
+        },
+        "smoke": {
+          "additionalProperties": false,
+          "properties": {
+            "budget_contract_digests": {
+              "additionalProperties": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "limits": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "limit_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maximum": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "node_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "unit": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "node_id",
+                  "limit_id",
+                  "unit",
+                  "maximum"
+                ],
+                "type": "object"
+              },
+              "maxItems": 1000,
+              "minItems": 1,
+              "type": "array"
+            },
+            "parent_recipe_digest": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "parent_recipe_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "schema": {
+              "const": "modelbuilder.smoke/v1"
+            }
+          },
+          "required": [
+            "schema",
+            "parent_recipe_digest",
+            "parent_recipe_revision",
+            "limits",
+            "budget_contract_digests"
+          ],
+          "type": "object"
         }
       },
       "type": "object"
@@ -382,6 +452,61 @@
                     },
                     "type": "array",
                     "uniqueItems": true
+                  },
+                  "smoke_budget": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "limits": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "minimum": {
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "parameter_path": {
+                              "items": {
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "maxItems": 16,
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "semantics": {
+                              "const": "absolute_integer_cap"
+                            },
+                            "unit": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "unit",
+                            "parameter_path",
+                            "semantics",
+                            "minimum"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 32,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "schema": {
+                        "const": "modelbuilder.smoke-budget/v1"
+                      }
+                    },
+                    "required": [
+                      "schema",
+                      "limits"
+                    ],
+                    "type": "object"
                   }
                 },
                 "required": [
@@ -411,8 +536,110 @@
                   "export",
                   "dataset",
                   "model",
-                  "utility"
+                  "utility",
+                  "derivation",
+                  "scientific_gate"
                 ]
+              },
+              "runner": {
+                "additionalProperties": false,
+                "properties": {
+                  "contracts": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "checkpoint": {
+                        "const": "modelbuilder.checkpoint/v1"
+                      },
+                      "dataset": {
+                        "const": "native-component-inputs"
+                      },
+                      "evaluation": {
+                        "const": "modelbuilder.evaluation/v1"
+                      },
+                      "model": {
+                        "const": "source-owned-native"
+                      }
+                    },
+                    "required": [
+                      "model",
+                      "dataset",
+                      "checkpoint",
+                      "evaluation"
+                    ],
+                    "type": "object"
+                  },
+                  "launcher": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "python",
+                          "accelerate",
+                          "torchrun",
+                          "deepspeed"
+                        ]
+                      },
+                      "processes": {
+                        "maximum": 1024,
+                        "minimum": 1,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "processes"
+                    ],
+                    "type": "object"
+                  },
+                  "protocol": {
+                    "const": "modelbuilder.runner/v1"
+                  },
+                  "stack": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "category": {
+                          "enum": [
+                            "framework",
+                            "training-library",
+                            "fine-tuning-library",
+                            "launcher",
+                            "distributed-strategy"
+                          ]
+                        },
+                        "distribution": {
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+                          "type": "string"
+                        },
+                        "id": {
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+                          "type": "string"
+                        },
+                        "version": {
+                          "pattern": "^[0-9][A-Za-z0-9.!+_-]{0,127}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "category",
+                        "distribution",
+                        "version"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 32,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "protocol",
+                  "stack",
+                  "launcher",
+                  "contracts"
+                ],
+                "type": "object"
               },
               "version": {
                 "minLength": 1,

@@ -23,7 +23,7 @@ from platform_config import detect_target
 from single_app import ROOT, digest, seal_runtime, safe_version, macos_floor
 
 sys.path.insert(0, str(ROOT / "scripts"))
-from dependency_profiles import backend_reason, lock_path  # noqa: E402
+from dependency_profiles import backend_reason, lock_path, HUB_TARGETS  # noqa: E402
 
 
 def verified_input(base: Path, item: dict) -> Path:
@@ -54,19 +54,25 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
     if output.exists():
         raise ValueError("Runtime output already exists; choose a fresh staging directory")
     # Validate all heavyweight inputs before changing staging state.
+    if inputs.get("source_bundle_shallow"):
+        verified_input(base, inputs["source_bundle_shallow"])
     components = ["service"] + ([] if backend_reason(target) else ["backend"])
+    if target in HUB_TARGETS:
+        if not inputs.get("hub"):
+            raise ValueError("The app requires its exact target Hub/keyring worker input")
+        components.append("hub")
+    elif inputs.get("hub"):
+        raise ValueError("No reviewed Hub/keyring profile for this target")
     if inputs.get("mlx"):
         if target != "darwin-arm64":
             raise ValueError("MLX payloads require the reviewed Apple Silicon target")
         components.append("mlx")
     for component in components:
         verified_input(base, inputs[component]["python"])
-        if component != "mlx":
+        if component not in {"mlx", "hub"}:
             verified_input(base, inputs[component]["wheel"])
     verified_input(base, inputs["git"])
     verified_input(base, inputs["source_bundle"])
-    if inputs.get("source_bundle_shallow"):
-        verified_input(base, inputs["source_bundle_shallow"])
     wheelhouse = Path(inputs["wheelhouse"])
     if not wheelhouse.is_absolute():
         wheelhouse = base / wheelhouse
@@ -85,15 +91,16 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
     expected_python = (ROOT / ".python-version").read_text().strip()
     for component in components:
         if inputs[component]["python"].get("version") != expected_python:
-            raise ValueError("Both runtime archives must declare the exact repository Python pin")
+            raise ValueError("All runtime archives must declare the exact repository Python pin")
     output.mkdir(parents=True)
     manifest = {"schema_version": 1, "target": target, "source_commit": inputs["source_commit"],
                 "source_bundle": "source.bundle", "application_version": application_version, "python_version": expected_python, "native_local_backend": backend_reason(target) or "requires_native_acceptance"}
+    manifest["hub_status"] = "bundled" if target in HUB_TARGETS else "unsupported_target"
     shutil.copytree(notices, output / "notices")
     for component in components:
         item = inputs[component]
         interpreter = extract_input(base, item["python"], output / (component + "-python"))
-        wheel = verified_input(base, item["wheel"]) if component != "mlx" else None
+        wheel = verified_input(base, item["wheel"]) if component not in {"mlx", "hub"} else None
         if wheel and not wheel.name.endswith(".whl"):
             raise ValueError("Application installs require an inert verified wheel, never a source build hook")
         lock = ROOT / "requirements/profiles/mlx-darwin-arm64.lock" if component == "mlx" else lock_path(ROOT, component, target)
@@ -114,6 +121,10 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
         subprocess.run([str(interpreter), "-I", "-m", "pip", "--isolated", "check"], env=env, check=True)
         manifest[component + "_python"] = interpreter.relative_to(output).as_posix()
         manifest[component + "_lock_sha256"] = digest(lock)
+        if component == "hub":
+            (output / "profiles").mkdir(exist_ok=True)
+            shutil.copyfile(lock, output / "profiles" / lock.name)
+            manifest["hub_profile"] = "profiles/" + lock.name
         if wheel:
             manifest[component + "_wheel_sha256"] = item["wheel"]["sha256"]
         manifest[component + "_python_provenance"] = {"source_url": item["python"]["source_url"], "archive_sha256": item["python"]["sha256"], "notice": item["python"]["notice"], "version": item["python"]["version"]}
@@ -126,7 +137,7 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
         manifest["source_bundle_shallow"] = "source.bundle.shallow"
     if target.startswith("darwin-"):
         floors = {component: macos_floor(output / (component + "-python"), inputs[component]["python"].get("minimum_os")) for component in components}
-        manifest["minimum_os"] = max((floor for component, floor in floors.items() if component != "mlx"), key=lambda value: tuple(map(int, value.split("."))))
+        manifest["minimum_os"] = max((floor for component, floor in floors.items() if component not in {"mlx", "hub"}), key=lambda value: tuple(map(int, value.split("."))))
         if "mlx" in floors:
             manifest["mlx_minimum_os"] = floors["mlx"]
     (output / "runtime.json").write_text(json.dumps(manifest, indent=2) + "\n")

@@ -1,0 +1,2 @@
+huggingface-hub==0.36.2
+keyring==25.6.0

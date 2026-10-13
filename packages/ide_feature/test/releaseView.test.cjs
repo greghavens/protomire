@@ -39,3 +39,42 @@ test('a changed evaluator catalog invalidates an already displayed comparison',(
  h.view.result('run.status',{backend_run_id:'a',metrics:{evaluation_catalog:[entry('first'),entry('second')]}});
  assert.doesNotMatch(h.compare.textContent,/Compatible evidence/);assert(!button(h.compare,'Record decision'));
 });
+
+function policyHarness(custom=false){
+ const h=harness();h.catalog.push(...['scientific.policy.get','run.artifacts'].map(name=>({name,authorized:true})));
+ h.snapshot.project.scientific_policy_digest='policy-digest';h.view.update({...h.snapshot,project:{...h.snapshot.project}},h.catalog);h.select();
+ // Snapshot is a shared mutable fixture: explicitly choose the pinned digest.
+ const digest=all(h.compare).find(n=>n.tagName==='input'&&n.placeholder?.startsWith('Exact registered'));digest.value='policy-digest';digest.oninput();
+ button(h.compare,'Load scientific policy').onclick();assert.equal(h.sent.at(-1).operation,'scientific.policy.get');
+ const p={id:'retention',version:'1',rules:[{id:'quality',metric:'validation_loss'},{id:'retention',metric:'retention'}],...(custom?{evaluator:{component_digest:'pin'}}:{})};
+ h.view.result('scientific.policy.get',{project_id:'p',policy_digest:'policy-digest',policy:p});
+ for(const id of ['a','b'])h.view.result('run.status',{backend_run_id:id,evaluations:p.rules.map(r=>({backend_run_id:id,node_id:'eval-'+r.id,output_port:'metrics',artifact_id:id+'-'+r.id,metric:r.metric}))});
+ return h;
+}
+test('scientific comparison uses exact loaded policy and all actual per-rule evaluation selectors',()=>{
+ const h=policyHarness();button(h.compare,'Compare selected runs').onclick();const p=h.sent.at(-1).payload;
+ assert.equal(p.scientific_policy_digest,'policy-digest');assert.equal(p.scientific_evaluations.length,2);
+ assert.equal(p.scientific_evaluations[1].baseline.artifact_id,'a-retention');assert.equal(p.scientific_evaluations[1].candidate.artifact_id,'b-retention');
+ assert.match(h.compare.textContent,/Baseline a/);assert.match(h.compare.textContent,/Candidate b/);
+});
+test('custom policy selects exact actual native gate artifact and rejects its stale response',()=>{
+ const h=policyHarness(true);button(h.compare,'Compare selected runs').onclick();assert.match(h.errors.at(-1),/native scientific gate/);
+ const gateRun=all(h.compare).find(n=>n.tagName==='select'&&n.children.some(c=>c._text==='Choose completed gate run'));gateRun.value='b';gateRun.onchange();button(h.compare,'Load gate result artifacts').onclick();assert.equal(h.sent.at(-1).payload.include_binding_descriptors,true);
+ const artifact={artifact_id:'gate-result',node_id:'gate',binding_descriptor:{producer_role:'scientific_gate',backend_run_id:'b',source_node_id:'gate',source_port:'result',artifact_id:'gate-result',content_sha256:'original'}};
+ h.view.result('run.artifacts',{backend_run_id:'b',artifacts:[artifact]});let choice=all(h.compare).find(n=>n.tagName==='select'&&n.children.some(c=>c.value==='gate-result'));choice.value='gate-result';choice.onchange();button(h.compare,'Compare selected runs').onclick();const old=h.sent.at(-1).payload;
+ assert.deepEqual(old.scientific_gate,{backend_run_id:'b',node_id:'gate',output_port:'result',artifact_id:'gate-result',content_sha256:'original'});
+ h.view.result('run.artifacts',{backend_run_id:'b',artifacts:[{...artifact,binding_descriptor:{...artifact.binding_descriptor,content_sha256:'changed'}}]});h.view.result('run.compare',compared,old);assert.doesNotMatch(h.compare.textContent,/Compatible evidence/);
+});
+test('accepted scientific decision preserves policy, all rule evidence and custom gate selector',()=>{
+ const h=policyHarness();button(h.compare,'Compare selected runs').onclick();const req=h.sent.at(-1).payload;
+ const scientific_result={policy_digest:req.scientific_policy_digest,digest:'scientific-result',passed:true,native_verified:true,outcome:'passed',rules:req.scientific_evaluations.map(r=>({rule_id:r.rule_id,evidence:{baseline:{selector:r.baseline},candidate:{selector:r.candidate}}}))};
+ h.view.result('run.compare',{...compared,evaluations:req.evaluations,scientific_result},req);
+ const rationale=all(h.compare).find(n=>n.tagName==='textarea');rationale.value='All declared criteria passed';rationale.oninput();all(h.compare).find(n=>n.tagName==='form').onsubmit({preventDefault(){}});
+ const rule=h.sent.at(-1).payload.selection_rule;assert.equal(rule.scientific_result_digest,'scientific-result');assert.equal(rule.scientific_policy_digest,'policy-digest');assert.deepEqual(rule.scientific_evaluations,req.scientific_evaluations);
+});
+test('policy changes invalidate previous comparison, and a late policy from another project is ignored',()=>{
+ const h=policyHarness();button(h.compare,'Compare selected runs').onclick();const req=h.sent.at(-1).payload;
+ const digest=all(h.compare).find(n=>n.tagName==='input'&&n.placeholder?.startsWith('Exact registered'));digest.value='replacement';digest.oninput();h.view.result('run.compare',compared,req);assert.doesNotMatch(h.compare.textContent,/Compatible evidence/);
+ h.view.result('scientific.policy.get',{project_id:'other',policy_digest:'replacement',policy:{id:'foreign',version:'1',rules:[]}});assert.doesNotMatch(h.compare.textContent,/foreign/);
+ button(h.compare,'Compare selected runs').onclick();assert.match(h.errors.at(-1),/Load the exact scientific policy/);
+});

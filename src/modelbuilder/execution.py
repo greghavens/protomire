@@ -8,10 +8,12 @@ from __future__ import annotations
 import copy
 from jsonschema import Draft202012Validator
 
+from .smoke import SMOKE_SCHEMA
+
 MAX_PARALLEL_STAGES = 8
 RECIPE_EXECUTION_SCHEMA = {"type": "object", "additionalProperties": False,
     "description": "Canonical per-run stage scheduling. Omitted settings preserve sequential execution.",
-    "properties": {"max_parallel_stages": {"type": "integer", "minimum": 1,
+    "properties": {"purpose": {"enum": ["production", "smoke"]}, "smoke": SMOKE_SCHEMA, "max_parallel_stages": {"type": "integer", "minimum": 1,
         "maximum": MAX_PARALLEL_STAGES, "default": 1,
         "description": "Maximum simultaneously executing independent native stages. Iterations remain sequential barriers; this is not a resource reservation."}}}
 
@@ -24,8 +26,13 @@ def max_parallel_stages(recipe: dict) -> int:
     same strict check, including callers that bypass recipe normalization.
     """
     settings = recipe.get("execution", {})
-    if not isinstance(settings, dict) or set(settings) - {"max_parallel_stages"}:
-        raise ValueError("Recipe execution must contain only max_parallel_stages")
+    if not isinstance(settings, dict) or set(settings) - {"max_parallel_stages", "purpose", "smoke"}:
+        raise ValueError("Recipe execution contains unknown fields")
+    errors = list(Draft202012Validator(RECIPE_EXECUTION_SCHEMA).iter_errors(settings))
+    if errors:
+        raise ValueError("Invalid canonical execution settings: " + errors[0].message)
+    if (settings.get("purpose") == "smoke") != ("smoke" in settings):
+        raise ValueError("Smoke execution requires its pinned budget lineage and purpose")
     limit = settings.get("max_parallel_stages", 1)
     if type(limit) is not int or not 1 <= limit <= MAX_PARALLEL_STAGES:
         raise ValueError(f"Recipe execution.max_parallel_stages must be an integer from 1 through {MAX_PARALLEL_STAGES}")

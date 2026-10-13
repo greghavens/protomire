@@ -1,0 +1,141 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "allowed_variations": {
+      "items": {
+        "enum": [
+          "model",
+          "checkpoint",
+          "architecture",
+          "objective",
+          "calibration",
+          "reference"
+        ]
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "evaluator": {
+      "additionalProperties": false,
+      "properties": {
+        "component_digest": {
+          "maxLength": 64,
+          "minLength": 64,
+          "type": "string"
+        },
+        "implementation_ref": {
+          "minProperties": 1,
+          "type": "object"
+        }
+      },
+      "required": [
+        "component_digest",
+        "implementation_ref"
+      ],
+      "type": "object"
+    },
+    "family_error_rate": {
+      "exclusiveMaximum": 1,
+      "exclusiveMinimum": 0,
+      "type": "number"
+    },
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "multiple_testing": {
+      "const": "bonferroni"
+    },
+    "purpose": {
+      "enum": [
+        "selection",
+        "continuation",
+        "promotion"
+      ]
+    },
+    "rules": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "direction": {
+            "enum": [
+              "minimize",
+              "maximize"
+            ]
+          },
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "method": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "implementation": {
+                "minProperties": 1,
+                "type": "object"
+              },
+              "parameters": {
+                "type": "object"
+              },
+              "version": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "version",
+              "implementation",
+              "parameters"
+            ],
+            "type": "object"
+          },
+          "metric": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minimum_improvement": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "metric",
+          "direction",
+          "minimum_improvement",
+          "method"
+        ],
+        "type": "object"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema": {
+      "const": "modelbuilder.scientific-policy/v1"
+    },
+    "unknown_behavior": {
+      "const": "block"
+    },
+    "version": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "purpose",
+    "family_error_rate",
+    "multiple_testing",
+    "allowed_variations",
+    "rules",
+    "unknown_behavior"
+  ],
+  "type": "object"
+}

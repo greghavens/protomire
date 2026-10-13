@@ -22,17 +22,46 @@ def reference_bytes(reference):
                       allow_nan=False).encode("utf-8")
 
 
-def reference_dependency(reference):
+def reference_dependency(reference, rights=None):
     sha = hashlib.sha256(reference_bytes(reference)).hexdigest()
     return {"id": "dataset-reference-" + sha, "kind": "dataset", "url": "urn:sha256:" + sha,
             "sha256": sha, "license": reference["manifest"]["license"], "required": True,
-            "redistribution_allowed": False, "metadata": {"dataset_reference": reference}}
+            "redistribution_allowed": False, "metadata": {"dataset_reference": reference, **({"rights": rights} if rights else {})}}
 
 
-def source_dependencies(reference):
+def source_dependencies(reference, rights=None):
     return [{**{key: value for key, value in item.items() if key != "source_id"},
              "url": "urn:sha256:" + item["sha256"], "redistribution_allowed": False,
-             "metadata": {"dataset_source": True}} for item in reference["dependencies"]]
+             "metadata": {"dataset_source": True, **({"rights": rights} if rights else {})}} for item in reference["dependencies"]]
+
+
+
+def _retire_replaced_dependencies(recipe, replacing_node_id):
+    """Drop orphaned generated closure before checking a replacement identity.
+
+    Preserve any generated reference mentioned by another node, including generic
+    operator nodes. A still-shared source cannot silently change its reviewed
+    provenance just because its byte-derived identifier happens to match.
+    """
+    declared = {item["id"]: item for item in recipe["resources"] + recipe["external_dependencies"]}
+
+    def references(value):
+        if isinstance(value, str):
+            return {value} if value in declared else set()
+        if isinstance(value, dict):
+            return set().union(*(references(item) for item in value.values()))
+        if isinstance(value, list):
+            return set().union(*(references(item) for item in value))
+        return set()
+
+    used = set().union(*(references(node) for node in recipe["nodes"] if node["id"] != replacing_node_id))
+    source_ids = {source["id"] for identifier in used
+                  for source in declared[identifier].get("metadata", {}).get("dataset_reference", {}).get("dependencies", [])}
+    used.update(source_ids)
+    for field in ("resources", "external_dependencies"):
+        recipe[field] = [item for item in recipe[field]
+                         if not (item.get("metadata", {}).get("dataset_reference") or item.get("metadata", {}).get("dataset_source"))
+                         or item["id"] in used]
 
 
 def bind(service, payload):
@@ -68,32 +97,35 @@ def bind(service, payload):
                            (edge["target_node"], edge["target_port"]) != (target["id"], port["name"])]
         recipe["edges"].append({"source_node": node_id, "source_port": "data",
                                 "target_node": target["id"], "target_port": port["name"]})
-    dependency = reference_dependency(reference)
+    from .backend.execution_rights import dataset_action
+    from .backend.admission import BackendError
+    try:
+        intended_use = dataset_action(payload.get("purpose"))
+    except BackendError as error:
+        raise ServiceError(error.code, error.message, error.details) from None
+    provenance = copy.deepcopy((existing or {}).get("provenance", {}))
+    if provenance.get("intended_use", intended_use) != intended_use:
+        raise ServiceError("license_usage_conflict", "Existing dataset action conflicts with the explicitly selected split purpose")
+    provenance["intended_use"] = intended_use
+    rights = service.hub.dataset_rights(reference)
+    dependency = reference_dependency(reference, rights)
     node = {"id": node_id, "kind": "dataset.version.import", "implementation_ref": "builtin:dataset.version.import",
             "inputs": [], "outputs": [{"name": "data", "type": "dict"}],
             "parameters": {"reference_id": dependency["id"], "split_id": payload["split_id"], "purpose": payload["purpose"]},
             "environment_ref": "default", "resource_request": {"gpu": 0}, "retry": {"max_attempts": 1, "backoff_seconds": 0},
-            "timeout": 300, "cache_policy": "disabled", "provenance": copy.deepcopy((existing or {}).get("provenance", {}))}
+            "timeout": 300, "cache_policy": "disabled", "provenance": provenance}
     recipe["nodes"] = [node if item["id"] == node_id else item for item in recipe["nodes"]]
     if existing is None:
         recipe["nodes"].append(node)
+    _retire_replaced_dependencies(recipe, node_id)
     declared = {item["id"]: item for item in recipe["resources"] + recipe["external_dependencies"]}
-    for item in [dependency, *source_dependencies(reference)]:
+    for item in [dependency, *source_dependencies(reference, rights)]:
         if item["id"] in declared and declared[item["id"]] != item:
             raise ServiceError("dataset_binding_conflict", "A recipe dependency has a conflicting dataset identity",
                                {"dependency_id": item["id"]})
         if item["id"] not in declared:
             recipe["external_dependencies"].append(item)
             declared[item["id"]] = item
-    # Retire only generated reference/source metadata no longer used by any importer.
-    used = {node.get("parameters", {}).get("reference_id") for node in recipe["nodes"]
-            if node["kind"] == "dataset.version.import"}
-    sources = {source["id"] for identifier in used if identifier in declared
-               for source in declared[identifier].get("metadata", {}).get("dataset_reference", {}).get("dependencies", [])}
-    for field in ("resources", "external_dependencies"):
-        recipe[field] = [item for item in recipe[field] if
-                         (not item.get("metadata", {}).get("dataset_reference") or item["id"] in used) and
-                         (not item.get("metadata", {}).get("dataset_source") or item["id"] in sources)]
     saved = service._save_recipe(recipe, project_id, current["recipe_id"], current["revision"] + 1, current["revision"])
     service._confirm_recipe_review(project_id)
     return {"project_id": project_id, "recipe_id": saved["recipe_id"], "revision": saved["revision"], "recipe": saved,
@@ -153,11 +185,12 @@ def resolve_backend(service, backend, payload):
             raise ServiceError("dataset_reference_invalid", "Bound dataset is missing its registered version identity")
         registry = service._dataset_registry
         registered = registry.portable_reference(payload["project_id"], reference["dataset_id"], reference["revision"])
-        if reference_bytes(reference) != reference_bytes(registered) or dependency != reference_dependency(registered):
+        rights = service.hub.dataset_rights(registered)
+        if reference_bytes(reference) != reference_bytes(registered) or dependency != reference_dependency(registered, rights):
             raise ServiceError("dataset_reference_invalid", "Bound reference differs from the registered immutable manifest")
         registry.read_split(payload["project_id"], reference["dataset_id"], reference["revision"],
                             parameters.get("split_id"), purpose=parameters.get("purpose", "training"))
-        for source in source_dependencies(reference):
+        for source in source_dependencies(reference, rights):
             if declared.get(source["id"]) != source:
                 raise ServiceError("dataset_reference_invalid", "Bound recipe is missing its exact dataset dependency closure")
         if not hasattr(backend, "with_dataset_dependencies"):

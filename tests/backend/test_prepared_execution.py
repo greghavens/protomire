@@ -2,6 +2,7 @@
 from copy import deepcopy
 from dataclasses import FrozenInstanceError
 import json
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -178,6 +179,25 @@ def test_lost_request_with_launch_evidence_cannot_start_another_worker(prepared_
 
 def test_resume_materialization_and_validation_happen_only_during_preparation(prepared_backend, monkeypatch, tmp_path):
     backend, payload, calls = prepared_backend
+    from tests.components.rights_test_support import USAGE_CONTEXT, local_review, write_reviewed_policies
+    checkpoint = tmp_path / "reviewed-checkpoint"
+    checkpoint.mkdir()
+    asset = checkpoint / "state.json"
+    asset.write_text('{"step": 1, "fixture": "test-authored"}')
+    inventory = [{"path": asset.name, "sha256": hashlib.sha256(asset.read_bytes()).hexdigest(),
+                  "size_bytes": asset.stat().st_size}]
+    policy, rights = local_review("project", source_files=inventory)
+    store = write_reviewed_policies(tmp_path / "reviews.sqlite3", {policy["policy_id"]: policy})
+    backend = backend.with_execution_rights(project_id="project", policies={policy["policy_id"]: policy},
+                                             policy_store_path=store)
+    write_json(checkpoint / "checkpoint.manifest.json", {
+        "schema_version": "modelbuilder.checkpoint/v1", "step": 1, "purpose": "last",
+        "resume_modes": ["warm_start"], "assets": inventory, "rights": rights,
+        "identities": {key: "test-authored" for key in
+                       ("architecture", "source", "dependencies", "training", "environment")}})
+    payload["recipe"]["nodes"][0]["component"] = {"role": "training"}
+    payload["recipe"]["extensions"] = {"usage_context": USAGE_CONTEXT}
+    payload["mode"] = "warm_start"
     parent = {**deepcopy(payload), "submitted_at": "parent-time"}
     monkeypatch.setattr(backend, "_job", lambda request: (tmp_path / "parent", parent))
     def rpc(operation, request, **kwargs):
@@ -185,7 +205,7 @@ def test_resume_materialization_and_validation_happen_only_during_preparation(pr
         if operation == "run.status":
             return {"status": "succeeded", "worker_alive": False}
         if operation == "model.checkpoint.get":
-            return {"backend_run_id": "parent-native", "artifact_id": "checkpoint", "path": "/dummy/checkpoint"}
+            return {"backend_run_id": "parent-native", "artifact_id": "checkpoint", "node_id": "node", "path": str(checkpoint)}
         assert operation == "backend.validate"
         return {}
     monkeypatch.setattr(backend, "_rpc", rpc)
@@ -195,7 +215,8 @@ def test_resume_materialization_and_validation_happen_only_during_preparation(pr
     materialized = json.loads(prepared._request_json)
     assert materialized["parent_run_id"] == "parent-native"
     assert materialized["parent_checkpoint_ref"] == "checkpoint"
-    assert materialized["resume_path"] == "/dummy/checkpoint"
+    assert materialized["resume_path"] == str(checkpoint)
+    assert materialized["rights_authorization"]["policies"][policy["policy_id"]] == policy
     assert "submitted_at" not in materialized
     monkeypatch.setattr(backend, "_rpc", lambda *a, **k: pytest.fail("Repeated resume preflight"))
     monkeypatch.setattr(backend, "_job", lambda *a, **k: pytest.fail("Repeated parent materialization"))

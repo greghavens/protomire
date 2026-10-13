@@ -12,7 +12,7 @@ export class OperationClient implements ServiceTransport {
     const token = managed?.token ?? await this.getToken(base);
     if (!token) throw new OperationError(401, 'not_configured', 'Configure the ModelBuilder service token first.');
     let response: Response;
-    try { response = await this.request(`${base}${path}`, {method:payload ? 'POST' : 'GET', redirect:'error', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}, body:payload ? JSON.stringify(payload) : undefined, signal:AbortSignal.timeout(['/model.export.package','/research.document.import'].some(suffix=>path.endsWith(suffix))?120_000:30_000)}); }
+    try { response = await this.request(`${base}${path}`, {method:payload ? 'POST' : 'GET', redirect:'error', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}, body:payload ? JSON.stringify(payload) : undefined, signal:AbortSignal.timeout(['/model.export.package','/research.document.import','/hub.repository.compare','/hub.publish.preview','/hub.license.inspect','/hub.license.local.inspect','/hub.local.register'].some(suffix=>path.endsWith(suffix))?120_000:30_000)}); }
     catch { throw new OperationError(0, 'connection_failed', this.getConnection ? 'The bundled core connection ended. Retry after the local session restarts.' : 'Cannot reach the operation service. Check its URL and that the service is running.'); }
     let body: any;
     try { body = await response.json(); } catch { throw new OperationError(response.status, 'invalid_response', 'Operation service returned a non-JSON response.'); }

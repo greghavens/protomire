@@ -17,14 +17,18 @@ import build_runtime as builder  # noqa: E402
 def payload(tmp_path):
     root = tmp_path / "runtime"
     root.mkdir()
-    for name in ["python", "backend", "git", "source.bundle", "notices/LICENSE"]:
+    for name in ["python", "backend", "hub-python", "git", "source.bundle", "notices/LICENSE"]:
         path = root / name
         path.parent.mkdir(exist_ok=True)
         path.write_text("explicit inert unit-test fixture")
-    for name in ["managed_core.py", "windows_storage.py"]:
+    for name in ["managed_core.py", "windows_storage.py", "reviewed_requests.py", "reviewed_mcp.py", "managed_hub.py", "hub_credentials.py"]:
         shutil.copyfile(ROOT / "distribution" / name, root / name)
     value = {"schema_version": 1, "target": "linux-x64", "sealed": True, "relocation_probe": "passed", "application_version": "2.7.4", "python_version": "3.12.14", "service_python": "python",
              "backend_python": "backend", "git_executable": "git", "source_bundle": "source.bundle"}
+    lock = packaging.lock_path(ROOT, "hub", "linux-x64")
+    (root / "profiles").mkdir()
+    shutil.copyfile(lock, root / "profiles" / lock.name)
+    value.update(hub_python="hub-python", hub_status="bundled", hub_profile="profiles/" + lock.name, hub_lock_sha256=packaging.digest(lock))
     value["files"] = packaging.inventory(root)
     (root / "runtime.json").write_text(json.dumps(value))
     return root
@@ -37,7 +41,7 @@ def app_fixture(root, target):
         app_root = root / "Modelbuilder IDE.app/Contents/Resources/app"
     feature = app_root / "extensions/modelbuilder-workbench"
     (feature / "out").mkdir(parents=True)
-    for name in ["package.json", "out/extension.js", "out/managedCore.js"]:
+    for name in ["package.json", "out/extension.js", "out/managedCore.js", "out/nativeReview.js"]:
         (feature / name).write_text("inert fixture")
     (app_root / "product.json").write_text(json.dumps({"applicationName": "modelbuilder-ide", "updateUrl": "https://invalid.example"}))
     if target.startswith("darwin-"):
@@ -48,6 +52,12 @@ def app_fixture(root, target):
 def retarget(payload, target):
     value = json.loads((payload / "runtime.json").read_text())
     value["target"] = target
+    previous = payload / value["hub_profile"]
+    previous.unlink()
+    lock = packaging.lock_path(ROOT, "hub", target)
+    shutil.copyfile(lock, payload / "profiles" / lock.name)
+    value.update(hub_profile="profiles/" + lock.name, hub_lock_sha256=packaging.digest(lock))
+    value["files"] = packaging.inventory(payload)
     if target.startswith("darwin-"):
         value["minimum_os"] = "26.0"
     (payload / "runtime.json").write_text(json.dumps(value))
@@ -198,7 +208,7 @@ def test_package_requires_moved_payload_probe(payload):
 def sealable_fixture(payload):
     manifest = json.loads((payload / "runtime.json").read_text())
     manifest["source_commit"] = "a" * 40
-    for field in ["service_python_provenance", "backend_python_provenance", "git_provenance"]:
+    for field in ["service_python_provenance", "backend_python_provenance", "hub_python_provenance", "git_provenance"]:
         manifest[field] = {"source_url": "https://vendor.invalid/archive", "archive_sha256": "a" * 64, "notice": "notices/LICENSE"}
     (payload / "git-helpers").mkdir()
     (payload / "runtime.json").write_text(json.dumps(manifest))
@@ -213,8 +223,9 @@ def test_seal_probes_only_after_original_location_disappears_and_restores(payloa
         assert " relocated " in str(moved)
         assert version == "3.12.14"
         probes.append(executable)
-        return {"version": [3, 12, 14], "modules": {}}
+        return {"version": [3, 12, 14], "modules": {"modelbuilder.hub_sdk_worker": "worker.py"}}
     monkeypatch.setattr(packaging, "probe_python", fake_probe)
+    monkeypatch.setattr(packaging, "probe_hub", lambda moved, manifest, worker: {"offline_worker": "passed"})
     monkeypatch.setattr(packaging.subprocess, "check_output", lambda command, **kwargs: str(Path(command[0]).parent / "git-helpers") + "\n")
     def fake_restore(git, archive, destination, commit, shallow):
         assert not payload.exists() and " relocated " in str(archive)
@@ -307,3 +318,85 @@ def test_optional_mlx_floor_does_not_raise_base_application_minimum(payload, tmp
     packaging.stage(app, payload, output, "darwin-arm64")
     info = plistlib.loads((packaging.application_root(output, "darwin-arm64").parents[1] / "Info.plist").read_bytes())
     assert info["LSMinimumSystemVersion"] == "14.0"
+
+
+def test_hub_profile_exact_target_selection_and_armhf_fail_closed(payload):
+    from dependency_profiles import HUB_TARGETS, lock_path
+    assert len(HUB_TARGETS) == 6
+    for target in HUB_TARGETS:
+        path = lock_path(ROOT, 'hub', target)
+        assert path.name == f'hub-{target}.lock' and path.is_file()
+    with pytest.raises(ValueError, match='Hub/keyring'):
+        lock_path(ROOT, 'hub', 'linux-armhf')
+    value = json.loads((payload / 'runtime.json').read_text())
+    with pytest.raises(ValueError, match='exact native target'):
+        packaging.validate_hub_profile(payload, value, 'darwin-arm64')
+    value.pop('hub_python')
+    value['hub_status'] = 'unsupported_target'
+    assert packaging.validate_hub_profile(payload, value, 'linux-armhf') is None
+
+
+def test_hub_payload_omission_and_tampered_profile_fail_closed(payload):
+    value = json.loads((payload / 'runtime.json').read_text())
+    for field in ['hub_python', 'hub_status', 'hub_profile', 'hub_lock_sha256']:
+        missing = {key: item for key, item in value.items() if key != field}
+        with pytest.raises((ValueError, packaging.CoreError)):
+            packaging.validate_hub_profile(payload, missing, 'linux-x64')
+    (payload / value['hub_profile']).write_text('keyring==0.0.0\n')
+    with pytest.raises(ValueError, match='reviewed hash lock'):
+        packaging.validate_hub_profile(payload, value, 'linux-x64')
+
+
+def test_builder_requires_hub_before_mutating_staging(tmp_path, monkeypatch):
+    inputs = tmp_path / 'inputs.json'
+    inputs.write_text(json.dumps({'target':'linux-x64'}))
+    monkeypatch.setattr(builder, 'detect_target', lambda:'linux-x64')
+    with pytest.raises(ValueError, match='Hub/keyring worker'):
+        builder.build_runtime(inputs, tmp_path / 'output')
+    assert not (tmp_path / 'output').exists()
+
+
+def test_hub_sealed_helper_changes_are_rejected(payload):
+    (payload / 'managed_hub.py').write_text('modified helper')
+    value = json.loads((payload / 'runtime.json').read_text())
+    value['files'] = packaging.inventory(payload)
+    (payload / 'runtime.json').write_text(json.dumps(value))
+    with pytest.raises(ValueError, match='stale'):
+        packaging.validate_payload(payload, 'linux-x64')
+
+
+def test_builder_installs_target_hub_closure_offline_without_application_wheel(tmp_path, monkeypatch):
+    import zipfile
+    archive = tmp_path / 'reviewed-python.tar.gz'
+    archive.write_text('inert native input fixture')
+    wheel = tmp_path / 'modelbuilder-8.2.1-py3-none-any.whl'
+    with zipfile.ZipFile(wheel, 'w') as output:
+        output.writestr('modelbuilder-8.2.1.dist-info/METADATA', 'Metadata-Version: 2.1\nName: modelbuilder\nVersion: 8.2.1\n')
+    python = {'path':str(archive),'sha256':packaging.digest(archive),'source_url':'https://vendor.invalid/reviewed','executable':'bin/python','notice':'notices/LICENSE','version':'3.12.14'}
+    application = {'path':str(wheel),'sha256':packaging.digest(wheel)}
+    (tmp_path / 'wheelhouse').mkdir()
+    (tmp_path / 'notices').mkdir()
+    (tmp_path / 'notices/LICENSE').write_text('inert notices fixture')
+    values = {'target':'linux-x64','service':{'python':python,'wheel':application},'backend':{'python':python,'wheel':application},
+              'hub':{'python':python},'git':python,'source_bundle':{'path':str(archive),'sha256':packaging.digest(archive)},
+              'source_commit':'a'*40,'wheelhouse':str(tmp_path/'wheelhouse'),'notices':str(tmp_path/'notices')}
+    inputs = tmp_path / 'inputs.json'
+    inputs.write_text(json.dumps(values))
+    monkeypatch.setattr(builder,'detect_target',lambda:'linux-x64')
+    def extract(base,item,destination):
+        path=destination/'bin/python'
+        path.parent.mkdir(parents=True)
+        path.write_text('inert executable fixture')
+        return path
+    monkeypatch.setattr(builder,'extract_input',extract)
+    calls=[]
+    monkeypatch.setattr(builder.subprocess,'run',lambda command,**kwargs:calls.append(command))
+    monkeypatch.setattr(builder,'seal_runtime',lambda root,target:json.loads((root/'runtime.json').read_text()))
+    manifest=builder.build_runtime(inputs,tmp_path/'output')
+    assert manifest['hub_status']=='bundled' and manifest['hub_profile']=='profiles/hub-linux-x64.lock'
+    assert manifest['hub_python_provenance']['version']=='3.12.14'
+    hub=[command for command in calls if 'hub-python' in command[0]]
+    assert len(hub)==2  # locked dependencies and pip check, no modelbuilder wheel
+    assert all(flag in hub[0] for flag in ['--no-index','--only-binary=:all:','--require-hashes','--isolated'])
+    assert hub[0][-1].endswith('hub-linux-x64.lock')
+    assert packaging.digest(tmp_path/'output'/manifest['hub_profile'])==manifest['hub_lock_sha256']

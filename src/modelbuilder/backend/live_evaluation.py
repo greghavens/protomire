@@ -597,6 +597,8 @@ def _evaluate(job: Path, evaluation_id: str) -> None:
     if evaluator["kind"] == "fixture":
         from . import fixtures
         from ..evaluation import fixture_evaluation_records
+        from .execution_rights import verify_dispatch
+        verify_dispatch(evaluator["spec"], {"data": evaluator["data"], "checkpoint": checkpoint})
         parameters = {**evaluator.get("parameters", {}), "checkpoint_kind": request["checkpoint"]["purpose"]}
         metrics = fixtures.evaluate(evaluator["data"], checkpoint, parameters, output)
         metrics["evaluation_records"] = fixture_evaluation_records(evaluator["data"], checkpoint, parameters, metrics)
@@ -610,18 +612,20 @@ def _evaluate(job: Path, evaluation_id: str) -> None:
             from .dependency_files import dependency_sha256
             if not path or dependency_sha256(path) != dependency["sha256"]:
                 raise ValueError("Component dependency changed after admission: " + dependency["id"])
-        function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
         inputs = {**evaluator["inputs"], evaluator["checkpoint_port"]: checkpoint}
+        from .execution_rights import verify_dispatch
+        rights_admission = verify_dispatch(spec, inputs)
+        function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
         parameters = spec.get("parameters", {})
         identities = {"architecture": identity(parameters.get("architecture", parameters)),
                       "source": identity(spec["source"]), "dependencies": identity(spec.get("dependencies", [])),
-                      "environment": identity(spec.get("environment", {})),
+                      "environment": identity({"declared": spec.get("environment", {}), "rights_admission": rights_admission}),
                       "training": identity({"component": node["component"], "parameters": parameters}),
                       "data": identity({k: v for k, v in inputs.items() if isinstance(v, dict)})}
         context = {"protocol": node["component"]["protocol"], "job_dir": str(job), "node_id": node["id"],
                    "output_dir": str(output), "source_root": function.__source_snapshot_root__, "source": spec["source"],
                    "device": "cpu", "placement": {"device": "cpu", "policy": "live_evaluation_cpu_only"},
-                   "identities": identities,
+                   "identities": identities, "rights_admission": rights_admission,
                    "dependencies": spec.get("dependency_paths", {}), "cancel_file": str(job / "cancel.json"),
                    "checkpoint_id": request["checkpoint"]["checkpoint_id"],
                    "checkpoint_digest": request["checkpoint"]["checkpoint_digest"],

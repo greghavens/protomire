@@ -119,7 +119,8 @@ def dataset(parameters: dict) -> dict:
 
 
 def verify_data(data: dict) -> str:
-    actual = canonical_hash({k: v for k, v in data.items() if k != "sha256"})
+    # Rights is separately verified lineage metadata; numerical dataset identity is unchanged.
+    actual = canonical_hash({k: v for k, v in data.items() if k not in {"sha256", "rights"}})
     if actual != data["sha256"]:
         raise ValueError("Consumed upstream dataset artifact hash mismatch")
     return actual
@@ -172,6 +173,8 @@ def initialize(data: dict, parameters: dict, out: Path) -> Path:
                  "initialization": {"fixture": fixture, "width": width if fixture == "custom" else None,
                                     "model_id": MODEL_ID if fixture == "pretrained" else None,
                                     "model_revision": MODEL_REVISION if fixture == "pretrained" else None}}, out / "checkpoint.pt")
+    from .fixture_artifacts import checkpoint_manifest
+    checkpoint_manifest(out, load_checkpoint(out), parameters.get("_artifact_rights"))
     return out
 
 
@@ -294,6 +297,8 @@ def train(data: dict, initial: Path, parameters: dict, out: Path, resume: Path |
         atomic_save(state, out / "checkpoint.pt")
         if is_best:
             atomic_save(state, out / "best.pt")
+        from .fixture_artifacts import checkpoint_manifest
+        checkpoint_manifest(out, state, parameters.get("_artifact_rights"))
         if parameters.get("_checkpoint_ready") and (step_index + 1) % parameters.get("checkpoint_interval_steps", 1) == 0:
             parameters["_checkpoint_ready"](path=out, step=step_index + 1, purpose="last")
         print(f"CHECKPOINT step={step_index + 1} validation_loss={validation_loss:.8f}", flush=True)
@@ -386,5 +391,10 @@ def export_model(data: dict, checkpoint: Path, parameters: dict, out: Path) -> P
                 "source": {"fixture": ck["fixture"], "implementation_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()},
                 "verification": {"passed": True, "atol": 0.0, "max_abs_difference": difference,
                                  "dataset_sha256": data["sha256"]}, "assets": assets}
+    from .components import read_checkpoint
+    from ..artifact_rights import combine_parent_rights
+    parent = read_checkpoint(checkpoint) if (checkpoint / "checkpoint.manifest.json").is_file() else {}
+    manifest["rights"] = parent.get("rights") or combine_parent_rights([{
+        "artifact_id": "fixture-checkpoint:" + selected_digest, "rights": None}])
     (out / "export.manifest.json").write_text(json.dumps(manifest, sort_keys=True))
     return out

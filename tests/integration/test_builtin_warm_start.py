@@ -77,6 +77,8 @@ def test_native_builtin_warm_start_uses_current_settings_exact_state_keeps_paren
     actor = Actor("native-warm-start-owner", {"read", "modify", "execute"})
     database = tmp_path / "service.sqlite3"
     source, manifest = committed_fixture_recipe(tmp_path)
+    from tests.integration.native_fixture_support import synthetic_review, register_project_review
+    review = synthetic_review(manifest, "pending", source)
     backend = ZenMLBackend(tmp_path, python_executable=str(BACKEND_PYTHON), source_root=source)
     service = OperationService(database, backend)
 
@@ -114,6 +116,7 @@ def test_native_builtin_warm_start_uses_current_settings_exact_state_keeps_paren
     try:
         project = invoke("project.create", {"slug": "native-builtin-warm-start",
             "model_name": "Native built-in warm start", "idempotency_key": "project"})
+        register_project_review(service, review, project["project_id"])
         scope = {"project_id": project["project_id"], "recipe_id": project["recipe_id"]}
         # Admission verifies the isolated workload/lock closure and real Git pin.
         # Unrelated source or shipping-example changes cannot invalidate this test.

@@ -98,3 +98,7 @@ The catalog also ships `modelbuilder.local.generate`, `modelbuilder.local.judge`
 ## Reusable standard training adapters
 
 `modelbuilder.transformers.train`, `.evaluate`, and `.export` wrap the installed Hugging Face Trainer, task-specific AutoModel classes, safetensors and existing native ZenML operations. User-bound configuration, weights, tokenizer, registered eager or streaming train splits, explicit task/metric choices and resource budgets replace fixture-specific assumptions. Their project wrapper is one import, while the framework continues to own optimization. See [Transformers Trainer](TRANSFORMERS_TRAINER.md) for the optional reproducible backend profile, implemented CPU/CUDA/MPS selection, CPU verification evidence, warm-start limits, exact held-out identities and standalone export loader. Existing arbitrary source-owned models/losses/harnesses remain supported through the same component ABI.
+
+## Independent framework environments
+
+Source-bound components can optionally select an operator-registered pinned interpreter through `modelbuilder.runner/v1`. The existing native ZenML attempt process handles execution and cleanup; the default platform environment does not need to absorb every training library. See [training runners and compatibility evidence](TRAINING_RUNNERS.md) for the environment receipt, extensible stack categories, artifact contracts, actual CPU tests, and explicitly unsupported distributed/accelerator/exact-resume combinations.

@@ -14,6 +14,7 @@ from modelbuilder.backend import ZenMLBackend
 from modelbuilder.backend.operator_config import load_operator_config
 from modelbuilder.models import Actor, ServiceError
 from modelbuilder.service import OperationService
+from tests.components.rights_test_support import local_review, USAGE_CONTEXT
 
 OWNER = Actor("owner", {"read", "modify", "execute"})
 
@@ -235,20 +236,34 @@ def test_export_and_dependency_inspection_use_bound_checkout(setup):
 
 def test_source_dependencies_are_isolated_and_hash_checked(setup):
     service, roots = setup
-    projects = []
+    projects, policies = [], {}
     for alias in roots:
         path = Path(roots[alias]["path"]) / "data.json"
         path.write_text(json.dumps({"model": alias}))
         service.source_workspaces.aliases[alias]["dependency_paths"] = {"data": str(path)}
         body = recipe(path.parent)
+        content_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+        review_args = {"commit": content_sha, "policy_id": "test-dataset-" + alias,
+                       "repo_id": "urn:modelbuilder:test:dataset:" + alias,
+                       "source_files": [{"path": path.name, "sha256": content_sha, "size_bytes": path.stat().st_size}]}
+        _, envelope = local_review(**review_args)
+        body["nodes"][0]["provenance"]["intended_use"] = "train"
+        body["extensions"] = {"usage_context": USAGE_CONTEXT}
         body["resources"] = [{"id": "data", "kind": "dataset", "url": "https://example.invalid/no-fetch",
-                              "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "license": "MIT"}]
+                              "sha256": content_sha, "license": "MIT", "metadata": {"rights": envelope}}]
         project = create(service, alias, recipe=body)
         projects.append(project)
+        policy, _ = local_review(project["project_id"], **review_args)
+        service.store.put("hub_license_policy", policy["policy_id"], project["project_id"], policy)
+        policies[project["project_id"]] = {policy["policy_id"]: policy}
+        service.backend = service.backend.with_execution_rights(project_id=project["project_id"],
+            policies=policies[project["project_id"]], policy_store_path=service.store.path)
         plan = service.invoke("run.plan", {"project_id": project["project_id"], "recipe_id": project["recipe_id"], "trusted": True}, OWNER)
         assert plan["executable"], plan
     service.source_workspaces.aliases["first"]["dependency_paths"] = service.source_workspaces.aliases["second"]["dependency_paths"]
     first = projects[0]
+    service.backend = service.backend.with_execution_rights(project_id=first["project_id"],
+        policies=policies[first["project_id"]], policy_store_path=service.store.path)
     plan = service.invoke("run.plan", {"project_id": first["project_id"], "recipe_id": first["recipe_id"], "trusted": True}, OWNER)
     assert not plan["executable"] and plan["blocked_reasons"][0]["code"] == "dependency_mismatch"
 

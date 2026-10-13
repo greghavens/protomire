@@ -1,5 +1,14 @@
 # Current verification and remaining gates
 
+## Current source checkpoint
+
+Both shipping recipes now pin runtime `edca4154021e7b1fc68b3503803dac67e0ba1ae6`
+and its complete **154-file** source/lock closure. This includes Moonshiner
+local composition and the replay-probe correction; the source tree also includes
+the Triggerfish adapter. Focused checks below are completed, but the new full
+local aggregate and rebuilt Mac package are not yet accepted. The 151-file
+aggregate/replay/DMG records remain evidence for their exact older candidate.
+
 ## Later source changes: Moonshiner composition and replay probe
 
 The source now includes a Linux-only, reviewed Moonshiner 0.8.23 dataset

@@ -407,7 +407,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "1dc969898d8c30a8a0c0a0e590e696639138e588",
+    "commit": "edca4154021e7b1fc68b3503803dac67e0ba1ae6",
     "files": [
       {
         "path": "pyproject.toml",
@@ -559,7 +559,7 @@
       },
       {
         "path": "scripts/replay_bundle.py",
-        "sha256": "17635046c6d79dfe36d8ea649a632c582d90077129fee9fa815492334731fa73"
+        "sha256": "181445979a194fc1e323df2b24a8e6f4cc1f369f8a3193a25df8421a17781ef6"
       },
       {
         "path": "src/modelbuilder/__init__.py",
@@ -603,7 +603,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/__init__.py",
-        "sha256": "294e108dc18ed477d8cf10c84429277de8a65d90ff61deeae7efe144cb1731de"
+        "sha256": "2f014a1180ddeff2bc1c5118687f7584da52f471d7d83b5c19a33ad1d67ab79c"
       },
       {
         "path": "src/modelbuilder/backend/components/local_inference.py",
@@ -634,6 +634,18 @@
         "sha256": "0c9adb263e6a16f5b04914672259c5ab1a559f0c8895c9430e04474b90bf353e"
       },
       {
+        "path": "src/modelbuilder/backend/components/moonshiner.py",
+        "sha256": "e69d037939a3c0823ac99580d51cf65d405424daa4d659763a060eb423577f9d"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/moonshiner_process.py",
+        "sha256": "3a72e6209942aa7b97bf0cdfa42e26e21671f322d8c50cb14611feeeb4bc8c26"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/moonshiner_worker.py",
+        "sha256": "bcdf1392be6548332242cb092419a8ed8e88a8e87ad587fb612ee704c9ca80ab"
+      },
+      {
         "path": "src/modelbuilder/backend/components/runtime.py",
         "sha256": "2b8ca89553b0427dce638e11c04a1194bf77776411c3ecca1c87bc048730be4a"
       },
@@ -651,7 +663,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/transformers_training.py",
-        "sha256": "224aed3c170c551937739e624fe872338a833a9d7a8cecd01f9306a06ea9f908"
+        "sha256": "68159d5725009043fc0fc34df68ebb24a9ace84e062f81d2f8d9f1a4f14af37d"
       },
       {
         "path": "src/modelbuilder/backend/components/weight_blend.py",
@@ -799,7 +811,7 @@
       },
       {
         "path": "src/modelbuilder/generated_artifacts.py",
-        "sha256": "8ef70661b4d4c5d33d17115073314caaf8d016a0a01fdbbfb75e633b4861da07"
+        "sha256": "c1f9a8da775aaeb1025a3a95ad1cb66fbd024ea42398ec7cd92176a9a407f3f6"
       },
       {
         "path": "src/modelbuilder/hub.py",

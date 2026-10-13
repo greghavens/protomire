@@ -23,7 +23,7 @@ class SourceWorkspaces:
         for alias, settings in (aliases or {}).items():
             if not isinstance(alias, str) or not re.fullmatch(ALIAS_PATTERN, alias):
                 raise ValueError("Source aliases must be simple identifiers")
-            if not isinstance(settings, dict) or set(settings) - {"path", "trusted", "dependency_paths", "project_ids", "label"}:
+            if not isinstance(settings, dict) or set(settings) - {"path", "trusted", "dependency_paths", "project_ids", "label", "kind"}:
                 raise ValueError("Source aliases require supported operator settings")
             if not isinstance(settings.get("path"), str) or not settings["path"].strip():
                 raise ValueError("Source alias paths must be nonempty strings")
@@ -36,7 +36,14 @@ class SourceWorkspaces:
             if not isinstance(dependencies, dict) or any(not isinstance(k, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+", k)
                     or not isinstance(v, str) or not v for k, v in dependencies.items()):
                 raise ValueError("Source dependencies must map IDs to operator paths")
-            self.aliases[alias] = {**settings, "path": str(Path(settings["path"]).expanduser().resolve()),
+            kind = settings.get("kind", "git")
+            if not isinstance(kind, str) or kind not in {"git", "imported_snapshot"}:
+                raise ValueError("Source kind must be git or imported_snapshot")
+            path = Path(settings["path"]).expanduser()
+            # Preserve the operator-selected route so a symlink cannot be hidden
+            # by normalization before snapshot inspection.
+            path = path.absolute() if kind == "imported_snapshot" else path.resolve()
+            self.aliases[alias] = {**settings, "kind": kind, "path": str(path),
                                    "trusted": settings.get("trusted", False),
                                    "dependency_paths": {k: str(Path(v).expanduser().resolve()) for k, v in dependencies.items()}}
 
@@ -64,6 +71,8 @@ class SourceWorkspaces:
         root = Path(settings["path"])
         if not root.is_dir() or root.resolve() != root:
             raise ServiceError("source_unavailable", "Approved checkout is missing or has been redirected", status_code=422)
+        if settings["kind"] == "imported_snapshot":
+            return self._inspect_snapshot(alias, settings, root)
         top = Path(self._git(root, "rev-parse", "--show-toplevel").decode().strip()).resolve()
         if top != root:
             raise ServiceError("source_unavailable", "Approved source path must identify the Git checkout root", status_code=422)
@@ -74,9 +83,47 @@ class SourceWorkspaces:
             raise ServiceError("source_unavailable", "Approved Git checkout identity is unavailable", status_code=422) from error
         identity = {"root": str(root), "git_dir": str(git_dir), "device": location.st_dev, "inode": location.st_ino}
         repository_id = "sha256:" + hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
-        return {"alias": alias, "label": settings.get("label", alias), "repository_id": repository_id,
+        return {"alias": alias, "label": settings.get("label", alias), "source_kind": "git", "repository_id": repository_id,
                 "workspace_path": str(root), "head_commit": self._git(root, "rev-parse", "HEAD").decode().strip(),
                 "operator_trusted": settings["trusted"], "available": True}
+
+    @staticmethod
+    def _inspect_snapshot(alias, settings, root):
+        """Verify an explicitly selected transport, never infer Git authenticity."""
+        from . import recipe as recipe_module
+        from .export_packages import safe_file
+        try:
+            if any(path.is_symlink() for path in (root, *root.parents)) or (root / ".git").exists() or (root / ".git").is_symlink():
+                raise ValueError("Imported snapshots must be Git-free directories without redirected ancestors")
+            before = root.stat()
+            with safe_file(root / "recipe.json", max_bytes=recipe_module.MAX_BUNDLE_BYTES) as stream:
+                manifest = json.load(stream)
+            bundle = recipe_module.export_bundle(manifest, source_root=root)
+            report = recipe_module.import_bundle(bundle)
+            source = report["recipe"]["source"]
+            if not source["files"] or source["commit"] == "0" * len(source["commit"]):
+                raise ValueError("Imported snapshots require a declared upstream commit and nonempty source inventory")
+            # A review must cover every executable/lock/profile reference, even
+            # when a transport author omitted it from the source.files array.
+            if {item["path"]: item["sha256"] for item in source["files"]} != {name: item["sha256"] for name, item in bundle["files"].items()}:
+                raise ValueError("Imported source inventory must include every implementation, lock and profile reference")
+            for item in source["files"]:
+                with safe_file(root / item["path"], max_bytes=recipe_module.MAX_FILE_BYTES) as stream:
+                    if hashlib.sha256(stream.read(recipe_module.MAX_FILE_BYTES + 1)).hexdigest() != item["sha256"]:
+                        raise ValueError("Imported snapshot bytes changed during inspection")
+            after = root.stat()
+            if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+                raise ValueError("Imported snapshot directory changed during inspection")
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            raise ServiceError("source_snapshot_invalid", "Imported snapshot manifest, complete source inventory or exact bytes are unavailable, changed or unsafe", status_code=422) from error
+        identity = {"root": str(root), "device": before.st_dev, "inode": before.st_ino,
+                    "snapshot_digest": report["bundle_digest"], "kind": "imported_snapshot"}
+        repository_id = "sha256:" + hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+        return {"alias": alias, "label": settings.get("label", alias), "source_kind": "imported_snapshot",
+                "repository_id": repository_id, "workspace_path": str(root),
+                "declared_source_commit": source["commit"], "snapshot_digest": report["bundle_digest"],
+                "transport_recipe_digest": report["digest"], "source_files": source["files"],
+                "git_provenance_verified": False, "operator_trusted": settings["trusted"], "available": True}
 
     def list(self, project_id=None):
         result = []
@@ -98,7 +145,7 @@ class SourceWorkspaces:
         source = self.inspect(alias, project_id)
         if repository_id != source["repository_id"]:
             raise ServiceError("source_identity_conflict", "Approved checkout identity changed since review; inspect it again before binding", status_code=409)
-        return {"alias": alias, "repository_id": source["repository_id"], "bound_at": utcnow(),
+        return {"alias": alias, "repository_id": source["repository_id"], "source_kind": source["source_kind"], "bound_at": utcnow(),
                 "bound_by": actor_id, "trust_acknowledged": True}
 
     def resolve(self, binding, project_id, *, execute=False):
@@ -114,7 +161,8 @@ class SourceWorkspaces:
     def status(self, project, recipe):
         binding = project.get("source_binding")
         result = {"project_id": project["project_id"], "project_revision": project["revision"], "binding": binding,
-                  "bound": bool(binding), "available": False, "execution_requires_trust": True,
+                  "bound": bool(binding), "available": False, "source_kind": (binding or {}).get("source_kind", "git"),
+                  "execution_requires_trust": True,
                   "isolation": "trusted_local_process", "diagnostics": []}
         try:
             source, _ = self.resolve(binding, project["project_id"])
@@ -126,6 +174,11 @@ class SourceWorkspaces:
             commit = declared.get("commit", "")
             if not re.fullmatch(r"[0-9a-fA-F]{40}|[0-9a-fA-F]{64}", commit) or not files:
                 raise ServiceError("source_pin_required", "The current recipe needs a Git commit and SHA256-pinned source closure")
+            if source["source_kind"] == "imported_snapshot":
+                if source["declared_source_commit"] != commit or source["source_files"] != files:
+                    raise ServiceError("dependency_mismatch", "Current recipe differs from the exact imported source snapshot")
+                result["pinned_source_matches"] = True
+                return result
             self._git(root, "cat-file", "-e", commit + "^{commit}")
             for reference in files:
                 candidate = (root / reference["path"]).resolve()

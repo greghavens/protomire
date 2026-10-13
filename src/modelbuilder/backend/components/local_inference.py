@@ -22,6 +22,7 @@ import unicodedata
 
 from jsonschema import Draft202012Validator
 
+from ...generated_artifacts import attach_lineage, validate_lineage
 from . import PROTOCOL, identity
 
 VERSION = "1"
@@ -332,11 +333,11 @@ def generate(*, inputs, parameters, context):
                 rows.append(row)
     if not rows:
         raise ValueError("Generation produced no schema-valid isolated candidates")
-    value = _seal({"schema": CANDIDATES, "status": "candidates_only", "row_schema": deepcopy(ROW_SCHEMA),
+    value = attach_lineage({"schema": CANDIDATES, "status": "candidates_only", "row_schema": deepcopy(ROW_SCHEMA),
         "rows": rows, "rejected": rejected, "provenance": {"generator": model_identity,
             "parameters": deepcopy(parameters), "splits": splits, "runtime": _runtime(context),
             "seed_policy": "sha256(seed,parent_id,sample_index)[0:8] per sample",
-            "protection": "NFKC/casefold/whitespace exact-text and sample-ID isolation; not semantic decontamination"}})
+            "protection": "NFKC/casefold/whitespace exact-text and sample-ID isolation; not semantic decontamination"}}, inputs, context)
     _artifact(value, CANDIDATES)
     return {"candidates": value}
 
@@ -348,6 +349,7 @@ def judge(*, inputs, parameters, context):
         raise ValueError("Judge requires only the candidate artifact")
     candidates = inputs["candidates"]
     rows = _candidate_rows(candidates)
+    validate_lineage(candidates)
     if parameters["score_label"] not in parameters["labels"]:
         raise ValueError("score_label must be in the configured label mapping")
     if parameters["model"]["weights"]["sha256"] == candidates["provenance"]["generator"]["assets"]["weights"]["sha256"]:
@@ -374,10 +376,10 @@ def judge(*, inputs, parameters, context):
                 "probabilities": dict(zip(parameters["labels"], probabilities)),
                 "score": probabilities[parameters["labels"].index(parameters["score_label"])]})
     ranked = sorted(predictions, key=lambda row: ((-1 if parameters["rank_direction"] == "highest_first" else 1) * row["score"], row["id"]))
-    result = _seal({"schema": JUDGMENTS, "candidate_digest": candidates["digest"],
+    result = attach_lineage({"schema": JUDGMENTS, "candidate_digest": candidates["digest"],
         "status": "model_predictions_not_ground_truth", "predictions": predictions,
         "ranked_ids": [row["id"] for row in ranked], "provenance": {"judge": model_identity,
-            "parameters": deepcopy(parameters), "runtime": _runtime(context)}})
+            "parameters": deepcopy(parameters), "runtime": _runtime(context)}}, inputs, context)
     _artifact(result, JUDGMENTS)
     return {"judgments": result}
 
@@ -404,6 +406,8 @@ def prepare_dataset(*, inputs, parameters, context):
             or {row.get("id") for row in predictions} != lookup.keys()
             or any(row.get("prediction_kind") != "model_prediction" for row in predictions)):
         raise ValueError("Review must select exact candidates with explicit model predictions")
+    validate_lineage(candidates)
+    validate_lineage(judgments)
     predictions = {row["id"]: row for row in predictions}
     selected = [{**lookup[row_id], "judge_predicted_label": predictions[row_id]["predicted_label"],
                  "judge_score": predictions[row_id]["score"], "candidate_digest": candidates["digest"],
@@ -426,6 +430,7 @@ def prepare_dataset(*, inputs, parameters, context):
                      "format": "jsonl", "sha256": hashlib.sha256(content).hexdigest()}],
         "id_column": "id", "row_schema": schema,
         "splits": [{"id": "train", "role": "train", "source_ids": ["reviewed"]}], "transformations": []}
+    manifest = attach_lineage(manifest, inputs, context)
     from ...dataset import validate_manifest
     validate_manifest(manifest)
     # Immutable content-addressed rows plus a full provenance sidecar. Never overwrite

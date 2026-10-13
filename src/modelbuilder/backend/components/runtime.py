@@ -91,7 +91,7 @@ def runtime_source_identity(package_root: Path | None = None) -> str:
     profile = root / "backend/components/mlx-darwin-arm64.lock"
     if profile.is_file():
         files.append(profile)
-    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py", "scientific.py", "scientific_operations.py", "smoke.py", "artifact_rights.py", "hub_rights.py", "hub_contract.py", "research_context_contract.py") if (root / name).is_file()]
+    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py", "scientific.py", "scientific_operations.py", "smoke.py", "artifact_rights.py", "generated_artifacts.py", "hub_rights.py", "hub_contract.py", "research_context_contract.py") if (root / name).is_file()]
     return identity({str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in sorted(files)})
 
@@ -187,10 +187,11 @@ def dispatch(inputs: dict, spec: dict):
         "environment": identity({"declared": spec.get("environment", {}), "actual": actual_environment}),
         "training": identity({"component": component, "parameters": parameters}),
         "data": identity({k: input_identity(v) for k, v in inputs.items()})}
-    from ..fixture_artifacts import declared_rights
+    from ..fixture_artifacts import declared_rights, declared_rights_parents
     run_context = {"protocol": component["protocol"], "output_dir": str(output),
                    "rights_admission": rights_admission,
                    "declared_artifact_rights": declared_rights(spec),
+                   "declared_rights_parents": declared_rights_parents(spec),
                    "job_dir": spec["job_dir"], "node_id": spec["node_id"], "invocation": spec.get("invocation", {}), "identities": identities, "environment": actual_environment,
                    "device": selected_device, "placement": selected_placement, "resume_modes": resume_modes,
                    "source_root": spec["source_root"], "source": spec["source"],

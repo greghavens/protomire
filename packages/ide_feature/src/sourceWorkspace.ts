@@ -3,14 +3,17 @@ import { lstat, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Project, Recipe, RecordValue, ServiceTransport } from './types';
-export type SourceChoice={alias:string;repository_id:string;workspace_path:string;label?:string;operator_trusted:boolean;available:boolean};
+import {sourceIdentityLines,SourceKind} from './sourceStatus';
+export type SourceChoice={alias:string;repository_id:string;workspace_path:string;label?:string;operator_trusted:boolean;available:boolean;source_kind?:SourceKind;declared_source_commit?:string;snapshot_digest?:string;transport_recipe_digest?:string};
 /** Compare only a human-chosen or already-open local folder; never open a service path blindly. */
 export async function matchLocalSource(folder:vscode.Uri,sources:SourceChoice[]):Promise<SourceChoice> {
   if(folder.scheme!=='file')throw new Error('Choose a local source folder. Remote workspace locations cannot be assumed to match the service checkout.');
   const canonical=await realpath(folder.fsPath);if(!(await stat(canonical)).isDirectory())throw new Error('Choose a source folder.');
   const matches=sources.filter(source=>source.available===true&&typeof source.workspace_path==='string'&&isAbsolute(source.workspace_path)&&normalize(source.workspace_path)===normalize(canonical));
-  if(matches.length!==1)throw new Error(matches.length?'This folder has multiple approved aliases. Ask the operator to remove the ambiguity.':'This local folder does not match an operator-approved source checkout. Ask the service operator to configure its alias. No client path was sent.');
+  if(matches.length!==1)throw new Error(matches.length?'This folder has multiple approved aliases. Ask the operator to remove the ambiguity.':'This local folder does not match an operator-approved source checkout or imported snapshot. Ask the service operator to configure its alias. No client path was sent.');
   const source=matches[0];if(!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$/.test(source.alias)||!/^sha256:[0-9a-f]{64}$/.test(source.repository_id))throw new Error('The service returned an invalid source identity. Reload before choosing a source.');
+  if(source.source_kind!==undefined&&!['git','imported_snapshot'].includes(source.source_kind))throw new Error('The service returned an unsupported source kind. No source was selected.');
+  if(source.source_kind==='imported_snapshot'&&(!/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/.test(source.declared_source_commit??'')||!/^(?:sha256:)?[0-9a-f]{64}$/.test(source.snapshot_digest??'')||!/^(?:sha256:)?[0-9a-f]{64}$/.test(source.transport_recipe_digest??'')))throw new Error('The service returned incomplete imported snapshot evidence. Reload before choosing a source.');
   return source;
 }
 export async function chooseLocalSource(client:ServiceTransport,projectId?:string):Promise<{source:SourceChoice;folder:vscode.Uri}|undefined> {
@@ -25,7 +28,7 @@ export async function chooseLocalSource(client:ServiceTransport,projectId?:strin
 export async function acknowledgeSource(choice:{source:SourceChoice;folder:vscode.Uri}):Promise<boolean> {
   const {source,folder}=choice;
   if(!vscode.workspace.isTrusted)throw new Error('Review and trust this native workspace before binding executable source. ModelBuilder never grants workspace trust automatically.');
-  return await vscode.window.showWarningMessage(`Bind this model project to ${source.label??source.alias} (${source.alias})?\nLocal folder: ${folder.fsPath}\nRepository identity: ${source.repository_id}\nThis is trusted local code with your filesystem and process access, not a hostile-code sandbox. ${source.operator_trusted?'The operator has approved execution.':'The operator has not approved execution; runs remain blocked.'} Binding does not run code. Each run still requires a separate decision.`,{modal:true},'Bind trusted source')==='Bind trusted source';
+  return await vscode.window.showWarningMessage(`Bind this model project to ${source.label??source.alias} (${source.alias})?\nLocal folder: ${folder.fsPath}\n${sourceIdentityLines(source).join('\n')}\nThis is trusted local code with your filesystem and process access, not a hostile-code sandbox. ${source.operator_trusted?'The operator has approved execution.':'The operator has not approved execution; runs remain blocked.'} Binding requires your explicit source-trust decision and grants no asset rights or license. Binding does not run code. Each run still requires a separate decision.`,{modal:true},'Bind trusted source')==='Bind trusted source';
 }
 export function sourceBindingPayload(choice:{source:SourceChoice},projectId:string,revision:number,key:string):RecordValue {
   return {project_id:projectId,expected_revision:revision,source_alias:choice.source.alias,source_repository_id:choice.source.repository_id,trusted:true,idempotency_key:key};
@@ -58,6 +61,7 @@ export async function reviewAndPinSource(client:ServiceTransport,context:SourceP
   const guard=()=>{context.assertCurrent();const current=vscode.workspace.workspaceFolders??[];if(current.length!==1||current[0].uri.scheme!==folder.scheme||current[0].uri.fsPath!==folder.fsPath)throw new Error('The native source workspace changed. Start a new source review.');if(vscode.workspace.textDocuments?.some(doc=>doc.isDirty&&doc.uri.scheme==='file'&&safeRelativePath(relative(resolve(folder.fsPath),resolve(doc.uri.fsPath)).split(sep).join('/'))))throw new Error('Save or explicitly discard native source edits before pinning. Your unsaved files are preserved.');};
   guard();
   const status=await client.invoke('project.source.status',{project_id:context.project.project_id});guard();const binding=status.binding;
+  if(status.source_kind==='imported_snapshot')throw new Error('Imported snapshots retain the extracted recipe inventory and declared commit; they cannot be pinned as authenticated Git. Use the local source rights review for the bound snapshot.');
   if(!binding||!status.available||status.repository_id!==binding.repository_id||binding.repository_id!==context.sourceRepositoryId)throw new Error('The bound repository identity changed or is unavailable. Reload the project and review its current source.');
   await matchLocalSource(folder,[{...status,alias:binding.alias,repository_id:binding.repository_id,workspace_path:status.workspace_path,operator_trusted:status.operator_trusted,available:status.available}]);guard();
   const inputCommit=await vscode.window.showInputBox({title:'Choose committed recipe source',value:status.head_commit??'',prompt:`Repository ${binding.alias} · ${binding.repository_id}. The displayed default is the checkout HEAD. Enter an explicit full Git commit; uncommitted edits cannot be pinned.`,validateInput:value=>fullCommit.test(value)?undefined:'Enter the complete 40- or 64-character hexadecimal Git commit.'});guard();if(inputCommit===undefined)return;if(!fullCommit.test(inputCommit))throw new Error('Enter an explicit full Git commit.');const commit=inputCommit.toLowerCase();

@@ -1,6 +1,7 @@
 /** Native local rights authoring. The shared service remains the sole rights authority. */
 import * as vscode from 'vscode';
 import {RecordValue} from './types';
+import {sourceIdentityLines} from './sourceStatus';
 
 export type LocalRightsInvoke=(operation:string,payload?:RecordValue,mutating?:boolean)=>Promise<RecordValue>;
 type Choice=vscode.QuickPickItem&{value:string};
@@ -29,7 +30,11 @@ async function documents(title:string,items:RecordValue[],check:()=>void,require
 }
 /** Every permission starts unselected; no license label is interpreted as a grant. */
 async function guidedPolicy(invoke:LocalRightsInvoke,evidence:RecordValue,check:()=>void):Promise<RecordValue|undefined>{
-  await view('Captured source bytes and license evidence: read all applicable terms',evidence,check);
+  const origin=evidence.evidence.source_origin;
+  await view('Captured source bytes and license evidence: read all applicable terms',{
+    ...evidence,...(origin?{source_identity:sourceIdentityLines({...origin,declared_source_commit:origin.commit}),
+      rights_review_notice:'Source identity, source trust and imported-byte validation grant no license. Only an explicit owner-approved review of the actual terms can record permitted uses.'}:{})
+  },check);
   const captured:RecordValue[]=evidence.evidence.documents??[];
   if(!captured.some(item=>typeof item.text==='string'&&item.text.trim())){
     await vscode.window.showWarningMessage('No nonempty applicable terms were captured. Rights remain unresolved. Choose an actual terms document before recording a policy.');check();return;
@@ -79,8 +84,10 @@ export async function reviewLocalAssetRights(invoke:LocalRightsInvoke,capabiliti
     const project=await invoke('project.get');
     const recipe=await invoke('recipe.get',{recipe_id:project.recipe_id});
     const status=await invoke('project.source.status');
-    if(!status.available||!status.binding||!recipe.source?.files?.length)throw new Error('Bind and pin the project source before reviewing source-origin rights. No model weights are needed.');
-    sourceSnapshot={project,recipe,repository_id:status.binding.repository_id};
+    if(!status.available||!status.binding||!recipe.source?.files?.length)throw new Error('Bind the project source and validate its pinned source inventory before reviewing source-origin rights. Imported snapshots use the extracted recipe inventory. No model weights are needed.');
+    if(status.source_kind!==undefined&&!['git','imported_snapshot'].includes(status.source_kind))throw new Error('Unsupported bound source kind. No source rights evidence was captured.');
+    if(status.source_kind==='imported_snapshot'&&(status.repository_id!==status.binding.repository_id||status.pinned_source_matches!==true||status.declared_source_commit!==recipe.source.commit||!/^(?:sha256:)?[0-9a-f]{64}$/.test(status.snapshot_digest??'')||!/^(?:sha256:)?[0-9a-f]{64}$/.test(status.transport_recipe_digest??'')))throw new Error('The imported snapshot does not match the current bound source and recipe inventory. Reload and validate the snapshot before reviewing rights.');
+    sourceSnapshot={project,recipe,status,repository_id:status.binding.repository_id};
   }
   const listing=await invoke('hub.local.files',{source_alias:source});
   if(!listing.files?.length){await vscode.window.showInformationMessage('The selected folder has no eligible regular files. No evidence or policy was created.');check();return;}
@@ -88,7 +95,7 @@ export async function reviewLocalAssetRights(invoke:LocalRightsInvoke,capabiliti
   if(sourceSnapshot){
     selected=sourceSnapshot.recipe.source.files.map((item:RecordValue)=>{
       const file=listing.files.find((candidate:RecordValue)=>candidate.path===item.path&&candidate.sha256===item.sha256);
-      if(!file)throw new Error('The selected folder does not contain the exact pinned source closure. Choose the bound source folder and save, commit and pin changes before review.');
+      if(!file)throw new Error(sourceSnapshot!.status.source_kind==='imported_snapshot'?'The selected folder does not contain the exact imported source inventory. Choose the bound snapshot folder; changed imported bytes require a new snapshot and review.':'The selected folder does not contain the exact pinned source closure. Choose the bound source folder and save, commit and pin changes before review.');
       return file;
     });
   }else selected=await documents('Choose exact local model or dataset files',listing.files,check,true);
@@ -96,7 +103,11 @@ export async function reviewLocalAssetRights(invoke:LocalRightsInvoke,capabiliti
   const evidenceDocs=await documents('Choose actual license, terms and notice documents',listing.files,check,true);if(!evidenceDocs)return;
   const files=[...new Map([...selected,...evidenceDocs].map(item=>[item.path,item])).values()];
   const label=await input('Declared local license label','Uninterpreted identifier. Use unknown when no label is established; actual terms and usage need review.',check,200,'unknown');if(label===undefined)return;
-  const evidence=await invoke('hub.license.local.inspect',{source_alias:source,repo_type:repoType,files:files.map(item=>item.path),evidence_document_paths:evidenceDocs.map(item=>item.path),max_bytes:files.reduce((sum,item)=>sum+item.size_bytes,0),declared_license:label,...(sourceSnapshot?{source_repository_id:sourceSnapshot.repository_id,source_commit:sourceSnapshot.recipe.source.commit}:{})},true);
+  const evidence=await invoke('hub.license.local.inspect',{source_alias:source,repo_type:repoType,files:files.map(item=>item.path),evidence_document_paths:evidenceDocs.map(item=>item.path),max_bytes:files.reduce((sum,item)=>sum+item.size_bytes,0),declared_license:label,...(sourceSnapshot?{source_repository_id:sourceSnapshot.repository_id,source_commit:sourceSnapshot.recipe.source.commit,recipe_id:sourceSnapshot.recipe.recipe_id,expected_revision:sourceSnapshot.recipe.revision,expected_recipe_digest:sourceSnapshot.recipe.digest,expected_project_revision:sourceSnapshot.project.revision}:{})},true);
+  if(sourceSnapshot?.status.source_kind==='imported_snapshot'){
+    const origin=evidence.evidence?.source_origin,target=origin?.review_target;
+    if(origin?.source_kind!=='imported_snapshot'||origin.git_provenance_verified!==false||origin.repository_id!==sourceSnapshot.repository_id||origin.commit!==sourceSnapshot.recipe.source.commit||origin.snapshot_digest!==sourceSnapshot.status.snapshot_digest||origin.transport_recipe_digest!==sourceSnapshot.status.transport_recipe_digest||target?.project_id!==sourceSnapshot.project.project_id||target.project_revision!==sourceSnapshot.project.revision||target.recipe_id!==sourceSnapshot.recipe.recipe_id||target.recipe_revision!==sourceSnapshot.recipe.revision||target.recipe_digest!==sourceSnapshot.recipe.digest)throw new Error('Captured imported snapshot evidence does not match the exact source, project and recipe reviewed. No rights decision was recorded.');
+  }
   const policy=await guidedPolicy(invoke,evidence,check);if(!policy)return;
   await view('Recorded source-bound policy',policy,check);
   if(sourceSnapshot){

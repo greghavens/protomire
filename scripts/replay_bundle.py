@@ -154,6 +154,7 @@ def build_wheel(root: Path, destination: Path, kind: str, *, target: str | None 
                     "src/modelbuilder/hub_contract.py", "src/modelbuilder/research_context_contract.py",
                     "src/modelbuilder/scientific.py", "src/modelbuilder/scientific_operations.py",
                     "src/modelbuilder/smoke.py", "src/modelbuilder/artifact_rights.py",
+                    "src/modelbuilder/generated_artifacts.py",
                     "src/modelbuilder/research_contract.py", "src/modelbuilder/recipe_registry_contract.py",
                     "src/modelbuilder/source_workspace.py", "src/modelbuilder/source_pinning_contract.py"}
                     or path.startswith(("src/modelbuilder/backend/", "src/modelbuilder/remote/"))):
@@ -317,6 +318,7 @@ def _prepare_session(source_root, data_dir, backend_python, pretrained_path, sta
                    "backend_python": str(backend_python.absolute()),
                    "pretrained_path": str(pretrained_path.resolve()) if pretrained_path else None,
                    "transport_recipe_digest": report["digest"], "source_commit": report["recipe"]["source"]["commit"],
+                   "source_kind": "git" if (source_root / ".git").exists() else "imported_snapshot",
                    "initial_recipe": current, "imported_recipe": execution_recipe}
     # This records only replay identity/configuration. It is never license authority.
     session["service"].store.put("replay_preparation", preparation["preparation_id"], pid, preparation)
@@ -372,10 +374,24 @@ def _load_session(prepared_path, state, *, trusted):
     binding = project.get("source_binding")
     if binding:
         # The operator's explicit trust applies only to this recorded root. The
-        # existing source resolver still checks the exact Git repository identity.
+        # source resolver rechecks the exact explicitly bound source kind/identity.
         from modelbuilder.source_workspace import SourceWorkspaces
         session["service"].source_workspaces = SourceWorkspaces({binding["alias"]: {
-            "path": str(source_root), "trusted": trusted, "project_ids": [pid]}})
+            "path": str(source_root), "kind": binding.get("source_kind", "git"),
+            "trusted": trusted, "project_ids": [pid]}})
+        # Restore local evidence aliases only from receiving-store authority for
+        # this exact already-bound root. Native source and Hub folder aliases may
+        # differ. Neither bundle JSON nor the receipt can supply policy authority.
+        hub = session["service"].hub
+        aliases = {binding["alias"]: str(source_root)}
+        for policy in hub.policy_snapshot(pid).values():
+            origin = policy.get("source_origin", {})
+            if (origin.get("source_kind") == "imported_snapshot"
+                    and origin.get("repository_id") == binding["repository_id"]):
+                evidence = hub._get("hub_license_evidence", policy["evidence_id"], pid)
+                if evidence["evidence"].get("source_origin") == origin:
+                    aliases[evidence["source_alias"]] = str(source_root)
+        hub.publication_roots = {pid: aliases}
     original = call("recipe.get", {"project_id": pid, "recipe_id": prepared["recipe_id"],
                                    "revision": prepared["initial_recipe"]["revision"]})
     recipes = call("recipe.list", {"project_id": pid})
@@ -402,6 +418,12 @@ def _plan_session(session):
     state["plan"] = plan
     return {"status": "PREPARED" if plan.get("executable") is True else "BLOCKED", "execution_allowed": False,
             "submitted": False, "preparation": session["preparation"], "plan": plan,
+            "source_review_setup": {"source_alias": "portable-snapshot",
+                "source_roots": {"portable-snapshot": {"path": str(session["source_root"]),
+                    "kind": session["preparation"].get("source_kind", "git"), "trusted": False,
+                    "project_ids": [session["pid"]]}},
+                "hub": {"publication_roots": {session["pid"]: {"portable-snapshot": str(session["source_root"])}}},
+                "authority": "Operator configuration guidance only; binding, trust and rights require separate explicit decisions"},
             "execution_revision": recipe["revision"], "execution_digest": recipe["digest"],
             "transcript": session["transcript"]}
 

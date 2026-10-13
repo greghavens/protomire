@@ -34,9 +34,11 @@ def test_source_component_training_evaluation_export_and_live(tmp_path, monkeypa
 
 
 def test_builtin_lifecycle_uses_process_bodies_and_native_lineage(tmp_path):
-    from modelbuilder.backend import ZenMLBackend
+    from tests.integration.native_fixture_support import pinned_builtin_source
     module = harness('tests/integration/test_native_lifecycle.py', 'parallel_fixture')
-    backend = ZenMLBackend(tmp_path)
+    # Dynamic module loading does not execute the helper module's pytest fixture.
+    module.SOURCE_ROOT = pinned_builtin_source(tmp_path)
+    backend = module.native_backend(tmp_path)
     body = module.recipe(steps=4)
     body['execution'] = {'max_parallel_stages': 2}
     request = module.submit(backend, body)

@@ -142,7 +142,8 @@ def test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim(
     assert result["port"] == "recovery_checkpoint"
     assert result["resume_modes"] == (MODES if device in {None, "cpu"} else ["warm_start"])
     assert result["sha256"] == digest
-    assert read_json(job / "recovery.json") == {"artifact_id": artifact_id}
+    assert read_json(job / "recovery.json") == {"artifact_id": artifact_id, "node_id": "train",
+                                               "canonical_node_id": "train", "invocation_id": "train"}
     if component:
         assert result["descriptor"] == descriptor
     assert sdk.checkpoint(job, "last")["resume_modes"] == result["resume_modes"]

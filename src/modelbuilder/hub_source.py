@@ -9,7 +9,7 @@ import copy
 from pathlib import Path
 
 from .hub import fail, fingerprint
-from .hub_rights import digest, source_reference, validate_artifact_rights, validate_source_origin
+from .hub_rights import digest, source_reference, validate_artifact_rights, validate_source_origin, source_review_scope
 from .source_provenance import verify_export_git_provenance
 from .models import ServiceError
 
@@ -25,9 +25,51 @@ def inspect_origin(hub, payload, root):
             or not recipe["source"].get("files")):
         fail("license_source_mismatch", "Source review must select the current bound repository and its exact pinned recipe commit")
     files = copy.deepcopy(recipe["source"]["files"])
-    verify_export_git_provenance({"recipe": recipe, "files": {item["path"]: item for item in files}}, root)
+    snapshot = source.get("source_kind") == "imported_snapshot"
+    extra = {}
+    if snapshot:
+        if source["declared_source_commit"] != recipe["source"]["commit"] or source["source_files"] != files:
+            fail("license_source_mismatch", "Current recipe source differs from the imported snapshot inventory")
+        if (payload.get("recipe_id") != recipe["recipe_id"] or payload.get("expected_revision") != recipe["revision"]
+                or payload.get("expected_recipe_digest") != recipe["digest"]
+                or payload.get("expected_project_revision") != project["revision"]):
+            fail("license_source_changed", "Snapshot review requires the exact current receiving project and recipe revision/digest")
+        extra = {"source_kind": "imported_snapshot", "snapshot_digest": source["snapshot_digest"],
+                 "transport_recipe_digest": source["transport_recipe_digest"], "git_provenance_verified": False,
+                 "review_target": {"project_id": project["project_id"], "project_revision": project["revision"],
+                                   "recipe_id": recipe["recipe_id"], "recipe_revision": recipe["revision"],
+                                   "recipe_digest": recipe["digest"], "scope": source_review_scope(recipe)}}
+    else:
+        verify_export_git_provenance({"recipe": recipe, "files": {item["path"]: item for item in files}}, root)
     return {"schema_version": "modelbuilder.source-origin/v1", "repository_id": source["repository_id"],
-            "source_alias": source["alias"], "commit": recipe["source"]["commit"], "files": files}
+            "source_alias": source["alias"], "commit": recipe["source"]["commit"], "files": files, **extra}
+
+
+def revalidate_snapshot_evidence(hub, evidence, *, exact_review=True):
+    """Captured JSON is evidence only; re-open the configured root and bytes."""
+    data = evidence["evidence"]
+    origin = data.get("source_origin", {})
+    if origin.get("source_kind") != "imported_snapshot":
+        return
+    target = origin["review_target"]
+    root = hub._source(evidence["project_id"], evidence["source_alias"])
+    payload = {"project_id": evidence["project_id"], "source_repository_id": origin["repository_id"],
+               "source_commit": origin["commit"], "recipe_id": target["recipe_id"],
+               "expected_revision": target["recipe_revision"], "expected_recipe_digest": target["recipe_digest"],
+               "expected_project_revision": target["project_revision"]}
+    if exact_review:
+        if inspect_origin(hub, payload, root) != origin:
+            fail("license_source_changed", "Imported snapshot identity or receiving recipe changed after evidence capture")
+    else:
+        project = hub.service._get("project", evidence["project_id"], evidence["project_id"])
+        source, _ = hub.service.source_workspaces.resolve(project.get("source_binding"), evidence["project_id"])
+        if (Path(source["workspace_path"]) != root or source["repository_id"] != origin["repository_id"]
+                or source.get("snapshot_digest") != origin["snapshot_digest"]):
+            fail("license_source_changed", "Reviewed imported snapshot was substituted or is no longer project-bound")
+    for item in data["source_file_manifest"]:
+        actual = fingerprint(root / item["path"], item["size_bytes"])
+        if any(actual[key] != item[key] for key in actual):
+            fail("license_evidence_changed", "Reviewed imported source or terms bytes changed")
 
 
 def bind_origin(hub, payload, actor, payload_hash, request_id, *, operation="hub.source.policy.bind"):
@@ -55,8 +97,11 @@ def bind_origin(hub, payload, actor, payload_hash, request_id, *, operation="hub
         if not origin or origin != data.get("source_origin") or policy["license_evidence_digest"] != evidence["evidence_digest"]:
             fail("license_source_mismatch", "The policy does not match the exact captured source origin")
         root = hub._source(project_id, evidence["source_alias"])
+        target = origin.get("review_target", {})
         current_origin = inspect_origin(hub, {"project_id": project_id, "source_repository_id": origin["repository_id"],
-                                             "source_commit": origin["commit"]}, root)
+            "source_commit": origin["commit"], "recipe_id": target.get("recipe_id"),
+            "expected_revision": target.get("recipe_revision"), "expected_recipe_digest": target.get("recipe_digest"),
+            "expected_project_revision": target.get("project_revision")}, root)
         if current_origin != origin:
             fail("license_source_mismatch", "Pinned source identity changed after review")
         validate_source_origin(recipe, policy)

@@ -1,0 +1,33 @@
+{
+  "description": "Hashes of original locally retained evidence; logical labels omit executor-private paths. Compact receipt.json is an explicitly scoped extraction, not a replacement for the originals.",
+  "sha256": {
+    "aggregate/aggregate.log": "cb8f979108cad0ee62ac6d58de2fe70159e6cabbcc4cf98b95fd2db266b98788",
+    "aggregate/corrected-full-aggregate-rerun.log": "cb8f979108cad0ee62ac6d58de2fe70159e6cabbcc4cf98b95fd2db266b98788",
+    "aggregate/cpu-components.log": "eb8c03b2a93ee94613d5c8f0573d8a793ed42c5b0c170190503a47cab617b8b8",
+    "aggregate/cpu-components.xml": "b3f2b593cde847bbdc0cc443516a47e569f9da2608a55be15fc0eb16e88e17fb",
+    "aggregate/cpu-concurrency.log": "013a455c46b15b0e8ac40f0a7eac78bebfdfcc03d7a38c4fcd52afd6670748de",
+    "aggregate/cpu-concurrency.xml": "372d693807f678748951731d3d9460cec5f2b10e0f3d5e81ad89fb837794be06",
+    "aggregate/cpu-lifecycle.log": "53b33825b09debef35b495e1a5b7861eb2dc9c40f5085d06016d9339a471a070",
+    "aggregate/cpu-lifecycle.xml": "9065c9a27b35b4dbd52d153b462e804f4c26cb7c30e229c4595838efd599b377",
+    "aggregate/hub-sdk.xml": "9ac083cfcf0aa7cae56de621f82d16e78948188e0606f7a763d1e20b40e55657",
+    "aggregate/integration.log": "32cebc7e151b02117da7420df84364c009d02a624482485b01ebc07330d39814",
+    "aggregate/integration.xml": "bd1981ec48322c7573123946b44447a3389e7a2a8b2f2e93431649c5e315c75c",
+    "aggregate/native-runner.json": "99715f9ee48bb01bc3304de12e6ff57e1ef6b8e8b92dd8630f6a40b4c3cf4625",
+    "aggregate/unit-service-mcp.xml": "7ade1e85fdb32adf27871c1bdcdc0ac2d8607c64034a664f88dd2e3237bbcdba",
+    "portable-2e60975/custom-comparison.json": "cee9d3d1792605675496f4c04101a7b790e071f3769d23ecdbc1863b7c990e5c",
+    "portable-2e60975/public-api-comparison.json": "a9a701f71962d8a5ba6cd63e8843680ad1226dba7e9463e62e2c059da4ba654d",
+    "portable-2e60975/public-strict-comparison.json": "e708c8b899bf259a321d7814b79916f88a844087de469c24fcb699f17150d9b8",
+    "portable-2e60975/source-after.json": "e73c994a0b640f5ac29703d3a26c3b2b215b859e54a7a50988f2ef2ee21d40b8",
+    "portable-2e60975/source-before.json": "73114700055c5d38e31a0ca2b83ccff6d46b1b1c88869504f189489c124c7cde",
+    "portable-2e60975/summary.json": "0210c84067ec8a82d55bb553b18df2695d662ab287a25796f77d596fc44429e4",
+    "portable-2e60975/termination.json": "5d047e2bb9797511ead1c0c1fe11f2c05387d78e38a6a4fb9ffa88b6a6a42478",
+    "uncommitted-repairs/component-fixtures.log": "d54aa8da1db1a5a640b58c8f770046540590549e06bc26442b899a4177f3e827",
+    "uncommitted-repairs/concurrency-fixtures.log": "676a4ecca71fda58236fe368489cabe1baee7cb792e25dc02d772c39903cff17",
+    "uncommitted-repairs/remaining-fixtures.log": "35452226da5618242bbce9d4b764e47c65a5ce68f37843e3da3c69515c649244",
+    "working-tree/cache-receipt-integrated.log": "73a1c37d18290a4ee6cde9e5331947782f68de9f7b24444240482261c5c76fb7",
+    "working-tree/snapshot-combined-light-diagnostic.log": "265052b1774f30764a1c8129d74b98a9150da97d468915ff6b5962a7f1e8c34e",
+    "working-tree/snapshot-combined-light-diagnostic.xml": "8983d62bcbaf0483a1adc029a11f338ca88dce9e17f0a471edb5093e7166c631",
+    "working-tree/snapshot-integrated-focused.log": "2d537e2454ca41de4f4ca2a3259b3bbc86965d7c7f90ebc6f7ccd6910ad60ab3",
+    "working-tree/snapshot-integrated-frontend.log": "cb93b5c2dde2952661dab2e8721dfa41b85b8f1b0e0c474b8a9de75882396609"
+  }
+}

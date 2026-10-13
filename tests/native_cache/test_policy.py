@@ -15,6 +15,16 @@ def node(**changes):
             "cache_policy": "enabled", **changes}
 
 
+def authorize_cache_request(request):
+    """Persist the selected admission receipt, as prepare_execution does."""
+    from modelbuilder.backend.execution_rights import prepare_authorization
+    from modelbuilder.execution import selected_recipe, selection
+    recipe = selected_recipe(request["recipe"], selection(request["recipe"], request.get("execution")))
+    request["rights_authorization"] = prepare_authorization(NS(), request, recipe)
+    request["rights_extensions"] = request["rights_authorization"]["receipt"]["declarations"]["extensions"]
+    return request
+
+
 def test_only_explicit_json_value_functions_are_cacheable():
     validate_node_settings(node())
     assert supports_cache(node(kind="component.run", component={"role": "dataset"}))
@@ -116,9 +126,7 @@ def test_cached_candidate_checks_are_read_only_and_fail_closed(tmp_path, monkeyp
     request = {"project_id": "project", "root": str(tmp_path / "backend"), "source_root": str(tmp_path),
         "trusted_code_roots": [str(tmp_path)], "recipe": {"recipe_id": "recipe", "revision": 1,
         "project_id": "project", "source": {"commit": "a" * 40}, "nodes": [node()], "edges": []}}
-    from modelbuilder.backend.execution_rights import prepare_authorization
-    request["rights_authorization"] = prepare_authorization(NS(), request, request["recipe"])
-    request["rights_extensions"] = request["rights_authorization"]["receipt"]["declarations"]["extensions"]
+    authorize_cache_request(request)
     execution = {"node_ids": ["prepare"], "input_bindings": []}
     expected = cache_identity(request, node(), execution, {})
     store = Path(request["root"]) / "zenml-stores" / "artifact"
@@ -221,22 +229,26 @@ def test_execution_and_condition_source_belong_to_runtime_closure(tmp_path):
     assert runtime_source_identity(tmp_path) != changed
 
 
-def _persisted_cache_request():
-    from modelbuilder.backend.execution_rights import prepare_authorization
+def _persisted_cache_request(*, selected=False):
     request = {"project_id": "test-project", "recipe": {"source": {"commit": "a" * 40},
                "nodes": [node()], "edges": []}}
-    request["rights_authorization"] = prepare_authorization(NS(), request, request["recipe"])
-    request["rights_extensions"] = request["rights_authorization"]["receipt"]["declarations"]["extensions"]
-    return request
+    if selected:
+        request["recipe"]["nodes"].append(node(id="unselected"))
+        request["execution"] = {"node_ids": ["prepare"], "input_bindings": []}
+    return authorize_cache_request(request)
 
 
-def test_internal_cache_revalidation_keeps_public_authority_rejected(monkeypatch):
+@pytest.mark.parametrize("selected", [False, True])
+def test_internal_cache_revalidation_keeps_public_authority_rejected(monkeypatch, selected):
     from modelbuilder.backend.execution_rights import prepare_authorization, RESERVED_FIELDS
     from modelbuilder.backend.native_cache import _validate_cache_request
-    request = _persisted_cache_request()
+    request = _persisted_cache_request(selected=selected)
+    before = copy.deepcopy(request)
     calls = []
     monkeypatch.setattr("modelbuilder.backend.admission.validate_execution", lambda backend, body: calls.append(body))
     _validate_cache_request(NS(), request)
+    assert request == before
+    assert set(request["rights_authorization"]["receipt"]["nodes"]) == {"prepare"}
     assert len(calls) == 1 and not RESERVED_FIELDS.intersection(calls[0])
     for field in RESERVED_FIELDS:
         public = {**calls[0], field: request["rights_authorization"]}
@@ -248,7 +260,7 @@ def test_internal_cache_revalidation_keeps_public_authority_rejected(monkeypatch
         _validate_cache_request(NS(), {**request, "reviewed_license_policies": {}})
 
 
-@pytest.mark.parametrize("change", ["missing_receipt", "digest", "project", "source", "node", "extensions", "protected_input"])
+@pytest.mark.parametrize("change", ["missing_receipt", "digest", "project", "source", "node", "environment", "recipe_identity", "extensions", "protected_input"])
 def test_internal_cache_revalidation_rejects_receipt_or_intent_drift(monkeypatch, change):
     from modelbuilder.backend.native_cache import _validate_cache_request
     request = _persisted_cache_request()
@@ -264,12 +276,33 @@ def test_internal_cache_revalidation_rejects_receipt_or_intent_drift(monkeypatch
         request["recipe"]["source"] = {"commit": "b" * 40}
     elif change == "node":
         request["recipe"]["nodes"] = [node(parameters={"changed": True})]
+    elif change == "environment":
+        request["recipe"]["environment"] = {"python": "3.13"}
+    elif change == "recipe_identity":
+        request["recipe"]["recipe_id"] = "another-recipe"
     elif change == "extensions":
         request["rights_extensions"] = {"usage_context": {"purpose": "changed"}}
     else:
         request["resolved_input_bindings"] = [{"node_id": "prepare", "rights_required": True}]
     with pytest.raises(BackendError):
         _validate_cache_request(NS(), request)
+    assert calls == []
+
+
+def test_internal_cache_revalidation_rejects_receipt_from_unselected_view(monkeypatch):
+    from modelbuilder.backend.execution_rights import prepare_authorization
+    from modelbuilder.backend.native_cache import _validate_cache_request
+    request = _persisted_cache_request()
+    public = {key: value for key, value in request.items()
+              if key not in {"rights_authorization", "rights_extensions"}}
+    # A valid receipt digest cannot authorize a different admission view. Even
+    # absent versus explicit empty declarations change the exact source scope.
+    request["rights_authorization"] = prepare_authorization(NS(), public, public["recipe"])
+    calls = []
+    monkeypatch.setattr("modelbuilder.backend.admission.validate_execution", lambda *args: calls.append(args))
+    with pytest.raises(BackendError) as stale:
+        _validate_cache_request(NS(), request)
+    assert stale.value.code == "license_policy_changed"
     assert calls == []
 
 

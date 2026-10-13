@@ -6,10 +6,17 @@ The intended end-user install is one app:
 - macOS: drag Modelbuilder from its DMG into Applications
 - Windows: run the Modelbuilder user installer
 
-**These installers are not yet built or available.** The current checkout is a
-source development build. Do not present its Python/bootstrap/service commands
-as an end-user installation path. A successful unit test or package recipe does
-not establish a working native installer.
+**An unsigned macOS arm64 development DMG has been built and tested on the
+Mac build host. There is no published, signed, clean-machine-accepted release.**
+That artifact pins runtime `2e60975`; it does not contain later source changes.
+Its mounted payload passed strict integrity, CLI/import-location and five managed
+service/MCP lifecycle checks. Bundled MPS and MLX checks passed separately.
+Native visual testing, signing/notarization and clean-machine acceptance remain
+open. The complete evidence archive is preserved on the build host; its latest
+Library upload is blocked. Linux AppImage and Windows installers are not built.
+See [current verification](../docs/CURRENT_VERIFICATION.md) for exact scope.
+Do not present development Python/bootstrap/service commands as an end-user
+installation path. Unit tests or a package recipe alone are not installer proof.
 
 The new package path embeds the operation service, its CPython environment,
 mandatory MCP bridge, verified native dependency resources, Git and an initial
@@ -26,7 +33,7 @@ A restart creates a new session credential. No daemon is registered at login,
 no global shell profile is changed, and no listener binds off-host.
 
 A selected project source folder is admitted only through the native owner flow:
-choose an existing committed Git checkout, explicitly confirm source trust, then
+choose a committed Git checkout or imported source snapshot, explicitly confirm source trust, then
 bind the returned project-specific alias using the existing revisioned operation.
 Cancelling does not register or trust anything. Registration stores no credential,
 does not create Git repositories or commits, and preserves the checkout identity

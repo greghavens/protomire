@@ -6772,6 +6772,18 @@
                     "type": "array",
                     "uniqueItems": true
                   },
+                  "expected_project_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "expected_recipe_digest": {
+                    "pattern": "^[a-f0-9]{64}$",
+                    "type": "string"
+                  },
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
                   "files": {
                     "items": {
                       "maxLength": 1024,
@@ -6794,6 +6806,11 @@
                     "type": "integer"
                   },
                   "project_id": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "recipe_id": {
                     "maxLength": 200,
                     "minLength": 1,
                     "type": "string"

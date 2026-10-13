@@ -263,3 +263,25 @@ def test_cli_error_is_json_without_traceback_and_persists_requested_output(tmp_p
     assert result.returncode == 1 and "Traceback" not in result.stderr
     assert json.loads(result.stderr)["status"] == "FAIL"
     assert json.loads(output.read_text())["submit_attempted"] is False
+
+
+@pytest.mark.parametrize("evidence_alias", ["snapshot", "separate-evidence"] )
+def test_gitfree_snapshot_public_review_reopens_same_project_and_normal_dispatch(source, tmp_path, boundary, evidence_alias):
+    from modelbuilder.recipe import export_bundle, import_bundle
+    from snapshot_review_fixture import review_synthetic_snapshot
+    extracted = tmp_path / "imported-gitfree-source"
+    import_bundle(export_bundle(json.loads((source / "recipe.json").read_text()), source_root=source), extracted)
+    (extracted / "TERMS.txt").write_text("Synthetic fixture terms: train, evaluate and export isolated test-authored fixtures only.\n")
+    path, prepared = prepare(extracted, tmp_path)
+    assert prepared["source_review_setup"]["source_roots"]["portable-snapshot"]["kind"] == "imported_snapshot"
+    assert prepared["source_review_setup"]["source_roots"]["portable-snapshot"]["trusted"] is False
+    reviewed = review_synthetic_snapshot(prepared, evidence_alias=evidence_alias)["recipe"]
+    plan = replay.plan_prepared(path, tmp_path / "snapshot-plan.json", trusted=True)
+    assert plan["status"] == "PREPARED" and plan["plan"]["executable"]
+    assert plan["execution_digest"] == reviewed["digest"]
+    output = tmp_path / "snapshot-dispatch.json"
+    with pytest.raises(RuntimeError, match="Replay failed"):
+        replay.run_prepared(path, output, expected_revision=reviewed["revision"], expected_digest=reviewed["digest"], trusted=True)
+    receipt = json.loads(output.read_text())
+    assert receipt["submitted"] is True and receipt["operation_id"]
+    assert not (extracted / ".git").exists()

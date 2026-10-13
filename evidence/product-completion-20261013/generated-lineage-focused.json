@@ -1,0 +1,163 @@
+{
+  "status": "focused_worker_checks_passed_parent_aggregate_pending",
+  "patch_sha256": "6e66c8c05095a2a6afb178108472ccfcb88d5719dc794332be649db911bc5af6",
+  "files": [
+    {
+      "path": "src/modelbuilder/backend/components/local_inference.py",
+      "base_sha256": "fc31986d3ff29db259b0d35b12f763e0dd06cdb5c008c29954a2fb94800a4d56",
+      "sha256": "abc19d392e1ae997792594c175044887c3f67b514d0b325fef720b979bfc46de"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/runtime.py",
+      "base_sha256": "bf9fe446995659c42c4e52035b7c25c109087de9aab31ace27a51042e521ac62",
+      "sha256": "2b8ca89553b0427dce638e11c04a1194bf77776411c3ecca1c87bc048730be4a"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/transformers_inference.py",
+      "base_sha256": "10a60db4a9df7648e436cd3c54f351fd2d26a05779f3533adfda99fbfa9c5e37",
+      "sha256": "8a441a5d2c34ac34bf6f9353c558517dee4a83844ff18ba4dc0cb3be56a905cb"
+    },
+    {
+      "path": "src/modelbuilder/backend/execution_rights.py",
+      "base_sha256": "7ee9bcb588a0087b377f87930a966039a0e769072c647f97dd9cf05ad7ff6320",
+      "sha256": "fdfb4079bdb827e1e9c1bf4fc927fd4afb4b25bbc607b07478b25760c25cabc1"
+    },
+    {
+      "path": "src/modelbuilder/backend/fixture_artifacts.py",
+      "base_sha256": "be3c040927178605348e5e24dcf411e008e76feffccbbfb5360b8172cc5d5a74",
+      "sha256": "d0f79d64fbe31db2ef37e09feed3de6783f558a874ca2827852722788d4c5b3d"
+    },
+    {
+      "path": "src/modelbuilder/backend/native_inputs.py",
+      "base_sha256": "effb0a0d4bcb35287e40fbefaf8b4ce9545d80fcad85d809dfa118f6deac06b3",
+      "sha256": "57a8f4e15f4a6226959cfffbda0211221893945a66d9be8fe50402081f95cc91"
+    },
+    {
+      "path": "src/modelbuilder/dataset.py",
+      "base_sha256": "8804588ee196bb7d1b5e8789ddbed44d97a63095b943ff720172033692178f2d",
+      "sha256": "deae1453c21bf854f1aebcdbfef1c59da9156b0146f125ce8baded2baa7ded18"
+    },
+    {
+      "path": "src/modelbuilder/dataset_streaming.py",
+      "base_sha256": "29e0f9f6cfc49f59cc6ed6195dc13f536473e17dbd833a3beb3ab77fd9f8218e",
+      "sha256": "87b86e41f2eec783825583fa0771985fed74964de608540b555e27ca58ba0ee5"
+    },
+    {
+      "path": "src/modelbuilder/generated_artifacts.py",
+      "base_sha256": null,
+      "sha256": "8ef70661b4d4c5d33d17115073314caaf8d016a0a01fdbbfb75e633b4861da07"
+    },
+    {
+      "path": "src/modelbuilder/hub.py",
+      "base_sha256": "733bc0572a7c460d9dc56e51737a313006858af4f59a5e32378a0e6b6a3fbaf6",
+      "sha256": "6f4e3151d098412041680284da191afe3827c4512c66e0107c30206753f04d06"
+    },
+    {
+      "path": "tests/components/test_generated_rights.py",
+      "base_sha256": null,
+      "sha256": "2fa0968da1c0c77c241d667f9be3e1a7e47b2055569e2962082fab6aae331a8f"
+    },
+    {
+      "path": "tests/components/test_local_inference.py",
+      "base_sha256": "7e0a13c28bc589aeade5e0dee53e5bf1ede7a88dc833ed06bf9493048f9ad026",
+      "sha256": "166496d8ffb7e15d81d470b1df95b2f67941cb89130cf67ed8820744ba0a3c8e"
+    },
+    {
+      "path": "tests/portability/test_replay_bundle.py",
+      "base_sha256": "bcb19ba2e8661f18de07f2c46f7f43d3d4dadd21587ca4b9de1a853bd95d39aa",
+      "sha256": "f9c47c7c56029003e566d1703a715cadaa133eb5d6477f2b8783d0b5e207418b"
+    },
+    {
+      "path": "schemas/dataset.v1.schema.json",
+      "base_sha256": "3a911f20fea9680b7e0698604852155038324f158fa581f1d36e4b6259d5b8bb",
+      "sha256": "c82c08d7bd8f37958373ab3a783084a3b963e2712a60cb62d3aefdeb4c5ad56f"
+    },
+    {
+      "path": "scripts/replay_bundle.py",
+      "base_sha256": "10f01969393bc5cf41e283c5600e480883c9239cbc27c4c74927bb27bda36397",
+      "sha256": "17635046c6d79dfe36d8ea649a632c582d90077129fee9fa815492334731fa73"
+    },
+    {
+      "path": "docs/LOCAL_GENERATION_AND_JUDGES.md",
+      "base_sha256": "3aa4f04ccf7e2c68604c87c6fc8054b287abd339c4f5c783f84f69e3158634f5",
+      "sha256": "39d2f21c471ca0587b984a9ddc3f21d61b0a61a5d4b2ba26f373236f4334f0b6"
+    }
+  ],
+  "checks": [
+    {
+      "name": "final-verification",
+      "note": "Combined actual CPU adapter, native security and rights suite before final finite-float decoder hardening.",
+      "counts": {
+        "tests": "216",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "96.587"
+      },
+      "evidence_sha256": {
+        "xml": "1af506720a5b2b3896de3a56cb85069b65bbf061c1c0654452c9bf2a8f26a2c1",
+        "log": "e5862ecd77076eb057a491d4703dcf4d5e95a09bfab239fd04235b1ea430a288",
+        "invocation": "ad7435aa089323bb24866b63cf96c341e66d952b8399a394559be76d2316e834"
+      }
+    },
+    {
+      "name": "finite-json-final",
+      "note": "Final-source rights/native JSON/security regression suite, including \u00b11e999 and normal finite floats.",
+      "counts": {
+        "tests": "133",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "3.308"
+      },
+      "evidence_sha256": {
+        "xml": "56b24562e3cada68fcb8322a0c96c30c0984eb15cff9f7119881b192c5e5dc59",
+        "log": "e84459e9ed7af60fbecae4d6ff23b9af96c56ff70a0824e8f29938a3e30ddf14",
+        "invocation": "19d825dc9003710272069f5c315bbd477acd4282b712541bebafa7291f66be4a"
+      }
+    },
+    {
+      "name": "service-delivery",
+      "note": "Final-source dataset registration/binding, policy and isolated service/backend wheel closure suite. Two shipping source-pin snapshots excluded pending source freeze/repin.",
+      "counts": {
+        "tests": "181",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "8.223"
+      },
+      "evidence_sha256": {
+        "xml": "2a3d45f200b634c83e4b7df51d1953118f7dec889bcf58cdd2fee8ad208cb0cb",
+        "log": "50d94cf4e31cc4a3564125214fec0b168c7ec9e98f31c376e6f6f86318c3a8f6",
+        "invocation": "0ee7697861f167f291f4a4df533b7ad3b3e044b5ba4b543d7a4f3a9fcbed63e4"
+      }
+    },
+    {
+      "name": "selected-subgraph-final",
+      "note": "Final-source actual CPU generation\u2192judge\u2192exact selected preparation; dataset resources absent; revoked dataset parent blocked; foreign existing native project blocked.",
+      "counts": {
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "38.748"
+      },
+      "evidence_sha256": {
+        "xml": "e59bc85d340cb6ecb9cc434ecb41092ed8c05b8acbd22a91a061d60a0e6fd23c",
+        "log": "1efa98c10309f6acce2caa1fa8c2d26aecce27f0989cbce7874f64fd7dea796b",
+        "invocation": "9f2048681a858502e880a6f61d9d274a2d871dc232c8dd9d9b7daefda3912a19"
+      }
+    }
+  ],
+  "scope": [
+    "Known candidate/judgment v1/v2 schemas and generated prepared manifests carry nonrecursive canonical content and exact parent rights evidence.",
+    "Known native dict schemas are protected independently of port label; inert data.json inspection never invokes nested materializers.",
+    "Current project-owned policy records re-admit native parent rights after source importer/resource pruning.",
+    "Generated dataset registry/split/binding lineage unions output reviews with inherited obligations; output labels cannot replace them.",
+    "Source trust is unchanged and separate. Rights JSON is evidence, not policy authority. Historic unsealed artifacts are not upgraded."
+  ],
+  "not_run": [
+    "Full repository aggregate and final source repin are owned by parent.",
+    "No additional generated-data training/export workload was introduced. Existing inherited-envelope export/publication admission is reused."
+  ]
+}

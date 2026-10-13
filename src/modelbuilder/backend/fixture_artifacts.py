@@ -11,7 +11,7 @@ from .common import write_json
 FORMAT = "modelbuilder.fixture-pytorch/v1"
 
 
-def declared_rights(spec):
+def declared_rights_parents(spec):
     parents = []
     extensions = spec.get("rights_extensions", {})
     if "artifact_rights" in extensions:
@@ -29,7 +29,14 @@ def declared_rights(spec):
         parents.append({"artifact_id": resource["id"], "rights": rights})
     if not parents:
         parents.append({"artifact_id": "unreviewed-local-origin:" + spec["node_id"], "rights": None})
-    return combine_parent_rights(parents)
+    for parent in parents:
+        resource = next((item for item in spec.get("dependencies", []) if item["id"] == parent["artifact_id"]), None)
+        parent["content_digest"] = identity(resource if resource is not None else spec.get("source", {}))
+    return parents
+
+
+def declared_rights(spec):
+    return combine_parent_rights(declared_rights_parents(spec))
 
 
 def attach_declared_rights(value, spec):

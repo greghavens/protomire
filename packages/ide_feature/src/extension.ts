@@ -639,12 +639,12 @@ export function activate(context:vscode.ExtensionContext) {
     const project=workbench.currentProject;if(!project||!managed)throw new Error('Open a model project in the managed app before registering trusted source.');
     const folder=context.globalState.get<Record<string,string>>('modelbuilder.projectFolders',{})[project.project_id];if(!folder)throw new Error('This project has no selected local layout folder.');
     const current=()=>{if(workbench.currentProject?.project_id!==project.project_id)throw new Error('The model project changed during source registration.');};
-    const result=await registerProjectSource(client,project,vscode.Uri.file(folder),(path,id,trusted)=>managed.registerSource(path,id,trusted),current);
+    const result=await registerProjectSource(client,project,vscode.Uri.file(folder),(path,id,trusted,kind)=>managed.registerSource(path,id,trusted,kind),current);
     if(result){explorer.refresh();await workbench.open({projectId:project.project_id,section:'Code'});}
   });
   const newProject=new NewProjectView(context,client,{
     assistantOptions,
-    registerSource:managed?(path,id,trusted)=>managed.registerSource(path,id,trusted):undefined,
+    registerSource:managed?(path,id,trusted,kind)=>managed.registerSource(path,id,trusted,kind):undefined,
     downloadBaseModel:async(project,assertCurrent)=>{await openHubWorkflow(client,project.project_id,assertCurrent,hubReview);},
     onCreated:async(project,folder,start)=>{
       if(!await workbench.closeProject())throw new Error('The new project is saved. Existing unsaved work was preserved; close it when ready to open the new project.');

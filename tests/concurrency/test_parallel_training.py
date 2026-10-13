@@ -146,6 +146,14 @@ def test_two_native_trainers_overlap_and_join_exact_checkpoints(tmp_path):
         helpers, recipe, "compare", "utility", {"left": "Path", "right": "Path"},
         {"comparison": "dict"}, observed))
     recipe["edges"] = [helpers.edge(name, "trained", "compare", name) for name in ("left", "right")]
+    recipe["nodes"][-1]["provenance"]["intended_use"] = "evaluate"
+    from tests.integration.native_fixture_support import synthetic_review
+    from tests.components.rights_test_support import write_reviewed_policies
+    review = synthetic_review(recipe, payload["project_id"], backend.repository)
+    policies = {review["policy_id"]: review}
+    policy_store = write_reviewed_policies(tmp_path / "fixture-reviews.sqlite3", policies)
+    backend = backend.with_execution_rights(project_id=payload["project_id"], policies=policies,
+                                            policy_store_path=policy_store)
     assert recipe["execution"] == {"max_parallel_stages": 2}
     assert all(node["cache_policy"] == "disabled" for node in recipe["nodes"])
 
@@ -174,6 +182,8 @@ def test_two_native_trainers_overlap_and_join_exact_checkpoints(tmp_path):
     for name in ("left", "right"):
         artifact = artifacts[name] = helpers.data_artifact(result, name, "trained")
         checkpoints[name] = checkpoint = read_checkpoint(job / "outputs" / name)
+        assert not checkpoint["rights"]["unresolved"]
+        assert checkpoint["rights"]["sources"] == recipe["extensions"]["artifact_rights"]["sources"]
         assert checkpoint["metrics"]["parameter_change"] > 0
         assert checkpoint["step"] == len(checkpoint["history"]) == 3
         assert comparison[name]["checkpoint_digest"] == identity(checkpoint)

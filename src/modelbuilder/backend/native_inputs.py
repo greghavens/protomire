@@ -6,6 +6,8 @@ is left to ZenML's public ArtifactVersionResponse pipeline input mechanism.
 """
 from __future__ import annotations
 import hashlib
+import json
+import math
 import os
 from pathlib import Path
 import stat
@@ -23,6 +25,7 @@ MAX_NATIVE_FILE_BYTES = 16 * 1024**3
 MAX_NATIVE_TOTAL_BYTES = 16 * 1024**3
 MAX_NATIVE_DEPTH = 128
 NATIVE_READ_BYTES = 1024 * 1024
+MAX_NATIVE_JSON_BYTES = 64 * 1024 * 1024
 
 
 def _denied(message):
@@ -177,11 +180,46 @@ def validate_native_type(artifact, declared_type):
         raise BackendError("artifact_type_mismatch", "Native artifact datatype or materializer does not match its declared typed port")
 
 
+def _native_dict(artifact):
+    """Read only ZenML's inert JSON container form, never nested materializers."""
+    from ..export_packages import safe_file
+
+    def finite(value):
+        raise ValueError("Native JSON must contain finite values")
+
+    def number(value):
+        result = float(value)
+        if not math.isfinite(result):
+            raise ValueError("Native JSON number overflows finite float range")
+        return result
+
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Native JSON has duplicate keys")
+            result[key] = value
+        return result
+
+    try:
+        with safe_file(Path(artifact.uri) / "data.json", max_bytes=MAX_NATIVE_JSON_BYTES) as stream:
+            raw = stream.read(MAX_NATIVE_JSON_BYTES + 1)
+        if len(raw) > MAX_NATIVE_JSON_BYTES:
+            raise ValueError("Native JSON exceeds its inspection bound")
+        body = json.loads(raw, parse_constant=finite, parse_float=number, object_pairs_hook=unique)
+        if not isinstance(body, dict):
+            raise ValueError("Native dictionary artifact must contain a JSON object")
+        return body
+    except (OSError, ValueError, TypeError, RecursionError) as error:
+        raise BackendError("artifact_binding_denied", "Native dictionary requires bounded inert data.json; nested materializers are not inspected") from error
+
+
 def artifact_rights_descriptor(artifact, root: Path, declared_type: str):
     """Inert rights projection from exact native bytes, never producer imports."""
     validate_native_type(artifact, declared_type)
     before = storage_identity(artifact, root)
     value, protected = None, False
+    from ..generated_artifacts import is_protected_dict, dict_rights, prepared_rights
     if artifact.data_type.import_path in {"pathlib.Path", "pathlib.PosixPath", "pathlib.WindowsPath"}:
         from .native_exports import native_directory
         from .components import read_checkpoint, read_export
@@ -190,11 +228,21 @@ def artifact_rights_descriptor(artifact, root: Path, declared_type: str):
                 value, protected = read_checkpoint(directory).get("rights"), True
             elif (directory / "export.manifest.json").is_file():
                 value, protected = read_export(directory).get("rights"), True
+            elif (directory / "dataset.manifest.json").is_file():
+                value, protected = prepared_rights(directory), True
             elif declared_type == "checkpoint":
                 protected = True
-    elif declared_type in {"CheckpointArtifact", "DatasetArtifact", "ExportArtifact"}:
-        body = artifact.load()
-        value, protected = body.get("rights") if isinstance(body, dict) else None, True
+    elif artifact.data_type.import_path == "builtins.dict":
+        # A whitelisted container materializer can still dispatch nested custom
+        # materializers. Do not call artifact.load() during rights preflight.
+        body = _native_dict(artifact)
+        protected = declared_type in {"CheckpointArtifact", "DatasetArtifact", "ExportArtifact"} or (
+            isinstance(body, dict) and is_protected_dict(body))
+        if protected:
+            try:
+                value = dict_rights(body) if isinstance(body, dict) else None
+            except Exception as error:
+                raise BackendError("license_rights_unreviewed", "Generated native input has invalid parent rights lineage") from error
     if storage_identity(artifact, root) != before:
         raise BackendError("artifact_binding_denied", "Native rights evidence changed during inspection")
     return {"rights_required": True, "rights": value} if protected else {}

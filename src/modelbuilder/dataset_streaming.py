@@ -642,8 +642,10 @@ def stream_identity(reference, split_id, purpose):
 
 
 def stream_data(record, reference, dependency_paths, source_guards, split_id, purpose, resource_limits):
+    from .generated_artifacts import manifest_rights
+    rights = manifest_rights(record["manifest"])
     identity = split_identity(record, split_id, purpose)
-    return {**identity, "version_id": record["version_id"], "stream": {
+    return {**identity, **({"rights": copy.deepcopy(rights)} if rights is not None else {}), "version_id": record["version_id"], "stream": {
         "schema": STREAM_SCHEMA, "identity": stream_identity(reference, split_id, purpose),
         "reference": copy.deepcopy(reference), "dependency_paths": {key: str(value) for key, value in dependency_paths.items()},
         "source_guards": copy.deepcopy(source_guards), "split_id": split_id, "purpose": purpose,

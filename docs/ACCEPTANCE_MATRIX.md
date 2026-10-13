@@ -4,25 +4,31 @@
 
 Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
-## Corrective source batch: full acceptance pending
+## Current 2e60975 runtime: aggregate failed; further corrections unaccepted
 
-The preceding `e658e32` aggregate **failed**, and its
-[compact receipt](../evidence/product-completion-20261013/acceptance-e658e32/README.md)
-preserves that outcome. Production corrections restore asset-free native cache
-revalidation, include exact manifests/rights in builtin live snapshots,
-canonicalize only internally allocated Mac Hub temporary roots, bundle the pinned
-Trainer overlay, and prevent managed Python bytecode writes into sealed payloads.
-Portable replay now reports blocked preflight truthfully and offers a receiving-
-project preparation/review/resume flow; Git-free snapshot review intake remains
-unsupported. No untrusted policy JSON becomes authority.
+Published checkpoint `8996355f8a3273da8f8adee6649f36667f39b993` pins runtime
+`2e609759ab5e86912f43a9a979e446030927c9a8`, the **150-file** source/lock
+closure. [Compact receipts and scope](../evidence/product-completion-20261013/acceptance-2e60975/README.md)
+separate the failed frozen aggregate, replay, later uncommitted work and
+provisional Mac report. No full-product or release acceptance is claimed.
 
-Tests now explicitly review repository-owned synthetic source/data and re-review
-changed dataset revisions. Existing negative rights, revocation, source integrity,
-concurrency and early-evaluation checks remain. The complete corrected aggregate,
-installed-wheel replay, bundled Mac Trainer/MLX and installer acceptance must be
-rerun before a release claim. Linux AppImage assembly is separately blocked by
-missing offline editor/backend/toolchain inputs; recovered service/Hub wheels do
-not constitute an AppImage or Bazzite acceptance.
+| Scope | Status | Evidence and limits |
+|---|---|---|
+| Corrected full local aggregate | **FAIL, exit 1** | Light 2,606 passed/140 skipped/88 deselected; frontend 480 passed; offline Hub SDK 18 passed; offline Modal SDK 3 passed. Successful stages do not establish a successful aggregate. |
+| Frozen native queue | **FAIL** | Lifecycle 30 passed/1 failed; integration 53 passed/43 deselected; components 468 passed/24 failed/8 skipped; concurrency 17 passed/1 failed/4 deselected. Total 1,978.149 seconds; cleanup complete, zero signaled processes. |
+| Public pretrained lifecycle | BLOCKED, unresolved rights | The failed lifecycle case requires unresolved public pretrained license/rights review. No approval was fabricated. |
+| Component/concurrency fixture repairs | PASS, isolated uncommitted tests only | All 24 component and one concurrency failures have fixture repairs verified in separate 119-, 76- and 4-pass groups. Full corrected aggregate acceptance remains pending. |
+| Git-backed public reviewed installed-wheel replay | Strict **FAIL, 34/35**; scientific payload equal | Two successful native runs; seven exact scientific outputs plus equal metrics/evaluations. Three rights-provenance manifests legitimately differ with actual independent policy IDs/timestamps. No forced identity normalization or full-output equality claim. |
+| Lower-level test-owned replay | PASS, limited scope | 35/35 comparisons and ten exact output hashes; four fresh environments/stores, source/installed bytes and cleanup verified. Does not establish the complete public workflow or public pretrained clearance. |
+| Git-free snapshot review | Implemented in uncommitted source; full acceptance pending | 62 focused and 528 frontend passes. Frozen 2e60975 lacks this intake; its replay evidence does not cover the later implementation. |
+| Latest working-tree light diagnostic | **PASS, limited selection** | 2,673 passed/140 skipped/90 deselected after cache fixture and generated-lineage changes. Two shipping source-pin tests deliberately excluded until commit/repin. Earlier 2,638-pass/2-failure attempt remains recorded; full aggregate pending. |
+| Mac development app | Provisional reported passes; final archive pending | Unsigned arm64 9caa54f/2e60975 DMG with mounted app/core checks, bundled MPS and six MLX passes reported. Fresh committed runtime builder replay passed; latest archive upload is blocked. Full release acceptance remains open. GUI blocked by locked Mac; signing/notarization not done. |
+| Linux AppImage / other platforms | BLOCKED / UNVERIFIED | Offline Linux editor/backend/toolchain inputs missing. Windows, Linux ARM64 and actual CUDA not accepted. |
+| Live providers / product release | UNVERIFIED / incomplete | No online-provider, authenticated-assistant, online-tracking, hostile-code-sandbox, redistribution, hosted-CI or full-product pass established by these local results. |
+
+Counts from overlapping selections are not added. Historical outcomes below
+remain valid only for their named checkpoints and are not inherited by current
+source. See [current verification](CURRENT_VERIFICATION.md) for details.
 
 ## Historical e658e32 implementation and partial results
 

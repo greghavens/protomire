@@ -17,6 +17,10 @@
       "maxLength": 10000,
       "type": "string"
     },
+    "digest": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
     "id_column": {
       "maxLength": 200,
       "minLength": 1,
@@ -26,6 +30,140 @@
       "maxLength": 2048,
       "minLength": 1,
       "type": "string"
+    },
+    "lineage": {
+      "additionalProperties": false,
+      "properties": {
+        "content_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "parents": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "artifact_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "content_digest": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              "rights": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "parent_rights_digests": {
+                        "items": {
+                          "pattern": "^[0-9a-f]{64}$",
+                          "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "schema_version": {
+                        "const": "modelbuilder.artifact-rights/v1"
+                      },
+                      "sources": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "commit": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "license_evidence_digest": {
+                              "pattern": "^[0-9a-f]{64}$",
+                              "type": "string"
+                            },
+                            "license_policy_id": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "provider": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "repo_id": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "repo_type": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "provider",
+                            "repo_type",
+                            "repo_id",
+                            "commit",
+                            "license_evidence_digest",
+                            "license_policy_id"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "unresolved": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "artifact_id": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "reason": {
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "artifact_id",
+                            "reason"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "schema_version",
+                      "sources",
+                      "unresolved",
+                      "parent_rights_digests"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "artifact_id",
+              "content_digest",
+              "rights"
+            ],
+            "type": "object"
+          },
+          "maxItems": 4096,
+          "minItems": 1,
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "modelbuilder.generated-lineage/v1"
+        }
+      },
+      "required": [
+        "schema_version",
+        "content_digest",
+        "parents"
+      ],
+      "type": "object"
     },
     "name": {
       "maxLength": 200,
@@ -57,6 +195,91 @@
       },
       "required": [
         "source"
+      ],
+      "type": "object"
+    },
+    "rights": {
+      "additionalProperties": false,
+      "properties": {
+        "parent_rights_digests": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "schema_version": {
+          "const": "modelbuilder.artifact-rights/v1"
+        },
+        "sources": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "commit": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "license_evidence_digest": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              "license_policy_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "provider": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "repo_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "repo_type": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "provider",
+              "repo_type",
+              "repo_id",
+              "commit",
+              "license_evidence_digest",
+              "license_policy_id"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "unresolved": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "artifact_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "reason": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "artifact_id",
+              "reason"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "sources",
+        "unresolved",
+        "parent_rights_digests"
       ],
       "type": "object"
     },

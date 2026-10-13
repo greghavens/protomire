@@ -1,4 +1,5 @@
 """Real CPU checks plus explicitly mocked unsupported-hardware admission paths."""
+import hashlib
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -214,10 +215,28 @@ def test_mocked_mps_probe_does_not_claim_observed_component_execution(monkeypatc
 def test_mocked_accelerator_exact_resume_is_rejected_before_component_call(tmp_path, monkeypatch):
     pytest.importorskip('zenml')
     from modelbuilder.backend.components import runtime
-    from modelbuilder.backend import worker
+    from modelbuilder.backend import process_execution, worker
+    from modelbuilder.backend.common import write_json
+    from tests.components.rights_test_support import USAGE_CONTEXT, authorize_test_recipe, local_review
     component = {'protocol': 'modelbuilder.component/v1', 'role': 'training',
                  'capabilities': {'resume_modes': ['exact_state', 'warm_start']}}
-    node = {'component': component, 'outputs': [], 'implementation_ref': {}}
+    node = {'id': 'train', 'kind': 'component.run', 'component': component, 'outputs': [], 'implementation_ref': {}}
+    prior = tmp_path / 'prior'
+    prior.mkdir()
+    content = b'Test-authored inert checkpoint; never loaded by a framework.'
+    (prior / 'weights.bin').write_bytes(content)
+    digest = hashlib.sha256(content).hexdigest()
+    policy, rights = local_review(source_files=[{'path': 'weights.bin', 'sha256': digest, 'size_bytes': len(content)}])
+    write_json(prior / 'checkpoint.manifest.json', {
+        'schema_version': 'modelbuilder.checkpoint/v1', 'purpose': 'last', 'step': 1,
+        'resume_modes': ['exact_state', 'warm_start'],
+        'state': ['model', 'optimizer', 'scheduler', 'rng', 'data_cursor'], 'rights': rights,
+        'identities': dict.fromkeys(('architecture', 'source', 'dependencies', 'training', 'environment'), 'test'),
+        'assets': [{'path': 'weights.bin', 'sha256': digest}]})
+    recipe = {'source': {'files': []}, 'nodes': [node],
+              'extensions': {'usage_context': USAGE_CONTEXT}}
+    metadata = []
+    monkeypatch.setattr(process_execution, 'metadata', metadata.append)
     monkeypatch.setattr(worker, 'context', lambda spec: ({}, tmp_path / 'output'))
     monkeypatch.setattr(runtime, 'validate_component', lambda value: component)
     monkeypatch.setattr(runtime, 'runtime_environment', lambda: {'mocked_runtime': True})
@@ -229,9 +248,11 @@ def test_mocked_accelerator_exact_resume_is_rejected_before_component_call(tmp_p
     monkeypatch.setattr(runtime, 'load_callable', lambda *a: pytest.fail('Must reject before loading training code'))
     spec = {'component_node': node, 'job_dir': str(tmp_path), 'node_id': 'train', 'placement': {'device': 'mps'},
             'source': {'files': []}, 'source_root': str(tmp_path), 'trusted_code_roots': [str(tmp_path)],
-            'resume_path': str(tmp_path / 'prior'), 'resume_mode': 'exact_state'}
+            'resume_path': str(prior), 'resume_mode': 'exact_state',
+            **authorize_test_recipe(tmp_path, recipe, {policy['policy_id']: policy})}
     with pytest.raises(ValueError, match='not supported'):
         runtime.dispatch({}, spec)
+    assert metadata[0]['rights_admission']['policy_revisions'][policy['policy_id']]['revision'] == 1
     assert component['capabilities']['resume_modes'] == ['exact_state', 'warm_start']
 
 
@@ -255,7 +276,7 @@ def test_shared_static_and_conditional_invocation_preserves_placement_and_bound_
     recipe = {'nodes': [gate, train], 'edges': []}
     placement_record = {'device': 'mps', 'requested_device': 'mps', 'component_execution_observed': False}
     execution = {'node_ids': ['gate', 'train'], 'input_bindings': [{'fixture': 'explicit-selected-boundary'}]}
-    prepared = {'job': tmp_path, 'request': {'placement': placement_record, 'source_root': str(tmp_path), 'run_name': 'native-name'},
+    prepared = {'job': tmp_path, 'request': {'project_id': project.id, 'placement': placement_record, 'source_root': str(tmp_path), 'run_name': 'native-name'},
                 'project': project, 'recipe': recipe, 'digest': 'pinned-recipe', 'provenance': {'placement': placement_record},
                 'execution': execution, 'execution_provenance': execution, 'active_recipe': recipe,
                 'ordered': [gate, train], 'functions': {'gate': Call(), 'train': Call()},
@@ -272,6 +293,7 @@ def test_shared_static_and_conditional_invocation_preserves_placement_and_bound_
     else:
         worker.invoke_nodes(prepared)
     assert len(received) == 2 and received[1]['data'] is artifact
+    assert all(call['spec']['project_id'] == project.id for call in received)
     assert all(call['spec']['placement'] == placement_record for call in received)
     assert all(call['spec']['execution'] == execution for call in received)
     assert captured_bindings == [execution['input_bindings'], execution['input_bindings']]

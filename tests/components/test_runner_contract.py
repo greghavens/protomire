@@ -69,8 +69,29 @@ def spec_for(tmp_path, backend, recipe):
         "dependency_paths": backend.dependency_paths, "runner_environment": routes[candidate["id"]]}
 
 
+def isolated_snapshot():
+    # The runtime captures before source imports in a fresh -I process. Broad
+    # pytest collection may import setuptools, which exposes its vendored
+    # packaging metadata on sys.path; that is deliberately not a runner profile.
+    program = ("import json,sys; sys.path.insert(0,sys.argv[1]); "
+               "from modelbuilder.backend.runner import environment_snapshot; "
+               "print(json.dumps(environment_snapshot()))")
+    result = subprocess.run([sys.executable, "-I", "-B", "-c", program,
+                             str(Path(runner.__file__).resolve().parents[2])],
+                            check=True, capture_output=True, text=True, timeout=30)
+    return json.loads(result.stdout)
+
+
 def test_environment_snapshot_and_isolated_probe_agree():
-    assert runner.environment_snapshot() == runner.inspect_environment(sys.executable)
+    assert isolated_snapshot() == runner.inspect_environment(sys.executable)
+
+
+def test_environment_snapshot_rejects_ambiguous_distribution_metadata(monkeypatch):
+    import importlib.metadata
+    distribution = importlib.metadata.distribution("jsonschema")
+    monkeypatch.setattr(importlib.metadata, "distributions", lambda: [distribution, distribution])
+    with pytest.raises(ValueError, match="ambiguous duplicate distribution metadata: jsonschema"):
+        runner.environment_snapshot()
 
 
 def test_inert_component_descriptor_and_catalog_do_not_import_frameworks():
@@ -116,14 +137,14 @@ def test_selection_is_feature_specific_and_fail_closed(tmp_path, mutation, match
 @pytest.mark.parametrize("field,value", [("python", "3.12.1"), ("executable_sha256", "0" * 64),
                                          ("platform", "darwin"), ("machine", "another-machine")])
 def test_environment_identity_drift_rejected(field, value):
-    original = runner.environment_snapshot()
+    original = isolated_snapshot()
     changed = {**original, field: value}
     with pytest.raises(ValueError, match="differs"):
         runner.verify_snapshot(original, changed)
 
 
 def test_environment_extra_missing_and_wrong_package_rejected():
-    original = runner.environment_snapshot()
+    original = isolated_snapshot()
     for packages in ({**original["packages"], "unexpected-package": "1.0"},
                      {k: v for k, v in original["packages"].items() if k != "pytest"},
                      {**original["packages"], "jsonschema": "0.0.0"}):

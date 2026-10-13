@@ -1,0 +1,369 @@
+{
+  "recorded_date_utc": "2026-10-13",
+  "published_checkpoint": "8996355f8a3273da8f8adee6649f36667f39b993",
+  "runtime_commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
+  "source_files": 150,
+  "full_product_complete": false,
+  "source_scope": "Published checkpoint and frozen runtime results are separate from later uncommitted source and test patches. Counts are not summed across overlapping selections.",
+  "aggregate": {
+    "status": "FAIL",
+    "exit_code": 1,
+    "log": "corrected-full-aggregate-rerun.log",
+    "light": {
+      "passed": 2606,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 140,
+      "deselected": 88,
+      "elapsed_seconds": 165.33
+    },
+    "frontend": {
+      "passed": 480,
+      "failed": 0,
+      "skipped": 0
+    },
+    "offline_hub_sdk": {
+      "passed": 18,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "offline_modal_sdk": {
+      "passed": 3,
+      "provider_calls": false
+    },
+    "native_queue": {
+      "status": "group_failed",
+      "elapsed_seconds": 1978.149,
+      "last_group_finished_seconds": 1978.044,
+      "deadline_seconds": 2100,
+      "concurrency": 2,
+      "groups": [
+        {
+          "name": "cpu-lifecycle",
+          "status": "failed",
+          "returncode": 1,
+          "started_seconds": 0.0,
+          "finished_seconds": 1133.811,
+          "passed": 30,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "deselected": 0
+        },
+        {
+          "name": "integration",
+          "status": "passed",
+          "returncode": 0,
+          "started_seconds": 0.0,
+          "finished_seconds": 1568.601,
+          "passed": 53,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "deselected": 43
+        },
+        {
+          "name": "cpu-components",
+          "status": "failed",
+          "returncode": 1,
+          "started_seconds": 1133.911,
+          "finished_seconds": 1745.946,
+          "passed": 468,
+          "failed": 24,
+          "errors": 0,
+          "skipped": 8,
+          "deselected": 0
+        },
+        {
+          "name": "cpu-concurrency",
+          "status": "failed",
+          "returncode": 1,
+          "started_seconds": 1568.701,
+          "finished_seconds": 1978.044,
+          "passed": 17,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "deselected": 4
+        }
+      ],
+      "cleanup": {
+        "complete": true,
+        "signaled_processes": 0
+      },
+      "failed_cases": {
+        "cpu-lifecycle": [
+          "tests.integration.test_native_lifecycle::test_pretrained_validation_selection_parent_and_export"
+        ],
+        "integration": [],
+        "cpu-components": [
+          "tests.components.test_local_inference::test_real_native_zenml_generation_judge_pipeline",
+          "tests.components.test_local_inference::test_human_library_source_pin_http_native_path_in_arbitrary_project",
+          "tests.components.test_runner_contract::test_environment_snapshot_and_isolated_probe_agree",
+          "tests.components.test_runner_contract::test_environment_identity_drift_rejected[python-3.12.1]",
+          "tests.components.test_runner_contract::test_environment_identity_drift_rejected[executable_sha256-0000000000000000000000000000000000000000000000000000000000000000]",
+          "tests.components.test_runner_contract::test_environment_identity_drift_rejected[platform-darwin]",
+          "tests.components.test_runner_contract::test_environment_identity_drift_rejected[machine-another-machine]",
+          "tests.components.test_runner_contract::test_environment_extra_missing_and_wrong_package_rejected",
+          "tests.components.test_transformers_inference::test_real_native_general_generation_judge_pipeline[local0]",
+          "tests.components.test_transformers_inference::test_real_native_general_generation_judge_pipeline[local1]",
+          "tests.datasets.test_reference_atomic_read::test_reference_parses_same_hashed_bytes_without_second_read",
+          "tests.datasets.test_reference_atomic_read::test_reference_oversize_rejected_before_parse_or_portable_load",
+          "tests.tracking.test_cpu_live_tracking::test_real_cpu_evaluations_reach_offline_sdk_before_training_ends",
+          "tests.placement.test_placement::test_mocked_accelerator_exact_resume_is_rejected_before_component_call",
+          "tests.placement.test_placement::test_shared_static_and_conditional_invocation_preserves_placement_and_bound_inputs[False]",
+          "tests.placement.test_placement::test_shared_static_and_conditional_invocation_preserves_placement_and_bound_inputs[True]",
+          "tests.placement.test_checkpoint_capabilities::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[False-None]",
+          "tests.placement.test_checkpoint_capabilities::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[False-cpu]",
+          "tests.placement.test_checkpoint_capabilities::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[False-mps]",
+          "tests.placement.test_checkpoint_capabilities::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[False-cuda:1]",
+          "tests.placement.test_checkpoint_capabilities::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[True-None]",
+          "tests.placement.test_checkpoint_capabilities::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[True-cpu]",
+          "tests.placement.test_checkpoint_capabilities::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[True-mps]",
+          "tests.placement.test_checkpoint_capabilities::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[True-cuda:1]"
+        ],
+        "cpu-concurrency": [
+          "tests.concurrency.test_parallel_training::test_two_native_trainers_overlap_and_join_exact_checkpoints"
+        ]
+      }
+    },
+    "lifecycle_blocker": "Public pretrained fixture license/rights review remains unresolved; no approval was fabricated.",
+    "later_focused_repairs_do_not_change_this_exit_code": true
+  },
+  "installed_wheel_replay": {
+    "candidate": "9caa54fbdbaeaa4a451eb42175c731a54fed50fb",
+    "runtime_commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
+    "source_files": 150,
+    "public_git_backed_review": {
+      "status": "SCIENTIFIC_PAYLOAD_EQUAL_PROVENANCE_DIFFERS",
+      "strict_status": "FAIL",
+      "checks_passed": 34,
+      "checks_total": 35,
+      "scientific_output_files_exact": 7,
+      "rights_provenance_manifests_different": 3,
+      "full_output_equality": false,
+      "metrics_equal": true,
+      "evaluation_records_equal": true,
+      "policy_ids_or_timestamps_modified_for_comparison": false,
+      "comparison_receipts": [
+        "public-strict-comparison.json",
+        "public-api-comparison.json"
+      ]
+    },
+    "lower_level_test_owned_authority": {
+      "status": "PASS",
+      "full_product_replay": false,
+      "checks_passed": 35,
+      "checks_total": 35,
+      "exact_output_files": 10,
+      "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8",
+      "idempotent_retries_reconciled_without_new_jobs": true
+    },
+    "frozen_gitfree_review_intake": {
+      "status": "UNAVAILABLE",
+      "gate": "supported receiving-project source-review intake for Git-free portable snapshot",
+      "code": "source_unavailable",
+      "message": "Approved source must be a readable committed Git checkout",
+      "test_owned_fixed_authority_is_not_product_workflow": true
+    },
+    "fresh_environments": 4,
+    "independent_successful_native_stores": 4,
+    "offline_hash_locked_installs": true,
+    "pip_checks_passed": 4,
+    "source_and_installed_bytes_verified_after": true,
+    "native_termination_count": 4,
+    "unreviewed_cli": [
+      {
+        "case": "shipping-custom",
+        "status": "BLOCKED_BEFORE_SUBMISSION",
+        "operation_and_policy_records": 0,
+        "native_jobs": 0,
+        "structured_failure_receipt": true
+      },
+      {
+        "case": "pretrained",
+        "status": "BLOCKED_BEFORE_SUBMISSION",
+        "operation_and_policy_records": 0,
+        "native_jobs": 0,
+        "structured_failure_receipt": true
+      }
+    ],
+    "source_before": {
+      "custom-pytorch": {
+        "source_commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
+        "source_files": 150,
+        "matches_git_and_manifest": true,
+        "manifest_sha256": "a0281d0f9544a31613d56461fb2ea313b05bb39dd99ad24c83f6d9c1d409b55d"
+      },
+      "pretrained-small": {
+        "source_commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
+        "source_files": 150,
+        "matches_git_and_manifest": true,
+        "manifest_sha256": "230c544cf4c796352ee55219418cf3d41d21b168057635b905f9f45452ed877d"
+      }
+    },
+    "source_after": [
+      {
+        "case": "custom-origin",
+        "source_commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
+        "files": 150,
+        "matches_git_after": true,
+        "root_runtime_matches_git": true,
+        "source_pycache_dirs": 0
+      },
+      {
+        "case": "custom-replay",
+        "source_commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
+        "files": 150,
+        "matches_git_after": true,
+        "root_runtime_matches_git": true,
+        "source_pycache_dirs": 0
+      },
+      {
+        "case": "public-origin",
+        "source_commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
+        "files": 150,
+        "matches_git_after": true,
+        "root_runtime_matches_git": true,
+        "source_pycache_dirs": 0
+      },
+      {
+        "case": "public-replay",
+        "source_commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
+        "files": 150,
+        "matches_git_after": true,
+        "root_runtime_matches_git": true,
+        "source_pycache_dirs": 0
+      }
+    ],
+    "installed_after": [
+      {
+        "role": "origin",
+        "kind": "service",
+        "installed_files": 112,
+        "source_bytes_unchanged": true,
+        "own_installed_modules": true,
+        "no_pythonpath_or_source_checkout_imports": true,
+        "imports_and_pdf_probe_after": "PASS",
+        "distribution_count": 71
+      },
+      {
+        "role": "origin",
+        "kind": "backend",
+        "installed_files": 87,
+        "source_bytes_unchanged": true,
+        "own_installed_modules": true,
+        "no_pythonpath_or_source_checkout_imports": true,
+        "imports_and_pdf_probe_after": "PASS",
+        "distribution_count": 104
+      },
+      {
+        "role": "replay",
+        "kind": "service",
+        "installed_files": 112,
+        "source_bytes_unchanged": true,
+        "own_installed_modules": true,
+        "no_pythonpath_or_source_checkout_imports": true,
+        "imports_and_pdf_probe_after": "PASS",
+        "distribution_count": 71
+      },
+      {
+        "role": "replay",
+        "kind": "backend",
+        "installed_files": 87,
+        "source_bytes_unchanged": true,
+        "own_installed_modules": true,
+        "no_pythonpath_or_source_checkout_imports": true,
+        "imports_and_pdf_probe_after": "PASS",
+        "distribution_count": 104
+      }
+    ],
+    "limitations": [
+      "Same Linux CPU host only",
+      "Fixed test authority is lower-level verification, not a Git-free product review workflow",
+      "Public API test reviews cover repository-owned synthetic fixtures only",
+      "No public pretrained success, provider/network execution or spending",
+      "No full local aggregate duplicated",
+      "Historical import/PDF probe code reused, historical runtime results not reused"
+    ]
+  },
+  "later_uncommitted_work": {
+    "aggregate_pass": false,
+    "native_fixture_repairs": {
+      "scope": "24 component failures and one concurrency failure from the frozen aggregate; isolated reruns only. Public pretrained lifecycle rights remain unresolved.",
+      "isolated_groups": [
+        {
+          "name": "component-fixtures",
+          "passed": 119,
+          "failed": 0,
+          "source_log_sha256": "d54aa8da1db1a5a640b58c8f770046540590549e06bc26442b899a4177f3e827"
+        },
+        {
+          "name": "remaining-fixtures",
+          "passed": 76,
+          "failed": 0,
+          "source_log_sha256": "35452226da5618242bbce9d4b764e47c65a5ce68f37843e3da3c69515c649244"
+        },
+        {
+          "name": "concurrency-fixtures",
+          "passed": 4,
+          "failed": 0,
+          "source_log_sha256": "676a4ecca71fda58236fe368489cabe1baee7cb792e25dc02d772c39903cff17"
+        }
+      ]
+    },
+    "gitfree_source_snapshot_review": {
+      "status": "IMPLEMENTED_IN_WORKING_TREE",
+      "focused_passed": 62,
+      "frontend_passed": 528,
+      "frozen_runtime_replay_covering_this_change": false
+    },
+    "combined_light_diagnostic": {
+      "passed": 2638,
+      "failed": 2,
+      "errors": 0,
+      "skipped": 140,
+      "deselected": 90,
+      "elapsed_seconds": 196.75,
+      "status": "FAIL",
+      "failed_cases": [
+        "tests/native_cache/test_policy.py::test_cached_candidate_checks_are_read_only_and_fail_closed",
+        "tests/native_cache/test_policy.py::test_internal_cache_revalidation_keeps_public_authority_rejected"
+      ],
+      "subsequent_repair_verification": {
+        "scope": "Test-only selected-admission receipt fixture corrections applied in working tree; not a full aggregate rerun.",
+        "focused_passed": 28,
+        "focused_failed": 0,
+        "elapsed_seconds": 0.21
+      }
+    },
+    "generated_dataset_lineage": {
+      "status": "PRODUCTION_GAP_UNDER_REPAIR",
+      "accepted": false
+    }
+  },
+  "mac_development_app": {
+    "status": "PROVISIONAL_REPORTED_CHECKS_FINAL_ARCHIVE_PENDING",
+    "candidate": "9caa54fbdbaeaa4a451eb42175c731a54fed50fb",
+    "runtime_commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
+    "reported_checks": [
+      "Unsigned arm64 development DMG built; mounted payload inventory, CLI and module probes passed",
+      "Five mounted managed-core lifecycle/MCP tests passed",
+      "Bundled MPS and six MLX cases passed",
+      "hdiutil verify and detach passed"
+    ],
+    "final_evidence_archive_independently_verified_here": false,
+    "appledouble_packaging_correction_reproduction": "PENDING",
+    "native_gui": "BLOCKED_LOCKED_MAC",
+    "signing_notarization": "NOT_DONE",
+    "release_acceptance": false
+  },
+  "remaining_gates": {
+    "linux_appimage": "BLOCKED_MISSING_OFFLINE_EDITOR_BACKEND_TOOLCHAIN_INPUTS",
+    "windows_linux_arm64_actual_cuda": "UNVERIFIED",
+    "live_providers_authenticated_assistants_online_tracking": "UNVERIFIED",
+    "hostile_code_isolation_redistribution": "UNRESOLVED",
+    "hosted_ci": "NOT_CLAIMED_LOCAL_CHECKS_ONLY"
+  }
+}

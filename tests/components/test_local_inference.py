@@ -189,6 +189,8 @@ def test_review_registration_immutable_versions_and_training_gate(local):
     prepared = prepare_dataset(inputs=results, parameters=review, context=local["context"])["prepared"]
     assert registry.list(pid) == before  # No automatic registration or training.
     manifest = json.loads((prepared / "dataset.manifest.json").read_text())
+    from modelbuilder.generated_artifacts import prepared_rights
+    assert prepared_rights(prepared) == manifest["rights"]
     assert manifest["splits"] == [{"id": "train", "role": "train", "source_ids": ["reviewed"]}]
     assert "label" not in manifest["row_schema"]["properties"]
     generated = DatasetRegistry(service.store, project_roots={pid: {"generated": str(prepared)}})
@@ -199,6 +201,10 @@ def test_review_registration_immutable_versions_and_training_gate(local):
         generated.read_split(pid, one["dataset_id"], 1, "train", purpose="evaluation")
     next_manifest = deepcopy(manifest)
     next_manifest["description"] += " Explicit subsequent reviewed version."
+    # This explicit declaration revision retains the same exact parent evidence.
+    next_manifest["lineage"]["content_digest"] = identity({key: value for key, value in next_manifest.items()
+        if key not in {"rights", "lineage", "digest"}})
+    next_manifest["digest"] = identity({key: value for key, value in next_manifest.items() if key != "digest"})
     two = generated.version(pid, one["dataset_id"], 1, next_manifest)
     assert two["revision"] == 2 and two["parent_version_id"] == one["version_id"]
     assert generated.get(pid, one["dataset_id"], 1) == one
@@ -275,6 +281,26 @@ def test_review_refuses_stale_unknown_or_misrepresented_artifacts(local, case):
     assert not Path(local["context"]["output_dir"]).exists()
 
 
+def _local_reviews(local, *, source_alias="test-source"):
+    from tests.components.rights_test_support import local_review, local_source_review
+    pid = local["project"]["project_id"]
+    # The fixture above creates random model weights and authored rows locally.
+    # These policies review those exact bytes; no pretrained grant is fabricated.
+    model_files = [{"path": key, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+                    "size_bytes": Path(path).stat().st_size}
+                   for key, path in local["context"]["dependencies"].items()]
+    dataset_files = []
+    for item in local["record"]["manifest"]["sources"]:
+        path = local["tmp"] / "data" / item["path"]
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == item["sha256"]
+        dataset_files.append({"path": item["path"], "sha256": item["sha256"], "size_bytes": path.stat().st_size})
+    model_policy, model_rights = local_review(pid, policy_id="test-random-models", source_files=model_files)
+    dataset_policy, dataset_rights = local_review(pid, policy_id="test-authored-data", repo_type="dataset", source_files=dataset_files)
+    source_policy, source_rights = local_source_review(local["source"], local["context"]["source"], pid, source_alias=source_alias)
+    policies = {policy["policy_id"]: policy for policy in (source_policy, model_policy, dataset_policy)}
+    return policies, {"source": source_rights, "model": model_rights, "dataset": dataset_rights}
+
+
 @pytest.mark.integration
 def test_real_native_zenml_generation_judge_pipeline(local):
     model_dependency("zenml")
@@ -284,11 +310,16 @@ def test_real_native_zenml_generation_judge_pipeline(local):
     dependency_paths, guards = registry.execution_sources(pid, record["dataset_id"], 1)
     reference_path = local["tmp"] / "dataset-reference.json"
     reference_path.write_text(json.dumps(reference, sort_keys=True))
-    dependencies = reference["dependencies"] + [{"id": "dataset-reference", "sha256": hashlib.sha256(reference_path.read_bytes()).hexdigest()}]
+    from tests.components.rights_test_support import USAGE_CONTEXT, authorize_test_recipe
+    policies, rights = _local_reviews(local)
     dependency_paths["dataset-reference"] = str(reference_path)
     dependency_paths.update(local["context"]["dependencies"])
-    dependencies.extend({"id": key, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest()}
-                        for key, path in local["context"]["dependencies"].items())
+    dependencies = [{"id": key, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+                     "kind": "model" if key in local["context"]["dependencies"] else "dataset",
+                     "metadata": {"rights": rights["model" if key in local["context"]["dependencies"] else "dataset"],
+                                  **({"dataset_reference": reference} if key == "dataset-reference" else
+                                     {"dataset_source": True} if key not in local["context"]["dependencies"] else {})}}
+                    for key, path in dependency_paths.items()]
     nodes, edges = [], []
     for name, split in [("prompts", "train"), ("validation", "dev"), ("test", "test")]:
         nodes.append({"id": name, "kind": "dataset.version.import", "timeout": 120, "inputs": [], "outputs": [{"name": "data", "type": "dict"}],
@@ -299,6 +330,7 @@ def test_real_native_zenml_generation_judge_pipeline(local):
         entry = catalog_entries()[index]
         descriptor = {key: entry[key] for key in ("id", "version", "protocol", "role", "description", "parameter_schema", "capabilities")}
         node = {"id": name, "kind": "component.run", "inputs": entry["inputs"], "outputs": entry["outputs"],
+            "provenance": {"intended_use": "generate" if name == "generate" else "evaluate"},
             "component": descriptor, "parameters": params, "timeout": 120, "retry": {"max_attempts": 1},
             "implementation_ref": {**local["context"]["source"]["files"][0], "module": "adapter", "entrypoint": name,
                 "commit": local["context"]["source"]["commit"]}}
@@ -306,12 +338,15 @@ def test_real_native_zenml_generation_judge_pipeline(local):
         nodes.append(node)
     edges.append({"source_node": "generate", "source_port": "candidates", "target_node": "judge", "target_port": "candidates"})
     recipe = {"recipe_id": "native-generation", "revision": 1, "source": local["context"]["source"], "nodes": nodes,
-              "edges": edges, "external_dependencies": dependencies, "evaluation": {}}
-    job = local["tmp"] / "native-job"
-    write_json(job / "request.json", {"recipe": recipe, "project_id": pid, "operation_id": "native-inference",
+              "edges": edges, "external_dependencies": dependencies, "evaluation": {},
+              "extensions": {"artifact_rights": rights["source"], "usage_context": USAGE_CONTEXT}}
+    authorization = authorize_test_recipe(local["tmp"], recipe, policies, project_id=pid)
+    root = local["tmp"] / "native-backend"
+    job = root / "jobs" / "native-job"
+    write_json(job / "request.json", {**authorization, "root": str(root), "recipe": recipe, "project_id": pid, "operation_id": "native-inference",
         "run_name": "native-inference", "source_root": str(local["source"]), "trusted_code_roots": [str(local["source"])],
         "dependency_paths": dependency_paths, "dataset_source_guards": guards})
-    env = {**os.environ, "ZENML_CONFIG_PATH": str(local["tmp"] / "zenml"), "ZENML_LOCAL_STORES_PATH": str(local["tmp"] / "stores"),
+    env = {**os.environ, "ZENML_CONFIG_PATH": str(root / "zenml-config"), "ZENML_LOCAL_STORES_PATH": str(root / "zenml-stores"),
            "ZENML_ANALYTICS_OPT_IN": "false", "ZENML_LOGGING_VERBOSITY": "ERROR", "OMP_NUM_THREADS": "1",
            "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1"}
     result = subprocess.run([sys.executable, "-m", "modelbuilder.backend.worker", str(job)], env=env,
@@ -328,6 +363,14 @@ run = Client().get_pipeline_run(native['backend_run_id'], include_full_metadata=
 assert str(run.status) == 'completed', str(run.status)
 outputs = {port: versions[-1].load() for step in run.steps.values() for port, versions in step.outputs.items() if port in {'candidates','judgments'}}
 (job / 'verified-outputs.json').write_text(json.dumps(outputs))
+from modelbuilder.backend.native_inputs import output_descriptor
+bindings = []
+for node, port in [('generate', 'candidates'), ('judge', 'judgments')]:
+    artifact = run.steps[node].outputs[port][-1]
+    descriptor, _ = output_descriptor(job, run, node, port, str(artifact.id))
+    bindings.append({'node_id': 'prepare', 'input_port': port, **{key: descriptor[key] for key in
+        ('backend_run_id', 'source_node_id', 'source_port', 'artifact_id', 'content_sha256')}})
+(job / 'reviewed-bindings.json').write_text(json.dumps(bindings))
 """
     inspection_path = local["tmp"] / "inspect_native.py"
     inspection_path.write_text(inspection)
@@ -342,7 +385,7 @@ outputs = {port: versions[-1].load() for step in run.steps.values() for port, ve
     entry = catalog_entries()[2]
     descriptor = {key: entry[key] for key in ("id", "version", "protocol", "role", "description", "parameter_schema", "capabilities")}
     prepared_node = {"id": "prepare", "kind": "component.run", "inputs": entry["inputs"], "outputs": entry["outputs"],
-        "component": descriptor, "parameters": _review(actual), "timeout": 120,
+        "provenance": {"intended_use": "generate"}, "component": descriptor, "parameters": _review(actual), "timeout": 120,
         "implementation_ref": {**local["context"]["source"]["files"][0], "module": "adapter", "entrypoint": "prepare_dataset",
                                "commit": local["context"]["source"]["commit"]}}
     reviewed_recipe = deepcopy(recipe)
@@ -350,13 +393,57 @@ outputs = {port: versions[-1].load() for step in run.steps.values() for port, ve
     reviewed_recipe["nodes"].append(prepared_node)
     reviewed_recipe["edges"].extend([{ "source_node": name, "source_port": port, "target_node": "prepare", "target_port": port}
                                     for name, port in [("generate", "candidates"), ("judge", "judgments")]])
-    reviewed_job = local["tmp"] / "reviewed-native-job"
+    reviewed_job = root / "jobs" / "reviewed-native-job"
     request = json.loads((job / "request.json").read_text())
-    request.update(recipe=reviewed_recipe, operation_id="native-reviewed", run_name="native-reviewed")
+    # A new authorization changes execution provenance even when sampled tokens
+    # are equal. Review the original exact native artifacts; do not regenerate
+    # them under a different receipt and pretend the prior review still applies.
+    request.update(recipe=reviewed_recipe, operation_id="native-reviewed", run_name="native-reviewed",
+        execution={"node_ids": ["prepare"], "input_bindings": json.loads((job / "reviewed-bindings.json").read_text())},
+        input_binding_jobs=[str(job)])
+    from modelbuilder.execution import selected_recipe, selection
+    active_recipe = selected_recipe(reviewed_recipe, selection(reviewed_recipe, request["execution"]))
+    request.update(authorize_test_recipe(local["tmp"], active_recipe, policies, project_id=pid))
+    write_json(reviewed_job / "request.json", request)
+    binding_inspection = """import json,sys
+from pathlib import Path
+from modelbuilder.backend.native_inputs import resolve_bindings
+job=Path(sys.argv[1]); request=json.loads((job/'request.json').read_text())
+resolved=resolve_bindings(request, request['input_binding_jobs'])
+(job/'resolved-inputs.json').write_text(json.dumps(resolved['input_bindings']))
+"""
+    binding_inspection_path = local["tmp"] / "inspect_bindings.py"
+    binding_inspection_path.write_text(binding_inspection)
+    resolved = subprocess.run([sys.executable, str(binding_inspection_path), str(reviewed_job)], env=env,
+                              capture_output=True, text=True, timeout=60)
+    assert resolved.returncode == 0, resolved.stdout + resolved.stderr
+    request["resolved_input_bindings"] = json.loads((reviewed_job / "resolved-inputs.json").read_text())
+    assert not [item for item in active_recipe["external_dependencies"] if item["kind"] == "dataset"]
+    assert all(item["rights_required"] for item in request["resolved_input_bindings"])
+    for item in request["resolved_input_bindings"]:
+        assert {"test-authored-data", "test-random-models"} <= {source["license_policy_id"] for source in item["rights"]["sources"]}
+    # Service-like admission includes the exact resolved native evidence, even
+    # though the original dataset importer and its resources are absent.
+    from modelbuilder.backend.execution_rights import bind_authority, prepare_authorization
+    from types import SimpleNamespace
+    backend = SimpleNamespace(_execution_rights_authority=bind_authority(pid, policies, local["tmp"] / "test-review.sqlite3"))
+    request["rights_authorization"] = prepare_authorization(backend,
+        {"project_id": pid, "resolved_input_bindings": request["resolved_input_bindings"]}, active_recipe, durable=True)
     write_json(reviewed_job / "request.json", request)
     reviewed = subprocess.run([sys.executable, "-m", "modelbuilder.backend.worker", str(reviewed_job)], env=env,
                               capture_output=True, text=True, timeout=180)
+    (local["tmp"] / "reviewed-native.log").write_text(reviewed.stdout + reviewed.stderr)
     assert reviewed.returncode == 0, (reviewed.stdout + reviewed.stderr)[-14000:]
+    check_selection = """import json,sys
+from pathlib import Path
+from zenml.client import Client
+native=json.loads((Path(sys.argv[1])/'native.json').read_text())
+run=Client().get_pipeline_run(native['backend_run_id'],include_full_metadata=True)
+assert set(run.steps)=={'prepare'}, set(run.steps)
+"""
+    selected = subprocess.run([sys.executable, "-c", check_selection, str(reviewed_job)], env=env,
+                              capture_output=True, text=True, timeout=60)
+    assert selected.returncode == 0, selected.stdout + selected.stderr
     prepared = reviewed_job / "outputs" / "prepare"
     proof = json.loads((prepared / "review.provenance.json").read_text())
     assert proof["candidates"] == actual["candidates"] and proof["judgments"] == actual["judgments"]
@@ -365,6 +452,36 @@ outputs = {port: versions[-1].load() for step in run.steps.values() for port, ve
     registered = generated_registry.register(pid, json.loads((prepared / "dataset.manifest.json").read_text()))
     assert registered["row_count"] == 2 and registered["benchmark"] == "generated-weather-v1"
     assert registry.get(pid, record["dataset_id"], 1) == record
+    manifest = json.loads((prepared / "dataset.manifest.json").read_text())
+    assert {"test-authored-data", "test-random-models"} <= {source["license_policy_id"] for source in manifest["rights"]["sources"]}
+    assert generated_registry.read_split(pid, registered["dataset_id"], 1, "train", purpose="training")["rights"] == manifest["rights"]
+    # Revocation after successful generation/preparation blocks another exact
+    # native binding before its selected source function can run.
+    from modelbuilder.store import SQLiteStore
+    from modelbuilder.hub_rights import digest
+    store = SQLiteStore(local["tmp"] / "test-review.sqlite3")
+    policy = deepcopy(policies["test-authored-data"])
+    policy.update(revision=2, status="revoked")
+    policy["review_digest"] = digest({key: value for key, value in policy.items() if key != "review_digest"})
+    store.put("hub_license_policy", policy["policy_id"], pid, policy, expected_revision=1)
+    store.close()
+    blocked_job = root / "jobs" / "revoked-generated-parent"
+    write_json(blocked_job / "request.json", {**request, "operation_id": "revoked-parent", "run_name": "revoked-parent"})
+    blocked = subprocess.run([sys.executable, "-m", "modelbuilder.backend.worker", str(blocked_job)], env=env,
+                             capture_output=True, text=True, timeout=180)
+    (local["tmp"] / "revoked-native.log").write_text(blocked.stdout + blocked.stderr)
+    assert blocked.returncode != 0
+    assert not (blocked_job / "outputs" / "prepare" / "dataset.manifest.json").exists()
+    assert "policy" in (blocked.stdout + blocked.stderr).lower()
+    # A foreign project cannot reuse these native artifact IDs, independently
+    # of whether it happens to hold a similarly named review.
+    foreign_job = root / "jobs" / "foreign-generated-parent"
+    write_json(foreign_job / "request.json", {**request, "project_id": "foreign-project"})
+    foreign_inspection = local["tmp"] / "inspect_foreign_bindings.py"
+    foreign_inspection.write_text("from zenml.client import Client\nClient().create_project('modelbuilder-foreign-project', 'Independent synthetic test project')\n" + binding_inspection)
+    foreign = subprocess.run([sys.executable, str(foreign_inspection), str(foreign_job)], env=env,
+                             capture_output=True, text=True, timeout=60)
+    assert foreign.returncode != 0 and "not owned by this project" in foreign.stderr
 
 
 @pytest.mark.parametrize("kind", ["custom_code", "huge_model", "pickle", "symlink"])
@@ -421,6 +538,9 @@ def test_human_library_source_pin_http_native_path_in_arbitrary_project(local):
     if not service_python.is_file():
         pytest.skip("Set MODELBUILDER_SERVICE_PYTHON to the installed service interpreter")
     pid, project = local["project"]["project_id"], local["project"]
+    from tests.components.rights_test_support import USAGE_CONTEXT, write_reviewed_policies
+    policies, rights = _local_reviews(local, source_alias="independent")
+    write_reviewed_policies(local["service"].store.path, policies)
     config = local["tmp"] / "operator.json"
     config.write_text(json.dumps({"python_executable": sys.executable,
         "source_roots": {"independent": {"path": str(local["source"]), "trusted": True,
@@ -496,14 +616,21 @@ process.stdout.write(JSON.stringify({recipe,incomplete}));
         "expected_revision": recipe["revision"], "recipe": authored["incomplete"], "idempotency_key": "incomplete"})
     assert rejected.status_code != 200
     recipe = authored["recipe"]
+    recipe.setdefault("extensions", {}).update(artifact_rights=rights["source"], usage_context=USAGE_CONTEXT)
+    for node in recipe["nodes"]:
+        node["provenance"] = {"intended_use": "generate" if node["id"] == "generate" else "evaluate"}
     recipe["external_dependencies"] = [{"id": name, "kind": "model", "license": "locally authored test model",
         "required": True, "url": "urn:sha256:" + hashlib.sha256(Path(path).read_bytes()).hexdigest(),
-        "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest()}
+        "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(), "metadata": {"rights": rights["model"]}}
         for name, path in local["context"]["dependencies"].items()]
     recipe["environment"] = {"python": "3.12", "requirements": ["zenml==0.97.0", "transformers==4.57.1",
         "torch==2.9.0+cpu", "tokenizers==0.22.2", "safetensors==0.8.0"]}
     saved = call("recipe.update", {"project_id": pid, "recipe_id": recipe["recipe_id"], "expected_revision": recipe["revision"],
         "recipe": recipe, "idempotency_key": "save-complete"})
+    call("hub.dataset.policy.bind", {"project_id": pid, "dataset_id": local["record"]["dataset_id"],
+        "dataset_revision": local["record"]["revision"],
+        "source_policies": {item["id"]: "test-authored-data" for item in local["record"]["manifest"]["sources"]},
+        "intended_use": "train", "usage_context": USAGE_CONTEXT, "idempotency_key": "review-exact-data"})
     for name, split in [("prompts", "train"), ("validation", "dev"), ("test", "test")]:
         response = call("dataset.bind", {"project_id": pid, "recipe_id": saved["recipe_id"], "expected_revision": saved["revision"],
             "dataset_id": local["record"]["dataset_id"], "dataset_revision": 1, "split_id": split,

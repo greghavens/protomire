@@ -84,6 +84,24 @@ def validate_artifact_rights(envelope, intended_use, policies=None, usage_contex
             "declared_inputs_only": True, "permissions_inferred_from_label": False}
 
 
+def source_review_scope(recipe):
+    """Exact receiving recipe semantics, excluding the rights-only bind revision."""
+    import copy
+    body = copy.deepcopy(recipe)
+    for key in ("revision", "digest", "created_at", "updated_at", "import_report"):
+        body.pop(key, None)
+    extensions = body.get("extensions", {})
+    for key in ("artifact_rights", "usage_context"):
+        extensions.pop(key, None)
+    if not extensions:
+        body.pop("extensions", None)
+    from .recipe import _file_references
+    files = _file_references({"source": recipe.get("source", {}), "environment": recipe.get("environment", {}),
+                              "nodes": [node for node in recipe.get("nodes", []) if "implementation_ref" in node]})
+    return {"project_id": recipe.get("project_id"), "recipe_id": recipe.get("recipe_id"),
+            "content_digest": digest(body), "file_references": files}
+
+
 def validate_source_origin(recipe, policy):
     """A direct recipe origin applies only to the reviewed pinned source closure.
 
@@ -107,6 +125,14 @@ def validate_source_origin(recipe, policy):
     reviewed = closure(origin["files"])
     if closure(source["files"]) != reviewed:
         blocked("Pinned source files changed after source-origin review")
+    if origin.get("source_kind") == "imported_snapshot":
+        target = origin.get("review_target", {})
+        scope = recipe.get("_source_review_scope") or source_review_scope(recipe)
+        if (any(scope.get(key) != target.get("scope", {}).get(key) for key in ("project_id", "recipe_id"))
+                or scope.get("project_id") != policy.get("project_id")):
+            blocked("Imported snapshot review does not match this receiving project and recipe identity")
+        if scope.get("file_references") != reviewed:
+            blocked("Current implementation, lock or profile references are outside the reviewed imported source closure")
     approved = closure(policy.get("source_files", []))
     if any(approved.get(path) != sha for path, sha in reviewed.items()):
         blocked("Source-origin bytes are outside the reviewed evidence closure")

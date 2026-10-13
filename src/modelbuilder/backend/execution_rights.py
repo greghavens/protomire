@@ -155,7 +155,8 @@ def node_action(node, *, required=False, inherited=()):
 
 
 def _declarations(recipe):
-    return {"source": recipe.get("source", {}), "resources": recipe.get("resources", []),
+    from ..hub_rights import source_review_scope
+    return {"_source_review_scope": source_review_scope(recipe), "source": recipe.get("source", {}), "resources": recipe.get("resources", []),
             "external_dependencies": recipe.get("external_dependencies", []),
             "extensions": {key: value for key, value in recipe.get("extensions", {}).items()
                            if key in {"artifact_rights", "usage_context"}}}
@@ -197,6 +198,45 @@ def _unreviewed_builtin_origins(recipe):
              "output_port": edge["source_port"], "consumer_node_id": edge["target_node"]}
             for edge in edges
             if edge["source_port"] in producers.get(nodes.get(edge["source_node"], {}).get("kind"), set())]
+
+
+def _current_snapshot(guard, policies):
+    """Recheck imported bytes, root identity and selected terms at native use."""
+    if guard is None:
+        return
+    from ..source_workspace import SourceWorkspaces
+    from ..export_packages import safe_file
+    from ..models import ServiceError
+    try:
+        source = SourceWorkspaces({"snapshot": {"path": guard["root"], "kind": "imported_snapshot"}}).inspect("snapshot")
+        if source["repository_id"] != guard["repository_id"] or source["snapshot_digest"] != guard["snapshot_digest"]:
+            _error("license_source_changed", "Reviewed imported source snapshot was substituted")
+        for identifier in guard["policy_ids"]:
+            for item in policies[identifier]["source_files"]:
+                with safe_file(Path(guard["root"]) / item["path"], max_bytes=item["size_bytes"]) as stream:
+                    if hashlib.sha256(stream.read(item["size_bytes"] + 1)).hexdigest() != item["sha256"]:
+                        _error("license_evidence_changed", "Reviewed imported source or terms changed before execution")
+    except ServiceError as error:
+        _error(error.code, error.message, **error.details)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        _error("license_source_changed", "Reviewed imported source or terms cannot be safely verified", reason=str(error))
+
+
+def _snapshot_guard(backend, recipe, policies):
+    origins = [policies.get(item.get("license_policy_id"), {})
+               for item in recipe.get("extensions", {}).get("artifact_rights", {}).get("sources", [])
+               if item.get("repo_type") == "source"]
+    snapshots = [policy for policy in origins if policy.get("source_origin", {}).get("source_kind") == "imported_snapshot"]
+    if not snapshots:
+        return None
+    origin = snapshots[0]["source_origin"]
+    if any(policy["source_origin"]["repository_id"] != origin["repository_id"]
+           or policy["source_origin"]["snapshot_digest"] != origin["snapshot_digest"] for policy in snapshots):
+        _error("license_source_changed", "Direct source reviews disagree on the current imported snapshot")
+    guard = {"root": str(backend.repository), "repository_id": origin["repository_id"],
+             "snapshot_digest": origin["snapshot_digest"], "policy_ids": sorted(policy["policy_id"] for policy in snapshots)}
+    _current_snapshot(guard, policies)
+    return guard
 
 
 def prepare_authorization(backend, payload, recipe, *, durable=False):
@@ -250,6 +290,7 @@ def prepare_authorization(backend, payload, recipe, *, durable=False):
     receipt = {"protocol": PROTOCOL, "project_id": project_id,
                "scope": "declared_asset_inputs" if governed or input_envelopes else "no_declared_external_asset_inputs",
                "declarations": _declarations(recipe), "nodes": decisions,
+               "source_snapshot_guard": _snapshot_guard(backend, recipe, policies),
                "native_input_rights": {key: [_digest(value) for value in values] for key, values in input_envelopes.items()},
                "policy_snapshot_digest": _digest(policies), "policy_store_identity": _digest(guard),
                "permissions_inferred_from_label": False}
@@ -259,6 +300,7 @@ def prepare_authorization(backend, payload, recipe, *, durable=False):
 
 def _input_envelopes(inputs, node):
     from .components import read_checkpoint, read_export
+    from ..generated_artifacts import is_protected_dict, dict_rights, prepared_rights
     result = {}
     ports = {port["name"]: port["type"] for port in node.get("inputs", [])}
     for name, value in inputs.items():
@@ -268,17 +310,17 @@ def _input_envelopes(inputs, node):
                 protected, rights = True, read_checkpoint(value).get("rights")
             elif (value / "export.manifest.json").is_file():
                 protected, rights = True, read_export(value).get("rights")
+            elif (value / "dataset.manifest.json").is_file():
+                protected, rights = True, prepared_rights(value)
             elif (node.get("kind", "").startswith("model.") or name == "__resume_checkpoint__"
                   or ports.get(name) in {"DatasetArtifact", "CheckpointArtifact"}):
                 protected = True
         elif isinstance(value, dict):
-            protected = (ports.get(name) in {"DatasetArtifact", "CheckpointArtifact"}
-                         or value.get("schema") in {"modelbuilder.dataset/v1", "modelbuilder.dataset-consumption/v1"}
-                         or value.get("schema_version") == "modelbuilder.checkpoint/v1"
-                         or isinstance(value.get("consumption"), dict)
-                         and value["consumption"].get("schema") == "modelbuilder.dataset-consumption/v1"
-                         or "rights" in value)
-            rights = value.get("rights")
+            protected = ports.get(name) in {"DatasetArtifact", "CheckpointArtifact"} or is_protected_dict(value)
+            try:
+                rights = dict_rights(value)
+            except Exception as error:
+                _error("license_rights_unreviewed", "Generated input has invalid parent rights lineage", input_name=name, reason=str(error))
         if protected:
             if rights is None:
                 _error("license_rights_unreviewed", "A connected model/dataset/checkpoint input has no reviewed rights lineage", input_name=name)
@@ -326,6 +368,7 @@ def verify_dispatch(spec, inputs=None):
             decisions.append(_validate_envelope(envelope, action, policies, saved["extensions"].get("usage_context")))
     used = {identifier for decision in decisions for identifier in decision["policy_ids"]}
     _current_policies(receipt["project_id"], policies, guard, used)
+    _current_snapshot(receipt.get("source_snapshot_guard"), policies)
     result = {"protocol": PROTOCOL, "node_id": node["id"], "requested_actions": actions,
               "scope": "declared_asset_inputs" if governed or envelopes else "no_declared_external_asset_inputs",
               "source_digest": _digest(saved["source"]), "receipt_digest": receipt["digest"],
@@ -353,6 +396,7 @@ def recheck_authorization(authorization, *, project_id=None):
     used = {identifier for node in receipt.get("nodes", {}).values() for decision in node["admission"]
             for identifier in decision["policy_ids"]}
     _current_policies(receipt["project_id"], policies, authorization.get("policy_store_guard"), used)
+    _current_snapshot(receipt.get("source_snapshot_guard"), policies)
 
 
 def artifact_authorization(backend, project_id, usage_context):

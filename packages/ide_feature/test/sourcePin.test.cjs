@@ -20,3 +20,8 @@ for(const changed of ['repository','commit','inventory','revision','execution'])
 test('native source edits appearing during confirmation are preserved and block pin',()=>fixture(async({folder,client,calls})=>{mock.window.showWarningMessage=async()=>{mock.workspace.textDocuments=[{isDirty:true,uri:uri(path.join(folder,'train.py'))}];return 'Pin reviewed source';};const {workbench,request,messages}=host(client);try{await workbench.message(request());assert.equal(pinCalls(calls).length,0);assert(messages.some(item=>item.type==='error'&&/native source edits/.test(item.message)));assert(mock.workspace.textDocuments[0].isDirty);}finally{workbench.dispose();}}));
 
 test('source pin requires the separate MLX worker lock alongside the backend lock',()=>{const current=recipe();current.environment.mlx_profile={path:'requirements/mlx.lock',sha256:'a'.repeat(64)};assert.deepEqual(requiredSourcePinPaths(current),['requirements.lock','requirements/mlx.lock','train.py']);});
+test('imported snapshots cannot enter the Git pin path or authenticate their declared commit',()=>fixture(async({client,status,calls})=>{
+ status.source_kind='imported_snapshot';status.declared_source_commit=commit;delete status.head_commit;
+ let prompted=false;mock.window.showInputBox=async()=>{prompted=true;return commit;};
+ const {workbench,request,messages}=host(client);try{await workbench.message(request());assert.equal(prompted,false);assert.deepEqual(calls.map(item=>item.op),['project.source.status']);assert(messages.some(item=>item.type==='error'&&/cannot be pinned as authenticated Git/.test(item.message)));assert.equal(workbench.document.current.revision,3);}finally{workbench.dispose();}
+}));

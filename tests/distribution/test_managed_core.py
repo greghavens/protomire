@@ -338,3 +338,48 @@ def test_real_http_review_denial_cancel_changed_payload_and_stale_context(runtim
         if bridge:
             bridge.close()
         close(process)
+
+
+def test_native_imported_snapshot_registration_is_explicit_and_restart_safe(runtime, state, tmp_path):
+    import hashlib
+    import shutil
+    from modelbuilder.recipe import default_recipe, export_bundle, import_bundle
+    author = tmp_path / "author"
+    author.mkdir()
+    (author / "source.py").write_text("raise RuntimeError('must never execute during registration')\n")
+    recipe = default_recipe("transport", "transport-recipe")
+    recipe["source"].update(commit="a" * 40, files=[{"path": "source.py", "sha256": hashlib.sha256((author / "source.py").read_bytes()).hexdigest()}])
+    snapshot = tmp_path / "imported-snapshot"
+    report = import_bundle(export_bundle(recipe, source_root=author), snapshot)
+    process, owner = lease(runtime, state)
+    try:
+        project = call(owner, "project.create", {"model_name": "Imported", "slug": "imported", "idempotency_key": "create"})
+        session = core.private_read(state / core.SESSION)
+        payload = {"folder_path": str(snapshot), "project_id": project["project_id"], "trust_consent": True}
+        with pytest.raises(urllib.error.HTTPError):
+            core.rpc(session, "/_desktop/source", payload)  # No implicit Git-free fallback.
+        with pytest.raises(urllib.error.HTTPError):
+            core.rpc(session, "/_desktop/source", {**payload, "source_kind": "automatic"})
+        assert not (state / "sources.json").exists()
+        receipt = core.rpc(session, "/_desktop/source", {**payload, "source_kind": "imported_snapshot"})
+        assert receipt["source_kind"] == "imported_snapshot" and receipt["git_provenance_verified"] is False
+        assert receipt["snapshot_digest"] == report["bundle_digest"] and receipt["operator_trusted"]
+        assert call(owner, "hub.license.policy.list", {"project_id": project["project_id"]})["policies"] == []
+        call(owner, "project.source.bind", {"project_id": project["project_id"], "source_alias": receipt["alias"],
+            "source_repository_id": receipt["repository_id"], "trusted": True, "expected_revision": 1, "idempotency_key": "bind"})
+    finally:
+        close(process)
+    until_stopped(state)
+    process, owner = lease(runtime, state)
+    try:
+        sources = call(owner, "project.source.list", {"project_id": project["project_id"]})["sources"]
+        assert sources[0]["source_kind"] == "imported_snapshot" and sources[0]["operator_trusted"]
+        moved = snapshot.with_name("original-snapshot")
+        snapshot.rename(moved)
+        shutil.copytree(moved, snapshot)
+        sources = call(owner, "project.source.list", {"project_id": project["project_id"]})["sources"]
+        assert sources[0]["operator_trusted"] is False
+        status = call(owner, "project.source.status", {"project_id": project["project_id"]})
+        assert not status["available"] and status["source_kind"] == "imported_snapshot"
+    finally:
+        close(process)

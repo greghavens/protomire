@@ -15,6 +15,7 @@ from modelbuilder.backend import fixtures  # noqa: E402
 from modelbuilder.backend.common import read_json, write_json  # noqa: E402
 from modelbuilder.backend.live_evaluation import LiveEvaluationCoordinator  # noqa: E402
 from modelbuilder.backend.tracking_bridge import LiveTracking  # noqa: E402
+from tests.live_evaluation.fixture_rights import reviewed_fixture  # noqa: E402
 
 pytestmark = pytest.mark.integration
 
@@ -29,9 +30,10 @@ def test_real_cpu_evaluations_reach_offline_sdk_before_training_ends(tmp_path, m
         "mode": "offline", "entity": "offline-test", "project": "cpu-live", "metric_names": ["validation_loss"]}})
     # Correlation UUID is synthetic here; no ZenML execution claim is made.
     write_json(job / "native.json", {"backend_run_id": str(uuid4())})
-    data = fixtures.dataset({"fixture": "custom", "count": 80})
-    initial = fixtures.initialize(data, {"fixture": "custom", "width": 4}, tmp_path / "initial")
-    coordinator = LiveEvaluationCoordinator(job, "train", {"kind": "fixture", "data": data, "parameters": {}},
+    data, spec = reviewed_fixture(tmp_path, fixtures.dataset({"fixture": "custom", "count": 80}))
+    initial = fixtures.initialize(data, {"fixture": "custom", "width": 4,
+                                        "_artifact_rights": data["rights"]}, tmp_path / "initial")
+    coordinator = LiveEvaluationCoordinator(job, "train", {"kind": "fixture", "data": data, "parameters": {}, "spec": spec},
                                           max_concurrency=1, timeout_seconds=30)
     failures = []
     tracker = LiveTracking(job)
@@ -39,7 +41,7 @@ def test_real_cpu_evaluations_reach_offline_sdk_before_training_ends(tmp_path, m
     def train():
         try:
             fixtures.train(data, initial, {"steps": 12, "step_delay": 0.8, "checkpoint_interval_steps": 2,
-                "_checkpoint_ready": coordinator.checkpoint_ready}, tmp_path / "training")
+                "_checkpoint_ready": coordinator.checkpoint_ready, "_artifact_rights": data["rights"]}, tmp_path / "training")
         except BaseException as error:
             failures.append(error)
 

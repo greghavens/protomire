@@ -385,11 +385,27 @@ def test_real_native_general_generation_judge_pipeline(local):
     paths, guards = registry.execution_sources(pid, record["dataset_id"], 1)
     reference_path = local["tmp"] / "dataset-reference.json"
     reference_path.write_text(json.dumps(reference, sort_keys=True))
-    dependencies = reference["dependencies"] + [{"id": "dataset-reference", "sha256": hashlib.sha256(reference_path.read_bytes()).hexdigest()}]
+    from tests.components.rights_test_support import (
+        USAGE_CONTEXT, authorize_test_recipe, local_review, local_source_review,
+    )
+    # These files are generated above from seeded random configs and authored
+    # rows. Review their actual bytes, never an upstream/pretrained permission.
+    model_files = [{"path": key, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+                    "size_bytes": Path(path).stat().st_size}
+                   for key, path in local["context"]["dependencies"].items()]
+    dataset_files = [{"path": item["id"], "sha256": item["sha256"],
+                      "size_bytes": Path(paths[item["id"]]).stat().st_size}
+                     for item in reference["dependencies"]]
+    model_policy, model_rights = local_review(pid, policy_id="test-random-models", source_files=model_files)
+    dataset_policy, dataset_rights = local_review(pid, policy_id="test-authored-data", repo_type="dataset", source_files=dataset_files)
+    source_policy, source_rights = local_source_review(source, code, pid)
     paths["dataset-reference"] = str(reference_path)
     paths.update(local["context"]["dependencies"])
-    dependencies.extend({"id": key, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest()}
-                        for key, path in local["context"]["dependencies"].items())
+    dependencies = [{"id": key, "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+                     "kind": "model" if key in local["context"]["dependencies"] else "dataset",
+                     "metadata": {"rights": model_rights if key in local["context"]["dependencies"] else dataset_rights,
+                                  **({"dataset_reference": reference} if key == "dataset-reference" else {})}}
+                    for key, path in paths.items()]
     nodes, edges = [], []
     for name, split in [("prompts", "train"), ("validation", "dev"), ("test", "test")]:
         nodes.append({"id": name, "kind": "dataset.version.import", "timeout": 120, "inputs": [],
@@ -400,15 +416,19 @@ def test_real_native_general_generation_judge_pipeline(local):
         entry = adapters.catalog_entries()[index]
         descriptor = {key: entry[key] for key in ("id", "version", "protocol", "role", "description", "parameter_schema", "capabilities")}
         node = {"id": name, "kind": "component.run", "inputs": entry["inputs"], "outputs": entry["outputs"],
+            "provenance": {"intended_use": "generate" if name == "generate" else "evaluate"},
             "component": descriptor, "parameters": params, "timeout": 120, "retry": {"max_attempts": 1},
             "implementation_ref": {**code["files"][0], "module": "adapter", "entrypoint": name, "commit": code["commit"]}}
         validate_component(node)
         nodes.append(node)
     edges.append({"source_node": "generate", "source_port": "candidates", "target_node": "judge", "target_port": "candidates"})
     recipe = {"recipe_id": "native-general-inference", "revision": 1, "source": code, "nodes": nodes,
-              "edges": edges, "external_dependencies": dependencies, "evaluation": {}}
+              "edges": edges, "external_dependencies": dependencies, "evaluation": {},
+              "extensions": {"artifact_rights": source_rights, "usage_context": USAGE_CONTEXT}}
+    policies = {policy["policy_id"]: policy for policy in (source_policy, model_policy, dataset_policy)}
+    authorization = authorize_test_recipe(local["tmp"], recipe, policies, project_id=pid)
     job = local["tmp"] / "native-job"
-    write_json(job / "request.json", {"recipe": recipe, "project_id": pid, "operation_id": "native-general-inference",
+    write_json(job / "request.json", {**authorization, "recipe": recipe, "project_id": pid, "operation_id": "native-general-inference",
         "run_name": "native-general-inference", "source_root": str(source), "trusted_code_roots": [str(source)],
         "dependency_paths": paths, "dataset_source_guards": guards})
     env = {**os.environ, "ZENML_CONFIG_PATH": str(local["tmp"] / "zenml"), "ZENML_LOCAL_STORES_PATH": str(local["tmp"] / "stores"),

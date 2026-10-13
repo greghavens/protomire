@@ -26,9 +26,25 @@ SERVICE_PYTHON -I SOURCE/scripts/replay_bundle.py run-prepared prepared.json \
 
 Use `execution_revision` and `execution_digest` from a fresh executable plan. Preparation records project, recipe, source, interpreter and store identity in that receiving store; editing the JSON receipt cannot supply policy authority. Reopening checks the original immutable transport and allows only explicit rights/usage-context changes to the owned recipe. Source, graph, environment, parameters or other changes require a new preparation. Normal submission checks current project policies, exact source closure, use context and revocation again, including at native dispatch. The CLI actor retains only read/modify/execute scopes.
 
-The currently supported authorized source-review path is an operator-configured, project-bound Git checkout: `project.source.bind`, `hub.license.local.inspect` (all pinned source files plus actual selected terms), `hub.license.review` (an independently authorized publish-scope reviewer explicitly supplies terms, uses, context and obligations), then `hub.source.policy.bind`. Configure the receiving service's source workspace alias and project-specific Hub publication source alias to the same exact root. This is a local review, not a provider publication. It changes only the receiving project's policy and future recipe lineage; historical revisions remain intact.
+Both committed checkouts and explicitly registered Git-free imported snapshots use the same public operations: `project.source.bind`, `hub.license.local.inspect` (every inventoried source file plus the actual selected terms), `hub.license.review` (an independently authorized publish-scope reviewer explicitly supplies terms, uses, context and obligations), then `hub.source.policy.bind`. Configure the receiving service's source alias and project-specific Hub publication source alias to the same exact root. This is local evidence review; it does not publish to a provider. Only receiving-project policies and future recipe lineage change; historical revisions remain intact.
 
-**Remaining gate:** extracted portable snapshots intentionally have no Git repository. The current source-review API requires a bound Git checkout, so `prepare` can inspect and truthfully block a Git-free snapshot but cannot itself establish a new source-origin review for it. A separately authorized snapshot-evidence review intake is not implemented. Do not write policy rows by hand or import an arbitrary policy JSON as a workaround. Existing reviewed receiving-project policies are read from their durable service store, never trusted from the bundle.
+### Register and review an imported snapshot
+
+In the native app, **Register Trusted Project Source** asks explicitly whether the selected folder is a Git checkout or an imported snapshot. Choose **Imported snapshot** for a directory produced by bundle import. The native confirmation identifies the source kind and explains the separate source-trust decision; registration never infers ownership or license rights. Configure that same folder as a project Hub source, then use **Review local source, model or dataset rights → Source origin for scratch outputs**. The guided review displays imported byte evidence, local identity, snapshot digest, original declared commit, exact receiving recipe revision/digest and selected terms before the existing exact native owner approval.
+
+An operator-configured alias uses `kind: "imported_snapshot"` in `source_roots`; the default remains `git`, with no automatic Git-free fallback. `prepare` returns `source_review_setup` as configuration guidance only, with `trusted: false`. It neither applies those settings nor records a policy. An imported alias requires a validated extracted `recipe.json`, a nonempty hash-pinned source inventory covering every implementation/lock/profile reference, ordinary non-symlink paths and a nonzero declared upstream commit. Inspection verifies the actual current bytes and binds the local root identity; it does not verify an upstream Git object or authenticate the publisher.
+
+After explicitly binding the alias, agents and humans capture the same review evidence using `hub.license.local.inspect` with `repo_type: "source"`, `source_repository_id`, `source_commit`, all source `files`, explicit `evidence_document_paths`, and these mandatory snapshot guards:
+
+- `recipe_id` and `expected_revision`: the receiving project's current owned recipe
+- `expected_recipe_digest`: its exact current digest
+- `expected_project_revision`: the exact project revision after source binding
+
+The service captures the original transport recipe digest, snapshot digest and selected file hashes itself; these are not caller-supplied policy authority. Changes to the project, recipe revision/digest, snapshot directory, source bytes or selected terms between capture, owner review and binding reject the decision. A source-origin policy cannot register a model/dataset asset. Missing or unknown terms remain unresolved; no permissions are inferred from a label, folder, source-trust flag, transport digest or policy JSON in a bundle.
+
+At planning, submission, launch and native dispatch, current policies/revocation, snapshot identity, current source and selected terms are checked again. Replacing a directory with byte-identical copied files does not inherit its prior local binding. Ordinary recipe parameter edits after binding retain the reviewed source origin when the receiving project/recipe identity, source closure and licensed context remain unchanged, matching Git source review. Context changes or source replacement require the applicable new review. Reopening a preparation still permits only rights/context changes under that preparation's original replay contract; other recipe edits require a new preparation.
+
+Do not write policy rows by hand or import policy JSON. The CLI actor still has no publish scope; source trust is never license clearance, and native review remains the existing owner-approved exact request.
 
 Retries for the same preparation + execution revision + digest reconcile the same service idempotency key. Receipts state whether that operation was already recorded before the submit call. An explicitly selected later reviewed recipe revision has a different key; uncertain retries never silently choose a new one. Failures at preparation, import, plan or submit write the requested JSON, including the error and transcript. A submit exception records `submit_attempted: true`, `submitted: null` until acknowledgment, and any service operation ID/dispatch state; it never claims an uncertain launch did not happen. Timeout receipts preserve cancellation/termination uncertainty.
 
@@ -116,7 +132,7 @@ done
   "$WORK/replay-source" --data-dir "$WORK/replay-data" \
   --backend-python "$ROOT/.venv-replay-backend/bin/python" \
   --trust-repository-source --output evidence/portability/custom-replay-prepared.json
-# These Git-free snapshots remain blocked pending an authorized review intake.
+# These previews remain blocked until the separate receiving-project owner review above.
 # Compare only actual successful execution receipts, never preview receipts.
 ```
 
@@ -189,3 +205,20 @@ Earlier results, including the `086908e` checkpoint and the directories named [c
 ### Pretrained replay
 
 Use `examples/pretrained-small/recipe.json` in the export step and new extracted source/data directories. Resolve the three immutable `resources` entries separately into distinct origin/replay model directories, verifying every SHA256 before running. Pass the corresponding directory with `run --pretrained-path /path/to/bert-tiny`. The measured run copied already-downloaded, immutable resources into new directories and reverified their contents; it did not depend on an original model path or fetch unpinned weights. The current raw resource-resolution record is retained locally and identified by SHA256 in the compact original-receipt index; resolved host paths are not published. The same installed service/runtime wheels support both fixtures.
+
+## Isolated snapshot-intake regression
+
+`tests/hub/test_snapshot_source_review.py` exercises public-API capture/review/bind with synthetic terms, restart, exact review revision/digest guards, root substitution and symlinks, byte/terms tampering, native owner approval, parameter-only edits and execution revocation. `tests/distribution/test_managed_core.py` also checks the real native registration HTTP endpoint and persisted source identity. Frontend tests cover explicit kind selection and guided dialog contracts; these are not live native-GUI acceptance.
+
+For an actual offline CPU reproduction, provide existing pinned Python 3.12 Linux service/backend dependency environments and a new work directory:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python \
+  tests/portability/reproduce_snapshot_review.py /new/absolute/snapshot-check \
+  --service-dependencies /existing/pinned-service-env \
+  --backend-dependencies /existing/pinned-backend-env
+```
+
+The script creates an isolated authored test commit and archive, extracts two Git-free trees, constructs and installs conventional wheels, and uses two independent receiving stores and explicit self-authored synthetic-fixture reviews through the public API. No shipping manifest, existing policy, dependency template, provider or network service is changed. Dependency files may share immutable hardlinks, as with an ordinary package cache; imports and application/native stores remain independent. Logs, exact commands, wheel hashes and raw execution receipts are retained. It requires local `git`, `uv`, Python 3.12 and the already installed dependencies; it downloads nothing.
+
+A successful scientific comparison requires seven identical metrics/weight/loader/parity outputs and three different manifests carrying independent review provenance. The ordinary strict comparison is preserved and must fail only its all-output-hashes check. Distinct review IDs/timestamps are never normalized away or reported as byte-identical. This regression is synthetic same-host CPU evidence for the additive intake, not shipping release, native installer, cross-platform, GPU or redistribution acceptance.

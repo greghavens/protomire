@@ -545,17 +545,22 @@ def serve(root: Path, state: Path, *, idle_grace: float = IDLE_GRACE) -> int:
         def register_source(payload: dict = Body(...), actor=Depends(owner)):
             from modelbuilder.source_workspace import SourceWorkspaces
             from modelbuilder.models import ServiceError
-            if set(payload) != {"folder_path", "project_id", "trust_consent"} or payload.get("trust_consent") is not True:
+            if (not {"folder_path", "project_id", "trust_consent"} <= set(payload)
+                    or set(payload) - {"folder_path", "project_id", "trust_consent", "source_kind"}
+                    or payload.get("trust_consent") is not True):
                 raise ServiceError("source_trust_required", "Select and explicitly trust the source folder in the native application", status_code=403)
+            kind = payload.get("source_kind", "git")
+            if not isinstance(kind, str) or kind not in {"git", "imported_snapshot"}:
+                raise ServiceError("invalid_source", "Explicitly choose a Git checkout or an imported snapshot")
             folder, project = payload.get("folder_path"), payload.get("project_id")
             if not isinstance(folder, str) or not isinstance(project, str):
                 raise ServiceError("invalid_source", "A native folder and model project are required")
             path = Path(folder)
             if not path.is_absolute() or not path.is_dir() or path.is_symlink() or path.resolve() != path:
-                raise ServiceError("invalid_source", "Select the canonical committed Git checkout directory")
+                raise ServiceError("invalid_source", "Select the canonical source directory for the explicitly chosen source kind")
             app.state.service.invoke("project.get", {"project_id": project}, actor)
             alias = "workspace-" + hashlib.sha256(project.encode()).hexdigest()[:24]
-            settings = {"path": str(path), "trusted": True, "project_ids": [project], "label": path.name}
+            settings = {"path": str(path), "kind": kind, "trusted": True, "project_ids": [project], "label": path.name}
             proposed = SourceWorkspaces({alias: settings})
             receipt = proposed.inspect(alias, project)
             with source_guard:

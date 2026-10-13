@@ -1,24 +1,89 @@
 # Current verification and remaining gates
 
-## Corrective source batch: full acceptance pending
+## Current 2e60975 runtime: aggregate failed; further corrections unaccepted
 
-The preceding `e658e32` aggregate **failed**, and its
-[compact receipt](../evidence/product-completion-20261013/acceptance-e658e32/README.md)
-preserves that outcome. Production corrections restore asset-free native cache
-revalidation, include exact manifests/rights in builtin live snapshots,
-canonicalize only internally allocated Mac Hub temporary roots, bundle the pinned
-Trainer overlay, and prevent managed Python bytecode writes into sealed payloads.
-Portable replay now reports blocked preflight truthfully and offers a receiving-
-project preparation/review/resume flow; Git-free snapshot review intake remains
-unsupported. No untrusted policy JSON becomes authority.
+Published checkpoint `8996355f8a3273da8f8adee6649f36667f39b993` pins runtime
+`2e609759ab5e86912f43a9a979e446030927c9a8` and its **150-file** source/lock
+closure. The corrected full local aggregate **exited 1**. Later uncommitted
+source and fixture changes have separate focused results below; they do not
+turn that aggregate into a pass or establish full-product completion.
+[Compact receipts and original-evidence hashes](../evidence/product-completion-20261013/acceptance-2e60975/README.md)
+record the distinct scopes. Historical evidence below is unchanged.
 
-Tests now explicitly review repository-owned synthetic source/data and re-review
-changed dataset revisions. Existing negative rights, revocation, source integrity,
-concurrency and early-evaluation checks remain. The complete corrected aggregate,
-installed-wheel replay, bundled Mac Trainer/MLX and installer acceptance must be
-rerun before a release claim. Linux AppImage assembly is separately blocked by
-missing offline editor/backend/toolchain inputs; recovered service/Hub wheels do
-not constitute an AppImage or Bazzite acceptance.
+### Corrected full local aggregate
+
+- Light: **2,606 passed, 140 skipped, 88 deselected** in 165.33 seconds;
+  frontend: **480 passed**; offline Hub SDK: **18 passed**; offline Modal SDK:
+  **3 passed**. Offline SDK tests make no live-provider claim.
+- Native lifecycle: **30 passed, 1 failed**; integration: **53 passed,
+  43 deselected**; components: **468 passed, 24 failed, 8 skipped**;
+  concurrency: **17 passed, 1 failed, 4 deselected**.
+- Native queue status: `group_failed`, exit 1; total elapsed **1,978.149
+  seconds**. The last group finished at 1,978.044 seconds. Cleanup completed
+  with **zero signaled processes**.
+- The public pretrained lifecycle fixture remains blocked by unresolved
+  license/rights evidence. No rights approval was fabricated. Test-only repairs
+  for the 24 component failures and one concurrency failure passed isolated
+  groups of **119, 76 and 4 tests**; a successful full corrected aggregate
+  covering those repairs has not been established.
+
+### Installed-wheel replay on the frozen runtime
+
+The `9caa54f` source candidate uses the same `2e60975` runtime. Four fresh
+installed environments, independent native stores, source/installed-byte checks,
+locked offline installs and all four worker terminations were verified on the
+same Linux CPU host.
+
+- Supported Git-backed public source review reached two successful native runs.
+  The unchanged strict comparator returned **FAIL, 34/35 checks**: seven
+  scientific output files, metrics and evaluation records match exactly;
+  three rights-provenance manifests differ with genuine independent review
+  policy IDs/timestamps. Those identities were not rewritten to force equality.
+- A lower-level, explicitly test-owned authority path passed **35/35 checks**
+  and ten exact output hashes. This is not acceptance of the complete public
+  review/replay workflow.
+- The frozen runtime has no supported Git-free snapshot review intake.
+  Unreviewed shipping custom and public pretrained recipes stopped before
+  submission, creating no operation/policy records or native jobs.
+
+### Later uncommitted changes
+
+Git-free source-snapshot review intake is now integrated in the working tree:
+**62 focused tests and 528 frontend tests passed**. These changes are not in the
+published 150-file runtime or its installed-wheel replay receipts. The broader
+light diagnostic still **failed: 2,638 passed, 2 failed, 140 skipped,
+90 deselected**, in 196.75 seconds. The two native-cache failures now have test-fixture corrections with **28 focused tests passing** in
+the working tree; the failed diagnostic remains recorded. The subsequent
+combined light diagnostic passed **2,673 tests, with 140 skipped and 90
+deselected**, in 197.88 seconds. Its selection deliberately excluded the two
+shipping source-pin tests until the new source is committed and repinned; it is
+not a full aggregate pass. Generated-data lineage is now implemented in the working
+tree: exact candidate/judgment content and parent rights survive selected-subgraph
+reuse and prepared-dataset registration. Final-source focused checks passed
+133 rights/input-boundary tests, 181 service/dataset/installed-wheel tests and an
+actual CPU generation/judge/preparation test that rejects revoked and foreign-
+project parents. Native inspection reads inert JSON without invoking nested
+materializers. The full integrated aggregate remains an open gate. Counts from these overlapping selections are
+not added as unique coverage.
+
+### Packaging and remaining gates
+
+Separate Mac verification reports an actual **unsigned arm64 development DMG** for
+`9caa54f` / `2e60975`, with mounted payload/CLI/module checks, five managed-core
+lifecycle/MCP tests, bundled MPS and six MLX cases passing. These are provisional
+reported checks pending verification of the final evidence archive. A fresh invocation of the unchanged committed runtime builder reproduced the
+sealed payload. The AppleDouble correction uses a reviewed Git input archive
+created with Python tarfile, without implicit BSD tar xattr sidecars. The latest
+evidence archive upload is blocked; both archives remain on the Mac build host. Current native
+GUI is blocked by the locked Mac; signing and notarization are not done. No
+canonical reproducible installer or signed release is claimed.
+
+Linux AppImage assembly remains blocked by missing offline editor, backend and
+toolchain inputs; recovered wheels are not AppImage or Bazzite acceptance.
+Windows, Linux ARM64, actual CUDA, live providers, authenticated vendor assistants
+and online tracking remain unverified. Hostile-code isolation and redistribution
+clearance remain unresolved. Local checks do not establish hosted-CI or
+full-product acceptance.
 
 ## Historical e658e32 implementation and partial results
 

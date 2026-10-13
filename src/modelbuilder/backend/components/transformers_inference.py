@@ -15,6 +15,7 @@ import tempfile
 
 from jsonschema import Draft202012Validator
 
+from ...generated_artifacts import attach_lineage, validate_lineage
 from . import PROTOCOL, identity
 from . import local_inference as legacy
 from . import transformers_loader as loader
@@ -140,8 +141,8 @@ def _row_schema(parameters):
 
 
 def _candidate_rows(value, limits):
-    # Both old artifacts and new budgeted artifacts can be explicitly reviewed
-    # with this family. No v1 adapter, schema or digest is changed.
+    # Both supported row-schema families can be explicitly reviewed here.
+    # Rights admission separately requires an intact generated-lineage seal.
     schema = value.get("schema") if isinstance(value, dict) else None
     _artifact(value, schema if schema in (CANDIDATES, legacy.CANDIDATES) else CANDIDATES, limits)
     rows = value.get("rows")
@@ -253,11 +254,11 @@ def generate(*, inputs, parameters, context):
                 rows.append(row)
     if not rows:
         raise ValueError("Generation produced no schema-valid isolated candidates")
-    value = legacy._seal({"schema": CANDIDATES, "status": "candidates_only", "row_schema": row_schema,
+    value = attach_lineage({"schema": CANDIDATES, "status": "candidates_only", "row_schema": row_schema,
         "rows": rows, "rejected": rejected, "provenance": {"generator": model_identity,
             "parameters": deepcopy(parameters), "splits": splits, "runtime": _runtime(context),
             "seed_policy": "sha256(seed,parent_id,sample_index)[0:8] per sample",
-            "protection": "NFKC/casefold/whitespace exact-text and sample-ID isolation; not semantic decontamination"}})
+            "protection": "NFKC/casefold/whitespace exact-text and sample-ID isolation; not semantic decontamination"}}, inputs, context)
     return {"candidates": _artifact(value, CANDIDATES, parameters["limits"])}
 
 
@@ -270,6 +271,7 @@ def judge(*, inputs, parameters, context):
     rows = _candidate_rows(candidates, parameters["limits"])
     if len(rows) * parameters["max_length"] > parameters["limits"]["max_tokenized_tokens"]:
         raise ValueError("Judging exceeds the recipe's declared token budget")
+    validate_lineage(candidates)
     if parameters["score_label"] not in parameters["labels"]:
         raise ValueError("score_label must be in the configured label mapping")
     if parameters["model"]["weights"]["sha256"] == candidates["provenance"]["generator"]["assets"]["weights"]["sha256"]:
@@ -299,10 +301,10 @@ def judge(*, inputs, parameters, context):
                     "score": scores[parameters["labels"].index(parameters["score_label"])]})
     ranked = sorted(predictions, key=lambda row: ((-1 if parameters["rank_direction"] == "highest_first" else 1)
                                                 * row["score"], row["id"]))
-    value = legacy._seal({"schema": JUDGMENTS, "candidate_digest": candidates["digest"],
+    value = attach_lineage({"schema": JUDGMENTS, "candidate_digest": candidates["digest"],
         "status": "model_predictions_not_ground_truth", "predictions": predictions,
         "ranked_ids": [row["id"] for row in ranked], "provenance": {"judge": model_identity,
-            "parameters": deepcopy(parameters), "runtime": _runtime(context)}})
+            "parameters": deepcopy(parameters), "runtime": _runtime(context)}}, inputs, context)
     return {"judgments": _artifact(value, JUDGMENTS, parameters["limits"])}
 
 
@@ -329,6 +331,8 @@ def prepare_dataset(*, inputs, parameters, context):
             or len(predictions) != len(rows) or {row.get("id") for row in predictions} != lookup.keys()
             or any(row.get("prediction_kind") != "model_prediction" for row in predictions)):
         raise ValueError("Review must select exact candidates with explicit model predictions")
+    validate_lineage(candidates)
+    validate_lineage(judgments)
     predictions = {row["id"]: row for row in predictions}
     selected = [{**lookup[row_id], "judge_predicted_label": predictions[row_id]["predicted_label"],
                  "judge_score": predictions[row_id]["score"], "candidate_digest": candidates["digest"],
@@ -351,6 +355,7 @@ def prepare_dataset(*, inputs, parameters, context):
                      "format": "jsonl", "sha256": hashlib.sha256(content).hexdigest()}],
         "id_column": "id", "row_schema": schema,
         "splits": [{"id": "train", "role": "train", "source_ids": ["reviewed"]}], "transformations": []}
+    manifest = attach_lineage(manifest, inputs, context)
     from ...dataset import validate_manifest
     validate_manifest(manifest)
     files = {filename: content, "dataset.manifest.json": json.dumps(manifest, sort_keys=True, indent=2).encode(),

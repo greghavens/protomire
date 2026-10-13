@@ -9,6 +9,7 @@ import { conditionChoices, conditionEdges, conditionSelection, withTerminalCondi
 import { renderCostDiagnostics } from './costDiagnostics';
 import { ParameterControls, parameterSchema } from './parameterControls';
 import { bindRecipeSourcePane } from './sourcePane';
+import { renderSourceStatus } from './sourceStatus';
 import { BusyControls } from './busyControls';
 import { renderLiveEvaluations } from './liveEvaluations';
 import { DEFAULT_NOTIFICATION_PREFERENCES, NOTIFICATION_BOOLEAN_KEYS, notificationPreferences } from './notifications';
@@ -142,16 +143,9 @@ function renderProjects(projects:RecordValue[]) {
 }
 function showLanding(){executionEditor.capabilities();releaseView.reset();$('compute-diagnostics').replaceChildren();datasets=[];renderDatasetRecords();$('dataset-error').hidden=true;$('dataset-error').textContent='';$('dataset-preview').hidden=true;$('dataset-preview').replaceChildren();research={};renderResearch();$('research-reader').replaceChildren();$('research-reader').hidden=true;trackingDirty=false;$('run-admission').replaceChildren();$('run-admission').hidden=true;snapshot={};activeRun=undefined;resetRun();renderRecipe(undefined);$('workspace').hidden=true;$('landing').hidden=false;$('workbench-heading').textContent='Model projects';$('operation-panel').hidden=true;$('result-panel').hidden=true;vscode.setState({});}
 function renderSourceBinding(){
-  const root=$('source-binding');root.replaceChildren();const status=snapshot.source;
-  if(!status){root.append(node('p','Source binding status is not provided by this service.','muted'));return;}
-  root.append(node('h3',status.bound?'Bound source checkout':'Source checkout not bound'));
-  if(status.binding)root.append(node('p',`Alias: ${status.binding.alias}`),node('p',`Repository identity: ${status.binding.repository_id}`));
-  if(status.workspace_path)root.append(node('p',`Service checkout: ${status.workspace_path}`));
-  if(status.head_commit)root.append(node('p',`Checkout HEAD (review default): ${status.head_commit}`));
-  if(recipe?.source?.commit)root.append(node('p',`Recipe source commit: ${recipe.source.commit}`));
-  root.append(node('p',status.operator_trusted?'Operator-approved trusted local execution; each run requires confirmation.':'Execution is blocked until the operator approves this source.','muted'));
-  for(const diagnostic of status.diagnostics??[])root.append(node('p',`${diagnostic.code}: ${diagnostic.message}`,'warning'));
-  if(['recipe.source.pin.preview','recipe.source.pin'].every(name=>catalog.some(item=>item.name===name))){
+  const root=$('source-binding'),status=snapshot.source;
+  const canPinGit=renderSourceStatus(root,status,recipe?.source?.commit);
+  if(canPinGit&&['recipe.source.pin.preview','recipe.source.pin'].every(name=>catalog.some(item=>item.name===name))){
     const pin=button('Review and pin source files…',()=>{
       if(busy)return;if(dirty||nodePanelDirty||liveSettingsDirty||executionEditor.isDirty()){report('Save or explicitly discard the recipe draft before pinning source. Your edits are preserved.');return;}
       if(!recipe||!snapshot.project||!status.binding)return;

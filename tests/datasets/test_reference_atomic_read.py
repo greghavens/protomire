@@ -9,7 +9,8 @@ pytest.importorskip("zenml")
 pytest.importorskip("torch")
 
 from modelbuilder import dataset  # noqa: E402
-from modelbuilder.backend import worker  # noqa: E402
+from modelbuilder.backend import process_execution, worker  # noqa: E402
+from tests.components.rights_test_support import USAGE_CONTEXT, authorize_test_recipe, local_review  # noqa: E402
 
 LIMIT = 16 * 1024 * 1024
 
@@ -17,10 +18,24 @@ LIMIT = 16 * 1024 * 1024
 def setup_reference(tmp_path, monkeypatch, content):
     reference = tmp_path / "reference.json"
     reference.write_bytes(content)
-    spec = {"parameters": {"reference_id": "reference", "split_id": "train"},
+    parameters = {"reference_id": "reference", "split_id": "train", "purpose": "training"}
+    node = {"id": "import", "kind": "dataset.version.import", "parameters": parameters}
+    digest = hashlib.sha256(content).hexdigest()
+    policy, rights = local_review("project", repo_type="dataset", source_files=[
+        {"path": reference.name, "sha256": digest, "size_bytes": len(content)}])
+    recipe = {"nodes": [node], "resources": [{"id": "reference", "kind": "dataset", "sha256": digest,
+                                              "metadata": {"rights": rights}}],
+              "extensions": {"usage_context": USAGE_CONTEXT}}
+    spec = {"node_id": node["id"], "component_node": node, "parameters": parameters,
             "dependency_paths": {"reference": str(reference)},
-            "dependencies": [{"id": "reference", "sha256": hashlib.sha256(content).hexdigest()}],
-            "recipe_provenance": {"application_project_id": "project"}}
+            "dependencies": recipe["resources"],
+            "recipe_provenance": {"application_project_id": "project"},
+            **authorize_test_recipe(tmp_path, recipe, {policy["policy_id"]: policy}, project_id="project")}
+    # This direct entrypoint has no native metadata context; retain the real
+    # rights check and verify its receipt at the logging boundary.
+    def metadata(value):
+        assert value["rights_admission"]["policy_revisions"][policy["policy_id"]]["revision"] == 1
+    monkeypatch.setattr(process_execution, "metadata", metadata)
     monkeypatch.setattr(worker, "context", lambda value: (value["parameters"], tmp_path))
     return reference, spec
 
@@ -55,7 +70,10 @@ def test_reference_parses_same_hashed_bytes_without_second_read(tmp_path, monkey
 
     monkeypatch.setattr(Path, "open", guarded_open)
     monkeypatch.setattr(dataset, "load_portable_split", load)
-    assert worker.import_dataset_version_step.entrypoint(spec) == {"rows": [], "checked": True}
+    result = worker.import_dataset_version_step.entrypoint(spec)
+    assert result == {"rows": [], "checked": True, "rights": result["rights"]}
+    assert result["rights"]["sources"] == spec["dependencies"][0]["metadata"]["rights"]["sources"]
+    assert result["rights"]["unresolved"] == []
     assert observed == [json.loads(content)]
     assert reads == [LIMIT + 1] and len(opens) == 1
 

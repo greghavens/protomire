@@ -268,6 +268,10 @@ class HubTransfers:
             previous = self.store.idempotent_result(actor.id, p["idempotency_key"], op, payload_hash)
             if previous is not None:
                 return previous
+            if kind in {"hub_license_evidence", "hub_license_policy"}:
+                from .hub_source import revalidate_snapshot_evidence
+                evidence = result if kind == "hub_license_evidence" else self._get("hub_license_evidence", result["evidence_id"], p["project_id"])
+                revalidate_snapshot_evidence(self, evidence)
             if kind == "hub_asset":
                 from .hub_rights import validate_artifact_rights
                 validate_artifact_rights(result["rights"], "download", self.policy_snapshot(p["project_id"]), result["usage_context"])
@@ -364,6 +368,8 @@ class HubTransfers:
             evidence = self._get("hub_license_evidence", p["evidence_id"], project)
             if p["evidence_digest"] != evidence["evidence_digest"]:
                 fail("license_evidence_changed", "Review must bind the exact captured upstream license evidence")
+            from .hub_source import revalidate_snapshot_evidence
+            revalidate_snapshot_evidence(self, evidence)
             if not evidence["evidence"]["documents"]:
                 fail("license_evidence_incomplete", "A label alone is insufficient; capture the actual authoritative license and notice text before review")
             if evidence["evidence"]["gated"] and not p["gated_terms_acknowledged"]:
@@ -408,6 +414,7 @@ class HubTransfers:
                     fail("license_evidence_changed", "Registered dataset source bytes are outside the selected reviewed policy")
                 rights_sources.append(source_reference(policy["source"], policy["license_evidence_digest"], policy["policy_id"]))
             rights = {"schema_version": "modelbuilder.artifact-rights/v1", "sources": rights_sources, "unresolved": [], "parent_rights_digests": []}
+            rights = self._inherited_dataset_rights(reference, rights)
             admission = validate_artifact_rights(rights, p["intended_use"], policies, p["usage_context"])
             payload = {key: copy.deepcopy(p[key]) for key in ("project_id", "dataset_id", "dataset_revision", "source_policies", "intended_use", "usage_context")}
             payload.update(version_id=reference["version_id"], content_digest=reference["content_digest"], rights=rights)
@@ -1014,6 +1021,19 @@ class HubTransfers:
             captured = (path, info.st_dev, info.st_ino)
         self.service._dataset_registry._roots.setdefault(asset["project_id"], {})[asset["dataset_root_alias"]] = captured
 
+    @staticmethod
+    def _inherited_dataset_rights(reference, direct=None):
+        from .generated_artifacts import manifest_rights
+        from .artifact_rights import combine_parent_rights
+        inherited = manifest_rights(reference["manifest"])
+        if inherited is None:
+            return copy.deepcopy(direct)
+        if direct is None:
+            return copy.deepcopy(inherited)
+        return combine_parent_rights([
+            {"artifact_id": "generated-dataset:" + reference["version_id"], "rights": inherited},
+            {"artifact_id": "reviewed-output-files:" + reference["content_digest"], "rights": direct}])
+
     def dataset_rights(self, reference):
         """Derive dataset bindings only from exact project-owned verified asset roots."""
         identity = digest({"project_id": reference["project_id"], "dataset_id": reference["dataset_id"], "dataset_revision": reference["revision"]})
@@ -1025,7 +1045,7 @@ class HubTransfers:
         else:
             if binding["version_id"] != reference["version_id"] or binding["content_digest"] != reference["content_digest"]:
                 fail("license_evidence_changed", "Dataset rights binding differs from the registered immutable version")
-            return copy.deepcopy(binding["rights"])
+            return self._inherited_dataset_rights(reference, binding["rights"])
         sources, unresolved, parents = [], [], []
         found = False
         for item in reference["manifest"]["sources"]:
@@ -1043,9 +1063,9 @@ class HubTransfers:
             unresolved.extend(rights["unresolved"])
             parents.append(digest(rights))
         if not found:
-            return None  # Missing metadata remains visibly unresolved at admission.
-        return {"schema_version": "modelbuilder.artifact-rights/v1", "sources": sources,
-                "unresolved": unresolved, "parent_rights_digests": sorted(set(parents))}
+            return self._inherited_dataset_rights(reference)  # Missing ordinary origins stay unresolved.
+        return self._inherited_dataset_rights(reference, {"schema_version": "modelbuilder.artifact-rights/v1", "sources": sources,
+                "unresolved": unresolved, "parent_rights_digests": sorted(set(parents))})
 
     def policy_snapshot(self, project_id):
         """Internal authority only: callers must never supply this map in payloads."""
@@ -1053,6 +1073,20 @@ class HubTransfers:
 
     def resolve_backend(self, backend, payload):
         payload.pop("reviewed_license_policies", None)
+        from .hub_source import revalidate_snapshot_evidence
+        from .hub_rights import validate_source_origin
+        recipe = payload.get("recipe", {})
+        direct = recipe.get("extensions", {}).get("artifact_rights", {})
+        for origin in direct.get("sources", []) if isinstance(direct, dict) else []:
+            if not isinstance(origin, dict):
+                continue
+            if origin.get("repo_type") != "source":
+                continue
+            policy = self.policy_snapshot(payload["project_id"]).get(origin.get("license_policy_id"), {})
+            if policy.get("source_origin", {}).get("source_kind") == "imported_snapshot":
+                validate_source_origin(recipe, policy)
+                evidence = self._get("hub_license_evidence", policy["evidence_id"], payload["project_id"])
+                revalidate_snapshot_evidence(self, evidence, exact_review=False)
         if hasattr(backend, "with_execution_rights"):
             backend = backend.with_execution_rights(project_id=payload["project_id"],
                                                    policies=self.policy_snapshot(payload["project_id"]),

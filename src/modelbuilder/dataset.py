@@ -21,8 +21,10 @@ import stat
 import unicodedata
 
 from jsonschema import Draft202012Validator
+from jsonschema.exceptions import ValidationError
 
 from .evaluation import digest
+from .generated_artifacts import MANIFEST_FIELDS, manifest_rights
 from .models import ServiceError, new_id, utcnow
 from .platform_file_access import WindowsRoot, read_windows_source, snapshot_windows_root
 
@@ -80,6 +82,7 @@ MANIFEST_SCHEMA = {
     "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "additionalProperties": False,
     "required": ["name", "benchmark", "license", "provenance", "sources", "id_column", "row_schema", "splits"],
     "properties": {
+        **MANIFEST_FIELDS,
         "name": _ID, "description": {"type": "string", "maxLength": 10000}, "benchmark": _ID,
         "license": {"type": "string", "minLength": 1, "maxLength": 2048},
         "provenance": {"type": "object", "additionalProperties": False, "required": ["source"],
@@ -113,6 +116,10 @@ def validate_manifest(manifest: dict) -> dict:
     if errors:
         _fail("dataset_manifest_invalid", "Dataset manifest does not match its schema",
               fields=[".".join(map(str, e.path)) for e in errors[:20]])
+    try:
+        manifest_rights(manifest)
+    except (ValueError, TypeError, KeyError, ValidationError) as error:
+        _fail("dataset_manifest_invalid", "Generated dataset parent rights lineage is invalid", reason=str(error))
     result = copy.deepcopy(manifest)
     result.setdefault("description", "")
     result.setdefault("transformations", [])
@@ -563,7 +570,8 @@ def _split_data(record, materialized, split_id, purpose):
     lineage = consumption(record, split_id, identity["split"]["sample_ids"], purpose=purpose)
     lookup = {item["sample_id"]: item["row"] for item in indexed}
     return {**identity, "rows": [lookup[sample_id] for sample_id in identity["split"]["sample_ids"]],
-            "consumption": lineage}
+            "consumption": lineage,
+            **({"rights": copy.deepcopy(manifest_rights(manifest))} if manifest_rights(manifest) is not None else {})}
 
 
 def load_portable_split(reference, dependency_paths, split_id, *, purpose, expected_project_id=None, source_guards=None,

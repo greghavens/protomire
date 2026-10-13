@@ -2,11 +2,12 @@
 import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, sep } from 'node:path';
+import type {SourceKind} from './sourceStatus';
 
 export interface CoreConnection {url:string; token:string; instance:string}
 export interface CorePaths {python:string; entrypoint:string; runtimeRoot:string; stateDir:string}
 export interface NativeReview {id:string;requested_by:string;project_id:string;project_name:string;operation:string;payload:Record<string,unknown>;payload_digest:string;review_digest:string;status:string;expires_at:number;action_ttl_seconds:number;required_scopes:string[];disclosure?:unknown;result?:unknown;error?:{message?:string};notice?:string}
-export interface SourceRegistration {alias:string;repository_id:string;workspace_path:string;project_id:string;operator_trusted:boolean;registered:boolean}
+export interface SourceRegistration {alias:string;repository_id:string;workspace_path:string;project_id:string;operator_trusted:boolean;registered:boolean;source_kind?:SourceKind;declared_source_commit?:string;snapshot_digest?:string;transport_recipe_digest?:string}
 export interface HubAccountReference {keyring_service:string;username:string;alias:string}
 export interface HubSettings {max_bytes:number;project_id:string;revision:number;account:HubAccountReference|null;folder:{path:string;device:number;inode:number}|null;credential_status?:string}
 export interface HubSettingsReview {plan:{project_id:string;expected_revision:number;account:HubAccountReference|null;folder:HubSettings['folder'];max_bytes:number;expires_at:number};review_digest:string}
@@ -113,15 +114,18 @@ export class ManagedCore {
     return this.reviewRequest('/_desktop/reviews/'+request.id+'/decision',{review_digest:request.review_digest,decision});
   }
   /** Invoke only after a native folder selection and explicit native trust confirmation. */
-  async registerSource(folderPath:string,projectId:string,trustConsent:boolean):Promise<SourceRegistration>{
+  async registerSource(folderPath:string,projectId:string,trustConsent:boolean,sourceKind?:SourceKind):Promise<SourceRegistration>{
     if(trustConsent!==true)throw new Error('Explicit native source trust confirmation is required.');
     if(!isAbsolute(folderPath)||folderPath.includes('\0')||!/^[a-zA-Z0-9_-]{1,128}$/.test(projectId))throw new Error('A selected native folder and model project are required.');
+    if(sourceKind!==undefined&&!['git','imported_snapshot'].includes(sourceKind))throw new Error('Choose an explicit supported source kind before registration.');
     const connection=await this.connection();
-    const response=await this.request(connection.url+'/_desktop/source',{method:'POST',redirect:'error',headers:{'Authorization':'Bearer '+connection.token,'Content-Type':'application/json'},body:JSON.stringify({folder_path:folderPath,project_id:projectId,trust_consent:true}),signal:AbortSignal.timeout(30000)});
+    const response=await this.request(connection.url+'/_desktop/source',{method:'POST',redirect:'error',headers:{'Authorization':'Bearer '+connection.token,'Content-Type':'application/json'},body:JSON.stringify({folder_path:folderPath,project_id:projectId,trust_consent:true,...(sourceKind?{source_kind:sourceKind}:{})}),signal:AbortSignal.timeout(30000)});
     const value=await response.json() as SourceRegistration&{error?:{message?:string}};
     if(!response.ok)throw new Error(value.error?.message??'The selected source folder could not be registered.');
     if(value.project_id!==projectId||value.workspace_path!==folderPath||value.registered!==true||value.operator_trusted!==true||!/^workspace-[a-f0-9]{24}$/.test(value.alias)||!/^sha256:[a-f0-9]{64}$/.test(value.repository_id))throw new Error('Source registration returned a mismatched receipt.');
-    return {alias:value.alias,repository_id:value.repository_id,workspace_path:value.workspace_path,project_id:value.project_id,operator_trusted:true,registered:true};
+    if((sourceKind!==undefined&&value.source_kind!==sourceKind)||(sourceKind===undefined&&value.source_kind==='imported_snapshot')||(value.source_kind!==undefined&&!['git','imported_snapshot'].includes(value.source_kind)))throw new Error('Source registration returned a different source kind.');
+    if(value.source_kind==='imported_snapshot'&&(!/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/.test(value.declared_source_commit??'')||!/^(?:sha256:)?[0-9a-f]{64}$/.test(value.snapshot_digest??'')||!/^(?:sha256:)?[0-9a-f]{64}$/.test(value.transport_recipe_digest??'')))throw new Error('Source registration returned incomplete imported snapshot evidence.');
+    return {alias:value.alias,repository_id:value.repository_id,workspace_path:value.workspace_path,project_id:value.project_id,operator_trusted:true,registered:true,...(value.source_kind?{source_kind:value.source_kind}:{}),...(value.source_kind==='imported_snapshot'?{declared_source_commit:value.declared_source_commit,snapshot_digest:value.snapshot_digest,transport_recipe_digest:value.transport_recipe_digest}:{})};
   }
   /** External consumers launch their own stdio process and receive only project-scoped read access. */
   mcpCommand(projectId:string):{command:string;args:string[]}{

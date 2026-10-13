@@ -35,10 +35,14 @@ def write_json(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
 
+PACKAGE_DATA = ("src/modelbuilder/backend/components/mlx-darwin-arm64.lock",)
+
+
 def source_inventory(root: Path) -> list[str]:
     """Explicit application sources; no caches, credentials, datasets or weights."""
     return sorted([str(path.relative_to(root)) for path in (root / "src/modelbuilder").rglob("*.py")]
                   + [str(path.relative_to(root)) for path in (root / "requirements/profiles").glob("*.lock")]
+                  + [path for path in PACKAGE_DATA if (root / path).is_file()]
                   + ["pyproject.toml", "requirements/service.lock", "requirements/backend.lock",
                      "scripts/replay_bundle.py"])
 
@@ -77,7 +81,9 @@ def build_wheel(root: Path, destination: Path, kind: str) -> dict:
     files = {}
     for item in recipe["source"]["files"]:
         path = item["path"]
-        if path.startswith("src/modelbuilder/") and path.endswith(".py"):
+        if path in PACKAGE_DATA:
+            files[path.removeprefix("src/")] = (root / path).read_bytes()
+        elif path.startswith("src/modelbuilder/") and path.endswith(".py"):
             if (kind == "service" or path in {
                     "src/modelbuilder/__init__.py", "src/modelbuilder/recipe.py",
                     "src/modelbuilder/evaluation.py", "src/modelbuilder/tracking.py",
@@ -93,6 +99,9 @@ def build_wheel(root: Path, destination: Path, kind: str) -> dict:
                     "src/modelbuilder/source_workspace.py", "src/modelbuilder/source_pinning_contract.py"}
                     or path.startswith(("src/modelbuilder/backend/", "src/modelbuilder/remote/"))):
                 files[path.removeprefix("src/")] = (root / path).read_bytes()
+    if ("modelbuilder/backend/components/mlx_bridge.py" in files
+            and "modelbuilder/backend/components/mlx-darwin-arm64.lock" not in files):
+        raise ValueError("MLX runtime source requires its inventoried adjacent worker lock")
     if not files or "modelbuilder/backend/adapter.py" not in files:
         raise ValueError("Bundle lacks application source needed by replay")
     requirements = project["dependencies"] if kind == "service" else recipe["environment"]["requirements"]
@@ -147,7 +156,9 @@ def runtime_identity(backend: bool = False) -> dict:
     package = Path(locations["modelbuilder"]).parent
     result["installed_source_sha256"] = {
         "src/modelbuilder/" + str(path.relative_to(package)): sha256(path.read_bytes())
-        for path in sorted(package.rglob("*.py"))}
+        for path in sorted([*package.rglob("*.py"),
+                            *(package / path.removeprefix("src/modelbuilder/")
+                              for path in PACKAGE_DATA if (package / path.removeprefix("src/modelbuilder/")).is_file())])}
     if backend:
         from zenml.client import Client
         client = Client()

@@ -28,6 +28,8 @@ def parser() -> argparse.ArgumentParser:
                         help='Add the hash-locked PyArrow adapter to the selected service/backend environments')
     result.add_argument('--trainer', action='store_true',
                         help='Add the optional hash-locked Transformers Trainer adapter to the backend only')
+    result.add_argument('--mlx', action='store_true', help='Install the separate reviewed Apple Silicon MLX worker profile')
+    result.add_argument('--mlx-venv', type=Path, default=ROOT / '.venv-mlx')
     result.add_argument('--tracking', action='store_true', help='Install isolated optional W&B SDK; never enable uploads')
     result.add_argument('--tracking-venv', type=Path, default=Path(os.environ.get('MODELBUILDER_TRACKING_VENV', ROOT / '.venv-tracking')))
     result.add_argument('--skip-frontend', action='store_true', help='Install Python components only')
@@ -51,6 +53,9 @@ def main(argv: list[str] | None = None) -> int:
     if service == backend:
         raise ValueError('Service and backend environments must remain separate.')
     tracking = args.tracking_venv.expanduser().resolve()
+    mlx_environment = args.mlx_venv.expanduser().resolve()
+    if mlx_environment in {service, backend, tracking}:
+        raise ValueError('MLX must use a separate environment.')
     if tracking in {service, backend}:
         raise ValueError('Optional tracking must use a separate environment.')
     wants_backend = args.backend or args.backend_only
@@ -58,6 +63,8 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("--backend-variant requires --backend or --backend-only.")
     if args.trainer and not wants_backend:
         raise ValueError("--trainer requires --backend or --backend-only.")
+    if args.mlx and not wants_backend:
+        raise ValueError('--mlx requires --backend or --backend-only.')
     reason = backend_reason(target, args.backend_variant)
     trainer_lock = ROOT / "requirements/profiles/trainer.lock"
     backend_lock = None if reason else lock_path(ROOT, "backend", target, backend_variant=args.backend_variant)
@@ -66,7 +73,8 @@ def main(argv: list[str] | None = None) -> int:
     parquet_unavailable = (None if parquet_runtime else
         'Contained Parquet decoding is currently Linux-only; use JSONL/CSV or a supported Linux service/backend.'
         if parquet_wheel else 'No reviewed optional PyArrow wheel profile is available for this target; use JSONL/CSV.')
-    plan = {'target': target, 'python': pin, 'service_python': str(venv_python(service, target)),
+    plan = {'target': target, 'python': pin, 'mlx_available': target == 'darwin-arm64',
+            'mlx_python': str(venv_python(mlx_environment, target)), 'service_python': str(venv_python(service, target)),
             'backend_python': str(venv_python(backend, target)),
             'service_lock': str(lock_path(ROOT, 'service', target)), 'backend_unavailable': reason,
             'backend_variant': args.backend_variant, 'backend_lock': str(backend_lock) if backend_lock else None,
@@ -80,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.plan:
         print(json.dumps(plan, indent=2))
         return 0
+    if args.mlx and target != 'darwin-arm64':
+        raise ValueError('The reviewed isolated MLX worker profile currently supports Apple Silicon macOS only.')
     if '.'.join(map(str, sys.version_info[:3])) != pin:
         raise ValueError(f'Pinned Python {pin} required; run this script with that interpreter.')
     parquet_lock = lock_path(ROOT, 'parquet', target) if args.parquet else None
@@ -126,6 +136,18 @@ def main(argv: list[str] | None = None) -> int:
         if not args.skip_model_download:
             env['PYTHONPATH'] = str(ROOT / 'src')
             run([venv_python(backend, target), ROOT / 'scripts/download_model.py'], env=env)
+    if args.mlx:
+        service_uv = venv_python(service, target).parent / 'uv'
+        uv = str(service_uv) if service_uv.is_file() else shutil.which('uv')
+        if not uv:
+            raise ValueError('Install the service environment or official uv 0.12.23 first.')
+        mlx_lock = ROOT / 'requirements/profiles/mlx-darwin-arm64.lock'
+        import hashlib
+        if hashlib.sha256(mlx_lock.read_bytes()).hexdigest() != 'f408bef35d4c867e2b634ac066cc73a4197bc60214dfd1f22cb57683fb2b68bb':
+            raise ValueError('Reviewed MLX profile bytes changed.')
+        run([uv, 'venv', '--allow-existing', '--python', sys.executable, mlx_environment], env=env)
+        run([uv, 'pip', 'sync', '--python', venv_python(mlx_environment, target), '--require-hashes', mlx_lock], env=env)
+        run([uv, 'pip', 'check', '--python', venv_python(mlx_environment, target)], env=env)
     if args.tracking:
         tracking_lock = ROOT / 'requirements/profiles' / f'tracking-wandb-{target}.lock'
         if not tracking_lock.is_file():

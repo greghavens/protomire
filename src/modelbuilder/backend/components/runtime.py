@@ -8,6 +8,7 @@ import tempfile
 import importlib
 import importlib.metadata
 import platform
+import os
 from pathlib import Path
 
 from . import PORT_TYPES, identity, read_checkpoint, read_export, validate_component, validate_resume
@@ -33,7 +34,7 @@ def load_callable(reference: dict, source_root: str, trusted_roots: list[str], s
     # Execute a private source closure, not the mutable checkout. This provides
     # reproducibility for ordinary Python imports, not isolation from trusted code.
     owner = tempfile.TemporaryDirectory(prefix="modelbuilder-source-")
-    snapshot = Path(owner.name)
+    snapshot = Path(owner.name).resolve()
     prior_snapshots = set(_SNAPSHOT_ROOTS)
     _SNAPSHOT_ROOTS.add(snapshot)
     for relative, digest in declared.items():
@@ -86,6 +87,9 @@ def runtime_source_identity(package_root: Path | None = None) -> str:
     """Hash installed execution code, independent of checkout/installation paths."""
     root = package_root or Path(__file__).resolve().parents[2]
     files = list((root / "backend").rglob("*.py"))
+    profile = root / "backend/components/mlx-darwin-arm64.lock"
+    if profile.is_file():
+        files.append(profile)
     files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py") if (root / name).is_file()]
     return identity({str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in sorted(files)})
@@ -142,12 +146,20 @@ def dispatch(inputs: dict, spec: dict):
             raise ValueError("Component dependency changed after admission: " + dependency["id"])
     actual_environment = runtime_environment()
     from ..placement import runtime_device_identity, effective_resume_modes
-    selected_device = spec.get("placement", {}).get("device", "cpu") if component["role"] == "training" else "cpu"
-    selected_placement = runtime_device_identity(selected_device)
+    from .mlx import selected_device_for_component, architecture_identity, probe
+    selected_device = selected_device_for_component(component, spec.get("placement", {}).get("device", "cpu"))
+    is_mlx = component.get('id', '').startswith('modelbuilder.mlx.') and 'mlx' in component.get('capabilities', {}).get('frameworks', [])
+    if is_mlx:
+        selected_placement = probe(os.environ.get('MODELBUILDER_MLX_PYTHON'), selected_device)
+        if not selected_placement.get('available'):
+            raise ValueError(selected_placement.get('reason', 'MLX worker unavailable'))
+        actual_environment['framework_worker'] = selected_placement
+    else:
+        selected_placement = runtime_device_identity(selected_device)
     resume_modes = effective_resume_modes(selected_device, component["capabilities"]["resume_modes"])
     actual_environment["placement"] = selected_placement
     identities = {
-        "architecture": identity(parameters.get("architecture", parameters)),
+        "architecture": architecture_identity(parameters) if is_mlx and component['role']=='training' else identity(parameters.get("architecture", parameters)),
         "source": identity(spec["source"]), "dependencies": identity(spec.get("dependencies", [])),
         "environment": identity({"declared": spec.get("environment", {}), "actual": actual_environment}),
         "training": identity({"component": component, "parameters": parameters}),

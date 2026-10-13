@@ -24,7 +24,7 @@ CUDA_PROFILES = {
     "linux-x64": {"path": "requirements/profiles/backend-cuda-cu128-linux-x64.lock", "sha256": "4ad97d32bad25f2cd1a68f39f243776247190a8b763d28c4edf97c3d0b516933"},
     "linux-arm64": {"path": "requirements/profiles/backend-cuda-cu128-linux-arm64.lock", "sha256": "ab2c32c254e3f5811f40bf4b0eb3ca71f635b37656d8dc957b0b9d04a5eaa21f"},
 }
-DEVICE_PATTERN = r"^(cpu|mps|cuda:(0|[1-9][0-9]{0,2}))$"
+DEVICE_PATTERN = r"^(cpu|mps|mlx-cpu|mlx-metal|cuda:(0|[1-9][0-9]{0,2}))$"
 
 
 def device_from_recipe(recipe: dict) -> str:
@@ -41,7 +41,7 @@ def target_for_device(device: str) -> str:
 
 
 def is_local_target(target) -> bool:
-    return isinstance(target, str) and (target in {"local-cpu", "local-mps"} or re.fullmatch(r"local-cuda:(0|[1-9][0-9]{0,2})", target) is not None)
+    return isinstance(target, str) and (target in {"local-cpu", "local-mps", "local-mlx-cpu", "local-mlx-metal"} or re.fullmatch(r"local-cuda:(0|[1-9][0-9]{0,2})", target) is not None)
 
 
 def placement_environment(device: str, base: dict) -> dict:
@@ -146,7 +146,11 @@ def backend_identity(backend):
     """Cheap local configuration/identity fence; never a driver/runtime probe."""
     python = getattr(backend, "python", None)
     config = Path(python).parent.parent / "pyvenv.cfg" if python else None
+    mlx_python = getattr(backend, 'mlx_python', None)
+    mlx_config = Path(mlx_python).parent.parent / 'pyvenv.cfg' if mlx_python else None
     return {"python": _path_identity(python), "venv_config": _config_identity(config),
+            "mlx_python": _path_identity(getattr(backend, 'mlx_python', None)),
+            "mlx_venv_config": _config_identity(mlx_config),
             "repository": _path_identity(getattr(backend, "repository", None)),
             "root": str(getattr(backend, "root", "")),
             "trusted_code_roots": list(getattr(backend, "trusted_code_roots", [])),
@@ -161,6 +165,9 @@ def _require_safe_identity(backend):
     if config.get("invalid"):
         from .admission import BackendError
         raise BackendError("capability_unavailable", config["invalid"])
+    if (identity.get('mlx_venv_config') or {}).get('invalid'):
+        from .admission import BackendError
+        raise BackendError('capability_unavailable', identity['mlx_venv_config']['invalid'])
     return identity
 
 
@@ -192,6 +199,9 @@ def probe(backend, device: str, *, allocate: bool = False) -> dict:
 
 
 def _probe(backend, device: str, *, allocate: bool = False) -> dict:
+    if device.startswith('mlx-'):
+        from .components.mlx import probe
+        return probe(getattr(backend, 'mlx_python', None), device, allocate=allocate)
     env = {k: v for k, v in os.environ.items() if k in {"PATH", "SYSTEMROOT", "WINDIR", "LANG", "LC_ALL", "CUDA_VISIBLE_DEVICES"}}
     env = placement_environment(device, env)
     env.update(OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1", MKL_NUM_THREADS="1")
@@ -223,7 +233,19 @@ def validate_placement(backend, payload: dict, *, allocate: bool = False) -> dic
         raise BackendError("dependency_mismatch", "Execution target must match the recipe's versioned environment.device", {"device": device, "target": target})
     if device != "cpu" and payload.get("resume_mode", payload.get("mode")) == "exact_state":
         raise BackendError("capability_unavailable", "Accelerator exact-state continuation is not hardware-verified; use explicit warm_start")
-    if device.startswith("cuda:"):
+    if device.startswith('mlx-'):
+        from .components.mlx import PROFILE_SHA256
+        environment = payload['recipe'].get('environment', {})
+        profile = environment.get('mlx_profile', {})
+        if profile.get('sha256') != PROFILE_SHA256:
+            raise BackendError('dependency_mismatch', 'MLX requires the reviewed separate hash-locked MLX worker profile')
+        path = (backend.repository / profile.get('path', '')).resolve()
+        if not path.is_relative_to(backend.repository) or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != PROFILE_SHA256:
+            raise BackendError('dependency_mismatch', 'Declared MLX worker profile is missing or changed')
+        result = probe(backend, device, allocate=allocate)
+        if not result.get('available'):
+            raise BackendError('capability_unavailable', result.get('reason', 'Configured MLX worker unavailable'))
+    elif device.startswith("cuda:"):
         environment = payload["recipe"].get("environment", {})
         digest = environment.get("lock_file", {}).get("sha256")
         if digest not in {profile["sha256"] for profile in CUDA_PROFILES.values()}:
@@ -304,6 +326,12 @@ def targets(backend) -> list[dict]:
                        "unavailable_reason": cuda.get("reason", CUDA_PROFILE_REASON),
                        "requires_explicit_device": "cuda:<visible ordinal>", "exact_resume": False,
                        "hardware_acceptance": "not_verified"})
+    if getattr(backend, 'mlx_python', None):
+        from .components.mlx import PROFILE_SHA256
+        for device in ('mlx-cpu', 'mlx-metal'):
+            metadata = probe(backend, device)
+            result.append({**base, **metadata, 'id': target_for_device(device), 'exact_resume': False,
+                           'required_mlx_profile_sha256': PROFILE_SHA256, 'hardware_acceptance': 'submission_required'})
     return result
 
 
@@ -332,6 +360,8 @@ def checkpoint_cpu(value):
 
 
 def runtime_device_identity(device: str) -> dict:
+    if device.startswith('mlx-'):
+        raise ValueError('MLX device identity must be inspected in its isolated configured worker, not Torch')
     import torch
     if device.startswith("cuda:") and cuda_profile({"python": platform.python_version(), "platform": sys.platform,
             "machine": platform.machine(), "torch": str(torch.__version__), "cuda_build": torch.version.cuda,

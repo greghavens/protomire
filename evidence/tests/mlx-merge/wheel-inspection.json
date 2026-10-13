@@ -1,0 +1,13 @@
+{
+  "wheel": "evidence/tests/mlx-merge/wheels/modelbuilder-0.1.0-py3-none-any.whl",
+  "sha256": "6d512094f68230debe37d961f0a50cfb969f64cf2ed4f1723f88627b94cde3f7",
+  "verified_files": [
+    "modelbuilder/backend/components/mlx.py",
+    "modelbuilder/backend/components/mlx_worker.py",
+    "modelbuilder/backend/components/mlx_components.py",
+    "modelbuilder/backend/components/mlx_bridge.py",
+    "modelbuilder/backend/components/mlx_probe.py",
+    "modelbuilder/backend/components/mlx-darwin-arm64.lock"
+  ],
+  "profile_sha256": "f408bef35d4c867e2b634ac066cc73a4197bc60214dfd1f22cb57683fb2b68bb"
+}

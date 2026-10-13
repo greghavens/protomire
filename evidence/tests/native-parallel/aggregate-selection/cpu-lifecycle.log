@@ -1,0 +1,38 @@
+tests/integration/test_cpu_fixtures.py::test_dataset_consumed_hash_and_tamper
+tests/integration/test_cpu_fixtures.py::test_exact_model_optimizer_scheduler_rng_and_cursor
+tests/integration/test_cpu_fixtures.py::test_resume_rejects_changed_training_contract
+tests/integration/test_cpu_fixtures.py::test_architecture_kl_and_negative_outcome_are_real
+tests/integration/test_cpu_fixtures.py::test_cancellation_preserves_complete_atomic_checkpoint
+tests/integration/test_cpu_fixtures.py::test_real_pinned_pretrained_kl_and_export_parity
+tests/integration/test_cpu_fixtures.py::test_pretrained_exact_continuation
+tests/integration/test_cpu_fixtures.py::test_model_initialization_is_explicit_and_dataset_compatible
+tests/integration/test_native_lifecycle.py::test_native_custom_dag_variants_negative_and_models
+tests/integration/test_native_lifecycle.py::test_real_failed_run_remains_queryable
+tests/integration/test_native_lifecycle.py::test_actual_cancel_recovered_checkpoint_exact_resume
+tests/integration/test_native_lifecycle.py::test_worker_sigkill_failure_is_reconciled
+tests/integration/test_native_lifecycle.py::test_pretrained_validation_selection_parent_and_export
+tests/integration/test_native_lifecycle.py::test_explicitly_trusted_python_uses_public_native_step_boundary
+tests/integration/test_early_cancellation.py::test_confirmed_cancel_before_native_run_creation
+tests/integration/test_early_cancellation.py::test_resume_waits_for_pending_cancel_even_with_native_checkpoint
+tests/integration/test_builtin_warm_start.py::test_native_builtin_warm_start_uses_current_settings_exact_state_keeps_parent
+tests/integration/test_model_release_workflow.py::test_two_independent_runs_decision_promotion_save_fresh_reload
+tests/integration/test_checkpoint_subgraph.py::test_train_once_two_benchmarks_export_native_bindings
+tests/integration/test_conditional_checkpoint.py::test_native_conditions_preserve_selected_checkpoint_and_explicit_comparison
+tests/integration/test_calibrated_reference_lifecycle.py::test_native_calibrated_reference_resume_and_selected_export
+tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[none]
+tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[parquet]
+tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement]
+
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+24 tests collected in 2.19s

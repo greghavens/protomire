@@ -60,11 +60,21 @@ def validate_execution(backend, payload: dict) -> dict:
     from .components import validate_live_evaluation
     device_kind = placement["device"].split(":")[0]
     for node in recipe.get("nodes", []):
+        if device_kind.startswith('mlx-') and node.get('kind', '').startswith('model.'):
+            raise BackendError('capability_unavailable', 'MLX placement requires reviewed MLX components; Torch fixture model nodes cannot execute in the MLX worker')
         if device_kind != "cpu" and node.get("kind") == "code.python":
             raise BackendError("capability_unavailable", "Accelerator placement requires a device-aware component contract; plain code.python has no device context")
         if node.get("kind") == "component.run":
             component = node.get("component", {})
-            selected_device = device_kind if component.get("role") == "training" else "cpu"
+            from .components.mlx import selected_device_for_component
+            if (component.get('id', '').startswith('modelbuilder.mlx.')
+                    and 'mlx' in component.get('capabilities', {}).get('frameworks', [])
+                    and not device_kind.startswith('mlx-')):
+                raise BackendError('capability_unavailable',
+                    'MLX components require explicit environment.device mlx-cpu or mlx-metal and the reviewed worker profile',
+                    {'node_id': node['id'], 'device': device_kind})
+            selected_device = selected_device_for_component(component, placement['device'])
+            selected_device = selected_device.split(':')[0]
             if selected_device not in component.get("capabilities", {}).get("devices", ["cpu"]):
                 raise BackendError("capability_unavailable", "Component does not declare support for the selected execution device", {"node_id": node["id"], "device": selected_device})
     try:
@@ -388,4 +398,16 @@ def environment_profiles(backend) -> list[dict]:
                              "devices": ["cpu", "cuda"], "hardware_acceptance": "not_verified",
                              "environment": {"python": "3.12.14", "requirements": ["numpy==2.2.6", "torch==2.9.0+cu128", "transformers==4.57.1", "zenml[server]==0.97.0"],
                                              "lock_file": dict(lock)}})
+    if getattr(backend, 'mlx_python', None):
+        from .components.mlx import PROFILE_SHA256
+        relative = 'requirements/profiles/mlx-darwin-arm64.lock'
+        path = backend.repository / relative
+        if path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == PROFILE_SHA256:
+            mac_profile = next((profile for profile in profiles if profile['target_platform']=='darwin-arm64'), None)
+            if mac_profile:
+                profiles.append({'target_platform':'darwin-arm64','requires_recipe_revision':True,'framework':'mlx',
+                    'devices':['mlx-cpu','mlx-metal'], 'environment':{**mac_profile['environment'],
+                        'mlx_profile':{'path':relative,'sha256':PROFILE_SHA256}},
+                    'worker_environment':{'python':'3.12.14','lock_file':{'path':relative,'sha256':PROFILE_SHA256},
+                        'isolation':'separate operator-configured interpreter','exact_state':False}})
     return profiles

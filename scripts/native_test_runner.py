@@ -1,7 +1,7 @@
-"""Opt-in Linux native-test queue: three full groups, at most two pytest roots.
+"""Opt-in Linux native-test queue: four full groups, at most two pytest roots.
 
-This stays on the existing CPU runner. No xdist, new packages, test selection,
-training worker changes, or additional CI machines. The serial aggregate remains
+This stays on the existing CPU runner. No xdist, new packages, training worker
+changes, or additional CI machines. The serial aggregate remains
 the default. Detached native descendants are adopted and cleaned up on exit.
 """
 from __future__ import annotations
@@ -45,8 +45,11 @@ COMPONENT_TESTS = (
     "tests/components", "tests/evaluation", "tests/live_evaluation",
     "tests/datasets/test_reference_atomic_read.py", "tests/tracking/test_cpu_live_tracking.py",
     "tests/placement/test_placement.py", "tests/placement/test_checkpoint_capabilities.py",
-    "tests/placement/test_cuda_execution.py",
+    "tests/placement/test_cuda_execution.py", "tests/integration/test_mlx_service.py",
 )
+# Keep mixed light/native concurrency files in one backend-only selection.
+# The integration marker leaves their light contracts to the service unit phase.
+CONCURRENCY_TESTS = ("tests/concurrency",)
 MAX_SECONDS = 2100
 
 
@@ -257,6 +260,7 @@ def build_groups(root, python, temporary):
         ("cpu-lifecycle", str(backend), LIFECYCLE_TESTS, ()),
         ("integration", str(python), SERVICE_TESTS, ("-m", "integration")),
         ("cpu-components", str(backend), COMPONENT_TESTS, ()),
+        ("cpu-concurrency", str(backend), CONCURRENCY_TESTS, ("-m", "integration")),
     ):
         directory = temporary / name
         directory.mkdir()
@@ -290,7 +294,7 @@ def main(argv=None):
     evidence = root / "evidence/tests"
     evidence.mkdir(parents=True, exist_ok=True)
     report = evidence / "native-runner.json"
-    for name in ("integration", "cpu-lifecycle", "cpu-components", "cpu-fixtures"):
+    for name in ("integration", "cpu-lifecycle", "cpu-components", "cpu-concurrency", "cpu-fixtures"):
         for suffix in ("log", "xml"):
             (evidence / f"{name}.{suffix}").unlink(missing_ok=True)
     report.write_text(json.dumps({"status": "starting", "concurrency": 2}) + "\n")

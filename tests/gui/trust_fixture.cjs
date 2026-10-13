@@ -4,6 +4,7 @@ const {chromium}=require('../../packages/ide_feature/node_modules/playwright-cor
 const debugPort=Number(process.env.MODELBUILDER_GUI_DEBUG_PORT || '9222');
 if(!Number.isInteger(debugPort)||debugPort<1||debugPort>65535)throw Error('Invalid MODELBUILDER_GUI_DEBUG_PORT');
 const fs=require('node:fs/promises');
+const os=require('node:os');
 const fixture=process.argv[2];
 const python=process.env.MODELBUILDER_GUI_PYTHON;
 const evidence=process.env.MODELBUILDER_GUI_EVIDENCE;
@@ -23,12 +24,15 @@ const evidence=process.env.MODELBUILDER_GUI_EVIDENCE;
         const button=page.getByRole('button',{name:'Yes, I trust the authors',exact:true});
         if(await button.isVisible().catch(()=>false)){
           const dialog=page.getByRole('dialog');
-          if(!(await dialog.innerText()).includes(fixture))throw Error('Trust dialog does not identify the owned test fixture');
+          const home=os.homedir();
+          const displayed=fixture.startsWith(home+'/')?'~'+fixture.slice(home.length):fixture;
+          const lines=(await dialog.innerText()).split(/\r?\n/).map(line=>line.trim());
+          if(!lines.includes(fixture)&&!lines.includes(displayed))throw Error('Trust dialog does not identify the owned test fixture');
           await button.click();console.log('Trusted only the explicitly identified test fixture through the standard UI.');
         }
         const kernelSource=page.getByText('Python Environments...', {exact:true});
         if(await kernelSource.isVisible().catch(()=>false)){await kernelSource.click();console.log('Selected the normal Python kernel source.');}
-        if(python){const kernel=page.locator('.monaco-list-row').filter({hasText:python});
+        if(python){const home=os.homedir();const displayPython=python.startsWith(home+'/')?'~'+python.slice(home.length):python;const kernel=page.locator('.monaco-list-row').filter({hasText:displayPython});
           if(await kernel.count()===1 && await kernel.isVisible().catch(()=>false)){await kernel.click();console.log('Selected the explicitly pinned local Python kernel.');}}
       }
       await new Promise(r=>setTimeout(r,1000));

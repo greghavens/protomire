@@ -69,6 +69,7 @@ policy unit test or earlier evaluation is counted as a GUI/backend acceptance pa
 - [ZenML lifecycle and cancellation semantics](docs/ZENML_BACKEND.md)
 - [Local device placement and hardware-verification limits](docs/LOCAL_DEVICE_PLACEMENT.md)
 - [Reusable Transformers training/evaluation/export](docs/TRANSFORMERS_TRAINER.md)
+- [Optional isolated MLX/Llama setup, bounds and verification limits](docs/MLX_COMPONENTS.md)
 - [General local generation and judging](docs/TRANSFORMERS_INFERENCE.md)
 - [Run admission, durable dispatch and retry semantics](docs/admission-dispatch.md)
 - [Clean replay](docs/PORTABILITY.md)

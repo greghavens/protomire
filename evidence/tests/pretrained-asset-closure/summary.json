@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "scope": "legacy pretrained fixture tokenizer asset closure; not an exploitation claim",
+  "reproduction": {
+    "transformers_version": "4.57.1",
+    "network": "offline; only tiny synthetic local files",
+    "clean_vocab": {
+      "[PAD]": 0,
+      "[UNK]": 1,
+      "[CLS]": 2,
+      "[SEP]": 3,
+      "[MASK]": 4,
+      "hello": 5,
+      "world": 6
+    },
+    "sidecar_override_vocab": {
+      "[PAD]": 0,
+      "[UNK]": 1,
+      "[CLS]": 2,
+      "[SEP]": 3,
+      "[MASK]": 4,
+      "benign": 5,
+      "world": 6
+    },
+    "same_vocab_size": true,
+    "undeclared_external_vocab_consumed": true,
+    "undeclared_added_token_consumed": true,
+    "undeclared_special_token_consumed": true
+  },
+  "compatibility": {
+    "dataset_equal_to_pre_fix": true,
+    "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+    "tokenizer_asset_hashes_preserved": {
+      "tokenizer_config.json": "e711904cac23112776b678356ccf702cf934babaa01125f698ac43bf9ad38e73",
+      "special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+      "vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
+    }
+  },
+  "changes": [
+    "src/modelbuilder/backend/fixtures.py",
+    "tests/integration/test_cpu_fixtures.py"
+  ],
+  "source_sha256": {
+    "src/modelbuilder/backend/fixtures.py": "d0003f64dcad2030ef76b96f3b0ef1ea892659227a164bf5e9eae5e48e4e6f58",
+    "tests/integration/test_cpu_fixtures.py": "7f4cd45fb34e687fe746ca877a46b8b7472832377627e587348458bcea3280d9"
+  },
+  "verification": {
+    "cpu_fixture_tests_passed": 14,
+    "cpu_fixture_tests_failed": 0,
+    "duration_seconds": 9.18,
+    "read_guard": "negative tests fail if any undeclared tokenizer sidecar or external vocabulary is opened",
+    "legacy_negative_control": "expected failure when substituting the previous directory-based tokenizer loader",
+    "lint": "passed",
+    "compileall": "passed",
+    "diff_check": "passed"
+  },
+  "limitations": [
+    "Focused fixture tests, not the full repository suite.",
+    "Two existing pytest config warnings: backend interpreter lacks pytest-asyncio."
+  ],
+  "source_repins_or_commits": false
+}

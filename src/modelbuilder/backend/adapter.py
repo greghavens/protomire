@@ -56,7 +56,8 @@ class ZenMLBackend:
 
     def __init__(self, data_dir: str | Path, python_executable: str | None = None,
                  trusted_code_roots: list[str] | None = None, dependency_paths: dict[str, str] | None = None,
-                 source_root: str | Path | None = None, pretrained_path: str | Path | None = None):
+                 source_root: str | Path | None = None, pretrained_path: str | Path | None = None,
+                 mlx_python_executable: str | None = None):
         self._preparation_owner = object()
         self.root = Path(data_dir).resolve() / "backend"
         self.root.mkdir(parents=True, exist_ok=True)
@@ -66,6 +67,8 @@ class ZenMLBackend:
         default_python = repository / ".venv-backend" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         configured = python_executable or os.environ.get("MODELBUILDER_BACKEND_PYTHON") or str(default_python)
         self.python = shutil.which(configured) or str(Path(configured).expanduser().resolve())
+        mlx_python = mlx_python_executable or os.environ.get('MODELBUILDER_MLX_PYTHON')
+        self.mlx_python = os.path.abspath(os.path.expanduser(mlx_python)) if mlx_python else None
         self.hardware_discovery = HardwareDiscovery(self.python)
         self.repository = repository
         self.package_root = package_root
@@ -107,6 +110,8 @@ class ZenMLBackend:
                    OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1", MKL_NUM_THREADS="1", PYTHONUNBUFFERED="1")
         if self.package_root.name != "src":
             env.pop("PYTHONPATH", None)
+        if self.mlx_python:
+            env['MODELBUILDER_MLX_PYTHON'] = self.mlx_python
         return env
 
     def _capability_reason(self) -> str | None:

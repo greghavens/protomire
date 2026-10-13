@@ -43,6 +43,13 @@ def test_source_inventory_includes_all_runtime_helpers_and_optional_profiles():
         "src/modelbuilder/backend/components/transformers_training.py",
         "src/modelbuilder/backend/components/transformers_inference.py",
         "src/modelbuilder/research_documents.py", "src/modelbuilder/research_document_decode.py",
+        "src/modelbuilder/backend/components/mlx.py",
+        "src/modelbuilder/backend/components/mlx_bridge.py",
+        "src/modelbuilder/backend/components/mlx_worker.py",
+        "src/modelbuilder/backend/components/mlx_probe.py",
+        "src/modelbuilder/backend/components/mlx_components.py",
+        "src/modelbuilder/backend/components/mlx-darwin-arm64.lock",
+        "requirements/profiles/mlx-darwin-arm64.lock",
         "requirements/profiles/trainer.lock",
         "requirements/profiles/remote-modal-linux-x64.lock",
     } <= set(inventory)
@@ -360,7 +367,7 @@ def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_so
     recipe["source"]["commit"] = "a" * 40
     recipe["source"]["files"] = [{"path": str(path.relative_to(source)),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
-        for path in sorted(source.rglob("*.py"))] + [{"path": "pyproject.toml",
+        for path in sorted([*source.rglob("*.py"), *(source / path for path in replay.PACKAGE_DATA)])] + [{"path": "pyproject.toml",
         "sha256": hashlib.sha256((source / "pyproject.toml").read_bytes()).hexdigest()}]
     recipe["environment"]["requirements"] = ["zenml[server]==0.97.0"]
     (source / "recipe.json").write_text(json.dumps(recipe))
@@ -378,6 +385,9 @@ def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_so
                      "parquet_stream.py", "parquet_stream_decode.py",
                      "backend/components/transformers_loader.py", "backend/components/transformers_training.py",
                      "backend/components/transformers_inference.py",
+                     "backend/components/mlx.py", "backend/components/mlx_bridge.py",
+                     "backend/components/mlx_worker.py", "backend/components/mlx_probe.py",
+                     "backend/components/mlx_components.py", "backend/components/mlx-darwin-arm64.lock",
                      "backend/evaluation_binding.py", "backend/promotion.py"]:
             assert "modelbuilder/" + path in archive.namelist()
         for path in ("service.py", "dataset_preparation.py", "research_scheduler.py", "literature_fetch.py",
@@ -403,6 +413,7 @@ for name in ('modelbuilder.dataset', 'modelbuilder.models', 'modelbuilder.source
              'modelbuilder.backend.components.transformers_loader',
              'modelbuilder.backend.components.transformers_training',
              'modelbuilder.backend.components.transformers_inference',
+             'modelbuilder.backend.components.mlx', 'modelbuilder.backend.components.mlx_bridge',
              'modelbuilder.parquet_reader',
              'modelbuilder.backend.evaluation_binding', 'modelbuilder.backend.promotion',
              'modelbuilder.remote.operation_contract', 'modelbuilder.remote.provider',
@@ -441,7 +452,19 @@ if sample.exists():
 from modelbuilder.backend.components import component_catalog
 ids = {entry['id'] for entry in component_catalog()}
 assert {'modelbuilder.transformers.train', 'modelbuilder.transformers.evaluate',
-        'modelbuilder.transformers.export'} <= ids
+        'modelbuilder.transformers.export', 'modelbuilder.mlx.train', 'modelbuilder.mlx.evaluate',
+        'modelbuilder.mlx.generate', 'modelbuilder.mlx.export'} <= ids
+from modelbuilder.backend.components import mlx
+import hashlib, json, subprocess
+lock = root / 'modelbuilder/backend/components/mlx-darwin-arm64.lock'
+assert hashlib.sha256(lock.read_bytes()).hexdigest() == mlx.PROFILE_SHA256
+worker = root / 'modelbuilder/backend/components/mlx_worker.py'
+# Reject malformed protocol before importing optional MLX frameworks; proves the
+# installed standalone worker and its explicit sibling loader are self-contained.
+child = subprocess.run([sys.executable, '-I', str(worker)], input=json.dumps({'protocol':'invalid'}),
+                       text=True, capture_output=True, timeout=5)
+assert child.returncode == 1 and json.loads(child.stdout)['message'] == 'Unsupported MLX IPC request'
+assert not any(name == 'mlx' or name.startswith('mlx.') for name in sys.modules)
 from modelbuilder.remote.provider import diagnostics
 assert diagnostics()['remote_execution_enabled'] is False
 print('Isolated runtime wheel import closure passed')

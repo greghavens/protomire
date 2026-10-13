@@ -60,8 +60,9 @@ def test_collection_selectors_are_complete_disjoint_union_of_serial_commands():
     assert runner.SERVICE_TESTS == serial_paths("-m pytest tests/service/test_real_backend.py")
     serial = serial_paths("-m pytest tests/integration/test_cpu_fixtures.py")
     assert runner.LIFECYCLE_TESTS + runner.COMPONENT_TESTS == serial
+    assert runner.CONCURRENCY_TESTS == serial_paths("-m pytest tests/concurrency")
     expanded = []
-    for collection in (runner.SERVICE_TESTS, runner.LIFECYCLE_TESTS, runner.COMPONENT_TESTS):
+    for collection in (runner.SERVICE_TESTS, runner.LIFECYCLE_TESTS, runner.COMPONENT_TESTS, runner.CONCURRENCY_TESTS):
         files = [str(path.relative_to(ROOT)) for name in collection
                  for path in ((ROOT / name).rglob("test_*.py") if (ROOT / name).is_dir() else [ROOT / name])
                  if collection is runner.SERVICE_TESTS or str(path.relative_to(ROOT)) not in runner.SERVICE_ONLY_TESTS]
@@ -93,17 +94,19 @@ def test_group_environment_and_junit_paths_are_isolated(tmp_path, monkeypatch):
     monkeypatch.setenv("MODELBUILDER_TRACKING_TEST_PYTHON", "/approved/tracking/python")
     monkeypatch.delenv("MODELBUILDER_REQUIRE_CUDA", raising=False)
     monkeypatch.delenv("MODELBUILDER_REQUIRE_TRAINER_DEVICE", raising=False)
+    monkeypatch.delenv("MODELBUILDER_REQUIRE_MLX", raising=False)
     groups = runner.build_groups(root, Path(sys.executable), temporary)
-    assert [group.name for group in groups] == ["cpu-lifecycle", "integration", "cpu-components"]
+    assert [group.name for group in groups] == ["cpu-lifecycle", "integration", "cpu-components", "cpu-concurrency"]
     for key in ("HOME", "XDG_CACHE_HOME", "ZENML_CONFIG_PATH", "ZENML_LOCAL_STORES_PATH", "TMPDIR", "TMP", "TEMP"):
-        assert len({group.environment[key] for group in groups}) == 3
-    assert len({group.log for group in groups}) == len({group.xml for group in groups}) == 3
+        assert len({group.environment[key] for group in groups}) == 4
+    assert len({group.log for group in groups}) == len({group.xml for group in groups}) == 4
     for group in groups:
         env = group.environment
         assert env["MODELBUILDER_REQUIRE_PARQUET"] == "1"
         assert env["MODELBUILDER_TRACKING_TEST_PYTHON"] == "/approved/tracking/python"
         assert "MODELBUILDER_REQUIRE_CUDA" not in env
         assert "MODELBUILDER_REQUIRE_TRAINER_DEVICE" not in env
+        assert "MODELBUILDER_REQUIRE_MLX" not in env
         assert all(env[key] == "1" for key in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"))
         assert any(arg.startswith("--basetemp=") for arg in group.command)
         assert any(arg.startswith("cache_dir=") for arg in group.command)
@@ -111,19 +114,31 @@ def test_group_environment_and_junit_paths_are_isolated(tmp_path, monkeypatch):
             assert env["MODELBUILDER_REQUIRE_LOCAL_INFERENCE"] == "1"
             assert env["MODELBUILDER_REQUIRE_TRAINER"] == "1"
             assert all(f"--ignore={path}" in group.command for path in runner.SERVICE_ONLY_TESTS)
+        arguments = group.command[3:]
+        if group.name in {"integration", "cpu-concurrency"}:
+            assert arguments.count("-m") == 1
+            assert arguments[arguments.index("-m") + 1] == "integration"
         else:
-            assert ("-m", "integration") == group.command[-7:-5]
+            assert "-m" not in arguments
+    concurrency = groups[-1]
+    assert concurrency.command[0] == str(root / ".venv-backend/bin/python")
+    assert all("tests/concurrency" not in group.command for group in groups[:-1])
+    assert runner.MAX_SECONDS == 2100
 
 
 def test_new_native_features_are_selected_and_backend_cannot_import_service_transports():
     assert "tests/iterations/test_native_iterations.py" in runner.SERVICE_TESTS
     assert "tests/iterations/test_native_iterations.py" in runner.SERVICE_ONLY_TESTS
-    files = {str(path.relative_to(ROOT)) for name in runner.LIFECYCLE_TESTS + runner.COMPONENT_TESTS
+    files = {str(path.relative_to(ROOT)) for name in runner.LIFECYCLE_TESTS + runner.COMPONENT_TESTS + runner.CONCURRENCY_TESTS
              for path in ((ROOT / name).rglob("test_*.py") if (ROOT / name).is_dir() else [ROOT / name])
              if str(path.relative_to(ROOT)) not in runner.SERVICE_ONLY_TESTS}
     assert {
         "tests/components/test_transformers_training.py", "tests/components/test_transformers_inference.py",
         "tests/components/test_local_inference.py", "tests/placement/test_cuda_execution.py",
+        "tests/components/test_mlx_boundaries.py", "tests/integration/test_mlx_service.py",
+        "tests/concurrency/test_native_parallel.py", "tests/concurrency/test_parallel_lifecycle.py",
+        "tests/concurrency/test_parallel_training.py", "tests/concurrency/test_native_crash_cleanup.py",
+        "tests/concurrency/test_native_snapshot_paths.py", "tests/concurrency/test_process_execution.py",
     } <= files
     assert not set(runner.SERVICE_ONLY_TESTS) & files
     for filename in files:
@@ -134,6 +149,36 @@ def test_new_native_features_are_selected_and_backend_cannot_import_service_tran
                        for module in modules), filename
 
 
+@pytest.mark.skipif(not (ROOT / ".venv-backend/bin/python").is_file(), reason="Pinned backend required for real native collection")
+def test_actual_concurrency_collection_partitions_native_and_light_without_duplicates():
+    def collect(python, marker=None):
+        arguments = [str(python), "-m", "pytest", *runner.CONCURRENCY_TESTS,
+                     "--collect-only", "-q", "-p", "no:cacheprovider"]
+        if marker:
+            arguments.extend(["-m", marker])
+        result = subprocess.run(arguments, cwd=ROOT, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+                                capture_output=True, text=True, timeout=60)
+        assert result.returncode == 0, result.stdout + result.stderr
+        nodeids = [line for line in result.stdout.splitlines()
+                   if line.startswith("tests/concurrency/") and "::" in line]
+        assert nodeids and len(nodeids) == len(set(nodeids))
+        return set(nodeids)
+
+    backend = ROOT / ".venv-backend/bin/python"
+    all_cases = collect(backend)
+    native = collect(backend, "integration")
+    light = collect(sys.executable, "not integration and not portability and not gui")
+    assert len(native) >= 18  # Frozen G11 matrix; future native cases remain included.
+    assert not native & light
+    assert all_cases == native | light
+    assert {nodeid.split("::", 1)[0] for nodeid in native} == {
+        "tests/concurrency/test_native_parallel.py", "tests/concurrency/test_parallel_lifecycle.py",
+        "tests/concurrency/test_parallel_training.py", "tests/concurrency/test_native_crash_cleanup.py",
+        "tests/concurrency/test_native_snapshot_paths.py", "tests/concurrency/test_process_execution.py",
+    }
+    assert all(nodeid.startswith("tests/concurrency/test_process_execution.py::") for nodeid in light)
+
+
 def test_explicit_hardware_requirements_are_preserved_without_becoming_defaults(tmp_path, monkeypatch):
     (tmp_path / ".venv-backend/bin").mkdir(parents=True)
     (tmp_path / ".venv-backend/bin/python").touch()
@@ -142,10 +187,14 @@ def test_explicit_hardware_requirements_are_preserved_without_becoming_defaults(
     monkeypatch.setenv("MODELBUILDER_REQUIRE_CUDA", "1")
     monkeypatch.setenv("MODELBUILDER_CUDA_TEST_DEVICE", "cuda:1")
     monkeypatch.setenv("MODELBUILDER_REQUIRE_TRAINER_DEVICE", "cuda:1")
+    monkeypatch.setenv("MODELBUILDER_REQUIRE_MLX", "1")
+    monkeypatch.setenv("MODELBUILDER_MLX_PYTHON", "/operator/approved-mlx/bin/python")
     for group in runner.build_groups(tmp_path, Path(sys.executable), temporary):
         assert group.environment["MODELBUILDER_REQUIRE_CUDA"] == "1"
         assert group.environment["MODELBUILDER_CUDA_TEST_DEVICE"] == "cuda:1"
         assert group.environment["MODELBUILDER_REQUIRE_TRAINER_DEVICE"] == "cuda:1"
+        assert group.environment["MODELBUILDER_REQUIRE_MLX"] == "1"
+        assert group.environment["MODELBUILDER_MLX_PYTHON"] == "/operator/approved-mlx/bin/python"
 
 
 AGGREGATE_SPY = r'''
@@ -198,6 +247,8 @@ def aggregate_harness(tmp_path, *, integration=True, modal=True, processes=1, **
     evidence.mkdir(parents=True)
     (evidence / "research-document-http.json").write_text('{"status":"PASS","scope":"stale"}')
     (evidence / "remote-modal-sdk.xml").write_text('<testsuite tests="100"/>')
+    (evidence / "cpu-concurrency.xml").write_text('<testsuite tests="100"/>')
+    (evidence / "cpu-concurrency.log").write_text('previous passing concurrency run')
     environment = {key: value for key, value in os.environ.items()
                    if not key.startswith(("MODELBUILDER_", "SPY_"))}
     environment.update(PATH=str(root / "bin") + os.pathsep + os.environ["PATH"],
@@ -222,17 +273,26 @@ def test_aggregate_runs_research_and_offline_sdk_before_native_with_separate_int
     assert modal["environment"]["MODELBUILDER_REQUIRE_MODAL_SDK"] == "1"
     assert "MODELBUILDER_REQUIRE_MODAL_SDK" not in service["environment"]
     assert all("MODELBUILDER_REQUIRE_CUDA" not in row["environment"] for row in commands)
+    assert all("MODELBUILDER_REQUIRE_MLX" not in row["environment"] for row in commands)
     assert commands.index(research) < commands.index(modal)
     if processes == 1:
         backend = next(row for row in commands if "tests/integration/test_cpu_fixtures.py" in row["args"])
         assert backend["executable"] == str(root / ".venv-backend/bin/python")
         assert backend["environment"]["MODELBUILDER_REQUIRE_TRAINER"] == "1"
         assert backend["environment"]["MODELBUILDER_REQUIRE_LOCAL_INFERENCE"] == "1"
+        assert "tests/integration/test_mlx_service.py" in backend["args"]
         assert all(f"--ignore={path}" in backend["args"] for path in runner.SERVICE_ONLY_TESTS)
         integration = next(row for row in commands if "tests/iterations/test_native_iterations.py" in row["args"])
         assert integration["executable"] == service["executable"]
         assert "MODELBUILDER_REQUIRE_TRAINER" not in integration["environment"]
         assert commands.index(modal) < commands.index(backend)
+        concurrency = [row for row in commands if "tests/concurrency" in row["args"]]
+        assert len(concurrency) == 1
+        assert concurrency[0]["executable"] == backend["executable"]
+        assert concurrency[0]["environment"]["MODELBUILDER_REQUIRE_TRAINER"] == "1"
+        assert concurrency[0]["environment"]["MODELBUILDER_REQUIRE_LOCAL_INFERENCE"] == "1"
+        assert concurrency[0]["args"][3:5] == ["-m", "integration"]
+        assert commands.index(backend) < commands.index(concurrency[0])
     else:
         queue = next(row for row in commands if "scripts/native_test_runner.py" in row["args"])
         assert commands.index(modal) < commands.index(queue)
@@ -247,6 +307,8 @@ def test_missing_research_dependencies_block_integration_and_replace_stale_pass(
     assert not any(row["args"] == ["run", "test:research-document-http"] for row in commands)
     assert not any("tests/integration/test_cpu_fixtures.py" in row["args"] for row in commands)
     assert not (root / "evidence/tests/remote-modal-sdk.xml").exists()
+    assert not (root / "evidence/tests/cpu-concurrency.xml").exists()
+    assert not (root / "evidence/tests/cpu-concurrency.log").exists()
 
 
 @pytest.mark.parametrize("required", [False, True])
@@ -266,6 +328,8 @@ def test_acceptance_dependency_or_stage_failure_cannot_reach_native_queue(tmp_pa
     assert not any("scripts/native_test_runner.py" in row["args"] for row in commands)
     assert not any(row["args"] == ["run", "test:component-http"] for row in commands)
     assert not (root / "evidence/tests/remote-modal-sdk.xml").exists()
+    assert not (root / "evidence/tests/cpu-concurrency.xml").exists()
+    assert not (root / "evidence/tests/cpu-concurrency.log").exists()
     if failure == "SPY_TRAINER":
         assert not (root / "evidence/tests/research-document-http.json").exists()
 
@@ -292,6 +356,8 @@ if mode=='descendant':
 if mode=='fail':
     while not (root/'detached.pid').exists():time.sleep(.01)
     raise SystemExit(7)
+if mode=='wait_last':
+    while not any(json.loads(line)[:2]==['last','start'] for line in (root/'events').read_text().splitlines()):time.sleep(.01)
 time.sleep(delay)
 event('end')
 print('group output '+name)
@@ -320,8 +386,8 @@ def finish(process, tmp_path, timeout=12):
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Optional concurrent runner uses Linux descendant containment")
-def test_three_complete_groups_never_exceed_two_slots_and_keep_logs(tmp_path):
-    process = launch(tmp_path, [("long", "pass", .6), ("short", "pass", .15), ("last", "pass", .1)])
+def test_four_complete_groups_never_exceed_two_slots_and_keep_logs(tmp_path):
+    process = launch(tmp_path, [("long", "wait_last", .1), ("short", "pass", .15), ("next", "pass", .1), ("last", "pass", .1)])
     code, report, _ = finish(process, tmp_path)
     assert code == 0 and report["status"] == "completed" and report["cleanup"]["complete"]
     events = [json.loads(line) for line in (tmp_path / "events").read_text().splitlines()]
@@ -331,9 +397,9 @@ def test_three_complete_groups_never_exceed_two_slots_and_keep_logs(tmp_path):
         high = max(high, len(active))
     assert high == 2 and not active
     lookup = {(name, kind): timestamp for name, kind, timestamp in events}
-    assert lookup['short', 'end'] <= lookup['last', 'start'] < lookup['long', 'end']
+    assert lookup['short', 'end'] <= lookup['next', 'start'] < lookup['next', 'end'] <= lookup['last', 'start'] < lookup['long', 'end']
     assert all(record["status"] == "passed" for record in report["groups"])
-    for name in ("long", "short", "last"):
+    for name in ("long", "short", "next", "last"):
         assert (tmp_path / (name + ".log")).read_text().strip() == 'group output ' + name
 
 
@@ -390,7 +456,7 @@ def test_unsupported_platform_has_no_concurrent_fallback(monkeypatch):
 def test_setup_failure_cannot_leave_old_success_reports(tmp_path):
     evidence = tmp_path / "evidence/tests"
     evidence.mkdir(parents=True)
-    for name in ("cpu-fixtures", "cpu-lifecycle", "integration", "cpu-components"):
+    for name in ("cpu-fixtures", "cpu-lifecycle", "integration", "cpu-components", "cpu-concurrency"):
         (evidence / (name + ".xml")).write_text('<testsuite tests="100"/>')
         (evidence / (name + ".log")).write_text('previous passing run')
     report = evidence / "native-runner.json"

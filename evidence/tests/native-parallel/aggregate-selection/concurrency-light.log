@@ -1,0 +1,6 @@
+tests/concurrency/test_process_execution.py::test_inert_codec_preserves_typed_outputs_and_tag_like_user_keys
+tests/concurrency/test_process_execution.py::test_cancel_publication_is_first_writer_wins
+tests/concurrency/test_process_execution.py::test_adapter_cancel_preserves_existing_deadline_identity
+tests/concurrency/test_process_execution.py::test_preexisting_cancellation_does_not_spawn_attempt
+
+4/19 tests collected (15 deselected) in 0.07s

@@ -14,10 +14,16 @@ exports.run=async function(){
  await fs.mkdir(evidence,{recursive:true});
  const tmp=await fs.mkdtemp(path.join(os.tmpdir(),'modelbuilder-gui-'));
  const python=process.env.MODELBUILDER_GUI_PYTHON||path.join(root,'.venv/bin/python');
+ const workspace=vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;assert(workspace,'Owned GUI fixture workspace missing');
+ const fixtureMarker=path.join(workspace,'modelbuilder-gui-fixture.txt');await fs.writeFile(fixtureMarker,'Disposable Modelbuilder GUI source fixture\n');
+ await promisify(cp.execFile)('git',['-C',workspace,'add','--','modelbuilder-gui-fixture.txt']);
+ const head=await promisify(cp.execFile)('git',['-C',workspace,'rev-parse','--verify','HEAD']).then(()=>true,()=>false);
+ if(!head)await promisify(cp.execFile)('git',['-C',workspace,'-c','user.name=Modelbuilder Test','-c','user.email=fixture@example.invalid','commit','-m','Initialize disposable GUI source fixture']);
+ const operatorConfig=path.join(tmp,'operator.json');await fs.writeFile(operatorConfig,JSON.stringify({source_root:workspace,source_roots:{'gui-fixture':{path:workspace,trusted:false}}}));
  const token=crypto.randomBytes(32).toString('hex');
  const server=net.createServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const port=server.address().port;await new Promise(resolve=>server.close(resolve));
  const url=`http://127.0.0.1:${port}`;
- const env={...process.env,MODELBUILDER_GUI_IMPORT_BUNDLE:path.join(tmp,'shipping-import-bundle.json'),PYTHONPATH:path.join(root,'src'),MODELBUILDER_DB_PATH:path.join(tmp,'model.sqlite3'),MODELBUILDER_PORT:String(port),MODELBUILDER_HOST:'127.0.0.1',MODELBUILDER_BACKEND:'none',MODELBUILDER_TOKEN:token,MODELBUILDER_API_URL:url,MODELBUILDER_GUI_PYTHON:python,MODELBUILDER_GUI_EVIDENCE:evidence};
+ const env={...process.env,MODELBUILDER_OPERATOR_CONFIG:operatorConfig,MODELBUILDER_GUI_IMPORT_BUNDLE:path.join(tmp,'shipping-import-bundle.json'),PYTHONPATH:path.join(root,'src'),MODELBUILDER_DB_PATH:path.join(tmp,'model.sqlite3'),MODELBUILDER_PORT:String(port),MODELBUILDER_HOST:'127.0.0.1',MODELBUILDER_BACKEND:'none',MODELBUILDER_TOKEN:token,MODELBUILDER_API_URL:url,MODELBUILDER_GUI_PYTHON:python,MODELBUILDER_GUI_EVIDENCE:evidence};
  delete env.MODELBUILDER_TOKENS_JSON;
  const api=cp.spawn(python,['-m','modelbuilder.api'],{cwd:root,env,stdio:['ignore','pipe','pipe']});let apiLog='';api.stdout.on('data',b=>apiLog+=b);api.stderr.on('data',b=>apiLog+=b);
  let exported;
@@ -38,7 +44,8 @@ exports.run=async function(){
   const extension=vscode.extensions.getExtension('modelbuilder.modelbuilder-workbench');assert(extension,'Built-in workbench missing');
   exported=await extension.activate();
   await vscode.commands.executeCommand('modelbuilder.configureConnection',{url,token});
-  const project=await exported.client.invoke('project.create',{model_name:'GUI parity model',slug:'gui-'+crypto.randomUUID().slice(0,8),idempotency_key:crypto.randomUUID()});
+  const sources=await exported.client.invoke('project.source.list',{});const source=sources.sources.find(item=>item.alias==='gui-fixture');assert(source?.available,'Configured GUI fixture source missing');
+  const project=await exported.client.invoke('project.create',{model_name:'GUI parity model',slug:'gui-'+crypto.randomUUID().slice(0,8),source_alias:source.alias,source_repository_id:source.repository_id,trusted:true,idempotency_key:crypto.randomUUID()});
   let recipe=(await exported.client.invoke('project.open',{project_id:project.project_id})).recipe;assert(recipe,'Project creation must provide exactly one current recipe');
   await check('native-monaco-source-save',async()=>{
    const uri=await exported.files.open(project.project_id,recipe.recipe_id);
@@ -57,7 +64,7 @@ exports.run=async function(){
   const fixture={project_id:project.project_id,model_name:project.model_name,recipe_id:recipe.recipe_id,initial_revision:recipe.revision};
   await fs.writeFile(path.join(evidence,'fixture-identities.json'),JSON.stringify(fixture,null,2));
   await check('real-webview-graph-mcp-parity',async()=>{
-   const result=await promisify(cp.execFile)(process.env.MODELBUILDER_GUI_NODE||'node',[path.join(__dirname,'guiDom.cjs'),JSON.stringify(fixture)],{cwd:root,env,timeout:180000,maxBuffer:8*1024*1024});
+   const result=await promisify(cp.execFile)(process.env.MODELBUILDER_GUI_NODE||'node',[path.join(__dirname,'guiDom.cjs'),JSON.stringify(fixture)],{cwd:root,env,timeout:process.platform==='darwin'?900000:180000,maxBuffer:8*1024*1024});
    await fs.writeFile(path.join(evidence,'dom-driver.log'),result.stdout+result.stderr);
    const dom=JSON.parse(await fs.readFile(path.join(evidence,'workbench-dom-results.json'),'utf8'));assert.equal(dom.status,'PASS');return dom;
   });

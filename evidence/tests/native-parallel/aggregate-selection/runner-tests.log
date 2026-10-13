@@ -1,0 +1,26 @@
+.................F...........                                            [100%]
+=================================== FAILURES ===================================
+________ test_four_complete_groups_never_exceed_two_slots_and_keep_logs ________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-128/test_four_complete_groups_neve0')
+
+    @pytest.mark.skipif(sys.platform != "linux", reason="Optional concurrent runner uses Linux descendant containment")
+    def test_four_complete_groups_never_exceed_two_slots_and_keep_logs(tmp_path):
+        process = launch(tmp_path, [("long", "pass", .6), ("short", "pass", .15), ("next", "pass", .1), ("last", "pass", .1)])
+        code, report, _ = finish(process, tmp_path)
+        assert code == 0 and report["status"] == "completed" and report["cleanup"]["complete"]
+        events = [json.loads(line) for line in (tmp_path / "events").read_text().splitlines()]
+        active, high = set(), 0
+        for name, kind, _ in events:
+            active.add(name) if kind == "start" else active.remove(name)
+            high = max(high, len(active))
+        assert high == 2 and not active
+        lookup = {(name, kind): timestamp for name, kind, timestamp in events}
+>       assert lookup['short', 'end'] <= lookup['next', 'start'] < lookup['next', 'end'] <= lookup['last', 'start'] < lookup['long', 'end']
+E       assert 41054.51389207 < 41054.504202676
+
+tests/service/test_native_test_runner.py:353: AssertionError
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/native-parallel/aggregate-selection/runner-tests.xml -
+=========================== short test summary info ============================
+FAILED tests/service/test_native_test_runner.py::test_four_complete_groups_never_exceed_two_slots_and_keep_logs
+1 failed, 28 passed in 12.90s

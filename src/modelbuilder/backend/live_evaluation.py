@@ -607,7 +607,8 @@ def _evaluate(job: Path, evaluation_id: str) -> None:
         node = spec["component_node"]
         for dependency in spec.get("dependencies", []):
             path = spec.get("dependency_paths", {}).get(dependency["id"])
-            if not path or _file_hash(Path(path)) != dependency["sha256"]:
+            from .dependency_files import dependency_sha256
+            if not path or dependency_sha256(path) != dependency["sha256"]:
                 raise ValueError("Component dependency changed after admission: " + dependency["id"])
         function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
         inputs = {**evaluator["inputs"], evaluator["checkpoint_port"]: checkpoint}

@@ -28,7 +28,7 @@ COMPONENT_SCHEMA = {
         "capabilities": {"type": "object", "additionalProperties": False,
             "required": ["resume_modes", "export_formats", "frameworks"], "properties": {
                 "checkpoint_events": {"type": "boolean"},
-                "devices": {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"enum": ["cpu", "cuda", "mps"]}},
+                "devices": {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"enum": ["cpu", "cuda", "mps", "mlx-cpu", "mlx-metal"]}},
                 "resume_modes": {"type": "array", "uniqueItems": True, "items": {"enum": ["exact_state", "warm_start"]}},
                 "export_formats": {"type": "array", "items": {"type": "string"}},
                 "frameworks": {"type": "array", "items": {"type": "string"}}}}
@@ -78,12 +78,14 @@ def component_catalog(recipe: dict | None = None) -> list[dict]:
     from .local_inference import catalog_entries
     from .transformers_training import catalog_entries as trainer_catalog_entries
     from .transformers_inference import catalog_entries as inference_catalog_entries
+    from .mlx import catalog_entries as mlx_catalog_entries
     catalog = [{"id": "modelbuilder.examples", "version": "1", "protocol": "modelbuilder.fixture/v1",
                 "description": "Versioned custom classifier and tiny BERT examples; not a generic training framework.",
                 "capabilities": {"resume_modes": ["exact_state", "warm_start"], "export_formats": ["pytorch"], "frameworks": ["pytorch", "transformers"]}}]
     catalog.extend(catalog_entries())
     catalog.extend(trainer_catalog_entries())
     catalog.extend(inference_catalog_entries())
+    catalog.extend(mlx_catalog_entries())
     for node in (recipe or {}).get("nodes", []):
         if node.get("kind") == "component.run":
             descriptor = validate_component(node)

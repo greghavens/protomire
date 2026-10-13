@@ -12,7 +12,7 @@ def load_operator_config(path: str | Path | None = None) -> dict:
         return {}
     source = Path(path).expanduser().resolve()
     value = json.loads(source.read_text())
-    allowed = {"source_root", "python_executable", "pretrained_path", "trusted_code_roots", "dependency_paths", "dataset_roots", "source_roots", "dataset_limits"}
+    allowed = {"source_root", "python_executable", "mlx_python_executable", "pretrained_path", "trusted_code_roots", "dependency_paths", "dataset_roots", "source_roots", "dataset_limits"}
     if not isinstance(value, dict) or set(value) - allowed:
         raise ValueError("Operator configuration must be an object with supported backend settings only")
     def local_path(item, *, preserve_symlink=False):
@@ -24,9 +24,9 @@ def load_operator_config(path: str | Path | None = None) -> dict:
         # interpreter and silently discards the explicitly chosen environment.
         return os.path.abspath(candidate) if preserve_symlink else str(candidate.resolve())
     result = {}
-    for key in ("source_root", "python_executable", "pretrained_path"):
+    for key in ("source_root", "python_executable", "mlx_python_executable", "pretrained_path"):
         if key in value:
-            result[key] = local_path(value[key], preserve_symlink=key == "python_executable")
+            result[key] = local_path(value[key], preserve_symlink=key in {"python_executable", "mlx_python_executable"})
     roots = value.get("trusted_code_roots", [])
     if not isinstance(roots, list):
         raise ValueError("trusted_code_roots must be an array")

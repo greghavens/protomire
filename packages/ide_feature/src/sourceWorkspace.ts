@@ -34,7 +34,7 @@ export type SourcePinContext={project:Project;recipe:Recipe;sourceRepositoryId:s
 const fullCommit=/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/;
 function safeRelativePath(path:string):boolean{return Boolean(path)&&path.length<=512&&!isAbsolute(path)&&!/[\\\x00-\x1f\x7f]/.test(path)&&!path.split('/').some(part=>!part||part==='.'||part==='..');}
 export function requiredSourcePinPaths(recipe:Recipe):string[]{
-  const paths=[...recipe.nodes.map(item=>item.implementation_ref?.path),recipe.environment?.lock_file?.path].filter((path):path is string=>typeof path==='string');
+  const paths=[...recipe.nodes.map(item=>item.implementation_ref?.path),recipe.environment?.lock_file?.path,recipe.environment?.mlx_profile?.path].filter((path):path is string=>typeof path==='string');
   if(paths.some(path=>!safeRelativePath(path)))throw new Error('The recipe contains an unsafe required source path. Correct it before pinning source.');
   return [...new Set(paths)].sort();
 }

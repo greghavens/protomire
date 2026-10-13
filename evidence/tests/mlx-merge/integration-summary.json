@@ -1,0 +1,218 @@
+{
+  "base_commit": "d40af0583f63f5ef909d2a9277d10cb5bd9ed578",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "0a32e92af7ec126e98d7cb4dee4eb05bf1c64c894433aca5b36657345a205e4c"
+    },
+    {
+      "path": "docs/MLX_COMPONENTS.md",
+      "sha256": "830256113dcfda646f2bc434602f5461deb1d491f9f88a3f3f1cf28a88a9446d"
+    },
+    {
+      "path": "packages/ide_feature/schemas/recipe.v0.schema.json",
+      "sha256": "3b8d2a99cc795cb1faf3fae49656bf0d7380f5b3dbda5a63bf89577cabe21050"
+    },
+    {
+      "path": "packages/ide_feature/src/sourceWorkspace.ts",
+      "sha256": "e888078a960b777962a734c9543cc52983e3ffa83e435753abaf962e3f981445"
+    },
+    {
+      "path": "packages/ide_feature/test/guiDom.cjs",
+      "sha256": "e794ee1a62ba4f4e55b10832a0434e119ec717c7b16a4d909ea9910cefb0533a"
+    },
+    {
+      "path": "packages/ide_feature/test/guiParity.cjs",
+      "sha256": "2bbc37e0c5b5b4417027d20459fbf226778eb10395e19c858b2a64521b3ae175"
+    },
+    {
+      "path": "packages/ide_feature/test/guiRun.cjs",
+      "sha256": "c5847ccad80ccbfbb65e34dac29f4f586ddc7d29b46157c790877ce6d266c3a0"
+    },
+    {
+      "path": "packages/ide_feature/test/sourcePin.test.cjs",
+      "sha256": "9066e359da7b7221302a792b48cccca8fc3493d4b04d491ec05cebd12b1a0ad7"
+    },
+    {
+      "path": "packages/ide_feature/test/sourcePinHarness.cjs",
+      "sha256": "ac5f6c8d3f9a66c90ddaccb1e7fdb13f7d1aa730bb29965ce9ed9e8b09623c8b"
+    },
+    {
+      "path": "packages/ide_feature/test/sourceWorkspace.test.cjs",
+      "sha256": "044c53553ac4b58eaa6ecb4adbf37492b678453113de98a2379160f3c94e92d8"
+    },
+    {
+      "path": "requirements/profiles/mlx-darwin-arm64.lock",
+      "sha256": "f408bef35d4c867e2b634ac066cc73a4197bc60214dfd1f22cb57683fb2b68bb"
+    },
+    {
+      "path": "schemas/recipe.v0.schema.json",
+      "sha256": "3b8d2a99cc795cb1faf3fae49656bf0d7380f5b3dbda5a63bf89577cabe21050"
+    },
+    {
+      "path": "scripts/bootstrap.py",
+      "sha256": "c69c43cb0d84868a99a4a2a771523d401184f0fff977f99a874c9699b1732d3e"
+    },
+    {
+      "path": "scripts/replay_bundle.py",
+      "sha256": "49cefb8b7bd74a2b0918d5f75f4d9d885dd615d8355c21dca33548fc6857a026"
+    },
+    {
+      "path": "src/modelbuilder/backend/adapter.py",
+      "sha256": "1bfcc75c9310067930d6397994ab757fb5aec664178908958bf15aa31236b32d"
+    },
+    {
+      "path": "src/modelbuilder/backend/admission.py",
+      "sha256": "43a5e6521d447f9671eed79c59bd328f953d5876ce65498e33e94422c3936663"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/__init__.py",
+      "sha256": "7a2f0ff49d865d3ccceaee7c89e08bcba57ed983be474454beb876db8a2b5f96"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/mlx-darwin-arm64.lock",
+      "sha256": "f408bef35d4c867e2b634ac066cc73a4197bc60214dfd1f22cb57683fb2b68bb"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/mlx.py",
+      "sha256": "1b0ff55601db6ac1e5f72c6599c033036b0dd42d300a8fb1cf2a3fb8e1e84787"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/mlx_bridge.py",
+      "sha256": "83a634b3c5807602632ae9cb0563d6733996f0ac9866695169c88d4c608825ad"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/mlx_components.py",
+      "sha256": "a2b35a64de887ea3b79213c0434a7ccff8206beb9e6b3f0fe7c8c61664a0ce69"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/mlx_probe.py",
+      "sha256": "27cda6e71c3b054fe1822248ac34d01082bc55542974abb7b5dabfe148b788cf"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/mlx_worker.py",
+      "sha256": "0c9adb263e6a16f5b04914672259c5ab1a559f0c8895c9430e04474b90bf353e"
+    },
+    {
+      "path": "src/modelbuilder/backend/components/runtime.py",
+      "sha256": "f9228e66908ec42671709cc5fe06d0ee79a20ac0555821355f332731bebd7cfe"
+    },
+    {
+      "path": "src/modelbuilder/backend/live_evaluation.py",
+      "sha256": "cf1d19cc8c40b854bb7794f5db6e15c5435c7e554b13843e66ae666b02dd397a"
+    },
+    {
+      "path": "src/modelbuilder/backend/operator_config.py",
+      "sha256": "52dfc1f2f6b6c14221a1e877f9274928bdca898001534c608b87bc3e6fc7efc8"
+    },
+    {
+      "path": "src/modelbuilder/backend/placement.py",
+      "sha256": "81239e4637969c449e0246e3523ef18f4d0dacc855b27d6784c39984a4e9326a"
+    },
+    {
+      "path": "src/modelbuilder/recipe.py",
+      "sha256": "8860cc473cf825d7d1ab6f28ef4fb926beae87b2e75e57bfaaf19d841a9f0bf4"
+    },
+    {
+      "path": "tests/components/mlx_fixture.py",
+      "sha256": "f80f3669b5dd334d20b37306390a17604bd4c8cc33a41f0533200134525c355d"
+    },
+    {
+      "path": "tests/components/test_mlx_boundaries.py",
+      "sha256": "86ba7849c1965824a78c35a79bdc115ca2cf53f6aa5747cb4fb9624ec1f6cd59"
+    },
+    {
+      "path": "tests/gui/trust_fixture.cjs",
+      "sha256": "ba8c1a63757ca459079a0bfa31f431d12abbf70e8b0a92a3bce05cdef3833fe0"
+    },
+    {
+      "path": "tests/integration/test_mlx_service.py",
+      "sha256": "7bb599395510356eb7587131bc30c252c2ede6986424b0c542fa24b77b8ffcc6"
+    },
+    {
+      "path": "tests/portability/test_mlx_profile.py",
+      "sha256": "a055ea633fd9821e407a930607e35837f3a3bd003a2c831bc308060387d56bba"
+    },
+    {
+      "path": "tests/portability/test_replay_bundle.py",
+      "sha256": "8dd097e5be887575ccf5561fc9e6c90b174956f1f9eab1a0a0ba8c5171b6e2b2"
+    }
+  ],
+  "preserved_runtime_files": [
+    "src/modelbuilder/backend/worker.py",
+    "src/modelbuilder/backend/execution_limits.py",
+    "src/modelbuilder/backend/supervisor.py",
+    "src/modelbuilder/backend/process_execution.py",
+    "src/modelbuilder/compute_discovery.py"
+  ],
+  "checks": {
+    "unit-service-final": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "137",
+      "tests": "2193",
+      "time": "84.892",
+      "timestamp": "2026-10-12T20:47:38.871789-05:00",
+      "hostname": "3097764c9729",
+      "passed": 2056
+    },
+    "unit-backend-final": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "1",
+      "tests": "461",
+      "time": "32.060",
+      "timestamp": "2026-10-12T20:48:33.613383-05:00",
+      "hostname": "3097764c9729",
+      "passed": 460
+    },
+    "mlx-contracts-final": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "90",
+      "time": "3.100",
+      "timestamp": "2026-10-12T20:47:24.303836-05:00",
+      "hostname": "3097764c9729",
+      "passed": 90
+    }
+  },
+  "frontend": {
+    "node": "22.19.0",
+    "tests": 357,
+    "passed": 357,
+    "failed": 0,
+    "typecheck": "passed",
+    "http_scenarios": [
+      "service",
+      "workspace",
+      "source-pin",
+      "history"
+    ],
+    "gui_native": "not_run_here; macOS full GUI remains incomplete"
+  },
+  "wheel": {
+    "wheel": "evidence/tests/mlx-merge/wheels/modelbuilder-0.1.0-py3-none-any.whl",
+    "sha256": "6d512094f68230debe37d961f0a50cfb969f64cf2ed4f1723f88627b94cde3f7",
+    "verified_files": [
+      "modelbuilder/backend/components/mlx.py",
+      "modelbuilder/backend/components/mlx_worker.py",
+      "modelbuilder/backend/components/mlx_components.py",
+      "modelbuilder/backend/components/mlx_bridge.py",
+      "modelbuilder/backend/components/mlx_probe.py",
+      "modelbuilder/backend/components/mlx-darwin-arm64.lock"
+    ],
+    "profile_sha256": "f408bef35d4c867e2b634ac066cc73a4197bc60214dfd1f22cb57683fb2b68bb"
+  },
+  "known_remaining_gates": [
+    "Commit and repin shipping source closure; two shipping recipe pin checks intentionally deferred.",
+    "Run final merged-source Mac MLX six-case required-hardware suite including the added full-mode native export-descendant deadline scenario.",
+    "Rerun Torch MPS native gate and final Mac GUI on accessible unlocked host.",
+    "Final aggregate/native CPU and clean replay remain parent-owned."
+  ],
+  "edits_committed": false,
+  "mlx_wheels_installed_on_linux": false
+}

@@ -1,0 +1,32 @@
+tests/concurrency/test_native_crash_cleanup.py::test_hard_exit_aborts_sibling_and_supervisor_reaps_orphan
+tests/concurrency/test_native_parallel.py::test_native_parallel_barrier_bound_typed_lineage_and_rng_isolation
+tests/concurrency/test_native_parallel.py::test_native_serial_default_and_explicit_one_preserve_previous_execution[False]
+tests/concurrency/test_native_parallel.py::test_native_serial_default_and_explicit_one_preserve_previous_execution[True]
+tests/concurrency/test_native_parallel.py::test_native_parallel_retry_isolated_attempts_and_cache_lineage
+tests/concurrency/test_native_parallel.py::test_native_parallel_iterations_join_each_wave_before_feedback
+tests/concurrency/test_native_parallel.py::test_native_parallel_conditions_optional_join_and_no_false_import[True-False]
+tests/concurrency/test_native_parallel.py::test_native_parallel_conditions_optional_join_and_no_false_import[False-True]
+tests/concurrency/test_native_parallel.py::test_native_parallel_deadlines_are_per_invocation_and_cancel_all_children
+tests/concurrency/test_native_parallel.py::test_native_parallel_cancel_after_service_reopen_reaps_bodies_and_descendants
+tests/concurrency/test_native_snapshot_paths.py::test_native_snapshot_and_relative_paths_match_sequential
+tests/concurrency/test_parallel_lifecycle.py::test_source_component_training_evaluation_export_and_live[False]
+tests/concurrency/test_parallel_lifecycle.py::test_source_component_training_evaluation_export_and_live[True]
+tests/concurrency/test_parallel_lifecycle.py::test_builtin_lifecycle_uses_process_bodies_and_native_lineage
+tests/concurrency/test_parallel_training.py::test_two_native_trainers_overlap_and_join_exact_checkpoints
+tests/concurrency/test_process_execution.py::test_fresh_interpreter_excludes_ambient_python_paths_and_reaps
+tests/concurrency/test_process_execution.py::test_successful_trusted_body_cannot_leave_spawned_children
+tests/concurrency/test_process_execution.py::test_ownership_write_failure_still_reaps_child
+
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+18/22 tests collected (4 deselected) in 2.02s

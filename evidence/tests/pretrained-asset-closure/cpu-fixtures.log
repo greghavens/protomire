@@ -1,0 +1,37 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 14 items
+
+tests/integration/test_cpu_fixtures.py::test_dataset_consumed_hash_and_tamper PASSED [  7%]
+tests/integration/test_cpu_fixtures.py::test_exact_model_optimizer_scheduler_rng_and_cursor PASSED [ 14%]
+tests/integration/test_cpu_fixtures.py::test_resume_rejects_changed_training_contract PASSED [ 21%]
+tests/integration/test_cpu_fixtures.py::test_architecture_kl_and_negative_outcome_are_real PASSED [ 28%]
+tests/integration/test_cpu_fixtures.py::test_cancellation_preserves_complete_atomic_checkpoint PASSED [ 35%]
+tests/integration/test_cpu_fixtures.py::test_real_pinned_pretrained_kl_and_export_parity PASSED [ 42%]
+tests/integration/test_cpu_fixtures.py::test_pretrained_exact_continuation PASSED [ 50%]
+tests/integration/test_cpu_fixtures.py::test_model_initialization_is_explicit_and_dataset_compatible PASSED [ 57%]
+tests/integration/test_cpu_fixtures.py::test_pretrained_tokenizer_ignores_unpinned_sidecars[tokenizer_config.json] PASSED [ 64%]
+tests/integration/test_cpu_fixtures.py::test_pretrained_tokenizer_ignores_unpinned_sidecars[added_tokens.json] PASSED [ 71%]
+tests/integration/test_cpu_fixtures.py::test_pretrained_tokenizer_ignores_unpinned_sidecars[special_tokens_map.json] PASSED [ 78%]
+tests/integration/test_cpu_fixtures.py::test_pretrained_tokenizer_ignores_unpinned_sidecars[tokenizer.json] PASSED [ 85%]
+tests/integration/test_cpu_fixtures.py::test_pretrained_tokenizer_rechecks_vocabulary_snapshot PASSED [ 92%]
+tests/integration/test_cpu_fixtures.py::test_pretrained_dataset_and_export_close_tokenizer_assets PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/pretrained-asset-closure/cpu-fixtures.xml -
+======================== 14 passed, 2 warnings in 9.18s ========================

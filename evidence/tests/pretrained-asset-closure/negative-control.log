@@ -1,0 +1,57 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_pretrained_tokenizer_ignores_unpinned_sidecars[tokenizer_config.json] __
+
+tiny_pinned_tokenizer = PosixPath('/tmp/pytest-of-agent/pytest-4/test_pretrained_tokenizer_igno0/model')
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-4/test_pretrained_tokenizer_igno0')
+sidecar = 'tokenizer_config.json'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f34e5551190>
+
+    @pytest.mark.parametrize("sidecar", ["tokenizer_config.json", "added_tokens.json", "special_tokens_map.json",
+                                         "tokenizer.json"])
+    def test_pretrained_tokenizer_ignores_unpinned_sidecars(tiny_pinned_tokenizer, tmp_path, sidecar, monkeypatch):
+        directory = tiny_pinned_tokenizer
+        outside = tmp_path / "outside-vocab.txt"
+        outside.write_bytes((directory / "vocab.txt").read_bytes().replace(b"hello", b"benign"))
+        payloads = {"tokenizer_config.json": {"vocab_file": str(outside), "unk_token": "world",
+                                            "do_basic_tokenize": False},
+                    "added_tokens.json": {"benign-added-token": 7},
+                    "special_tokens_map.json": {"cls_token": "[MASK]", "unk_token": "world"}}
+        # Invalid tokenizer.json also must not be parsed just because it is nearby.
+        (directory / sidecar).write_text(json.dumps(payloads[sidecar]) if sidecar in payloads else "invalid json")
+        deny_file_reads(monkeypatch, [directory / sidecar, outside])
+>       tokenizer = fixtures._pretrained_tokenizer()
+
+tests/integration/test_cpu_fixtures.py:179: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+<stdin>:6: in legacy_tokenizer
+    ???
+.venv-backend/lib/python3.12/site-packages/transformers/tokenization_utils_base.py:2022: in from_pretrained
+    with open(resolved_config_file, encoding="utf-8") as reader:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+file = '/tmp/pytest-of-agent/pytest-4/test_pretrained_tokenizer_igno0/model/tokenizer_config.json'
+_open = <built-in function open>, args = (), kwargs = {'encoding': 'utf-8'}
+
+    def guarded(file, *args, _open=original, **kwargs):
+        if isinstance(file, (str, bytes, os.PathLike)) and Path(os.fsdecode(file)).resolve() in forbidden:
+>           raise AssertionError(f"Unpinned tokenizer file was opened: {file}")
+E           AssertionError: Unpinned tokenizer file was opened: /tmp/pytest-of-agent/pytest-4/test_pretrained_tokenizer_igno0/model/tokenizer_config.json
+
+tests/integration/test_cpu_fixtures.py:36: AssertionError
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/test_cpu_fixtures.py::test_pretrained_tokenizer_ignores_unpinned_sidecars[tokenizer_config.json]
+1 failed, 2 warnings in 0.06s
+EXPECTED FAILURE: negative control detected the legacy directory loader reading an undeclared tokenizer_config.json.

@@ -1,0 +1,26 @@
+{
+  "transformers_version": "4.57.1",
+  "network": "offline; only tiny synthetic local files",
+  "clean_vocab": {
+    "[PAD]": 0,
+    "[UNK]": 1,
+    "[CLS]": 2,
+    "[SEP]": 3,
+    "[MASK]": 4,
+    "hello": 5,
+    "world": 6
+  },
+  "sidecar_override_vocab": {
+    "[PAD]": 0,
+    "[UNK]": 1,
+    "[CLS]": 2,
+    "[SEP]": 3,
+    "[MASK]": 4,
+    "benign": 5,
+    "world": 6
+  },
+  "same_vocab_size": true,
+  "undeclared_external_vocab_consumed": true,
+  "undeclared_added_token_consumed": true,
+  "undeclared_special_token_consumed": true
+}

@@ -11,6 +11,7 @@ import json
 import os
 import random
 import shutil
+import tempfile
 import time
 from pathlib import Path
 
@@ -38,6 +39,21 @@ def model_directory() -> Path:
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
             raise ValueError(f"Pinned pretrained dependency missing or hash mismatch: {name}; run scripts/download_model.py")
     return directory
+
+
+def _pretrained_tokenizer():
+    """Load only the pinned vocabulary, never neighboring tokenizer sidecars."""
+    from transformers import BertTokenizer
+
+    vocabulary = (model_directory() / "vocab.txt").read_bytes()
+    if hashlib.sha256(vocabulary).hexdigest() != MODEL_FILES["vocab.txt"]:
+        raise ValueError("Pinned pretrained dependency missing or hash mismatch: vocab.txt; run scripts/download_model.py")
+    # Stage the verified bytes so replacement of the source after verification
+    # cannot affect the tokenizer. BertTokenizer reads the vocabulary eagerly.
+    with tempfile.TemporaryDirectory(prefix="modelbuilder-pinned-tokenizer-") as temporary:
+        path = Path(temporary) / "vocab.txt"
+        path.write_bytes(vocabulary)
+        return BertTokenizer(vocab_file=str(path), do_lower_case=True)
 
 
 class GatedResidual(nn.Module):
@@ -80,8 +96,7 @@ def dataset(parameters: dict) -> dict:
                 "heldout_ids": list(range(train_n + val_n, count)),
                 "tensor_sha256": hashlib.sha256(x.numpy().tobytes() + y.numpy().tobytes()).hexdigest()}
     elif fixture == "pretrained":
-        from transformers import BertTokenizer
-        tokenizer = BertTokenizer.from_pretrained(str(model_directory()), local_files_only=True, do_lower_case=True)
+        tokenizer = _pretrained_tokenizer()
         texts, labels = [], []
         for adjective, label in [("wonderful", 1), ("excellent", 1), ("great", 1), ("pleasant", 1),
                                   ("awful", 0), ("terrible", 0), ("bad", 0), ("dreadful", 0)]:
@@ -330,9 +345,9 @@ def export_model(data: dict, checkpoint: Path, parameters: dict, out: Path) -> P
     with torch.no_grad():
         before = _logits(model, _batch(data, ids))
     if ck["fixture"] == "pretrained":
-        from transformers import BertForSequenceClassification, BertTokenizer
+        from transformers import BertForSequenceClassification
         model.save_pretrained(out, safe_serialization=True)
-        BertTokenizer.from_pretrained(str(model_directory()), local_files_only=True).save_pretrained(out)
+        _pretrained_tokenizer().save_pretrained(out)
         reloaded = BertForSequenceClassification.from_pretrained(str(out), local_files_only=True).eval()
     else:
         atomic_save({"model": ck["model"], "width": ck["width"]}, out / "model.pt")

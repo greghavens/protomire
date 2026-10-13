@@ -1,5 +1,12 @@
 """Real CPU computations. Run in .venv-backend; no model calls are mocked."""
+import builtins
 import copy
+import hashlib
+import io
+import json
+import os
+import shutil
+from pathlib import Path
 
 import pytest
 torch = pytest.importorskip("torch", reason="Real CPU fixture suite requires .venv-backend")
@@ -17,6 +24,19 @@ def equal_state(a, b):
     if isinstance(a, (tuple, list)):
         return len(a) == len(b) and all(equal_state(x, y) for x, y in zip(a, b))
     return a == b
+
+
+def deny_file_reads(monkeypatch, paths):
+    forbidden = {path.resolve() for path in paths}
+    for module in (builtins, io):
+        original = module.open
+
+        def guarded(file, *args, _open=original, **kwargs):
+            if isinstance(file, (str, bytes, os.PathLike)) and Path(os.fsdecode(file)).resolve() in forbidden:
+                raise AssertionError(f"Unpinned tokenizer file was opened: {file}")
+            return _open(file, *args, **kwargs)
+
+        monkeypatch.setattr(module, "open", guarded)
 
 
 def test_dataset_consumed_hash_and_tamper(tmp_path):
@@ -84,6 +104,7 @@ def test_cancellation_preserves_complete_atomic_checkpoint(tmp_path):
 def test_real_pinned_pretrained_kl_and_export_parity(tmp_path):
     fixtures.model_directory()  # Missing or mismatching immutable dependency is a hard failure.
     data = fixtures.dataset({"fixture": "pretrained"})
+    assert data["sha256"] == "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e"
     assert data["vocabulary_size"] == 30522 and len(data["tokens"]["input_ids"]) == 48
     initial = fixtures.initialize(data, {"fixture": "pretrained", "seed": 701}, tmp_path / "initial")
     baseline = fixtures.train(data, initial, {"steps": 8}, tmp_path / "baseline")
@@ -125,3 +146,86 @@ def test_model_initialization_is_explicit_and_dataset_compatible(tmp_path):
         fixtures.initialize(pretrained_data, {"fixture": "custom"}, tmp_path / "reverse-mismatch")
     with pytest.raises(ValueError, match="architecture is pinned"):
         fixtures.initialize(pretrained_data, {"fixture": "pretrained", "width": 20}, tmp_path / "false-width")
+
+
+@pytest.fixture
+def tiny_pinned_tokenizer(tmp_path, monkeypatch):
+    """Synthetic hash-checked assets exercise closure without fetching a model."""
+    directory = tmp_path / "model"
+    directory.mkdir()
+    files = {"vocab.txt": b"[PAD]\n[UNK]\n[CLS]\n[SEP]\n[MASK]\nhello\nworld\n",
+             "config.json": b"{}", "pytorch_model.bin": b"not used by the tokenizer"}
+    for name, content in files.items():
+        (directory / name).write_bytes(content)
+    monkeypatch.setattr(fixtures, "MODEL_FILES", {name: hashlib.sha256(content).hexdigest()
+                                                for name, content in files.items()})
+    monkeypatch.setenv("MODELBUILDER_PRETRAINED_PATH", str(directory))
+    return directory
+
+
+@pytest.mark.parametrize("sidecar", ["tokenizer_config.json", "added_tokens.json", "special_tokens_map.json",
+                                     "tokenizer.json"])
+def test_pretrained_tokenizer_ignores_unpinned_sidecars(tiny_pinned_tokenizer, tmp_path, sidecar, monkeypatch):
+    directory = tiny_pinned_tokenizer
+    outside = tmp_path / "outside-vocab.txt"
+    outside.write_bytes((directory / "vocab.txt").read_bytes().replace(b"hello", b"benign"))
+    payloads = {"tokenizer_config.json": {"vocab_file": str(outside), "unk_token": "world",
+                                        "do_basic_tokenize": False},
+                "added_tokens.json": {"benign-added-token": 7},
+                "special_tokens_map.json": {"cls_token": "[MASK]", "unk_token": "world"}}
+    # Invalid tokenizer.json also must not be parsed just because it is nearby.
+    (directory / sidecar).write_text(json.dumps(payloads[sidecar]) if sidecar in payloads else "invalid json")
+    deny_file_reads(monkeypatch, [directory / sidecar, outside])
+    tokenizer = fixtures._pretrained_tokenizer()
+    assert tokenizer.encode("Hello world") == [2, 5, 6, 3]
+    assert len(tokenizer) == 7 and tokenizer.unk_token == "[UNK]"
+    assert "benign" not in tokenizer.get_vocab() and "benign-added-token" not in tokenizer.get_vocab()
+    tokenizer.save_pretrained(tmp_path / "export")
+    assert (tmp_path / "export/vocab.txt").read_bytes() == (directory / "vocab.txt").read_bytes()
+    assert str(outside) not in (tmp_path / "export/tokenizer_config.json").read_text()
+
+
+def test_pretrained_tokenizer_rechecks_vocabulary_snapshot(tiny_pinned_tokenizer, monkeypatch):
+    original = fixtures.model_directory
+
+    def replace_after_directory_check():
+        directory = original()
+        (directory / "vocab.txt").write_text("replaced after directory validation\n")
+        return directory
+
+    monkeypatch.setattr(fixtures, "model_directory", replace_after_directory_check)
+    with pytest.raises(ValueError, match="hash mismatch: vocab.txt"):
+        fixtures._pretrained_tokenizer()
+
+
+def test_pretrained_dataset_and_export_close_tokenizer_assets(tmp_path, monkeypatch):
+    from transformers import BertTokenizer
+
+    directory = tmp_path / "model"
+    directory.mkdir()
+    for name in fixtures.MODEL_FILES:
+        shutil.copyfile(fixtures.model_directory() / name, directory / name)
+    monkeypatch.setenv("MODELBUILDER_PRETRAINED_PATH", str(directory))
+    data = fixtures.dataset({"fixture": "pretrained"})
+    initial = fixtures.initialize(data, {"fixture": "pretrained", "seed": 701}, tmp_path / "initial")
+    checkpoint = fixtures.train(data, initial, {"steps": 1}, tmp_path / "trained")
+    baseline = fixtures.export_model(data, checkpoint, {}, tmp_path / "baseline")
+    # The explicit constructor must preserve the clean legacy tokenizer assets.
+    legacy = tmp_path / "legacy-tokenizer"
+    BertTokenizer.from_pretrained(str(directory), local_files_only=True).save_pretrained(legacy)
+    for path in legacy.iterdir():
+        assert (baseline / path.name).read_bytes() == path.read_bytes(), path.name
+
+    outside = tmp_path / "outside-vocab.txt"
+    vocabulary = (directory / "vocab.txt").read_text().splitlines()
+    vocabulary[vocabulary.index("wonderful")] = "benign-unused-token"
+    outside.write_text("\n".join(vocabulary) + "\n")
+    (directory / "tokenizer_config.json").write_text(json.dumps({"vocab_file": str(outside)}))
+    (directory / "added_tokens.json").write_text(json.dumps({"benign-added-token": 30522}))
+    (directory / "special_tokens_map.json").write_text(json.dumps({"cls_token": "[MASK]"}))
+    deny_file_reads(monkeypatch, [outside, *(directory / name for name in (
+        "tokenizer_config.json", "added_tokens.json", "special_tokens_map.json"))])
+    assert fixtures.dataset({"fixture": "pretrained"}) == data
+    exported = fixtures.export_model(data, checkpoint, {}, tmp_path / "with-sidecars")
+    assert {path.name: path.read_bytes() for path in exported.iterdir()} == {
+        path.name: path.read_bytes() for path in baseline.iterdir()}

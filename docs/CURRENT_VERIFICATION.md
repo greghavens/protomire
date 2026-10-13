@@ -1,5 +1,24 @@
 # Current verification and remaining gates
 
+## Deterministic rules engine, 2026-10-13
+
+Runtime source `4e458d632ba23c42145d3afbe507a7cea4a43e76` adds versioned,
+source-pinned rule methods, durable project policy activation, native decision
+attestations, exact selected-checkpoint action guards, and configurable eager
+stratified sampling. Both shipping recipes pin its complete **160-file** closure.
+See [rule contracts and limits](DETERMINISTIC_RULES.md) and the
+[scoped acceptance receipt](../evidence/product-completion-20261013/deterministic-rules.json).
+
+The focused rules/native/queue suite passed **102 tests**; shipping source-pin
+coverage passed **51 tests**. After fixing test-module isolation, the local Python
+aggregate passed **2,845**, with **141 skipped** and **101 deselected**, and the
+offline Hub SDK suite passed **18**. A blocked npm update request interrupted the
+aggregate script; its remaining workbench stages were rerun offline and passed:
+**582 frontend tests**, type checks, compilation and real loopback HTTP checks.
+The full native queue is still running. Fresh installed-wheel replay, real Trainer
+epoch continuation, streaming sampling and native graphical acceptance are not
+claimed complete. Earlier runtime receipts below remain historical evidence.
+
 ## Guided quickstart correction, 2026-10-13
 
 The current extension replaces the worksheet with separate assistant, goals,

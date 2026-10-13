@@ -1,0 +1,71 @@
+{
+  "evidence": {
+    "evidence/rules-20261013/final-rules.xml": {
+      "errors": 0,
+      "failures": 0,
+      "sha256": "67e24557d8e875cd1f61862b7c4c3bd84c2e75ff30e1ca04b1bdedda597cfa79",
+      "skipped": 0,
+      "tests": 102
+    },
+    "evidence/rules-20261013/test-isolation.xml": {
+      "errors": 0,
+      "failures": 0,
+      "sha256": "004c39bc22570392f266b1272a930e3096d73c5e4a42acb09179bbb842d6b4de",
+      "skipped": 0,
+      "tests": 211
+    },
+    "evidence/tests/hub-sdk.xml": {
+      "errors": 0,
+      "failures": 0,
+      "sha256": "4ef99aec668cde00fdd20545eff70dd6f615c54e29da230c13df2b67bb76edfb",
+      "skipped": 0,
+      "tests": 18
+    },
+    "evidence/tests/unit-service-mcp.xml": {
+      "errors": 0,
+      "failures": 0,
+      "sha256": "c35fef40bdf4c276edb3b9f968a6c3727b5f5ef75cc846f35142d2e772ba49bf",
+      "skipped": 141,
+      "tests": 2986
+    }
+  },
+  "fixed_regressions": [
+    "Test helper polluted stdlib queue module; unique temporary module and restoration covered by four regression cases.",
+    "Custom continuation cannot override strict shared exact-state capability checks.",
+    "Selected best/last promotion retains owning manifest and selected asset identity."
+  ],
+  "frontend": {
+    "build_typecheck_service_workspace_source_pin_history_http": "passed",
+    "failed": 0,
+    "log_sha256": "7647dad4cf695ee5aed1e55c8be55ed080bd81632640ad710139f451332bdafb",
+    "passed": 582
+  },
+  "no_claims": [
+    "No hosted CI or paid cloud run.",
+    "No user dataset or model rights approval inferred.",
+    "This receipt does not claim full product completion."
+  ],
+  "pending": [
+    "Full canonical native queue is running; outcome not yet known.",
+    "Fresh installed-wheel replay for this runtime has not run.",
+    "Real Transformers Trainer exact epoch continuation is in development.",
+    "Streaming stratified sampling is not implemented.",
+    "Native GUI and OS Keychain acceptance remain unrun while Mac is locked."
+  ],
+  "recorded_at": "2026-10-13T18:10:37.593443+00:00",
+  "runtime_source_commit": "4e458d632ba23c42145d3afbe507a7cea4a43e76",
+  "runtime_source_files": 160,
+  "source_pin_tests": {
+    "failed": 0,
+    "passed": 51
+  },
+  "standard_aggregate": {
+    "interruption": "npm registry update request blocked by environment policy after Python and Hub passed; all workbench stages rerun successfully with npm offline/update checks disabled",
+    "offline_hub_passed": 18,
+    "python_deselected": 101,
+    "python_passed": 2845,
+    "python_skipped": 141,
+    "whole_script_exit_zero": false
+  },
+  "status": "SCOPED_ACCEPTANCE_PASSED_FULL_NATIVE_PENDING"
+}

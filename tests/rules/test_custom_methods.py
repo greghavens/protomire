@@ -3,6 +3,8 @@
 from copy import deepcopy
 import importlib.util
 from pathlib import Path
+import sys
+from types import ModuleType
 
 import pytest
 from modelbuilder.evaluation import digest
@@ -206,14 +208,28 @@ def test_pure_quota_planner_scales_by_strata_and_constructs_required_retention()
     assert plan_quotas({"a": 98, "b": 2}, 10, "proportional", 0, ["b"]) == {"a": 9, "b": 1}
 
 
+def load_native_rule_test_runner():
+    root = Path(__file__).resolve().parents[2]
+    name = "_modelbuilder_rules_native_test_runner"
+    spec = importlib.util.spec_from_file_location(name, root / "scripts/native_test_runner.py")
+    module = importlib.util.module_from_spec(spec)
+    missing = object()
+    previous = sys.modules.get(name, missing)
+    try:
+        # Dataclasses resolve their defining module while the script imports.
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    finally:
+        if previous is missing:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = previous
+    return module
+
+
 def test_native_queue_includes_rule_tests_without_duplicate_partition():
     root = Path(__file__).resolve().parents[2]
-    spec = importlib.util.spec_from_file_location("queue", root / "scripts/native_test_runner.py")
-    module = importlib.util.module_from_spec(spec)
-    import sys
-
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
+    module = load_native_rule_test_runner()
     for name in ("test_native_rules.py", "test_rule_stdio.py", "test_custom_native.py", "test_standalone_native.py"):
         path = "tests/rules/" + name
         assert module.SERVICE_TESTS.count(path) == 1
@@ -222,6 +238,47 @@ def test_native_queue_includes_rule_tests_without_duplicate_partition():
             sum(line.split().count(path) for line in (root / "scripts/test_all.sh").read_text().splitlines())
             == 1
         )
+
+
+@pytest.mark.parametrize("preexisting", [False, True])
+@pytest.mark.parametrize("fail_import", [False, True])
+def test_native_queue_inspection_preserves_module_isolation(monkeypatch, preexisting, fail_import):
+    import importlib.machinery
+    import queue
+    from multiprocessing import get_context
+
+    name = "_modelbuilder_rules_native_test_runner"
+    previous = ModuleType(name)
+    if preexisting:
+        monkeypatch.setitem(sys.modules, name, previous)
+    else:
+        monkeypatch.delitem(sys.modules, name, raising=False)
+    if fail_import:
+        def fail(*args):
+            raise RuntimeError("isolated import failure")
+
+        with monkeypatch.context() as importing:
+            importing.setattr(importlib.machinery.SourceFileLoader, "exec_module", fail)
+            with pytest.raises(RuntimeError, match="isolated import failure"):
+                load_native_rule_test_runner()
+    else:
+        load_native_rule_test_runner()
+
+    if preexisting:
+        assert sys.modules.get(name) is previous
+    else:
+        assert name not in sys.modules
+    assert sys.modules["queue"] is queue
+    assert importlib.import_module("queue").Empty is queue.Empty
+    assert importlib.import_module("queue").Full is queue.Full
+    # This imports multiprocessing.queues, which failed after the old helper
+    # replaced stdlib queue. No worker process or training is launched.
+    channel = get_context("spawn").SimpleQueue()
+    try:
+        channel.put("stdlib queue is intact")
+        assert channel.get() == "stdlib queue is intact"
+    finally:
+        channel.close()
 
 
 def continuation_fixture(outcome='continue'):

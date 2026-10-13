@@ -14,8 +14,10 @@ MODELBUILDER_NATIVE_TEST_PROCESSES=2 bash scripts/test_all.sh
 ```
 
 Only `1` and `2` are accepted. The retained manual GitHub definition uses the same
-test lists and keeps its existing two jobs and 40-minute CPU-job budget.
-There is no xdist dependency.
+test lists and keeps its existing two jobs and 40-minute CPU-job budget. It remains
+dormant and unused per the owner's local-only instruction. Its hosted budget is
+not validated for the expanded 45-minute local queue allowance. There is no xdist
+dependency.
 
 Preflight, service/unit/MCP, workbench and native component-authoring HTTP checks
 finish first. This prevents npm compilation from changing the JavaScript read by
@@ -49,10 +51,11 @@ these reports; temporary dataset/checkpoint state stays outside the artifact
 upload directory and is removed after child cleanup. If cleanup cannot be confirmed,
 temporary state is retained and only its local path is recorded in the receipt.
 
-The queue has a 35-minute wall deadline, followed by at most eight seconds of
-cleanup; an explicitly authorized hosted run would also have the existing
-40-minute job deadline including bootstrap/preflight. A group failure stops
-scheduling and cancels running work.
+The local queue has a 45-minute (2,700-second) wall deadline, followed by at most
+eight seconds of cleanup. The unchanged dormant hosted workflow has a shorter
+40-minute job ceiling, including bootstrap/preflight; it cannot provide the full
+local queue allowance and no hosted acceptance or preflight margin is claimed.
+Do not dispatch it. A group failure stops scheduling and cancels running work.
 SIGINT/SIGTERM also stop scheduling and clean up. Linux subreaper mode adopts
 orphaned children, including native workers that create separate sessions.
 Cleanup repeatedly finds only this supervisor's descendants, opens Linux pidfds and verifies PID/start time after opening each handle,
@@ -71,3 +74,31 @@ full native suites pass together. That requires actual complete opt-in native
 execution locally. Local success does not establish hosted-runner timing or
 native GUI acceptance. Controlled subprocess proof is not a substitute for
 ZenML/model lifecycle acceptance.
+
+## Aggregate allowance revision, 2026-10-13
+
+The previous 2,100-second allowance predated twelve added rules integration
+cases and the pending epoch-Trainer coverage. The
+[prior 6323bfd receipt](../evidence/rules-20261013/prior-native-6323bfd/native-runner.json)
+completed all groups in 2,017.17 seconds, leaving only 82.83 seconds of allowance;
+it still failed its existing lifecycle rights case. The
+[expanded run](../evidence/rules-20261013/full-native-first/native-runner.json)
+reached the old deadline with concurrency canceled. Its twelve new rules cases
+accounted for 279.89 seconds. Combining its completed group durations with the
+prior completed concurrency duration gives 4,266.763 process-seconds: even ideal
+two-slot balancing would require 2,133.382 seconds. Reordering the four intact
+groups would require at least 2,217.832 seconds under those measured durations.
+
+The staged Trainer candidate added 285.431 seconds in a focused run that included
+one setup timeout. Including that observed duration projects roughly 2,451 seconds
+under the existing schedule. Substituting the successful quiet calibrated,
+discovery and conditional rerun timings instead projects roughly 2,310 seconds.
+These are planning estimates, not a passing aggregate benchmark. The revised
+2,700-second local aggregate allowance provides bounded headroom for the expanded
+coverage while retaining two pytest roots, the same selectors, thread limits,
+individual test/RPC deadlines, failure propagation and descendant cleanup.
+
+Historical 2,100-second receipts remain unchanged and the failed expanded run
+remains failed. A fresh complete canonical run on the final source, without other
+aggregate or Trainer workloads alongside it, is required to establish acceptance.
+No hosted workflow was dispatched for this allowance change.

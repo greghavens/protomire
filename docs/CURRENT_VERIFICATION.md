@@ -20,8 +20,12 @@ cleanup completed. Lifecycle had four failures, integration one, and components
 two; concurrency was canceled at the deadline. The known pretrained rights
 rejection remains. Invalid mocked component descriptors have been corrected
 without relaxing production validation (**2 focused and 90 placement unit tests
-passed**). The remaining timeouts are undergoing quiet sequential reruns; their
-cause and full acceptance are not yet established. Fresh installed-wheel replay,
+passed**). All previously timed-out selections passed unchanged in quiet sequential reruns:
+**1 calibrated lifecycle, 3 discovery, 1 conditional live evaluation and 18
+concurrency tests**. That does not replace the failed aggregate. Measured added
+coverage exceeds the former aggregate allowance; the documented queue budget is
+now **2,700 seconds**, retaining two processes and every individual deadline
+(**43 runner unit tests passed**). A fresh full run is still required. Fresh installed-wheel replay,
 real Trainer epoch continuation, streaming sampling and native graphical
 acceptance are not claimed complete. Earlier runtime receipts below remain
 historical evidence.

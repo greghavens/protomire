@@ -1,0 +1,54 @@
+{
+  "concurrency": 2,
+  "deadline_seconds": 2100,
+  "status": "deadline_exceeded",
+  "elapsed_seconds": 2100.071,
+  "groups": [
+    {
+      "name": "cpu-lifecycle",
+      "pid": 16,
+      "status": "failed",
+      "returncode": 1,
+      "log": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-lifecycle.log",
+      "xml": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-lifecycle.xml",
+      "started_seconds": 0.0,
+      "finished_seconds": 1113.878
+    },
+    {
+      "name": "integration",
+      "pid": 17,
+      "status": "failed",
+      "returncode": 1,
+      "log": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/integration.log",
+      "xml": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/integration.xml",
+      "started_seconds": 0.0,
+      "finished_seconds": 2048.931
+    },
+    {
+      "name": "cpu-components",
+      "pid": 3224,
+      "status": "failed",
+      "returncode": 1,
+      "log": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-components.log",
+      "xml": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-components.xml",
+      "started_seconds": 1113.978,
+      "finished_seconds": 1815.568
+    },
+    {
+      "name": "cpu-concurrency",
+      "pid": 6728,
+      "status": "canceled",
+      "returncode": -15,
+      "log": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-concurrency.log",
+      "xml": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-concurrency.xml",
+      "started_seconds": 1815.668,
+      "finished_seconds": 2100.071
+    }
+  ],
+  "continue_on_failure": true,
+  "cleanup": {
+    "complete": true,
+    "signaled_processes": 3
+  },
+  "exit_code": 124
+}

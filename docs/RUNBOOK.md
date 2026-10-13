@@ -225,5 +225,7 @@ This increment has no public recipe marketplace, paid remote provider, budget le
 Set `MODELBUILDER_NATIVE_COLLECT_ALL=1` with
 `MODELBUILDER_NATIVE_TEST_PROCESSES=2` to continue the bounded local native queue
 after a group fails. This diagnostic mode preserves the failing exit code,
-per-group receipts, the 2,100-second overall deadline and descendant cleanup.
+per-group receipts, the 2,700-second local overall deadline and descendant cleanup.
 It does not turn blocked fixtures into passes. The default remains fail-fast.
+The dormant manual-only hosted workflow remains unused; its unchanged 40-minute
+job ceiling is not validated for this 45-minute local allowance.

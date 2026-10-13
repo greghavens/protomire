@@ -1,4 +1,14 @@
 {
+  "aggregate_budget_revision": {
+    "acceptance": "A fresh complete final-source queue is still required; old failed results remain failed.",
+    "concurrency": 2,
+    "hosted_workflow": "Still manual-only; not dispatched.",
+    "individual_test_or_rpc_deadlines_changed": false,
+    "maximum_and_default_seconds": 2700,
+    "previous_seconds": 2100,
+    "reason": "Measured expanded coverage exceeds the former aggregate allowance even with ideal two-slot balancing.",
+    "unit_tests_passed": 43
+  },
   "evidence": {
     "evidence/rules-20261013/final-rules.xml": {
       "errors": 0,
@@ -45,9 +55,9 @@
       "complete": true,
       "signaled_processes": 3
     },
-    "concurrency": "Canceled at overall deadline; quiet complete-group rerun pending.",
+    "concurrency": "Initially canceled at overall deadline; subsequent complete isolated concurrency group passed18 tests.",
     "deadline_seconds": 2100,
-    "diagnosis": "Known pretrained rights rejection remains. Two mocked component descriptors were invalid and have been corrected without relaxing production validation. Other failures were timeouts; their cause is not yet established. Quiet sequential reruns are active.",
+    "diagnosis": "Known pretrained rights rejection remains. Invalid mocked component descriptors were corrected without relaxing production validation. All previously timed-out selections passed unchanged when run separately; precise load-sensitive timing cause is not established.",
     "elapsed_seconds": 2100.071,
     "exit_code": 124,
     "groups": {
@@ -94,7 +104,7 @@
     "This receipt does not claim full product completion."
   ],
   "pending": [
-    "Quiet sequential calibrated/discovery/conditional/concurrency reruns are running after the failed full native queue.",
+    "Fresh complete canonical queue on final integrated source under the documented2700-second allowance remains pending.",
     "Fresh installed-wheel replay for this runtime has not run.",
     "Real Transformers Trainer exact epoch continuation is in development.",
     "Streaming stratified sampling is not implemented.",
@@ -105,6 +115,45 @@
     "hardware_deselected": 5,
     "placement_unit_passed": 90,
     "production_changes": false
+  },
+  "quiet_native_reruns": {
+    "does_not_replace_failed_aggregate": true,
+    "individual_timeouts_changed": false,
+    "status": "PASS",
+    "tests": {
+      "calibrated": {
+        "errors": 0,
+        "failures": 0,
+        "junit_sha256": "757943248c644ddc4e0da1c64b3f929211154f7e6d69a97f8fe21bd0106a5557",
+        "seconds": 480.507,
+        "skipped": 0,
+        "tests": 1
+      },
+      "concurrency": {
+        "errors": 0,
+        "failures": 0,
+        "junit_sha256": "1cee464a3213a11f8caa1e0eb7310d19947d299275fdad3bcc93cca4cb3b2c1e",
+        "seconds": 412.843,
+        "skipped": 0,
+        "tests": 18
+      },
+      "conditional": {
+        "errors": 0,
+        "failures": 0,
+        "junit_sha256": "e14875328c56546ba43cd88dcb055a5092dd57039f4db772cdcbddfa9e49e949",
+        "seconds": 41.777,
+        "skipped": 0,
+        "tests": 1
+      },
+      "discovery": {
+        "errors": 0,
+        "failures": 0,
+        "junit_sha256": "3b9282685128dfefce8bb8d8e7260d9c3a19bc40c478aaa0c01c6a89b8e443a6",
+        "seconds": 47.818,
+        "skipped": 0,
+        "tests": 3
+      }
+    }
   },
   "recorded_at": "2026-10-13T18:10:37.593443+00:00",
   "runtime_source_commit": "4e458d632ba23c42145d3afbe507a7cea4a43e76",
@@ -121,5 +170,6 @@
     "python_skipped": 141,
     "whole_script_exit_zero": false
   },
-  "status": "FOCUSED_ACCEPTANCE_PASSED_FULL_NATIVE_FAILED"
+  "status": "FOCUSED_ACCEPTANCE_PASSED_FULL_NATIVE_FAILED",
+  "updated_at": "2026-10-13T18:54:20.538925+00:00"
 }

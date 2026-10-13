@@ -80,6 +80,7 @@ def test_collection_selectors_are_complete_disjoint_union_of_serial_commands():
         assert path in runner.SERVICE_TESTS
         assert f"--ignore={path}" in next(line for line in script.splitlines() if "-m pytest tests/integration/test_cpu_fixtures.py" in line)
     ci = (ROOT / ".github/workflows/ci.yml").read_text()
+    # Dormant hosted configuration is unchanged; its budget does not cover the local allowance.
     assert "timeout-minutes: 40" in ci and "MODELBUILDER_NATIVE_TEST_PROCESSES=2" in ci
     assert ci.count("runs-on: ubuntu-latest") == 2  # Existing contracts and CPU jobs only.
 
@@ -123,7 +124,41 @@ def test_group_environment_and_junit_paths_are_isolated(tmp_path, monkeypatch):
     concurrency = groups[-1]
     assert concurrency.command[0] == str(root / ".venv-backend/bin/python")
     assert all("tests/concurrency" not in group.command for group in groups[:-1])
-    assert runner.MAX_SECONDS == 2100
+    assert runner.MAX_SECONDS == 2700
+
+
+@pytest.mark.parametrize("timeout", [-1, 0, 2701])
+def test_queue_deadline_outside_revised_bound_refuses_before_containment(tmp_path, monkeypatch, timeout):
+    monkeypatch.setattr(runner, "_subreaper", lambda: pytest.fail("Invalid budget must not start containment"))
+    with pytest.raises(ValueError, match="at most 2700 seconds"):
+        runner.run_groups([], tmp_path, tmp_path / "report.json", timeout=timeout)
+
+
+@pytest.mark.parametrize("timeout", [None, 1, 2700])
+def test_queue_default_and_exact_deadline_boundaries_are_recorded(tmp_path, monkeypatch, timeout):
+    # Empty selections exercise budget validation/reporting without launching jobs.
+    monkeypatch.setattr(runner, "_subreaper", lambda: None)
+    options = {} if timeout is None else {"timeout": timeout}
+    report = tmp_path / "report.json"
+    assert runner.run_groups([], tmp_path, report, **options) == 0
+    receipt = json.loads(report.read_text())
+    assert receipt["deadline_seconds"] == (2700 if timeout is None else timeout)
+    assert receipt["concurrency"] == 2 and receipt["cleanup"]["complete"]
+
+
+@pytest.mark.parametrize("arguments,expected,code", [
+    ([], 2700, 0), (["--timeout-seconds", "1"], 1, 0),
+    (["--timeout-seconds", "2700"], 2700, 0), (["--timeout-seconds", "2701"], None, 1),
+])
+def test_cli_default_and_explicit_deadline_obey_revised_bound(tmp_path, monkeypatch, arguments, expected, code):
+    monkeypatch.setattr(runner, "build_groups", lambda *_args: [])
+    monkeypatch.setattr(runner, "_subreaper", lambda: None)
+    assert runner.main(["--root", str(tmp_path), *arguments]) == code
+    receipt = json.loads((tmp_path / "evidence/tests/native-runner.json").read_text())
+    if code:
+        assert receipt["status"] == "setup_failed" and receipt["error"] == "ValueError"
+    else:
+        assert receipt["deadline_seconds"] == expected and receipt["cleanup"]["complete"]
 
 
 def test_new_native_features_are_selected_and_backend_cannot_import_service_transports():

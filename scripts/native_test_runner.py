@@ -53,7 +53,7 @@ COMPONENT_TESTS = (
 # Keep mixed light/native concurrency files in one backend-only selection.
 # The integration marker leaves their light contracts to the service unit phase.
 CONCURRENCY_TESTS = ("tests/concurrency",)
-MAX_SECONDS = 2100
+MAX_SECONDS = 2700
 
 
 @dataclass(frozen=True)
@@ -172,7 +172,7 @@ def run_groups(groups, root, report, *, timeout=MAX_SECONDS, continue_on_failure
     report.write_text(json.dumps({"status": "starting", "concurrency": 2,
         "groups": [{"name": group.name, "status": "not_started"} for group in groups]}, indent=2) + "\n")
     if not 0 < timeout <= MAX_SECONDS or len({group.name for group in groups}) != len(groups):
-        raise ValueError("Native queue requires unique groups and a deadline of at most 2100 seconds")
+        raise ValueError(f"Native queue requires unique groups and a deadline of at most {MAX_SECONDS} seconds")
     _subreaper()
     started, running, processes, records = time.monotonic(), {}, [], []
     pending = list(groups)

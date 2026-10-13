@@ -4,6 +4,10 @@
 
 Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
+## Current runtime 33397ea
+
+The current runtime has 163 pinned files. See [latest scoped results and open gates](CURRENT_VERIFICATION.md#latest-acceptance-status-2026-10-13-2206-utc). The installed synthetic replay passed its scientific and immutability scope, while strict artifact equality remains 34/35 and full native/GUI/product acceptance remains incomplete. Older candidate sections below are historical.
+
 ## Guided quickstart correction
 
 Separate assistant/goals/starting-point/project-details/review screens replace
@@ -20,7 +24,7 @@ The integration-host DOM attempt was blocked by sandbox socket permissions; no
 security settings were weakened. Encrypted obsolete-snapshot garbage collection
 is deferred. No new upstream Code - OSS edits or backend source changes were made.
 
-## Current frozen candidate 34fe6c7 / 6323bfd
+## Historical frozen candidate 34fe6c7 / 6323bfd
 
 Candidate `34fe6c75dda74e07eb8c6bf048d03e6694e0c886` pins runtime
 `6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92`, with both **154-file** closures verified.

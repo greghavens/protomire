@@ -1,0 +1,48 @@
+{
+  "recorded_at": "2026-10-13T22:07:17.726020+00:00",
+  "status": "SCOPED_INSTALLED_REPLAY_PASSED_AGGREGATE_INCOMPLETE",
+  "installed_replay": {
+    "additional_driver": {
+      "reason": "No explicit installed-workload driver supplied",
+      "status": "NOT_RUN"
+    },
+    "all_installed_files_and_bytecode_unchanged": true,
+    "both_sides_exact_wheel_and_import_audit": true,
+    "checkout_commit": "1ea4eb6b08542ba74c66596fa786453f6f175940",
+    "custom_pytorch_scientific_outputs_equal": 7,
+    "fresh_noneditable_environments": 4,
+    "rights_only_structural_audit": "PASS",
+    "runtime_commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
+    "runtime_source_files": 163,
+    "scope": "Same-host Linux CPU synthetic custom-PyTorch; no GUI/installer/GPU/provider/pretrained rights claim",
+    "source_and_checkout_bytecode_unchanged": true,
+    "status": "PASS_SYNTHETIC_INSTALLED_REPLAY",
+    "strict_comparison_status": "FAIL",
+    "strict_failed_checks": [
+      "output_hashes_equal"
+    ]
+  },
+  "sealed_receipts_verified": 117,
+  "installed_entries_unchanged": 64574,
+  "installed_bytecode_files": 0,
+  "native_results": {
+    "integration": "65 passed in completed group from interrupted aggregate; no aggregate cleanup claim.",
+    "lifecycle": "30 passed, 1 public pretrained rights admission refusal.",
+    "components_first": "649 passed, 11 skipped, 1 incomplete test fixture failure; exit1 with cleanup complete.",
+    "components_corrected": "Incomplete SIGKILL returncode-9 after291.629s, missing JUnit;207 pass/6skip/2fail log observations only. Runner exit1; cleanup complete with2signaled processes. Cause unconfirmed.",
+    "concurrency": "18 passed,4deselected; exit0 with cleanup complete."
+  },
+  "fixture_correction": "Production already supplies job_dir. Direct-entrypoint fixture corrected;2focused backend tests passed. Full corrected component group not accepted.",
+  "remaining": [
+    "Complete corrected component/native acceptance.",
+    "Installed Trainer and streaming scientific acceptance.",
+    "Current Mac GUI acceptance, signing and clean-machine installation.",
+    "Other platform and external integration gates remain as recorded."
+  ],
+  "mac": "Connected execution recovered; v19 unsigned development DMG built with runtime33397ea. Mounted core initial5pass1fixturefailure; corrected external fixture1pass. GUI preflight found locked and launched no window. Local receipts not uploaded without approval.",
+  "evidence_hashes": {
+    "evidence/installed-runtime-33397ea-20261013T2154/evidence/summary.json": "937f4fbede234efaf3c2c38cae10b4bd3457b809fbcdd8b902fa03a890abba0c",
+    "evidence/rules-20261013/component-fixture-rerun-2159/completion.json": "5eade6f4da95c4eae125acce4259b88e51ef58672fa199634d15d952517e087d",
+    "evidence/rules-20261013/native-group-reruns-2124/completion.json": "47df2024c3a2fbf0a8d55958a40fc6c921508bc2d516a6ba0eeec9ad61e21cb5"
+  }
+}

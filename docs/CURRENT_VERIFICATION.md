@@ -1,5 +1,34 @@
 # Current verification and remaining gates
 
+## Latest acceptance status, 2026-10-13 22:06 UTC
+
+Runtime remains `33397ea30361b9c51dfb6bde219fd5f58c59dc10`, with both
+163-file shipping closures verified. [Current receipt](../evidence/product-completion-20261013/current-33397ea-acceptance.json)
+separates scoped passes from incomplete acceptance.
+
+- Complete standard run: 2,939 Python passes, 199 skips, 106 deselections;
+  18 offline Hub SDK passes and 582 frontend passes.
+- Actual installed synthetic custom-PyTorch replay passed on the same Linux CPU
+  host: four fresh noneditable copy installs, 64,574 installed entries unchanged,
+  zero installed bytecode files, seven identical scientific outputs, and confirmed
+  native worker/supervisor/process-group cleanup. All 117 sealed receipts verified.
+  Strict comparison stays **FAIL, 34/35**: three original manifests differ only
+  under `/rights`. The structural audit passes without rewriting provenance.
+  Installed Trainer and streaming workloads have **not** passed this acceptance.
+- Separate native groups: integration 65 passed; lifecycle 30 passed with one
+  public pretrained rights-admission refusal; concurrency 18 passed (4 deselected).
+  Components first completed with 649 passes, 11 skips and one fixture failure.
+  The fixture correction passed its two focused tests, but the full rerun was
+  killed before JUnit completion. Its log showed two failures without tracebacks;
+  the cause remains unconfirmed. **No complete native aggregate pass is claimed.**
+- Native queue receipts now preserve atomic progress, completed-group evidence
+  and explicit unfinished state. The interrupted rerun retained actual exit and
+  confirmed cleanup; 128 integrated tooling tests passed (one deselected).
+- The v19 unsigned Mac development DMG contains this runtime. Mounted checks
+  initially had five passes and one external-fixture failure; the corrected
+  fixture passed separately. Native GUI acceptance remains blocked on unlock.
+  Signing, clean-machine installation and other platform/integration gates remain.
+
 ## Shared-service Trainer continuation, 2026-10-13
 
 The strengthened real service test passed on Linux (**232.20 seconds**) and Mac
@@ -13,9 +42,9 @@ teardown. See [the scoped receipt](../evidence/product-completion-20261013/train
 
 This proves the tested static five-node CPU/eager DAG, not arbitrary DAGs,
 iteration state, streaming training or other accelerator continuation. The runtime
-remains `33397ea` with 163 pinned files. Full native and installed replay gates
-remain open. The Mac is now offline; the updated app build cannot start there
-until it reconnects. All completed Mac source/test artifacts were saved first.
+remains `33397ea` with 163 pinned files. Full native and installed Trainer/streaming replay gates remain open. The Mac
+execution connection recovered and the v19 unsigned app was built. The latest
+GUI preflight found the screen locked and launched no IDE window.
 
 ## Streaming dataset safeguards, 2026-10-13
 

@@ -437,7 +437,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+    "commit": "0e825487ef94fa613e1606f458177ad009b1a5cf",
     "files": [
       {
         "path": "pyproject.toml",
@@ -466,6 +466,10 @@
       {
         "path": "requirements/profiles/backend-linux-x64.lock",
         "sha256": "db08be2d2633f4d21f12beeabdd082b491a9c8710ea8ac268445643428563270"
+      },
+      {
+        "path": "requirements/profiles/mlx-darwin-arm64.lock",
+        "sha256": "f408bef35d4c867e2b634ac066cc73a4197bc60214dfd1f22cb57683fb2b68bb"
       },
       {
         "path": "requirements/profiles/parquet-darwin-arm64.lock",
@@ -537,7 +541,7 @@
       },
       {
         "path": "scripts/replay_bundle.py",
-        "sha256": "0c1ca7669647c05de401c4af551915b545c64f452181f71aa6b8c20ec95537a0"
+        "sha256": "49cefb8b7bd74a2b0918d5f75f4d9d885dd615d8355c21dca33548fc6857a026"
       },
       {
         "path": "src/modelbuilder/__init__.py",
@@ -557,11 +561,11 @@
       },
       {
         "path": "src/modelbuilder/backend/adapter.py",
-        "sha256": "25a2d4524bbe65cc2aa087d5ecf3c228d850baf0c6fbb476985526f64c7d69b5"
+        "sha256": "1bfcc75c9310067930d6397994ab757fb5aec664178908958bf15aa31236b32d"
       },
       {
         "path": "src/modelbuilder/backend/admission.py",
-        "sha256": "a6792846b370fc9800abb64f056f26c306402ebde565fe2e313ee046d64524c9"
+        "sha256": "43a5e6521d447f9671eed79c59bd328f953d5876ce65498e33e94422c3936663"
       },
       {
         "path": "src/modelbuilder/backend/calibration.py",
@@ -569,19 +573,43 @@
       },
       {
         "path": "src/modelbuilder/backend/common.py",
-        "sha256": "4afea5af7851cdff155621452b9c2fb6d37b98ff52fd3b30ddc1e6c3eab19555"
+        "sha256": "5a608ba3a4fe6be7f2c0e13202f0f0fee9055e9e4227a6b77682f946a19455d5"
       },
       {
         "path": "src/modelbuilder/backend/components/__init__.py",
-        "sha256": "965db3c30664aa365bccd63d074b8b208a1c0a2ecf325944b1248a77257048af"
+        "sha256": "7a2f0ff49d865d3ccceaee7c89e08bcba57ed983be474454beb876db8a2b5f96"
       },
       {
         "path": "src/modelbuilder/backend/components/local_inference.py",
         "sha256": "fc31986d3ff29db259b0d35b12f763e0dd06cdb5c008c29954a2fb94800a4d56"
       },
       {
+        "path": "src/modelbuilder/backend/components/mlx-darwin-arm64.lock",
+        "sha256": "f408bef35d4c867e2b634ac066cc73a4197bc60214dfd1f22cb57683fb2b68bb"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/mlx.py",
+        "sha256": "1b0ff55601db6ac1e5f72c6599c033036b0dd42d300a8fb1cf2a3fb8e1e84787"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/mlx_bridge.py",
+        "sha256": "83a634b3c5807602632ae9cb0563d6733996f0ac9866695169c88d4c608825ad"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/mlx_components.py",
+        "sha256": "a2b35a64de887ea3b79213c0434a7ccff8206beb9e6b3f0fe7c8c61664a0ce69"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/mlx_probe.py",
+        "sha256": "27cda6e71c3b054fe1822248ac34d01082bc55542974abb7b5dabfe148b788cf"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/mlx_worker.py",
+        "sha256": "0c9adb263e6a16f5b04914672259c5ab1a559f0c8895c9430e04474b90bf353e"
+      },
+      {
         "path": "src/modelbuilder/backend/components/runtime.py",
-        "sha256": "e0d9fef94dace57cb88d8237227a9ed364ad27c8811d4ffbc4bdb478c7eaa044"
+        "sha256": "f9228e66908ec42671709cc5fe06d0ee79a20ac0555821355f332731bebd7cfe"
       },
       {
         "path": "src/modelbuilder/backend/components/transformers_inference.py",
@@ -597,7 +625,7 @@
       },
       {
         "path": "src/modelbuilder/backend/conditional_worker.py",
-        "sha256": "953fd3781e017b6e721143427a7d63253c07eb41db81498a4760a38435089c3f"
+        "sha256": "3b2383d99f836cfcb692aa7a42b8752729bf2007e316c2883c7f738fb4191218"
       },
       {
         "path": "src/modelbuilder/backend/dependency_files.py",
@@ -609,15 +637,15 @@
       },
       {
         "path": "src/modelbuilder/backend/execution_limits.py",
-        "sha256": "8090bf38ac922d78cf2d0d628e46c7020139fd463dd6c41bae42f5eca3e5e4e1"
+        "sha256": "f282415f44f35b93fbc5069543f1d5f410c41e67f4aaab2abf6b4bf2a39040e7"
       },
       {
         "path": "src/modelbuilder/backend/fixtures.py",
-        "sha256": "34254208a3f4e8bce02b9e6fe801ad8ef36747e88125fcc816dcfc561840979e"
+        "sha256": "d0003f64dcad2030ef76b96f3b0ef1ea892659227a164bf5e9eae5e48e4e6f58"
       },
       {
         "path": "src/modelbuilder/backend/live_evaluation.py",
-        "sha256": "c68996f44f7a8a7fdafdad9526702e009fffe7f4794a915d65a70ac60ab99fba"
+        "sha256": "cf1d19cc8c40b854bb7794f5db6e15c5435c7e554b13843e66ae666b02dd397a"
       },
       {
         "path": "src/modelbuilder/backend/native_cache.py",
@@ -637,11 +665,15 @@
       },
       {
         "path": "src/modelbuilder/backend/operator_config.py",
-        "sha256": "811c52e082358f44c8151aed30e3ef7195bae98dc4bdf9b4a9fc130292241cf4"
+        "sha256": "52dfc1f2f6b6c14221a1e877f9274928bdca898001534c608b87bc3e6fc7efc8"
       },
       {
         "path": "src/modelbuilder/backend/placement.py",
-        "sha256": "b4335c8f08369d80e7c86ef63ea52bf3f08d561c948f820cb30675f781be25b5"
+        "sha256": "81239e4637969c449e0246e3523ef18f4d0dacc855b27d6784c39984a4e9326a"
+      },
+      {
+        "path": "src/modelbuilder/backend/process_execution.py",
+        "sha256": "df0714ec5ea746cf0dd29473844c0a52314176c8eebf473dc0d4d96bc6636c13"
       },
       {
         "path": "src/modelbuilder/backend/promotion.py",
@@ -653,7 +685,7 @@
       },
       {
         "path": "src/modelbuilder/backend/supervisor.py",
-        "sha256": "2e210a6a0a93bbfbadc9e88119344c1067301fe111e596be706da8bdc55decbd"
+        "sha256": "ca70940c19477a16edd2bfdef5ea7f9925a6f2525e882cd74b38cc6806ea57c7"
       },
       {
         "path": "src/modelbuilder/backend/tracking_bridge.py",
@@ -665,7 +697,7 @@
       },
       {
         "path": "src/modelbuilder/backend/worker.py",
-        "sha256": "d03beeb5f02f58cb8d70eae30cf0d9152a43736f59977f517830a90ec5614add"
+        "sha256": "809e6a7933fd42e4ff2f845abf925210db6f61f85acc9e6c9c53616bb1a1f880"
       },
       {
         "path": "src/modelbuilder/compute_discovery.py",
@@ -697,7 +729,7 @@
       },
       {
         "path": "src/modelbuilder/execution.py",
-        "sha256": "60859233a9858bf984770437b7cfd1020d4fb8b1dac70808888180860411d9ed"
+        "sha256": "6c8bc2bed1eaf5abcdc482633df9c0cdde61a88a46cfa5d7ca2447ad28595e77"
       },
       {
         "path": "src/modelbuilder/export_packages.py",
@@ -745,7 +777,7 @@
       },
       {
         "path": "src/modelbuilder/recipe.py",
-        "sha256": "df013a99d8ba3bece27095401d17e55e608048e76fb3dd04445b4bbbabca2bdc"
+        "sha256": "8860cc473cf825d7d1ab6f28ef4fb926beae87b2e75e57bfaaf19d841a9f0bf4"
       },
       {
         "path": "src/modelbuilder/recipe_registry.py",

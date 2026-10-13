@@ -4,22 +4,28 @@
 
 Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
-## Later source changes: Triggerfish compatibility adapter
+## Current frozen candidate d573fe0 / edca415
 
-These results cover later source changes, not the frozen runtime or Mac artifact
-below. They do not establish complete harness acceptance or a new source pin.
+Candidate `d573fe0e3656cdcb77608c0c3ff0bb841756d8f4` pins runtime
+`edca4154021e7b1fc68b3503803dac67e0ba1ae6` with both **154-file** closures verified.
+[Compact evidence](../evidence/product-completion-20261013/acceptance-edca415/README.md)
+preserves terminal receipts and distinguishes later staging from this freeze.
+**Full-product acceptance remains incomplete.**
 
 | Scope | Status | Evidence and limits |
 |---|---|---|
-| ModelBuilder-side flat MCP profile | PASS, local adapter stage | Real managed stdio/HTTP/SQLite tests retain original service schemas, project read-only grants and exact owner-reviewed mutations; text envelopes preserve errors. Validation, bounds, isolation, replay, denial, cancellation and stale-state checks pass. Codex/Claude transport is retained. |
-| Reviewed inactive project preparation | PASS, source/host tests | Disabled MCP fragment and non-autoloaded skill templates; no credentials, classification, installation, daemon, global-plugin or port changes. Exact review, cancellation, conflicts, rollback and passive stale-runtime detection tested. |
-| Focused regression selections | PASS, not a full aggregate | 164 focused Python, 40 managed-core/packaging and 530 frontend host tests; TypeScript build and lint pass. Overlapping counts are not summed. |
-| Triggerfish execution and activation | BLOCKED / UNVERIFIED | No upstream code executed. Audited fixed gateway/CLI port 18789 blocks automatic concurrent project isolation; python3.12/python.exe fail the command allowlist and config does not forward allowedCommands. Official install/provenance, provider authentication, actual client/agent calls and native GUI remain unverified. |
-| Packaged adapter and current GUI | UNVERIFIED | Rebuild/reseal/repin required; frozen runtime and prior unsigned Mac DMG do not contain these source changes. Host tests are not native GUI or installer acceptance. |
+| Full local aggregate | **FAIL, exit 1** | Light 2,759 passed/141 skipped/88 deselected (205.08 seconds); frontend 530 passed with checks/build; offline Hub SDK 18 and Modal SDK 3 passed. |
+| Native queue | **FAIL, sole lifecycle rights failure** | lifecycle: 30 passed, 1 failed in 1,214.29 seconds; integration: 53 passed, 43 deselected in 1,657.97 seconds; components: 569 passed, 9 skipped in 675.55 seconds; concurrency: 18 passed, 4 deselected in 412.86 seconds. All groups attempted; queue 2,072.671 seconds below 2,100; cleanup complete, 0 signaled processes. |
+| Public pretrained lifecycle | BLOCKED | test_pretrained_validation_selection_parent_and_export fails at license_rights_unreviewed admission. No fabricated approval or weakened check. |
+| Mac frozen runtime | Build-host reported scoped passes | 154-file closures, 45,381 sealed files; 6 MLX, 1 MPS, 6 core/MCP/snapshot, 33 bundled-side Triggerfish, combined 150 passed/48 Linux-only Moonshiner skips, frontend 530. Overlapping counts; raw archive not independently retrieved. |
+| Actual Mac installer | Historical v9 only; current packaging held | No d573fe0/v11 DMG or mounted acceptance. Actual unsigned DMG remains f99c5d5/1dc9698. GUI, signing/notarization and clean-machine gates remain. |
+| Frozen Moonshiner public workflow | GAPS FOUND outside aggregate selection | DatasetArtifact input typing incompatible with ordinary dictionary bindings; fictitious top-level schema guard. Earlier native-process tests do not establish this complete workflow. |
+| Later staged Moonshiner correction | PASS, separate unmerged-at-capture scope | Five-file patch based on d573fe0; public service-to-ZenML/official 0.8.23/prepared-data path passes 71 focused tests. Separate default 69 passed/1 skipped. Not frozen runtime acceptance; failed attempts retained. [Scoped receipt](../evidence/product-completion-20261013/acceptance-edca415/later-moonshiner-correction.json). |
+| Triggerfish upstream execution | UNVERIFIED | ModelBuilder-side adapter and bundled checks do not execute/accept the upstream client, agent or provider. Audited port/allowlist limits remain. |
+| Current installed-wheel replay | UNVERIFIED for 154-file freeze | Probe -I -B fix is included; earlier 1dc9698 strict 34/35 failure and rights-only output differences remain historical, without inherited acceptance. |
+| Product/platform/provider gates | Incomplete | Linux AppImage inputs, Windows/Linux ARM64/actual CUDA, live providers, authenticated assistants, online tracking, hostile-code isolation and redistribution unresolved/unverified. Hosted CI disabled; no release pass. |
 
-[Compatibility details and audited source links](../distribution/TRIGGERFISH_COMPATIBILITY.md)
-retain all vendor, same-user-shell and activation limits. Historical records
-below are unchanged; no full-product or complete Triggerfish harness pass is claimed.
+Historical 1dc9698 sections below are unchanged; selection counts are not summed.
 
 ## Latest frozen candidate: aggregate complete with one rights-gate failure
 

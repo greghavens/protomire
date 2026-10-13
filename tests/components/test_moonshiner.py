@@ -27,7 +27,7 @@ INSTALLATION = {"version": adapter.UPSTREAM_VERSION, "reviewed_upstream_commit":
 
 
 def example(index=0):
-    return {"task": "fixture-" + str(index), "split": "train", "teacher_model": "owned-fixture-teacher",
+    return {"id": "trace-" + str(index), "task": "fixture-" + str(index), "split": "train", "teacher_model": "owned-fixture-teacher",
         "teacher_runtime": "fixture", "source_trajectory_id": "owned-trajectory-" + str(index),
         "source_trajectory_sha256": hashlib.sha256(str(index).encode()).hexdigest(),
         "messages": [{"role": "system", "content": "Answer the prompt"},
@@ -38,12 +38,34 @@ def example(index=0):
         "target_message_index": 4}
 
 
+def registered_traces(root, rows, rights):
+    """Use the real registry split shape, not a synthetic top-level schema marker."""
+    root.mkdir()
+    source = root / "traces.jsonl"
+    source.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    manifest = {"name": "Owned traces", "benchmark": "source-traces", "license": "test-only",
+        "provenance": {"source": "Owned fixture traces"}, "id_column": "id",
+        "sources": [{"id": "traces", "root_id": "data", "path": source.name, "format": "jsonl",
+                     "sha256": hashlib.sha256(source.read_bytes()).hexdigest()}],
+        "row_schema": {"type": "object", "properties": {"id": {"type": "string"}}, "required": ["id"]}, "splits": [{"id": "train", "role": "train", "source_ids": ["traces"]}],
+        "transformations": []}
+    store = SQLiteStore(root / "input-registry.sqlite")
+    try:
+        store.put("project", "p", "p", {"project_id": "p", "revision": 1})
+        registry = DatasetRegistry(store, project_roots={"p": {"data": str(root)}})
+        version = registry.register("p", manifest)
+        result = registry.read_split("p", version["dataset_id"], 1, "train", purpose="training")
+        result["rights"] = deepcopy(rights)
+        return result
+    finally:
+        store.close()
+
+
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
     _, data_rights = local_review(policy_id="owned-traces", repo_type="dataset")
     _, teacher_rights = local_review(policy_id="owned-teacher")
-    traces = {"schema": "modelbuilder.dataset/v1", "dataset": {"id": "traces", "benchmark": "source-traces"},
-        "split": {"id": "train", "role": "train"}, "rows": [example(0), example(1)], "rights": data_rights}
+    traces = registered_traces(tmp_path / "input", [example(0), example(1)], data_rights)
     parameters = {"mode": "offline-compose", "installation": INSTALLATION, "traces_digest": identity(traces),
         "teacher": {"model": "owned-fixture-teacher", "runtime": "fixture", "rights_parent_id": "teacher-model"},
         "limits": {"max_records": 4, "max_bytes": 1024 * 1024, "timeout_seconds": 5, "max_cost_usd": 0},
@@ -156,6 +178,9 @@ def test_source_review_and_split_target_gates(setup, case):
         parameters["benchmark"] = "source-traces"
     else:
         parameters["traces_digest"] = "0" * 64
+    if case in {"row-heldout", "target-missing", "target-history", "target-bool", "target-tool", "teacher"}:
+        traces = registered_traces(setup.root / "changed-input", traces["rows"], traces["rights"])
+        setup.inputs["traces"] = traces
     if case != "changed-review":
         parameters["traces_digest"] = identity(traces)
     with pytest.raises(ValueError):
@@ -187,7 +212,12 @@ def test_timeout_cancellation_stop_descendants(setup, cause):
         if timer:
             timer.join()
     pid = int((Path(setup.context["output_dir"]) / "moonshiner-work/descendant.pid").read_text())
-    assert not psutil.pid_exists(pid) or psutil.Process(pid).status() == psutil.STATUS_ZOMBIE
+    # Linux can briefly expose either terminal state while the parent reaps.
+    try:
+        status = psutil.Process(pid).status()
+    except psutil.NoSuchProcess:
+        status = None
+    assert status in {None, psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD}
     assert not (Path(setup.context["output_dir"]) / "prepared").exists()
 
 
@@ -307,7 +337,9 @@ def test_already_cancelled_never_starts_cli(setup, monkeypatch):
 def test_deduplication_keeps_the_exact_first_reviewed_target(setup):
     duplicate = deepcopy(setup.inputs["traces"]["rows"][0])
     duplicate["source_trajectory_id"] = "another-reviewed-trajectory-same-conversation"
-    setup.inputs["traces"]["rows"].append(duplicate)
+    duplicate["id"] = "distinct-row-same-conversation"
+    original = setup.inputs["traces"]
+    setup.inputs["traces"] = registered_traces(setup.root / "duplicate-input", [*original["rows"], duplicate], original["rights"])
     setup.parameters["traces_digest"] = identity(setup.inputs["traces"])
     prepared = run(setup)
     manifest = json.loads((prepared / "dataset.manifest.json").read_text())
@@ -389,3 +421,59 @@ print(json.dumps({"installation": request["parameters"]["installation"], "owner"
     receipt = json.loads(result.stdout)
     assert receipt["installation"]["version"] == adapter.UPSTREAM_VERSION
     (setup.root / "installed-acceptance.json").write_text(json.dumps(receipt, indent=2))
+
+
+def test_registry_split_has_no_top_level_schema_and_is_accepted(setup):
+    assert "schema" not in setup.inputs["traces"]
+    assert setup.inputs["traces"]["consumption"]["schema"] == "modelbuilder.dataset-consumption/v1"
+    assert adapter.catalog_entries()[0]["inputs"] == [{"name": "traces", "type": "dict"}]
+    assert run(setup).is_dir()
+
+
+@pytest.mark.parametrize("case", ["missing-consumption", "schema", "purpose", "project", "dataset", "split",
+    "revision", "content-digest", "version", "count", "bool-count", "unique-count", "ids", "duplicate-ids",
+    "row-order", "row-content", "row-digest", "seal", "unregistered-schema-marker"])
+def test_registered_input_lineage_is_required_even_after_digest_review(setup, case):
+    traces = setup.inputs["traces"]
+    lineage = traces["consumption"]
+    if case == "missing-consumption":
+        del traces["consumption"]
+    elif case == "schema":
+        lineage["schema"] = "unsupported"
+    elif case == "purpose":
+        lineage["purpose"] = "evaluation"
+    elif case == "project":
+        lineage["project_id"] = ""
+    elif case == "dataset":
+        lineage["dataset"] = {**lineage["dataset"], "id": "other"}
+    elif case == "split":
+        lineage["split"] = {**lineage["split"], "id": "other"}
+    elif case == "revision":
+        traces["dataset"]["revision"] = "0"
+    elif case == "content-digest":
+        traces["dataset"]["content_digest"] = "invalid"
+    elif case == "version":
+        lineage["version_id"] = "invalid"
+    elif case in {"count", "bool-count", "unique-count"}:
+        lineage["unique_count" if case == "unique-count" else "count"] = True if case == "bool-count" else 1
+    elif case == "ids":
+        lineage["sample_ids"] = list(reversed(lineage["sample_ids"]))
+    elif case == "duplicate-ids":
+        traces["split"]["sample_ids"] = ["trace-0", "trace-0"]
+    elif case == "row-order":
+        traces["rows"].reverse()
+    elif case == "row-content":
+        traces["rows"][0]["messages"][-1]["content"] = "Substituted target"
+    elif case == "row-digest":
+        lineage["sample_digests"][0] = "0" * 64
+    elif case == "unregistered-schema-marker":
+        traces["schema"] = "modelbuilder.dataset/v1"
+        del traces["consumption"]
+    if case == "seal":
+        lineage["digest"] = "0" * 64
+    else:
+        lineage["digest"] = identity({key: value for key, value in lineage.items() if key != "digest"})
+    setup.parameters["traces_digest"] = identity(traces)
+    with pytest.raises(ValueError):
+        run(setup)
+    assert setup.commands == []

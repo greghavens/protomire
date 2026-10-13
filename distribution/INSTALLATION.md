@@ -35,6 +35,24 @@ its remaining failure is not resolved by these Mac passes. See
 Do not present development Python/bootstrap/service commands as an end-user
 installation path. Unit tests or a package recipe alone are not installer proof.
 
+### Current source build-host scope, separate from the actual v9 DMG
+
+Current source candidate `d573fe0` pins runtime `edca415` and **154 files**.
+The Mac build host reports a **45,381-file** resealed payload and scoped passes:
+6 MLX, 1 MPS, 6 core/MCP/snapshot, 33 bundled ModelBuilder-side Triggerfish,
+combined 150 tests with 48 Linux-only Moonshiner skips, and 530 frontend tests.
+These overlapping counts are **build-host reported**; the raw evidence archive
+has not been independently retrieved here. It is 60,984,605 bytes, with reported
+SHA256 `9f867c64cf54cab54164e93a324b0df7559fb3fa39f3c6398ec14537d0bad3ba`.
+
+**Current DMG packaging is held. No d573fe0/v11 mounted-DMG pass is claimed.**
+The actual artifact described above remains the older **v9 / f99c5d5 / 1dc9698**
+DMG. The later staged Moonshiner public-workflow correction is outside this
+154-file source freeze and outside the existing DMG. Neither bundled-side checks
+nor its separate 71-test staging result establish complete Triggerfish/vendor,
+current GUI, signed or clean-machine installer acceptance. See the
+[current source evidence](../evidence/product-completion-20261013/acceptance-edca415/README.md).
+
 The new package path embeds the operation service, its CPython environment,
 mandatory MCP bridge, verified native dependency resources, Git and an initial
 source bundle. Opening the packaged workbench obtains a private local core

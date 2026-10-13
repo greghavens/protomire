@@ -1,0 +1,28 @@
+{
+  "candidate_commit": "d573fe0e3656cdcb77608c0c3ff0bb841756d8f4",
+  "runtime_commit": "edca4154021e7b1fc68b3503803dac67e0ba1ae6",
+  "source_files": 154,
+  "both_shipping_closures_identical": true,
+  "source_lock_inventory_sha256": "7038b479a71bfdc568fa3eed83379ac9dfc07eb9fca2e73476b1ddb588ae0d94",
+  "inventory_hash_encoding": "SHA256 of UTF-8 JSON sorted by path, object keys sorted, compact separators, no final newline",
+  "recipes": [
+    {
+      "path": "examples/custom-pytorch/recipe.json",
+      "sha256": "de46ca65620cf0c0db47cfbd93b64815dd1410dcb31e19f397a20015c3ef7b1f",
+      "source_commit": "edca4154021e7b1fc68b3503803dac67e0ba1ae6",
+      "source_files": 154,
+      "working_tree_matches": true,
+      "runtime_commit_matches": true
+    },
+    {
+      "path": "examples/pretrained-small/recipe.json",
+      "sha256": "7c973ef67445780aaa77a1ba0301705ca21fd5a2c65336717946c97784b47b49",
+      "source_commit": "edca4154021e7b1fc68b3503803dac67e0ba1ae6",
+      "source_files": 154,
+      "working_tree_matches": true,
+      "runtime_commit_matches": true
+    }
+  ],
+  "tracked_working_tree_clean_at_initial_verification": true,
+  "verification_scope": "All 154 source/lock file hashes independently checked against frozen runtime commit blobs and the clean candidate before any later source correction."
+}

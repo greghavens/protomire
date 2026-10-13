@@ -39,8 +39,14 @@ not a hostile-code sandbox or OS-level network isolation.
 3. Pin `examples/moonshiner/adapter.py` in the project's existing trusted source
    closure. The native runtime still verifies source/dependency/environment and
    current project-owned rights policies before dispatch.
-4. Supply one reviewed native `DatasetArtifact` `traces` input from a train split,
-   and its exact canonical `traces_digest`. Rows must explicitly have `split:
+4. Use the existing `dataset.register`, reviewed dataset policy and `dataset.bind`
+   operations to connect the registered train split directly to `compose.traces`.
+   The catalog input type is `dict`, matching the existing native import port.
+   Supply its exact canonical `traces_digest`, including the native import's
+   inherited rights. The adapter validates the existing `dataset`, `split`,
+   `consumption`, `rows` and `rights` contract; it requires no new top-level schema
+   marker. Consumption must identify training use, exact dataset/split/version,
+   ordered unique sample IDs, counts and matching row hashes. Rows must explicitly have `split:
    "train"`, teacher model/runtime, source trajectory ID/SHA256, canonical messages,
    and a final `target_message_index`. Declare the teacher/model as a rights-bearing
    admitted dependency and name its exact `rights_parent_id`. A model-name string
@@ -105,8 +111,9 @@ and exercised on owned local fixtures. Two real CLI compositions produced
 identical dataset and sealed-manifest hashes across independent private
 directories. An additional opt-in test ran genuine composition through the
 existing native process ABI, verified artifact handoff and confirmed the direct
-child was reaped with no remaining descendants. These are local CLI/native-body
-checks, not a complete service-to-ZenML/GUI end-to-end acceptance.
+child was reaped with no remaining descendants. Those initial receipts remain local CLI/native-body checks. The subsequent
+service-to-ZenML regression described below additionally exercises the ordinary
+registered-dataset route. Neither set establishes GUI acceptance.
 
 The default regression suite uses an owned deterministic CLI double for malformed
 output, timeout/cancellation, descendant cleanup and rights checks. It does not
@@ -122,8 +129,50 @@ hostname inspection works while socket creation, host/address lookup and child
 commands remain blocked. Separate real installed-CLI checks enforced a 0.1-second deadline and cancelled
 during bundled-corpus copying. Both published no prepared artifact and left no
 child process. This covers foreground startup/copy cancellation, not long-running
-provider tracing. Complete service-to-ZenML/GUI lifecycle integration remains
-additional acceptance coverage; native-body checks must not be described as that pass.
+provider tracing. The separate service-to-ZenML check below covers successful native composition
+and explicit dataset proposal handling. GUI lifecycle integration and cancellation
+through the complete service workflow remain additional acceptance coverage.
+
+### Actual registered-dataset service acceptance
+
+The first complete public-flow attempt exposed two adapter compatibility bugs
+that the earlier native-body tests could not detect: the catalog advertised a
+`DatasetArtifact` port although `dataset.bind` emits `dict`, and the adapter
+required a top-level `schema` marker absent from the real registered split.
+The adapter now uses the existing `dict` port and validates the registry's
+consumption-backed split contract. Shared graph typing and dataset binding are
+unchanged. The prior failed native run and initial passing fixture-only receipts
+are retained separately; they are not retroactively reported as a full pass.
+
+The opt-in regression is
+`tests/components/test_moonshiner_native_workflow.py::test_official_installed_compose_service_zenml_source_bound_runner`.
+Set `MODELBUILDER_BACKEND_PYTHON` to the already installed native backend and
+`MODELBUILDER_MOONSHINER_TEST_PYTHON` to the explicitly reviewed 0.8.23 interpreter;
+run it with the existing service test interpreter and this checkout on `PYTHONPATH`.
+It installs nothing and uses a fresh small service/native store. Upstream still
+copies approximately 240 MiB of its bundled corpus into the isolated work directory.
+
+This regression passed with two test-authored canonical traces and an explicitly
+reviewed synthetic teacher-identity file (no real teacher model). It exercised:
+
+- public dataset registration, local data/teacher/source evidence review and
+  policy binding, then ordinary `dataset.bind` targeting the catalog input;
+- trusted committed source binding, inert planning and actual `run.submit` /
+  `run.status` through native ZenML and the exact pinned runner environment;
+- genuine installed offline composition, exact message/target/hash/mask checks,
+  inherited data/teacher/source rights, and successful native child reaping with
+  no remaining descendants;
+- artifact listing, proposal validation and explicit registration, output-file
+  review preserving inherited rights, and a new dataset binding with no automatic
+  training or second execution.
+
+Default regressions also check public target binding without upstream installed
+and reject changed consumption schemas, purposes, identities, counts, row order,
+row hashes, seals and a schema-marked but unregistered dictionary before any CLI
+starts. They continue checking target semantics, rights and lifecycle failure
+paths. This acceptance covers local Linux composition, not provider distillation,
+token masking in a downstream trainer, HTTP/MCP transport for this complete run,
+or a GUI workflow.
 
 Before provider tracing can be enabled, review and implement a supported upstream
 API/CLI contract with enforceable whole-run call/token/spend caps and no automatic

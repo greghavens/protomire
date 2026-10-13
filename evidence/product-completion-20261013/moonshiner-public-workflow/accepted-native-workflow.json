@@ -1,0 +1,124 @@
+{
+  "adapter_source_sha256": "56e7b2aa97e138fd48b17c2d5e0f2fafb480857da1420588a7f6b62056ae0c8f",
+  "backend_run_id": "c17707d9-4a29-43e6-b4d4-4f458e39fb4e",
+  "dataset_id": "8288d1d9-b86e-4fb8-94a3-1cde42604ee8",
+  "dataset_version_id": "4f678c1ff11cca46fd6ca17111afe20c0011ac9e128b7aee259ea75302c6f071",
+  "gui_acceptance": false,
+  "input_boundary": "ordinary dataset.register, reviewed dataset policy and dataset.bind target compose.traces",
+  "input_dataset_id": "2b8846df-311c-4f2d-9b53-11098b62a4fa",
+  "input_version_id": "8afec7338d31f6897274d2d3a808a417feda63e18ac8d879c52f70fe183d5646",
+  "installation": {
+    "environment_sha256": "ac8a9f2f02c69de396c5a02789d5db162ebc7ef4fdc978f32c294bfeb0520869",
+    "reviewed_upstream_commit": "7abb66ac5328db6a5d5f3990cf85ddc40310f0b8",
+    "source_sha256": "a3d5c3159459a137020ad89751c70707ced14b6fbedf3a5dc6702551de3589c5",
+    "version": "0.8.23"
+  },
+  "operation_id": "693d4ffc-846f-5274-8dda-50f10e179c74",
+  "output_binding_rights": {
+    "parent_rights_digests": [
+      "01a3dd92230cc02edb204d2317fbe08b83242c2b95835c59534e02b90e6db0f7",
+      "0f379d1eaca2dbec7dca11a3335fc7be179fd85e4d9f2b2bdc92ede9fba2c353",
+      "564c1937ebe3b4fac14d94fd7c195ed67dc32555a85ab1505263333d9ad8e224",
+      "6265d4023b1c00db7af88e13d09d62b5a75a161d7731de25e8bdacc62ae92540",
+      "6745add4b1409e3452339c9d521da7ba3b28a17151b637857ccdf9f3df4b86d9",
+      "67c3fed6b98d149bcdb709e4bbc4f091d489dd2c8fb5db53558ed808bfef743b",
+      "949d14fa0f5978d3b3e3143ce6de9c43fe767a3f16f388ba88e26cd464314f6a"
+    ],
+    "schema_version": "modelbuilder.artifact-rights/v1",
+    "sources": [
+      {
+        "commit": "a4b440fccb39c52b0bcdac62cbf91f2d5b5c748c4e53a722349c5293b5f2140e",
+        "license_evidence_digest": "fad6b4bd446cc3d498b8b1af6078ccbf71fe3c4dabe3f439abc175e610cbe7a0",
+        "license_policy_id": "c072d078-2e19-47da-9f91-a47d3964e4b9",
+        "provider": "local",
+        "repo_id": "source",
+        "repo_type": "source"
+      },
+      {
+        "commit": "10a7acb6a589d254e84394f888cd9de1eee331cb45298a0e154335962e5143f9",
+        "license_evidence_digest": "45a7e8f36d758ebfa9caae52742fb858d5afddceeebff03673e4696a05e2c457",
+        "license_policy_id": "395d20fe-5ad3-4126-a359-2e9b787fb60f",
+        "provider": "local",
+        "repo_id": "prepared",
+        "repo_type": "dataset"
+      },
+      {
+        "commit": "38ab013e96a22331b486534aa4ce76993ac5ab1b73fb106d98ea126822285f84",
+        "license_evidence_digest": "dab2ad4adfc8b37351d0d854a2c9767a6c1b6f441e145e647e1f1dbf0b396773",
+        "license_policy_id": "cb109471-d575-446b-adb9-894b73a37a44",
+        "provider": "local",
+        "repo_id": "teacher",
+        "repo_type": "model"
+      },
+      {
+        "commit": "f1127f40162ed5f40a21714e921309e283c14e99ad91985a02169c434235e154",
+        "license_evidence_digest": "250e856eca8bfb754bb6e6ae74f413a0f933f23c803f431e4a201f489fa58c2a",
+        "license_policy_id": "2fa4a444-71d2-4cad-9eee-702e43799875",
+        "provider": "local",
+        "repo_id": "data",
+        "repo_type": "dataset"
+      }
+    ],
+    "unresolved": []
+  },
+  "owners": [
+    {
+      "canonical_node_id": "compose",
+      "descendant_cleanup": {
+        "observed_pids": [],
+        "remaining_pids": [],
+        "subreaper": true
+      },
+      "direct_child_reaped": true,
+      "exit_code": 0,
+      "node_id": "compose",
+      "reaped": true,
+      "remaining_observed_descendants": []
+    }
+  ],
+  "prepared_manifest_sha256": "2c11e7714a98d0c0f02db851bb2cf651a03b377a98fa2bfba9781f1a1d971cad",
+  "provider_execution": false,
+  "registration_started_automatically": false,
+  "rights": {
+    "parent_rights_digests": [
+      "01a3dd92230cc02edb204d2317fbe08b83242c2b95835c59534e02b90e6db0f7",
+      "0f379d1eaca2dbec7dca11a3335fc7be179fd85e4d9f2b2bdc92ede9fba2c353",
+      "6265d4023b1c00db7af88e13d09d62b5a75a161d7731de25e8bdacc62ae92540",
+      "67c3fed6b98d149bcdb709e4bbc4f091d489dd2c8fb5db53558ed808bfef743b",
+      "949d14fa0f5978d3b3e3143ce6de9c43fe767a3f16f388ba88e26cd464314f6a"
+    ],
+    "schema_version": "modelbuilder.artifact-rights/v1",
+    "sources": [
+      {
+        "commit": "a4b440fccb39c52b0bcdac62cbf91f2d5b5c748c4e53a722349c5293b5f2140e",
+        "license_evidence_digest": "fad6b4bd446cc3d498b8b1af6078ccbf71fe3c4dabe3f439abc175e610cbe7a0",
+        "license_policy_id": "c072d078-2e19-47da-9f91-a47d3964e4b9",
+        "provider": "local",
+        "repo_id": "source",
+        "repo_type": "source"
+      },
+      {
+        "commit": "38ab013e96a22331b486534aa4ce76993ac5ab1b73fb106d98ea126822285f84",
+        "license_evidence_digest": "dab2ad4adfc8b37351d0d854a2c9767a6c1b6f441e145e647e1f1dbf0b396773",
+        "license_policy_id": "cb109471-d575-446b-adb9-894b73a37a44",
+        "provider": "local",
+        "repo_id": "teacher",
+        "repo_type": "model"
+      },
+      {
+        "commit": "f1127f40162ed5f40a21714e921309e283c14e99ad91985a02169c434235e154",
+        "license_evidence_digest": "250e856eca8bfb754bb6e6ae74f413a0f933f23c803f431e4a201f489fa58c2a",
+        "license_policy_id": "2fa4a444-71d2-4cad-9eee-702e43799875",
+        "provider": "local",
+        "repo_id": "data",
+        "repo_type": "dataset"
+      }
+    ],
+    "unresolved": []
+  },
+  "row_count": 2,
+  "runner_profile_sha256": "198ed4b3e1b11a78d23702bc8f25f3764905d5fbd86e8e9dc45980a5c4070173",
+  "scope": "service-to-ZenML source-bound installed offline composition and explicit dataset registration/binding",
+  "status": "passed",
+  "training_started": false
+}

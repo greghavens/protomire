@@ -1,77 +1,107 @@
 # Current verification and remaining gates
 
-## Current source checkpoint
+## Integrated Moonshiner public-workflow correction
 
-Both shipping recipes now pin runtime `edca4154021e7b1fc68b3503803dac67e0ba1ae6`
-and its complete **154-file** source/lock closure. This includes Moonshiner
-local composition and the replay-probe correction; the source tree also includes
-the Triggerfish adapter. Focused checks below are completed, but the new full
-local aggregate and rebuilt Mac package are not yet accepted. The 151-file
-aggregate/replay/DMG records remain evidence for their exact older candidate.
+The adapter now uses the existing dictionary dataset port and validates the
+actual registered split/consumption contract, including ordered row hashes.
+The normal public dataset binding path no longer needs a producer shim or a
+fictional top-level schema marker. Both earlier defects and failed attempts
+remain recorded in the frozen evidence below.
 
-## Later source changes: Moonshiner composition and replay probe
+Root verification passed **71 tests** in 42.67 seconds, including the official
+Moonshiner 0.8.23 service-to-ZenML source-bound execution, explicit prepared
+output validation/registration/policy binding/dataset binding, and inherited
+teacher/data/source rights. An initial root fixture assertion rejected Linux's
+terminal `dead` process state (70 passed, 1 failed); terminal-state handling and
+the disappearance race were corrected without accepting live descendants.
+The final targeted cancellation/deadline checks passed **2 tests**. The new
+full aggregate and rebuilt Mac package remain separate acceptance steps.
 
-The source now includes a Linux-only, reviewed Moonshiner 0.8.23 dataset
-composition component. It uses the existing source-bound native process ABI,
-preserves final-target metadata and inherited teacher/data rights, and returns a
-prepared dataset for ordinary explicit registration. It does not generate new
-provider traces, tokenize labels, register data or start training automatically.
+[Current focused receipts](../evidence/product-completion-20261013/moonshiner-public-workflow/verification.json)
+do not claim provider generation, actual teacher execution, training, GUI,
+full-flow HTTP/MCP transport or whole-service cancellation acceptance.
 
-The official wheel was hash-verified against its published owner release.
-Two actual local compositions matched dataset and sealed-manifest hashes; actual
-native-process handoff passed, and deadline/cancellation left no child or
-prepared artifact. Root integration passed **97 focused tests**, followed by
-**one genuine installed-release native-process test**. The default selection
-skipped that opt-in test and deselected two shipping source-pin tests pending
-repinning. Full service-to-ZenML, provider, Mac/Windows and GUI acceptance remain
-open. [Contract and reproduction](MOONSHINER_DATASETS.md) and
-[compact evidence](../evidence/product-completion-20261013/moonshiner-adapter/verification.json)
-record the exact scope.
 
-The final replay backend identity probe now explicitly uses `-I -B`. Its new
-regression reproduced a bytecode write with the old command despite the
-PYTHONDONTWRITEBYTECODE environment setting; the fix prevents that write without
-changing isolation, interpreter, arguments, environment or timeout. Root replay
-checks passed **49 tests**, with the same two source-pin tests deselected pending
-repin. This correction does not retroactively change the frozen replay result.
+## Current frozen candidate d573fe0: aggregate completed with one rights failure
 
-## Later source changes: Triggerfish compatibility adapter
+Candidate `d573fe0e3656cdcb77608c0c3ff0bb841756d8f4` pins runtime
+`edca4154021e7b1fc68b3503803dac67e0ba1ae6`, the identical **154-file** source/lock
+closure in both shipping recipes. **The full local aggregate exited 1**. Its only
+aggregate failure is the unchanged public pretrained lifecycle admission gate,
+`license_rights_unreviewed`; full-product acceptance remains incomplete.
 
-The ModelBuilder-side Triggerfish flat MCP transport and reviewed inactive
-project preparation are implemented in source. This is a later change, separate
-from the frozen candidate and Mac artifact below; it is **not complete harness
-or vendor acceptance**. No new final source/runtime pin is claimed here.
+- Light: **2,759 passed, 141 skipped, 88 deselected** in 205.08 seconds;
+  frontend: **530 passed** with type checks and compilation; offline Hub SDK:
+  **18 passed**; offline Modal SDK: **3 passed**.
+- Native lifecycle: **30 passed, 1 failed** in 1,214.29 seconds; integration:
+  **53 passed, 43 deselected** in 1,657.97 seconds; components: **569 passed, 9
+  skipped** in 675.55 seconds; concurrency: **18 passed, 4 deselected** in
+  412.86 seconds.
+- All four native groups were attempted. The queue completed in
+  **2,072.671 seconds**, below its **2,100-second** deadline.
+  Cleanup completed with **0 signaled processes**. Skips remain recorded;
+  no approval was fabricated and no rights check was weakened or excluded.
 
-- The explicit Triggerfish profile exposes flat catalog/dispatch tools with
-  JSON-string arguments and text success/error envelopes. Original service
-  schemas, one-project read-only grants and the exact native owner-review queue
-  remain authoritative. Codex/Claude retain their normal transport; the actual
-  native `-I -B` command vector is accepted without allowing arbitrary flags.
-- Project preparation requires exact native review and writes only an inactive
-  MCP fragment and non-autoloaded skill templates. It stores no credentials,
-  selects no classification, and does not install, launch or join Triggerfish,
-  modify global plugins, or change ports. A non-executing declaration check
-  rejects older managed entrypoints lacking the profile; executable trust still
-  depends on native sealed-runtime checks.
-- Adapter-stage verification: **164 focused Python tests**, **40 managed-core/
-  packaging tests**, and **530 frontend host tests** passed, with TypeScript
-  build and lint. Real local stdio/HTTP/SQLite tests cover unchanged schemas,
-  validation/bounds, project isolation, exact approval, denial, cancellation,
-  replay and stale state. These overlapping selections are not a new aggregate.
-- **Upstream execution remains UNVERIFIED**: the protocol fixture did not execute
-  Triggerfish. Its audited gateway/CLI fixes port 18789, preventing automatic
-  concurrent per-project activation; the MCP command allowlist rejects
-  `python3.12`/`python.exe`, and configuration does not forward `allowedCommands`.
-  Official binary provenance, provider authentication, actual vendor-client/
-  agent calls and native GUI acceptance remain separate gates. An isolated
-  upstream-client source test has not been run.
-- The managed app must be **rebuilt, resealed and repinned** with the new helper
-  code. The frozen runtime and unsigned Mac DMG below do not include this change;
-  their results cannot establish its packaged or current GUI acceptance.
+[Compact terminal evidence](../evidence/product-completion-20261013/acceptance-edca415/README.md)
+records original raw receipt hashes, independently verified source closures and
+exact scopes. Overlapping selections are not added as unique coverage. The
+previous 151-file aggregate and strict replay remain at their named checkpoint;
+no full installed-wheel replay result is inherited by this 154-file candidate.
 
-See [Triggerfish compatibility contracts and limits](../distribution/TRIGGERFISH_COMPATIBILITY.md)
-for audited upstream references, configuration paths, test scopes and the
-same-user-shell limitation. Existing rights, release and platform gates remain.
+### Mac scope: resealed build-host checks, no new DMG
+
+The Mac build host reports both **154-file** closures matching and **45,381 sealed
+payload files**. Scoped checks passed: **6 MLX**, **1 MPS**, **6 core/MCP/snapshot**,
+**33 bundled ModelBuilder-side Triggerfish**, **150 combined tests with 48
+Linux-only Moonshiner skips**, and **530 frontend tests**. These selections may
+overlap. They do not establish upstream Triggerfish client/agent execution.
+
+These are **build-host reported** results. The raw 60,984,605-byte evidence archive
+remains on the Mac and has not been independently retrieved here; its reported
+SHA256 is recorded in the [Mac scope receipt](../evidence/product-completion-20261013/acceptance-edca415/mac-build-host-report.json).
+**DMG packaging is held. There is no d573fe0/v11 mounted-DMG acceptance.** The
+actual existing development DMG remains the older **v9 / f99c5d5 / 1dc9698**
+artifact. Its checks below are not relabeled as current-candidate results.
+
+### Moonshiner public-workflow gap and separate staged correction
+
+The frozen candidate includes Linux-only Moonshiner 0.8.23 composition through
+the existing native process ABI. Earlier 97 focused checks and one genuine
+installed-release native-process check establish only their lower-level scope.
+A later actual public service-to-ZenML workflow found two adapter gaps:
+`DatasetArtifact` input typing rejected ordinary dictionary dataset bindings,
+and a fictitious top-level schema guard rejected the actual registered contract.
+The full aggregate selection does not establish that public workflow.
+
+A **separate five-file staged correction**, based on d573fe0, changes only the
+production Moonshiner adapter plus tests/docs. Its public registration/review/
+binding → service → ZenML → official 0.8.23 composition → prepared validation/
+registration/policy binding/binding path passed **71 focused tests** (zero skips).
+The default selection separately passed **69 with 1 skip**. Earlier failing
+attempts are retained. **Those passes are not d573fe0 runtime or aggregate
+acceptance.** The [separate correction receipt](../evidence/product-completion-20261013/acceptance-edca415/later-moonshiner-correction.json)
+records exact staged file hashes and evidence scope. It does not establish
+provider generation, real-teacher execution, downstream training/loss masking,
+GUI, full-flow HTTP/MCP transport or full-service cancellation.
+
+### Triggerfish, replay probe and remaining gates
+
+The frozen source includes the flat MCP transport and reviewed inactive project
+preparation. Earlier 164 focused Python, 40 managed-core/packaging and 530 frontend
+checks remain overlapping adapter-stage evidence. Mac bundled-side checks above
+do not establish actual upstream client/agent or provider acceptance. Audited
+fixed port 18789 and command-allowlist/configuration limits remain; preparation
+is inactive and grants no install, daemon, credential or activation authority.
+See [compatibility scope](../distribution/TRIGGERFISH_COMPATIBILITY.md).
+
+This runtime also includes the replay-probe `-I -B` correction and its focused
+regression. It does not change the older 1dc9698 strict comparison or establish
+new full replay/installer acceptance. Current native GUI remains blocked by the
+locked Mac; signing/notarization, clean-machine acceptance, Linux AppImage inputs,
+Windows/Linux ARM64/actual CUDA, live providers, authenticated assistants, online
+tracking, hostile-code isolation and redistribution remain unresolved or
+unverified. No hosted-CI pass or product release is claimed. Historical sections
+below are preserved byte-for-byte at their named source checkpoints.
 
 ## Latest frozen candidate: aggregate complete with one rights-gate failure
 

@@ -73,7 +73,7 @@ def catalog_entries():
         "parameter_schema": deepcopy(PARAMETERS),
         "capabilities": {"resume_modes": [], "export_formats": [], "frameworks": ["moonshiner"],
                          "devices": ["cpu"]}}
-    return [{**descriptor, "inputs": [{"name": "traces", "type": "DatasetArtifact"}],
+    return [{**descriptor, "inputs": [{"name": "traces", "type": "dict"}],
         "outputs": [{"name": "prepared", "type": "Path"}],
         "adapter": {"module": __name__, "entrypoint": "prepare_dataset",
             "source_binding": "Pin a wrapper in the existing trusted source closure and review the installed Moonshiner source/environment receipt.",
@@ -84,14 +84,63 @@ def _json(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
 
 
+def _registered_rows(traces, limits):
+    """Validate the existing DatasetRegistry/native import contract, without a new wrapper.
+
+    The registry places its schema marker on consumption, not on the split
+    artifact itself. Its content hashes omit the caller-selected ID column.
+    """
+    from ...dataset import CONSUMPTION_SCHEMA
+    from ...evaluation import digest
+    dataset, split, lineage = (traces.get(key) for key in ("dataset", "split", "consumption"))
+    rows = traces.get("rows")
+    if not isinstance(rows, list) or not 1 <= len(rows) <= limits["max_records"]:
+        raise ValueError("Trace count is empty or exceeds the reviewed record bound")
+    if len(_json(rows)) > limits["max_bytes"]:
+        raise ValueError("Trace bytes exceed the reviewed byte bound")
+    if (not isinstance(dataset, dict) or not isinstance(split, dict) or not isinstance(lineage, dict)
+            or split.get("role") != "train"):
+        raise ValueError("Only an explicitly registered train split may be composed; held-out data is refused")
+    identifiers = split.get("sample_ids")
+    if (any(not isinstance(dataset.get(key), str) or not dataset[key] for key in ("id", "revision", "benchmark"))
+            or not dataset["revision"].isdigit() or int(dataset["revision"]) < 1
+            or not _is_hash(dataset.get("content_digest"))
+            or not isinstance(split.get("id"), str) or not split["id"]
+            or not isinstance(identifiers, list) or len(identifiers) != len(rows)
+            or any(not isinstance(item, str) or not item for item in identifiers)
+            or len(set(identifiers)) != len(identifiers)
+            or lineage.get("schema") != CONSUMPTION_SCHEMA
+            or not isinstance(lineage.get("project_id"), str) or not lineage["project_id"]
+            or lineage.get("dataset") != dataset or lineage.get("split") != split
+            or lineage.get("purpose") != "training" or lineage.get("sample_ids") != identifiers
+            or not _is_hash(lineage.get("version_id"))
+            or type(lineage.get("count")) is not int or lineage["count"] != len(rows)
+            or type(lineage.get("unique_count")) is not int or lineage["unique_count"] != len(rows)
+            or not isinstance(lineage.get("sample_digests"), list)
+            or len(lineage["sample_digests"]) != len(rows)
+            or any(not _is_hash(item) for item in lineage["sample_digests"])
+            or lineage.get("digest") != digest({key: value for key, value in lineage.items() if key != "digest"})):
+        raise ValueError("Trace dataset lacks consistent registered consumption lineage")
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise ValueError("Registered trace rows must be objects")
+        # The native split does not expose id_column. Bind the exact row to the
+        # registry hash by excluding a field holding its ordered sample ID,
+        # as the existing registered-dataset adapters do.
+        candidates = {digest({key: value for key, value in row.items() if key != field})
+                      for field, value in row.items() if value == identifiers[index]}
+        if lineage["sample_digests"][index] not in candidates:
+            raise ValueError("Trace rows differ from their registered consumption hashes")
+    return rows
+
+
 def _input_rows(inputs, parameters, context):
     if set(inputs) != {"traces"} or not isinstance(inputs["traces"], dict):
         raise ValueError("Moonshiner requires one native traces dataset artifact")
     traces = inputs["traces"]
     if identity(traces) != parameters["traces_digest"]:
         raise ValueError("Reviewed trace dataset identity changed")
-    if traces.get("schema") != "modelbuilder.dataset/v1" or traces.get("split", {}).get("role") != "train":
-        raise ValueError("Only an explicitly bound train split may be composed; held-out data is refused")
+    rows = _registered_rows(traces, parameters["limits"])
     if traces.get("dataset", {}).get("benchmark") == parameters["benchmark"]:
         raise ValueError("Prepared training data requires a distinct benchmark identity")
     Draft202012Validator(RIGHTS_SCHEMA).validate(traces.get("rights"))
@@ -101,11 +150,6 @@ def _input_rows(inputs, parameters, context):
     if parent is None or not parent.get("rights"):
         raise ValueError("Teacher/model rights must name an admitted declared parent; row labels grant no rights")
     Draft202012Validator(RIGHTS_SCHEMA).validate(parent["rights"])
-    rows = traces.get("rows")
-    if not isinstance(rows, list) or not 1 <= len(rows) <= parameters["limits"]["max_records"]:
-        raise ValueError("Trace count is empty or exceeds the reviewed record bound")
-    if len(_json(rows)) > parameters["limits"]["max_bytes"]:
-        raise ValueError("Trace bytes exceed the reviewed byte bound")
     for row in rows:
         if not isinstance(row, dict) or row.get("split") != "train":
             raise ValueError("Every canonical trace must explicitly belong to train")

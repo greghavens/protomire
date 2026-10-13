@@ -1,0 +1,39 @@
+{
+  "status": "PASS, focused final source checks",
+  "adapter_source_sha256": "56e7b2aa97e138fd48b17c2d5e0f2fafb480857da1420588a7f6b62056ae0c8f",
+  "tests": {
+    "root_integrated": {
+      "passed": 71,
+      "seconds": 42.67
+    },
+    "terminal_state_fixture_final": {
+      "passed": 2,
+      "deselected": 66,
+      "seconds": 2.18
+    }
+  },
+  "initial_root_attempt": {
+    "passed": 70,
+    "failed": 1,
+    "cause": "Cancellation fixture observed Linux terminal process state dead; assertion previously allowed only absent or zombie. Corrected terminal-state handling and disappearance race; live descendants remain rejected."
+  },
+  "prior_product_defects": [
+    "Catalog DatasetArtifact type incompatible with native dictionary dataset bindings",
+    "Top-level schema marker absent from real registered split artifacts"
+  ],
+  "correction": "Adapter uses native dict port and validates actual dataset/split/consumption plus ordered row hashes; no producer shim or global type relaxation",
+  "root_logs": {
+    "moonshiner-public-integrated.log": "4d6c3692a9c03e32664eaa361050849f038e541b6f2a1484d17d519b69c67f5b",
+    "moonshiner-public-integrated-corrected.log": "e29e35e7f0809a33df4f1c4c6fea8b8670b0da93d76dd2528ca318404a351be3"
+  },
+  "scope": "service-to-ZenML source-bound installed offline composition and explicit dataset registration/binding",
+  "unverified": [
+    "provider generation",
+    "real teacher execution",
+    "training/token-level masking",
+    "GUI",
+    "full-flow HTTP/MCP transport",
+    "full-service cancellation"
+  ],
+  "new_aggregate": "not yet run"
+}

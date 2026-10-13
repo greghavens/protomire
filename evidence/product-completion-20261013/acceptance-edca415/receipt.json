@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "recorded_date_utc": "2026-10-13",
+  "candidate_commit": "d573fe0e3656cdcb77608c0c3ff0bb841756d8f4",
+  "runtime_commit": "edca4154021e7b1fc68b3503803dac67e0ba1ae6",
+  "source_files": 154,
+  "full_product_complete": false,
+  "aggregate_status": "FAIL",
+  "aggregate_exit_code": 1,
+  "aggregate_exit_confirmation": "Aggregate process terminal exit, cross-checked against the independently inspected native queue receipt.",
+  "source_verification": "source-verification.json",
+  "light": {
+    "passed": 2759,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 141,
+    "deselected": 88,
+    "pytest_elapsed_seconds": 205.08
+  },
+  "frontend": {
+    "passed": 530,
+    "failed": 0,
+    "skipped": 0,
+    "type_checks": "passed",
+    "compilation": "passed"
+  },
+  "offline_hub_sdk": {
+    "passed": 18,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 0,
+    "pytest_elapsed_seconds": 0.25
+  },
+  "offline_modal_sdk": {
+    "passed": 3,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 0,
+    "pytest_elapsed_seconds": 1.58
+  },
+  "native_queue": {
+    "concurrency": 2,
+    "deadline_seconds": 2100,
+    "status": "group_failed",
+    "elapsed_seconds": 2072.671,
+    "continue_on_failure": true,
+    "cleanup": {
+      "complete": true,
+      "signaled_processes": 0
+    },
+    "exit_code": 1,
+    "all_groups_attempted": true,
+    "deadline_met": true,
+    "groups": [
+      {
+        "name": "cpu-lifecycle",
+        "status": "failed",
+        "returncode": 1,
+        "started_seconds": 0.0,
+        "finished_seconds": 1215.838,
+        "passed": 30,
+        "failed": 1,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 0,
+        "pytest_elapsed_seconds": 1214.29
+      },
+      {
+        "name": "integration",
+        "status": "passed",
+        "returncode": 0,
+        "started_seconds": 0.0,
+        "finished_seconds": 1658.52,
+        "passed": 53,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 43,
+        "pytest_elapsed_seconds": 1657.97
+      },
+      {
+        "name": "cpu-components",
+        "status": "passed",
+        "returncode": 0,
+        "started_seconds": 1215.938,
+        "finished_seconds": 1893.082,
+        "passed": 569,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 9,
+        "deselected": 0,
+        "pytest_elapsed_seconds": 675.55
+      },
+      {
+        "name": "cpu-concurrency",
+        "status": "passed",
+        "returncode": 0,
+        "started_seconds": 1658.62,
+        "finished_seconds": 2072.566,
+        "passed": 18,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 4,
+        "pytest_elapsed_seconds": 412.86
+      }
+    ]
+  },
+  "failed_tests": [
+    {
+      "group": "cpu-lifecycle",
+      "test": "tests.integration.test_native_lifecycle::test_pretrained_validation_selection_parent_and_export",
+      "message": "modelbuilder.backend.admission.BackendError: Declared model/dataset/checkpoint inputs need authoritative reviewed rights before execution"
+    }
+  ],
+  "failure_code": "license_rights_unreviewed",
+  "rights_approval_fabricated": false,
+  "native_component_skips": [
+    {
+      "test": "tests.components.test_mlx_boundaries::test_hostile_python_environment_cannot_shadow_worker",
+      "reason": "Required-hardware isolated MLX worker gate"
+    },
+    {
+      "test": "tests.components.test_mlx_boundaries::test_full_checkpoint_is_self_contained_and_sharded_warm_start",
+      "reason": "Required-hardware isolated MLX worker gate"
+    },
+    {
+      "test": "tests.components.test_mlx_boundaries::test_stalled_reader_large_payload_respects_deadline",
+      "reason": "Required-hardware isolated MLX worker gate"
+    },
+    {
+      "test": "tests.components.test_mlx_boundaries::test_architecture_and_asset_budget_precede_model_loading",
+      "reason": "Required-hardware isolated MLX worker gate"
+    },
+    {
+      "test": "tests.components.test_moonshiner::test_official_installed_compose_through_native_process_abi",
+      "reason": "Explicit reviewed installed Moonshiner interpreter required"
+    },
+    {
+      "test": "tests.components.test_transformers_training::test_required_accelerator_trainer_hardware",
+      "reason": "Set MODELBUILDER_REQUIRE_TRAINER_DEVICE=cuda:<ordinal> or mps on the real pinned target"
+    },
+    {
+      "test": "tests.placement.test_cuda_execution::test_real_cuda_training_checkpoint_evaluation_warm_start_and_cancel",
+      "reason": "Real CUDA hardware acceptance is unverified on this host"
+    },
+    {
+      "test": "tests.integration.test_mlx_service::test_registered_project_mlx_native_pipeline[full]",
+      "reason": "Set MODELBUILDER_REQUIRE_MLX=1 with the reviewed operator MLX interpreter"
+    },
+    {
+      "test": "tests.integration.test_mlx_service::test_registered_project_mlx_native_pipeline[lora]",
+      "reason": "Set MODELBUILDER_REQUIRE_MLX=1 with the reviewed operator MLX interpreter"
+    }
+  ],
+  "current_installed_wheel_replay": "No complete installed-wheel replay result for this 154-file candidate is claimed. Historical 1dc9698 strict replay remains FAIL 34/35 with seven equal scientific outputs and rights-only differences; it is not inherited.",
+  "mac_scoped_report": "mac-build-host-report.json",
+  "separate_later_correction": "later-moonshiner-correction.json",
+  "scope_limits": [
+    "The sole aggregate failure does not imply that all public workflows were covered; the later real Moonshiner service-to-ZenML check found two adapter gaps",
+    "Later staged 71-pass correction is not in this frozen source or aggregate",
+    "No actual upstream Triggerfish client/agent/provider acceptance",
+    "Mac candidate scoped checks are build-host reported; no new DMG or v11 mount claim",
+    "Public pretrained rights, native GUI, signing/notarization, clean-machine, other-platform, actual CUDA, online-provider, hostile-code-isolation and redistribution gates remain",
+    "Hosted CI disabled; local counts overlap and are not summed as unique coverage"
+  ]
+}

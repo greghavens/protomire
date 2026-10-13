@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "scope": "SEPARATE_LATER_STAGING_ONLY_NOT_D573FE0_ACCEPTANCE",
+  "base_candidate": "d573fe0e3656cdcb77608c0c3ff0bb841756d8f4",
+  "included_in_frozen_runtime": false,
+  "applied_to_root_at_evidence_capture": false,
+  "production_change": "Moonshiner adapter only, with tests and documentation in a five-file staged patch",
+  "gaps_found": [
+    "Declared DatasetArtifact input type was incompatible with ordinary dictionary dataset bindings in the public service-to-ZenML workflow",
+    "A fictitious top-level schema-marker guard rejected the actual registered dataset contract"
+  ],
+  "corrected_workflow": "Public registration/review/binding through service, ZenML and official Moonshiner 0.8.23, then explicit prepared dataset validation, registration, policy binding and binding",
+  "verification": {
+    "focused_with_explicit_installed_runtime": {
+      "passed": 71,
+      "skipped": 0
+    },
+    "default_without_upstream_opt_in": {
+      "passed": 69,
+      "skipped": 1
+    },
+    "ruff": "passed",
+    "patch_apply_check": "passed"
+  },
+  "corrected_file_sha256": {
+    "src/modelbuilder/backend/components/moonshiner.py": "56e7b2aa97e138fd48b17c2d5e0f2fafb480857da1420588a7f6b62056ae0c8f",
+    "tests/components/test_moonshiner.py": "5d2b403f0b6108c3a91f844226bcedd451f71a28224a01a92b0da7ffe341481e",
+    "tests/components/test_moonshiner_native_workflow.py": "5e3b70c0b33ff68d648a02e9d6841dd0225d686268d1d899a54dbaa9c1631317",
+    "tests/service/test_moonshiner_catalog.py": "92fbe02417811a3632cbdcfe14b9b6fe0c28e8a77b007ccb8186e8e076e8a54a",
+    "docs/MOONSHINER_DATASETS.md": "124e46cfe78a068754de50d43dbfd4ef9fc2ddfc283d18d9e756010441538f45"
+  },
+  "failed_attempts_preserved": true,
+  "not_claimed": [
+    "provider generation/distillation",
+    "real teacher model execution",
+    "training or downstream token loss masking",
+    "GUI acceptance",
+    "full-flow HTTP/MCP transport",
+    "full-service cancellation",
+    "Frozen d573fe0 public Moonshiner full-workflow pass",
+    "Full HTTP/MCP transport or full-service cancellation",
+    "Full aggregate pass for the staged correction"
+  ],
+  "source_evidence": {
+    "patch": {
+      "filename": "moonshiner-native-workflow.patch",
+      "bytes": 43357,
+      "sha256": "8d0cb15453f42a94802c64ac9a4549fcc8e94b94aa6a1085a279798fb7f8c5dd"
+    },
+    "archive": {
+      "filename": "moonshiner-native-workflow-evidence.zip",
+      "bytes": 224733,
+      "sha256": "319773465277571087b97c1957bb4b2c948c559f845d151660b82c90ff957546",
+      "indexed_members_verified": 192
+    },
+    "summary_sha256": "b253530e1d1246d929325d5642bad9eab55e405a4a29d9121ef55235ff1772f3",
+    "index_sha256": "61f24ed1e361742e4eb01f2b02cab6eafb1eb977eeb9500a191f4468f1ce9c1c"
+  }
+}

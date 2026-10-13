@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "d573fe0e3656cdcb77608c0c3ff0bb841756d8f4",
+  "runtime_commit": "edca4154021e7b1fc68b3503803dac67e0ba1ae6",
+  "provenance": {
+    "status": "BUILD_HOST_REPORTED_SCOPED_VALIDATION",
+    "source": "Terminal report from the native Mac build host. Raw archive has not been independently retrieved into this verification workspace.",
+    "raw_archive_independently_retrieved": false,
+    "raw_archive_independently_hashed_here": false,
+    "transfer_status": "evidence-backup upload route blocked; archive remains on the Mac build host"
+  },
+  "source": {
+    "source_files_per_closure": 154,
+    "both_shipping_closures_match": true,
+    "sealed_payload_files": 45381
+  },
+  "checks": {
+    "mlx_passed": 6,
+    "mps_passed": 1,
+    "core_mcp_snapshot_passed": 6,
+    "bundled_triggerfish_side_passed": 33,
+    "combined": {
+      "passed": 150,
+      "skipped": 48,
+      "skip_scope": "Linux-only Moonshiner cases"
+    },
+    "frontend_passed": 530
+  },
+  "packaging": {
+    "current_candidate_dmg_packaged": false,
+    "current_candidate_dmg_mounted_acceptance": false,
+    "status": "HELD",
+    "actual_existing_dmg_candidate": "f99c5d5024090a20c30ba9077b9614ac2ea86475",
+    "actual_existing_dmg_runtime": "1dc969898d8c30a8a0c0a0e590e696639138e588",
+    "actual_existing_dmg_revision": "v9",
+    "v11_mounted_app_claim": false
+  },
+  "evidence_archive": {
+    "bytes": 60984605,
+    "sha256": "9f867c64cf54cab54164e93a324b0df7559fb3fa39f3c6398ec14537d0bad3ba",
+    "hash_provenance": "Mac build-host reported only; bytes not independently retrieved here"
+  },
+  "limits": [
+    "Selections overlap and are not added as unique coverage",
+    "Bundled ModelBuilder-side Triggerfish checks are not actual upstream client/agent/provider acceptance",
+    "No new DMG or mounted v11 acceptance",
+    "Current native GUI, signing/notarization and clean-machine acceptance remain unverified",
+    "Linux-only Moonshiner skips do not establish Mac Moonshiner execution"
+  ]
+}

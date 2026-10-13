@@ -75,9 +75,9 @@
     "No full product completion."
   ],
   "pending": [
-    "Complete standard aggregate failed one streaming memory test; diagnosis and a full rerun are required.",
+    "Fresh complete native queue remains pending; complete standard aggregate retest passed.",
     "Fresh complete native queue and installed-wheel replay remain pending.",
-    "The service Trainer resume test passed on Linux but its negative-case and cleanup evidence is being strengthened before final acceptance.",
+    "Strengthened shared-service Trainer resume acceptance passed on Linux232.20s and Mac106.89s; see trainer-service-resume.json.",
     "Updated application packaging and native GUI acceptance remain pending."
   ],
   "recorded_at": "2026-10-13T19:50:48.194690+00:00",
@@ -85,7 +85,7 @@
     "cause": "Controlled Linux probe reproduced parent high-water RSS inherited across exec, despite low current child memory.",
     "change": "Test-only stdlib intermediary launches the measured process from a clean address space; kernel peak measurement is retained.",
     "focused_regressions_passed": 3,
-    "full_aggregate_rerun": "pending",
+    "full_aggregate_rerun": "PASS; earlier failed receipt preserved",
     "limits_unchanged": true,
     "pressured_parent_evidence": {
       "parent_peak_rss_bytes": 280498176,
@@ -134,6 +134,17 @@
     "python_failed": 1,
     "python_passed": 2936,
     "python_skipped": 199
+  },
+  "standard_aggregate_retest": {
+    "exit_code": 0,
+    "frontend_passed": 582,
+    "http": "All service/workspace/source-pin/history loopback checks passed",
+    "log_sha256": "bae414e5923a0c06ef90db33e47f3fa2eaae2adcbc28d5b10b17367c9707749e",
+    "offline_hub_passed": 18,
+    "python_deselected": 106,
+    "python_passed": 2939,
+    "python_skipped": 199,
+    "recorded_at": "2026-10-13T20:08:52.208306+00:00"
   },
   "status": "SCOPED_ACCEPTANCE_PASSED_FULL_NATIVE_PENDING"
 }

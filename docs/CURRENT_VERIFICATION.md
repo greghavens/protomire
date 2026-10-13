@@ -49,7 +49,10 @@ parent high-water RSS across exec. A test-only clean intermediary now excludes
 that inherited peak while retaining real child allocation peaks. Under a 280 MB
 parent, both real fixtures remained near 38 MB; all **3 measurement regressions
 passed**. The 192 MiB absolute and 16 MiB growth limits are unchanged. Later
-script stages did not run in the failed attempt; a complete rerun is required.
+script stages did not run in the failed attempt. The complete corrected rerun
+then exited **0**: **2,939 Python passed, 199 skipped, 106 deselected**, **18 Hub SDK**
+and **582 frontend tests**, plus all loopback HTTP stages. The original failed
+measurement receipt remains preserved.
 Fresh full native queue,
 installed-wheel replay and rebuilt application acceptance remain pending. This
 feature does not establish streaming Trainer exact-state continuation.

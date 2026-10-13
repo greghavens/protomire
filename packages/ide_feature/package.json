@@ -157,5 +157,8 @@
     "esbuild": "0.25.12",
     "playwright-core": "1.56.1",
     "typescript": "5.9.3"
-  }
+  },
+  "extensionKind": [
+    "ui"
+  ]
 }

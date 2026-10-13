@@ -13,6 +13,7 @@ import { chooseLocalSource, acknowledgeSource, sourceBindingPayload, matchLocalS
 import { saveNativeModel } from './modelExport';
 import { importResearchPdf } from './researchDocuments';
 import { configureOptionalAssistant } from './assistantSetup';
+import { ManagedCore, corePaths } from './managedCore';
 
 const TOKEN_KEY = 'modelbuilder.serviceToken';
 const SECTIONS = ['Research', 'Code', 'Data', 'Recipe', 'Runs', 'Versions'] as const;
@@ -579,7 +580,10 @@ export function activate(context:vscode.ExtensionContext) {
   void vscode.commands.executeCommand('setContext','modelbuilder.projectOpen',false);
   // Supported workbench commands only: hide stock assistant chrome without a core fork.
   if(vscode.workspace.getConfiguration('chat').get('disableAIFeatures',true))void vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar');
-  const client=new OperationClient(()=>vscode.workspace.getConfiguration('modelbuilder').get('serviceUrl','http://127.0.0.1:8765'),async(base)=>{const stored=await context.secrets.get(TOKEN_KEY);if(!stored)return undefined;try{const credential=JSON.parse(stored);return credential.url===base && typeof credential.token==='string'?credential.token:undefined;}catch{return undefined;}});
+  const bundled=corePaths(context.extensionUri.fsPath,context.globalStorageUri?join(context.globalStorageUri.fsPath,'core'):'',vscode.env?.appRoot);
+  const managed=bundled?new ManagedCore(bundled):undefined;
+  if(managed)context.subscriptions.push(managed);
+  const client=new OperationClient(()=>managed?.url??vscode.workspace.getConfiguration('modelbuilder').get('serviceUrl','http://127.0.0.1:8765'),async(base)=>{const stored=await context.secrets.get(TOKEN_KEY);if(!stored)return undefined;try{const credential=JSON.parse(stored);return credential.url===base && typeof credential.token==='string'?credential.token:undefined;}catch{return undefined;}},fetch,managed?()=>managed.connection():undefined);
   const explorer=new ModelExplorer(client);
   const files=new RecipeFileSystem(client,()=>explorer.refresh());
   const workbench=new Workbench(context,client,explorer,files);
@@ -594,6 +598,7 @@ export function activate(context:vscode.ExtensionContext) {
   register('modelbuilder.closeProject',()=>workbench.closeProject());
   register('modelbuilder.refresh',()=>explorer.refresh());
   register('modelbuilder.configureConnection',async(options?:{url?:string;token?:string})=>{
+    if(managed){await managed.connection();await client.catalog();explorer.refresh();void vscode.window.showInformationMessage('The bundled ModelBuilder core is connected.');return;}
     if(!vscode.workspace.isTrusted) throw new Error('Trust this workspace before configuring a service credential.');
     const url=options?.url ?? await vscode.window.showInputBox({title:'ModelBuilder service URL',value:vscode.workspace.getConfiguration('modelbuilder').get('serviceUrl','http://127.0.0.1:8765'),validateInput:value=>{try{serviceUrl(value);return null;}catch(e){return (e as Error).message;}}});
     if(!url)return; serviceUrl(url);
@@ -615,6 +620,6 @@ export function activate(context:vscode.ExtensionContext) {
     return vscode.window.showTextDocument(await files.open(projectId,recipeId));
   });
   const pending=context.globalState?.get<{projectId:string;folderPath:string}>('modelbuilder.pendingSourceProject');const openFolders=vscode.workspace.workspaceFolders??[];if(pending&&openFolders.length===1&&openFolders[0].uri.scheme==='file'&&openFolders[0].uri.fsPath===pending.folderPath){void (async()=>{await context.globalState.update('modelbuilder.pendingSourceProject',undefined);await workbench.open({projectId:pending.projectId});})().catch(error=>vscode.window.showErrorMessage(error instanceof Error?error.message:String(error)));}
-  return {client,explorer,files,workbench,clearConnection:()=>context.secrets.delete(TOKEN_KEY)};
+  return {client,explorer,files,workbench,managed,clearConnection:()=>context.secrets.delete(TOKEN_KEY)};
 }
 export function deactivate() {}

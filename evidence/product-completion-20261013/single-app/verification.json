@@ -1,0 +1,32 @@
+{
+  "status": "implementation_verified_installer_unbuilt",
+  "python_distribution_tests": 50,
+  "frontend_host_tests": 368,
+  "http_mcp_parity_checks": 8,
+  "source_registration_recheck": 1,
+  "native_appimage_built": false,
+  "native_dmg_built": false,
+  "native_windows_installer_built": false,
+  "native_windows_acl_verified": false,
+  "clean_machine_acceptance": "not_run",
+  "mcp_agent_mutation": "unavailable_pending_service_enforced_reviewed_grants",
+  "hub_payload": "pending_separate_profile_and_operator_integration",
+  "owned_files": {
+    "distribution/README.md": "3eac98a85007104b910f26628c5a79fdd3f0c94190c09f4d04c803dea47441ca",
+    "distribution/INSTALLATION.md": "0ee33946fd634951118aec1e069dfc95273f5ed3d458033fa524448826e5f3cc",
+    "distribution/assets/modelbuilder.desktop": "b75202632a52d6208c5687d2b8664e269c36f8a56f15e894065ff2cb762a6cfa",
+    "distribution/build_runtime.py": "627abeb3dcc5ca4c54f77542a5b5d90c6994042a6a5c3c65383811c0f8870ebf",
+    "distribution/managed_core.py": "30dd31247dd7be987142e187019bdf15731c284250109e2c1cd45d8be50a3421",
+    "distribution/single_app.py": "2aafe2c88e97aa4f9f505e3280b2dbccf858b924feefa53887fcd4899d3426da",
+    "distribution/windows_storage.py": "0ef0754f0ad45cc28ba34054f6910d989301ebf764404d79233f27bdba14d847",
+    "packages/ide_feature/package.json": "a0f8ca9f89ee62c403a0bb99b70c4cce44bf3c798d1d182438b66900a5e99aac",
+    "packages/ide_feature/scripts/build.mjs": "946818554298f489ff6d73a6815b8a92a246ac907f51e34c081750833b99b39f",
+    "packages/ide_feature/src/client.ts": "1656361b6837446ffe132c78f640df0499bca52378d78748b0eea0523612bc56",
+    "packages/ide_feature/src/extension.ts": "e4656ba7fc58abd0fb19a02f9a380013672ab8104bf8802c8eea5642fa47b9db",
+    "packages/ide_feature/src/managedCore.ts": "fc0dd654225b6fb10795e80f63f021ada1042287cf9af8bf8e891d88f3816735",
+    "packages/ide_feature/test/managedCore.test.cjs": "4e76903516fbc49a0263b9e4e0a139bb0eb12dfc0d6be83d91c5a8542348671b",
+    "tests/distribution/test_managed_core.py": "a08d69226a16778aba10524cc73a5cb0b884f4f9b0a913b3fb8218f73aa0b7fe",
+    "tests/distribution/test_single_app.py": "e1a4bf254808359f402fce317daf94574e0b81f775b2767827c7b64648fa1210"
+  },
+  "frozen_runtime_diff_empty": true
+}

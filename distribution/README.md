@@ -12,6 +12,12 @@ The current product has one documented composition import for its permanent
 native File-menu contribution; see [the exact exception](FILE_MENU_EXCEPTION.md).
 The original zero-core-patch build is historical evidence, not the current count.
 
+## End-user packaging
+
+The single-app packaging implementation and its unbuilt native release gates are
+documented in [Installation](INSTALLATION.md). The commands below are developer
+reproduction instructions, not an end-user product installation.
+
 ## Reproduce (native desktop)
 
 1. Install Git and Python 3.12+ for the build driver, then the platform's native
@@ -116,8 +122,10 @@ repositories and is not an independently pinned portable OS image.
   `workbench.secondarySideBar.defaultVisibility=hidden`. Activation closes the
   auxiliary bar using a supported command when the no-AI default is enabled.
   This is the product default, not a screenshot-only manual change.
-- The operation service, not the extension, owns all business state. Closing
-  the IDE does not stop the native MCP service or change resource identity.
+- The operation service, not the extension, owns all business state. In source
+  development it is started separately. Packaged clients share a managed core
+  lease: closing one client preserves other clients; the last lease releases the
+  idle service while durable project state and supervised backend jobs persist.
 - Node 22.19.0 is the upstream build toolchain. The repository's service and
   workbench CI uses its own separately pinned Node/Python versions.
 - `tests/gui/test_distribution.py` checks packaging policy only. Its success

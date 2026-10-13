@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Modelbuilder
+Comment=Model lifecycle workbench
+Exec=AppRun %F
+Icon=modelbuilder
+Categories=Development;Science;
+Terminal=false
+StartupWMClass=Modelbuilder

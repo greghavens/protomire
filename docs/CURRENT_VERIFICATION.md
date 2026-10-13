@@ -1,6 +1,20 @@
 # Current verification and remaining gates
 
-## Current 2e60975 runtime: aggregate failed; further corrections unaccepted
+## Latest source: snapshot and generated-data lineage, acceptance running
+
+Runtime commit `1dc969898d8c30a8a0c0a0e590e696639138e588` adds reviewed
+Git-free source intake and preserves inherited rights through generation,
+judging, selected-subgraph reuse and prepared-dataset registration. Both shipping
+recipes now pin its complete **151-file** source/lock closure. Source-pin and
+portable wheel checks passed **50 tests**; the combined frontend passed
+**528 tests** with type checks and compilation. The pre-repin light diagnostic
+passed **2,673 tests**, with 140 skipped and 90 deselected, explicitly excluding
+the two source-pin checks until repinning. Full integrated acceptance is running;
+these results do not resolve the public pretrained licensing gate or establish a
+complete-product release. The existing Mac DMG below still contains the older
+`2e60975` runtime.
+
+## Historical 2e60975 runtime: failed aggregate and later repairs
 
 Published checkpoint `8996355f8a3273da8f8adee6649f36667f39b993` pins runtime
 `2e609759ab5e86912f43a9a979e446030927c9a8` and its **150-file** source/lock

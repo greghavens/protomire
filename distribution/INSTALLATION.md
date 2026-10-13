@@ -241,3 +241,25 @@ Strict verification rejects added executable or bytecode files; it never makes
 exceptions for arbitrary unsealed caches. Native acceptance drivers must also
 use `-B` when running the bundled interpreters. The mandatory Hub profile counts
 toward the base macOS minimum; the optional MLX minimum remains independent.
+
+## macOS archive metadata reproduction note
+
+The unsigned `2e60975` arm64 build exposed BSD tar's implicit AppleDouble
+sidecars in a native Git input archive. Preparing the reviewed Git prefix with
+Python `tarfile` instead, after confirming it contains no `._*` files, produced
+an input accepted by the unchanged runtime builder, stage and package commands.
+Do not edit a sealed app or ignore unexpected inventory files to work around
+this check. Retain Git's helpers, notices and corresponding source, then record
+the actual new archive SHA256 in the reviewed input manifest. Archive hashes can
+differ because of timestamps; this is process reproduction, not byte-identical
+installer reproduction.
+
+That build used Git 2.56.0 official source SHA256
+`26c56c296b38c0695b26fa95f475f1d01704d2d38e73465ca30b0b2f5dc789d3`,
+with `RUNTIME_PREFIX=YesPlease`, `NO_HOMEBREW=YesPlease` and deployment target
+11.0. Its portable Git archive hash was
+`f135e14d9f9fac1b9a237f6754ce80576461eac71f884e2935c3a987c26f768e`.
+CPython 3.12.14+20260929 arm64 install-only archive hash was
+`de6b8f94fa765639b423ea353ab340669704c7186f96ee3cab389dcfde770c3c`.
+These are historical reviewed inputs, not permission to substitute unverified
+archives or evidence that a new target has passed.

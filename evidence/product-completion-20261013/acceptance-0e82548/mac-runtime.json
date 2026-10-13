@@ -1,0 +1,374 @@
+{
+  "status": "PASS_FOR_DECLARED_MAC_RUNTIME_GATES",
+  "scope": "Exact frozen candidate on Apple M3 Max arm64; GUI and installer acceptance remain separate",
+  "candidate_commit": "5b38d9602b6f8ae36fc0dcaf28f0a6da8c8f7d4a",
+  "runtime_commit": "0e825487ef94fa613e1606f458177ad009b1a5cf",
+  "source_files": 114,
+  "runtime_edits": false,
+  "handoff_verification": {
+    "archive_sha256": "9f72f2c6972606ffceaca9a92dfcc8e2c028dc30417bcf256e90341705a0b852",
+    "archive_bytes": 11286257,
+    "manifest_files_checked": 107,
+    "mismatches": []
+  },
+  "native_mlx": {
+    "tests": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 6,
+    "seconds": 208.083,
+    "skip_reasons": [],
+    "deselected": 0,
+    "deselection_source": "Terminal pytest log; JUnit does not encode deselections",
+    "cases": [
+      {
+        "name": "tests.integration.test_mlx_service.test_registered_project_mlx_native_pipeline[full]",
+        "status": "passed"
+      },
+      {
+        "name": "tests.integration.test_mlx_service.test_registered_project_mlx_native_pipeline[lora]",
+        "status": "passed"
+      },
+      {
+        "name": "tests.components.test_mlx_boundaries.test_hostile_python_environment_cannot_shadow_worker",
+        "status": "passed"
+      },
+      {
+        "name": "tests.components.test_mlx_boundaries.test_full_checkpoint_is_self_contained_and_sharded_warm_start",
+        "status": "passed"
+      },
+      {
+        "name": "tests.components.test_mlx_boundaries.test_stalled_reader_large_payload_respects_deadline",
+        "status": "passed"
+      },
+      {
+        "name": "tests.components.test_mlx_boundaries.test_architecture_and_asset_budget_precede_model_loading",
+        "status": "passed"
+      }
+    ]
+  },
+  "mandatory_mps": {
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 1,
+    "seconds": 13.962,
+    "skip_reasons": [],
+    "deselected": 24,
+    "deselection_source": "Terminal pytest log; JUnit does not encode deselections",
+    "cases": [
+      {
+        "name": "tests.components.test_transformers_training.test_required_accelerator_trainer_hardware",
+        "status": "passed"
+      }
+    ]
+  },
+  "affected_service": {
+    "tests": 376,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 13,
+    "passed": 363,
+    "seconds": 7.328,
+    "skip_reasons": [
+      {
+        "reason": "collection skipped",
+        "count": 1
+      },
+      {
+        "reason": "Negative availability observation uses the non-Mac service interpreter",
+        "count": 1
+      },
+      {
+        "reason": "could not import 'torch': No module named 'torch'",
+        "count": 7
+      },
+      {
+        "reason": "Real CUDA acceptance requires the CUDA backend interpreter",
+        "count": 1
+      },
+      {
+        "reason": "could not import 'zenml': No module named 'zenml'",
+        "count": 3
+      }
+    ],
+    "deselected": 0,
+    "deselection_source": "Terminal pytest log; JUnit does not encode deselections"
+  },
+  "frontend": {
+    "tests": 357,
+    "passed": 357,
+    "failed": 0,
+    "skipped": 0
+  },
+  "source_verification": {
+    "examples/pretrained-small/recipe.json": {
+      "commit": "0e825487ef94fa613e1606f458177ad009b1a5cf",
+      "closure_count": 114,
+      "mismatches": []
+    },
+    "examples/custom-pytorch/recipe.json": {
+      "commit": "0e825487ef94fa613e1606f458177ad009b1a5cf",
+      "closure_count": 114,
+      "mismatches": []
+    }
+  },
+  "source_wheel_identity": {
+    "source": "49217f1c7c3ff93685b1dc6ee12944308776a514e860dea52eeece76710c3812",
+    "installed_wheel": "49217f1c7c3ff93685b1dc6ee12944308776a514e860dea52eeece76710c3812",
+    "equal": true
+  },
+  "native_runs": [
+    {
+      "mode": "full",
+      "project_id": "cd62c0be-50c9-4b9b-a312-bc742486bb9b",
+      "recipe_id": "15edc9ad-b963-59b7-916e-202faacaf75b",
+      "backend_run_id": "ea3d6a61-9245-4d41-beae-2dee9b9365f5",
+      "live_devices": [
+        "mlx-cpu",
+        "mlx-cpu"
+      ],
+      "process_group_terminated": true,
+      "cancelled_group_terminated": true,
+      "deadline": {
+        "timed_out": true,
+        "process_group_terminated": true,
+        "worker_exit_code": 124
+      }
+    },
+    {
+      "mode": "lora",
+      "project_id": "aad58fb3-86b6-4d5a-adeb-c8e3c3fc2a68",
+      "recipe_id": "36d9eea2-afef-55ce-9f34-0064d9cb7e2c",
+      "backend_run_id": "14c484bf-b26f-4f40-9b66-216277f9b4e7",
+      "live_devices": [
+        "mlx-cpu",
+        "mlx-cpu"
+      ],
+      "process_group_terminated": true,
+      "cancelled_group_terminated": true,
+      "deadline": null
+    }
+  ],
+  "independent_exports": [
+    {
+      "mode": "full",
+      "native_backend_run_id": "ea3d6a61-9245-4d41-beae-2dee9b9365f5",
+      "installed_runtime_source_identity": "49217f1c7c3ff93685b1dc6ee12944308776a514e860dea52eeece76710c3812",
+      "execution": {
+        "device": "mlx-metal",
+        "framework": "mlx",
+        "metal_available": true,
+        "packages": {
+          "annotated-doc": "0.0.5",
+          "anyio": "4.15.1",
+          "certifi": "2026.7.22",
+          "click": "8.5.0",
+          "filelock": "4.1.1",
+          "fsspec": "2026.9.0",
+          "h11": "0.16.0",
+          "hf-xet": "1.7.0",
+          "httpcore": "1.0.9",
+          "httpx": "0.28.1",
+          "huggingface-hub": "1.33.0",
+          "idna": "3.20",
+          "jinja2": "3.1.6",
+          "markdown-it-py": "4.2.0",
+          "markupsafe": "3.0.4",
+          "mdurl": "0.1.2",
+          "mlx": "0.32.3",
+          "mlx-lm": "0.32.0",
+          "mlx-metal": "0.32.3",
+          "numpy": "2.5.4",
+          "packaging": "26.3",
+          "protobuf": "7.36.2",
+          "pygments": "2.21.0",
+          "pyyaml": "6.0.3",
+          "regex": "2026.9.29",
+          "rich": "15.0.0",
+          "safetensors": "0.8.0",
+          "sentencepiece": "0.2.2",
+          "shellingham": "1.5.4",
+          "tokenizers": "0.22.2",
+          "tqdm": "4.70.1",
+          "transformers": "5.7.0",
+          "typer": "0.27.3",
+          "typing-extensions": "4.16.0"
+        },
+        "profile_sha256": "f408bef35d4c867e2b634ac066cc73a4197bc60214dfd1f22cb57683fb2b68bb",
+        "python": "3.12.14",
+        "versions": {
+          "mlx": "0.32.3",
+          "mlx-lm": "0.32.0",
+          "mlx-metal": "0.32.3",
+          "transformers": "5.7.0"
+        }
+      },
+      "export_verification": {
+        "atol": 1e-06,
+        "fresh_process": true,
+        "max_abs_difference": 0.0,
+        "passed": true,
+        "rtol": 0
+      },
+      "export_assets": [
+        {
+          "path": "config.json",
+          "sha256": "fa5916f02415bde30000e256c7173257ba12c1778afc54033c156f9f59ec1001"
+        },
+        {
+          "path": "loader.py",
+          "sha256": "25b5e75355a345555b7555489fbc533eebf1145090ab22d963a5ba5bccbd9870"
+        },
+        {
+          "path": "model.safetensors",
+          "sha256": "fe2e0b62a64f62b165f953c2eacc6242e7f7ff6612a3334e0a0829d515c23bb4"
+        },
+        {
+          "path": "model.safetensors.index.json",
+          "sha256": "ff7d1bdcb16c8bd9054343b13e9046404495573ff1d110a39f6b3949e3d53789"
+        },
+        {
+          "path": "parity-input.json",
+          "sha256": "2d6341e262fff80c7cdd95a1e7897a4f97a62e170302cce310533ed5d9fec7a6"
+        },
+        {
+          "path": "tokenizer.json",
+          "sha256": "7666e9fc18e5dffa8249f94a636059b53fcc9db303d2f409ba78d3b188892f8f"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "sha256": "0d08bc30c7d0a028721a776eb9d592d7f9eb35e51539ac0e9b62c73048cedfbe"
+        }
+      ],
+      "independent_environment_versions": {
+        "mlx": "0.32.3",
+        "mlx-metal": "0.32.3",
+        "mlx-lm": "0.32.0",
+        "transformers": "5.7.0"
+      },
+      "independent_export_loader_sha256": "25b5e75355a345555b7555489fbc533eebf1145090ab22d963a5ba5bccbd9870",
+      "independent_reload": {
+        "passed": true,
+        "atol": 1e-06,
+        "max_abs_difference": 0.0,
+        "logit_count": 48
+      }
+    },
+    {
+      "mode": "lora",
+      "native_backend_run_id": "14c484bf-b26f-4f40-9b66-216277f9b4e7",
+      "installed_runtime_source_identity": "49217f1c7c3ff93685b1dc6ee12944308776a514e860dea52eeece76710c3812",
+      "execution": {
+        "device": "mlx-metal",
+        "framework": "mlx",
+        "metal_available": true,
+        "packages": {
+          "annotated-doc": "0.0.5",
+          "anyio": "4.15.1",
+          "certifi": "2026.7.22",
+          "click": "8.5.0",
+          "filelock": "4.1.1",
+          "fsspec": "2026.9.0",
+          "h11": "0.16.0",
+          "hf-xet": "1.7.0",
+          "httpcore": "1.0.9",
+          "httpx": "0.28.1",
+          "huggingface-hub": "1.33.0",
+          "idna": "3.20",
+          "jinja2": "3.1.6",
+          "markdown-it-py": "4.2.0",
+          "markupsafe": "3.0.4",
+          "mdurl": "0.1.2",
+          "mlx": "0.32.3",
+          "mlx-lm": "0.32.0",
+          "mlx-metal": "0.32.3",
+          "numpy": "2.5.4",
+          "packaging": "26.3",
+          "protobuf": "7.36.2",
+          "pygments": "2.21.0",
+          "pyyaml": "6.0.3",
+          "regex": "2026.9.29",
+          "rich": "15.0.0",
+          "safetensors": "0.8.0",
+          "sentencepiece": "0.2.2",
+          "shellingham": "1.5.4",
+          "tokenizers": "0.22.2",
+          "tqdm": "4.70.1",
+          "transformers": "5.7.0",
+          "typer": "0.27.3",
+          "typing-extensions": "4.16.0"
+        },
+        "profile_sha256": "f408bef35d4c867e2b634ac066cc73a4197bc60214dfd1f22cb57683fb2b68bb",
+        "python": "3.12.14",
+        "versions": {
+          "mlx": "0.32.3",
+          "mlx-lm": "0.32.0",
+          "mlx-metal": "0.32.3",
+          "transformers": "5.7.0"
+        }
+      },
+      "export_verification": {
+        "atol": 1e-06,
+        "fresh_process": true,
+        "max_abs_difference": 0.0,
+        "passed": true,
+        "rtol": 0
+      },
+      "export_assets": [
+        {
+          "path": "config.json",
+          "sha256": "fa5916f02415bde30000e256c7173257ba12c1778afc54033c156f9f59ec1001"
+        },
+        {
+          "path": "loader.py",
+          "sha256": "25b5e75355a345555b7555489fbc533eebf1145090ab22d963a5ba5bccbd9870"
+        },
+        {
+          "path": "model.safetensors",
+          "sha256": "89183e89a295ca939d5e41eed7aea959b26f15b3f3de39d5a84c50add48e2332"
+        },
+        {
+          "path": "model.safetensors.index.json",
+          "sha256": "ff7d1bdcb16c8bd9054343b13e9046404495573ff1d110a39f6b3949e3d53789"
+        },
+        {
+          "path": "parity-input.json",
+          "sha256": "2d6341e262fff80c7cdd95a1e7897a4f97a62e170302cce310533ed5d9fec7a6"
+        },
+        {
+          "path": "tokenizer.json",
+          "sha256": "7666e9fc18e5dffa8249f94a636059b53fcc9db303d2f409ba78d3b188892f8f"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "sha256": "0d08bc30c7d0a028721a776eb9d592d7f9eb35e51539ac0e9b62c73048cedfbe"
+        }
+      ],
+      "independent_environment_versions": {
+        "mlx": "0.32.3",
+        "mlx-metal": "0.32.3",
+        "mlx-lm": "0.32.0",
+        "transformers": "5.7.0"
+      },
+      "independent_export_loader_sha256": "25b5e75355a345555b7555489fbc533eebf1145090ab22d963a5ba5bccbd9870",
+      "independent_reload": {
+        "passed": true,
+        "atol": 1e-06,
+        "max_abs_difference": 0.0,
+        "logit_count": 48
+      }
+    }
+  ],
+  "limitations": [
+    "Native MLX live evaluation records mlx-cpu; MLX training/export records mlx-metal. Mandatory MPS Trainer is a separate gate.",
+    "The earlier MLX invocation failed before creating a native job because the output parent was absent; the corrected native-mlx-verified run is accepted.",
+    "An earlier affected-service invocation named a nonexistent file and collected zero; the corrected 363-pass/13-skip run is accepted.",
+    "Prior native GUI work stopped when the Mac relocked; no current GUI pass is inferred.",
+    "The installed wheel is runtime packaging evidence, not a single-app installer.",
+    "No general CUDA, other-platform, model-quality or full-product claim."
+  ],
+  "profile_packages": 34
+}

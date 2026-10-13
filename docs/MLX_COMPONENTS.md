@@ -8,11 +8,14 @@ run process group.
 
 ## Supported profile and setup
 
-The reviewed profile is **macOS ARM64, Python 3.12.14**, with MLX/MLX-Metal
+The reviewed profile is **macOS 26 or later on ARM64, Python 3.12.14**, with MLX/MLX-Metal
 0.32.3, MLX-LM 0.32.0 and Transformers 5.7.0. All 34 worker distributions are
 version- and hash-locked. This environment is separate from the service and the
 Torch/Transformers 4.57.1/ZenML backend; do not install its lock into either of
-those environments. Linux, Intel macOS and Windows MLX execution are unsupported.
+those environments. The pinned MLX and MLX-Metal 0.32.3 wheels target
+`macosx_26_0_arm64`; this OS minimum belongs to the optional MLX worker profile,
+not the global application minimum. Linux, Intel macOS and Windows MLX execution
+are unsupported.
 
 Using the repository's pinned Python and official bootstrap tools:
 

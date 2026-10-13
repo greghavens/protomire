@@ -1,6 +1,93 @@
 # Current verification and remaining gates
 
-## 2026-10-13 local aggregate passed; product gates remain
+## 2026-10-13 frozen merged runtime: local aggregate and Mac runtime gates passed
+
+The full product remains incomplete. Candidate
+`5b38d9602b6f8ae36fc0dcaf28f0a6da8c8f7d4a` pins runtime
+`0e825487ef94fa613e1606f458177ad009b1a5cf`; both shipping recipes and the
+working-tree runtime match the complete **114-file** source/lock closure.
+This candidate was pushed to `main` and the remote SHA was verified at
+**2026-10-13 02:33:08 UTC**; publication of source does not establish an installer
+or release. Integrated changes include bounded native stage concurrency, isolated MLX
+training/evaluation/export, and verified legacy pretrained tokenizer assets.
+
+### Linux aggregate and installed-wheel replay
+
+- The complete local `scripts/test_all.sh` run **exited 0**. Light selection:
+  **2,058 passed, 137 skipped, 84 deselected** in **86.29 seconds**. Original
+  frontend: **357 passed**; TypeScript/compile and four workbench HTTP harnesses
+  passed. Required local PDF/OCR HTTP/MCP and native component-authoring harnesses
+  passed. Offline, socket-blocked Modal SDK construction: **3 passed**.
+- The four-group native queue completed in **1,923.375 seconds**, below its
+  2,100-second deadline: lifecycle **30 passed** (1,232.05 seconds); integration
+  **50 passed, 43 deselected** (1,526.02 seconds); components **373 passed,
+  8 skipped** (346.54 seconds); concurrency **18 passed, 4 deselected**
+  (395.53 seconds). Every group exited 0; cleanup completed with **zero signaled
+  processes**. Component skips are four required MLX boundary cases, two MLX
+  service cases, one accelerator-Trainer gate and one actual-CUDA gate.
+- Independent installed-wheel replay passed **35/35 comparisons per fixture**,
+  including exact hashes for **8 custom and 12 pretrained outputs**. Four fresh
+  environments/native stores, before/after source and installed-byte checks,
+  and all four worker terminations were verified. The actual complete portability
+  suite passed **224 tests, zero skips**. Linux replay imports MLX inertly;
+  native MLX hardware evidence is the separately scoped Mac result below.
+
+See the [compact acceptance evidence](../evidence/product-completion-20261013/acceptance-0e82548/README.md)
+for terminal counts, cleanup, output hashes, source inventory and original receipt
+hashes. Light, native and focused selections overlap; counts are not added as
+unique coverage. Later uncommitted distribution/frontend changes and their
+separate test results are not covered by this original 357-test aggregate.
+
+### Exact-candidate Mac runtime acceptance
+
+The same `5b38d96` / `0e82548` candidate was materialized and all 114 pinned files
+verified on an **Apple M3 Max, arm64** Mac, without runtime edits. The incoming
+archive hash and all **107 manifest members** were independently checked here.
+The pinned MLX/MLX-Metal 0.32.3 wheel tags require **macOS 26+ ARM64** for that
+optional worker profile; this is not a global app OS minimum.
+
+- **6 required MLX tests passed**, covering native full/LoRA service pipelines,
+  actual export, warm-start, cancellation, export-descendant deadline termination
+  and four boundary regressions. Training/export records **mlx-metal**; durable
+  live-evaluation records correctly identify **mlx-cpu**.
+- **1 mandatory MPS Trainer test passed, 24 deselected**. Affected service and
+  placement/recipe selections: **363 passed, 13 skipped**. Exact-candidate
+  frontend: **357 passed**. Optional-runtime skips remain recorded as skips.
+- A fresh installed service wheel matched frozen runtime identity. A second
+  independent **34-package MLX environment** loaded full and LoRA exports;
+  both matched **48 logits exactly, maximum difference 0.0**. This is installed
+  runtime/export portability evidence, not a single-app installer.
+- Earlier missing-directory and nonexistent-test-file invocations remain failed
+  attempts; corrected runs passed without runtime changes. Prior native GUI
+  interaction stopped when the Mac relocked. Hardware results do not establish
+  a current native GUI pass.
+
+Details: [Mac runtime receipt](../evidence/product-completion-20261013/acceptance-0e82548/mac-runtime.json).
+
+### Remaining release and product gates
+
+- Single-app installer, managed service/MCP startup and current native GUI
+  acceptance remain separate work. Later packaging changes need their own
+  validation before any installer/release claim.
+- Actual CUDA execution, Linux ARM64/Windows acceptance and complete
+  cross-platform release verification remain unestablished. CPU queue passes and
+  specific Mac MPS/MLX results do not imply general accelerator acceptance.
+- The native Modal bridge is offline-tested. Production dispatch remains blocked
+  by source-image provenance and authoritative all-in billing/runtime limits.
+  Live authenticated vendor assistant calls and online tracking remain separate
+  unverified gates.
+- The host cannot establish required isolated worker namespaces. Resource limits
+  and trusted-source worker isolation are not a hostile-code sandbox.
+  Source licensing/redistribution clearance remains unresolved.
+- Hosted CI remains disabled by owner instruction. These checks ran locally;
+  no hosted-CI or paid-cloud pass is claimed.
+
+Earlier results below are preserved only at their named source checkpoints.
+They do not substitute for current runtime, GUI or packaging acceptance.
+
+---
+
+## Historical d51a90d / 106-file aggregate, recorded 2026-10-13
 
 The full product remains incomplete. This frozen runtime checkpoint implements
 Transformers Trainer/inference components, streaming datasets, conditional live

@@ -4,31 +4,33 @@
 
 Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
-## Current 2026-10-13 local aggregate and focused verification
+## Current 2026-10-13 frozen merged runtime
 
-Runtime remains `d51a90d93df4a150c088c2d9800c340168b911b4`; shipping manifests at
-`bdafebeb736a3839294755c2f2ba223a42cdd5b4` retain the complete 106-file runtime/lock
-closure. Aggregate test checkpoint `4154a2fdd6e5fed67f840ba6c9316cf06ccb3e46`
-adds the test-only
-held-discovery correction and documentation updates, without changing runtime
-bytes or shipping pins.
+Candidate `5b38d9602b6f8ae36fc0dcaf28f0a6da8c8f7d4a` pins
+`0e825487ef94fa613e1606f458177ad009b1a5cf`, the verified **114-file** runtime/lock
+closure. The complete local aggregate exited 0. Exact-candidate Mac runtime
+checks passed separately. [Compact evidence and scope](../evidence/product-completion-20261013/acceptance-0e82548/README.md)
+retain source hashes, terminal results and cleanup.
 
 | Scope | Current status | Evidence and limits |
 |---|---|---|
-| Complete native bounded-iteration file | PASS, focused suite | `tests/iterations/test_native_iterations.py`: 12 passed, zero skipped, 339.737 seconds. All 14 native job workers reaped and process groups terminated; runtime/test hashes unchanged. `evidence/tests/native-iterations/combined-d51a90d.json`. |
-| Complete CPU component preflight | PASS, focused group with skips | 373 passed, 2 skipped; runner exit 0 and `cleanup.complete: true`. `evidence/product-completion-20261012/component-preflight/runner.json` and adjacent `results.xml`. |
-| Complete local aggregate rerun | PASS, declared Linux CPU selections; exit 0 | Light: 1,952 passed, 136 skipped, 63 deselected in 82.68 seconds. Frontend: 349 passed. Separate offline Modal SDK construction: 3 passed, without live provider calls. [Preserved final aggregate evidence](../evidence/product-completion-20261012/final-local-ci/summary.json). |
-| Final combined native queue | PASS, all groups exit 0 | Lifecycle: 24 passed in 1,219.55 seconds. Service/native integration: 50 passed, 43 deselected in 1,484.27 seconds. Components: 373 passed, 2 skipped in 338.99 seconds. Queue completed in 1,561.526 seconds; cleanup complete, zero signaled processes. Runner and per-group receipts are recorded in the [preserved final aggregate evidence](../evidence/product-completion-20261012/final-local-ci/summary.json). The two skips are accelerator-Trainer and actual-CUDA hardware gates. |
-| Mac backend/service checks | PASS, separate Mac-local selections | Apple M3 Max, arm64, macOS 26.6.2: 45 backend passes and 64 service passes after a local snapshot-path fix. Mac fixes are not yet integrated into frozen `d51a90d`; this is not complete Mac runtime acceptance. |
-| Mac native software smoke | PASS, 8 smoke checks; full GUI gates remain | Source-built Code - OSS passed 8 native software smoke checks. The earlier workspace-trust timeout remains an unsuccessful attempt; later smoke passes do not establish all native GUI gates. |
-| Accelerator execution and MLX | PARTIAL: mandatory Mac MPS test passed | The separate Mac task has 1 mandatory MPS test pass. Actual CUDA remains unverified. Mac-local fixes and standalone MLX work are not integrated into the frozen source; no integrated MLX acceptance is claimed. |
+| Complete local Linux aggregate | PASS, declared selections; exit 0 | Light: 2,058 passed, 137 skipped, 84 deselected. Original frontend: 357 passed. Four workbench HTTP harnesses, required research PDF/OCR HTTP/MCP and native component authoring passed. Offline Modal SDK: 3 passed, no provider calls. |
+| Combined native queue | PASS, all four groups exit 0 | Lifecycle 30 passed; integration 50 passed/43 deselected; components 373 passed/8 skipped; concurrency 18 passed/4 deselected. Queue 1,923.375 seconds; cleanup complete, zero signaled processes. Eight skips are six MLX cases, one accelerator-Trainer and one actual CUDA gate. |
+| Installed-wheel Linux replay (T19) | PASS, frozen 114-file runtime | Four fresh environments/native stores; 35/35 comparisons for each fixture; exact 8/12 output hashes; 224 actual portability tests, zero skips; source/installed bytes and worker termination verified. Same Linux CPU host, trusted repository fixtures. |
+| Integrated native MLX | PASS, exact-candidate Mac gates | Six required tests: native full/LoRA pipelines and four boundary regressions. Training/export records mlx-metal; durable live evaluation records mlx-cpu. Actual cancellation and deadline termination checked. |
+| Installed-wheel/independent MLX exports | PASS, exact-candidate Mac gates | Fresh service wheel matches runtime identity; fresh 34-package MLX environment loads full/LoRA exports with maximum logit difference 0.0, 48 logits each. Runtime packaging evidence, not an app installer. |
+| Mac MPS, service and frontend | PASS, declared separate selections | One mandatory MPS Trainer pass/24 deselected; 363 service passes/13 skips; 357 frontend passes. Runtime files unchanged; archive and all 107 handoff manifest members verified. |
+| Single-app installer and managed MCP startup | UNVERIFIED, packaging work separate | Later uncommitted distribution/frontend changes and their separate tests are not the original aggregate or Mac candidate. Fresh assembled-app acceptance still required. |
+| Native GUI | UNVERIFIED for this candidate | Prior Mac native interaction stopped when the machine relocked. Source builds, software smoke, HTTP harnesses and runtime hardware checks do not establish current native GUI acceptance. |
+| Actual CUDA / other-platform releases | UNVERIFIED | Real CUDA is an explicit skip on this host. Specific Mac gates do not establish general accelerator, Linux ARM64 or Windows acceptance. |
+| Live remote provider, assistants and online tracking | BLOCKED / UNVERIFIED | Offline Modal construction makes no execution/billing claim; image provenance and authoritative cost/runtime limits remain gates. Authenticated vendor calls and online tracking require separate acceptance. |
+| Hostile-code isolation / redistribution | BLOCKED / unresolved | Host namespace isolation unavailable; trusted subprocess/resource limits are not a hostile-code sandbox. Source licensing clearance remains unresolved. |
 
-Standalone, preflight, light and native selections overlap; their counts are
-not added as unique coverage. The successful final aggregate does not relabel
-earlier canceled or not-started groups as passes. No full-product completion,
-general accelerator acceptance or hosted CI pass is claimed. Separate Mac
-results and historical results below are not promoted to this frozen Linux
-runtime's aggregate acceptance.
+Overlapping selections are not added as unique coverage. Earlier invocation
+errors and historical results remain scoped to their original attempts. No
+full-product completion, installer/GUI, general accelerator or hosted-CI pass is
+claimed. The previous d51a90d/106-file aggregate is preserved in
+[historical verification](CURRENT_VERIFICATION.md#historical-d51a90d--106-file-aggregate-recorded-2026-10-13).
 
 Historical checkpoint: Direct-main development, Linux x64 CPU execution evidence only. Status names are
 literal: PASS is demonstrated, FAIL is a tested unmet requirement, BLOCKED needs

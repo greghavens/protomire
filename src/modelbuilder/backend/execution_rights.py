@@ -180,6 +180,25 @@ def _validate_envelope(envelope, action, policies, usage_context):
         _error(error.code, error.message, **error.details)
 
 
+def _unreviewed_builtin_origins(recipe):
+    """Known builtin producers attach unresolved lineage without declarations.
+
+    Only their connected asset outputs are predictable before execution. Generic
+    source code and asset-free utilities retain their existing native checks.
+    """
+    producers = {"dataset.synthetic": {"data"}, "dataset.import": {"data"},
+                 "dataset.version.import": {"data"}, "model.initialize": {"initial"},
+                 "model.train": {"checkpoint"}}
+    nodes = {node["id"]: node for node in recipe.get("nodes", [])}
+    edges = list(recipe.get("edges", []))
+    edges.extend(edge for block in recipe.get("bounded_iterations", [])
+                 if block.get("max_iterations", 1) > 1 for edge in block.get("state", []))
+    return [{"reason": "missing_reviewed_generated_origin", "node_id": edge["source_node"],
+             "output_port": edge["source_port"], "consumer_node_id": edge["target_node"]}
+            for edge in edges
+            if edge["source_port"] in producers.get(nodes.get(edge["source_node"], {}).get("kind"), set())]
+
+
 def prepare_authorization(backend, payload, recipe, *, durable=False):
     """Build an inert receipt from service authority, never caller policy fields."""
     if RESERVED_FIELDS & payload.keys():
@@ -191,6 +210,15 @@ def prepare_authorization(backend, payload, recipe, *, durable=False):
     policies = json.loads(authority.policies_json) if authority else {}
     guard = json.loads(authority.store_guard_json) if authority else None
     governed = has_declared_assets(recipe)
+    extensions = recipe.get("extensions", {})
+    if "artifact_rights" in extensions and not isinstance(extensions["artifact_rights"], dict):
+        _error("license_rights_unreviewed", "An explicit artifact rights declaration must be a complete rights envelope")
+    if not governed:
+        unresolved = _unreviewed_builtin_origins(recipe)
+        if unresolved:
+            _error("license_rights_unreviewed",
+                   "Connected builtin dataset/checkpoint outputs require an explicitly reviewed origin before execution",
+                   unresolved=unresolved)
     bound = [item for item in payload.get("resolved_input_bindings", []) if item.get("rights_required") or "rights" in item]
     resume_nodes = [node for node in recipe.get("nodes", []) if node.get("id") == payload.get("resume_node_id")
                     or not payload.get("resume_node_id") and _known_action(node) == "train"] if payload.get("resume_path") else []

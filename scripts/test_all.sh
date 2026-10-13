@@ -6,6 +6,12 @@ case "${MODELBUILDER_NATIVE_TEST_PROCESSES:-1}" in
   1|2) ;;
   *) echo "MODELBUILDER_NATIVE_TEST_PROCESSES must be 1 (serial) or 2 (bounded Linux native queue)" >&2; exit 2 ;;
 esac
+NATIVE_DIAGNOSTIC_ARGS=()
+case "${MODELBUILDER_NATIVE_COLLECT_ALL:-0}" in
+  0) ;;
+  1) NATIVE_DIAGNOSTIC_ARGS=(--continue-on-failure) ;;
+  *) echo "MODELBUILDER_NATIVE_COLLECT_ALL must be 0 or 1" >&2; exit 2 ;;
+esac
 PYTHON="${MODELBUILDER_TEST_PYTHON:-$ROOT/.venv/bin/python}"
 if [[ -x "$ROOT/.venv-tracking/bin/python" ]]; then
   export MODELBUILDER_TRACKING_TEST_PYTHON="$ROOT/.venv-tracking/bin/python"
@@ -88,7 +94,7 @@ PYDOC
   fi
   (cd packages/ide_feature && MODELBUILDER_COMPONENT_NATIVE=1 MODELBUILDER_GUI_PYTHON="$PYTHON" MODELBUILDER_BACKEND_PYTHON="$ROOT/.venv-backend/bin/python" npm run test:component-http) | tee evidence/tests/component-authoring-native.log
   if [[ "${MODELBUILDER_NATIVE_TEST_PROCESSES:-1}" == 2 ]]; then
-    "$PYTHON" scripts/native_test_runner.py --root "$ROOT" --python "$PYTHON"
+    "$PYTHON" scripts/native_test_runner.py --root "$ROOT" --python "$PYTHON" "${NATIVE_DIAGNOSTIC_ARGS[@]}"
   else
     MODELBUILDER_BACKEND_PYTHON="$ROOT/.venv-backend/bin/python" "$PYTHON" -m pytest tests/service/test_real_backend.py tests/integration/test_mcp_training.py tests/security/test_adversarial_review.py tests/integration/test_source_bound_execution.py tests/integration/test_native_multi_output.py tests/integration/test_project_source_execution.py tests/integration/test_bound_dataset_checkpoint_release.py tests/integration/test_source_deadline_hooks.py tests/integration/test_live_mcp_tracking.py tests/datasets/test_mcp_dataset.py tests/datasets/test_native_dataset.py tests/native_cache/test_native_reuse.py tests/conditions/test_native_conditions.py tests/integration/test_admission_live_native.py tests/live_evaluation/test_selected_live_native.py tests/iterations/test_native_iterations.py tests/components/test_runner_native.py -m integration -v --junitxml=evidence/tests/integration.xml | tee evidence/tests/integration.log
     MODELBUILDER_REQUIRE_TRAINER=1 MODELBUILDER_REQUIRE_LOCAL_INFERENCE=1 PYTHONPATH="$ROOT/src" "$ROOT/.venv-backend/bin/python" -m pytest tests/integration/test_cpu_fixtures.py tests/integration/test_native_lifecycle.py tests/integration/test_early_cancellation.py tests/integration/test_builtin_warm_start.py tests/integration/test_model_release_workflow.py tests/integration/test_checkpoint_subgraph.py tests/integration/test_conditional_checkpoint.py tests/integration/test_calibrated_reference_lifecycle.py tests/integration/test_live_reads_during_discovery.py tests/components tests/evaluation tests/live_evaluation tests/scientific/test_derivation.py tests/scientific/test_native_derivation.py tests/datasets/test_reference_atomic_read.py tests/tracking/test_cpu_live_tracking.py tests/placement/test_placement.py tests/placement/test_checkpoint_capabilities.py tests/placement/test_cuda_execution.py tests/integration/test_mlx_service.py --ignore=tests/live_evaluation/test_selected_live_native.py --ignore=tests/iterations/test_native_iterations.py --ignore=tests/components/test_runner_native.py -v --junitxml=evidence/tests/cpu-fixtures.xml | tee evidence/tests/cpu-fixtures.log

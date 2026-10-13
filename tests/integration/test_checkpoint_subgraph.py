@@ -36,8 +36,13 @@ def selector(result, node):
     return {key: entry[key] for key in ("backend_run_id", "node_id", "output_port", "artifact_id", "metric")}
 
 
-def test_train_once_two_benchmarks_export_native_bindings(tmp_path):
-    backend = ZenMLBackend(tmp_path)
+def test_train_once_two_benchmarks_export_native_bindings(tmp_path, monkeypatch):
+    from tests.integration.native_fixture_support import pinned_builtin_source, authorized_backend
+    from tests.components.rights_test_support import local_source_review, write_reviewed_policies
+    source = pinned_builtin_source(tmp_path)
+    monkeypatch.setitem(recipe.__globals__, "SOURCE_ROOT", source)
+    backend = ZenMLBackend(tmp_path, python_executable=str(Path(__file__).resolve().parents[2] / ".venv-backend/bin/python"),
+                           source_root=source, trusted_code_roots=[str(source)])
     project = str(uuid.uuid4())
     body = recipe(steps=3)
     body.update(project_id=project, recipe_id=str(uuid.uuid4()), revision=1)
@@ -49,6 +54,7 @@ def test_train_once_two_benchmarks_export_native_bindings(tmp_path):
     body["nodes"].extend([data, evaluation])
     body["edges"].extend([{"source_node": "benchmark_two", "source_port": "data", "target_node": "evaluate_two", "target_port": "data"},
                           {"source_node": "train", "source_port": "checkpoint", "target_node": "evaluate_two", "target_port": "checkpoint"}])
+    backend = authorized_backend(backend, {"project_id": project, "recipe": body})
     training = request(body, project, ["data", "initial", "train"])
     backend.invoke("run.submit", training)
     trained = wait(backend, training, lambda row: row["status"] == "succeeded" and row["worker_alive"] is False and row["supervisor_alive"] is False)
@@ -157,8 +163,18 @@ def test_train_once_two_benchmarks_export_native_bindings(tmp_path):
         for relative in ("src/modelbuilder/backend/fixtures.py", "pause.py")])
     cancelling_body["nodes"].append({"id": "pause", "kind": "code.python", "inputs": [],
         "outputs": [{"name": "value", "type": "int"}], "parameters": {}, "timeout": 90,
+        "provenance": {"intended_use": "evaluate"},
         "implementation_ref": {"path": "pause.py", "module": "pause_evaluation", "entrypoint": "pause", "commit": commit, "sha256": digest}})
-    cancelling_backend = backend.with_source_workspace(source, trusted=True, dependency_paths={})
+    # Changed test source gets its own bounded review; the original checkpoint's
+    # policy remains available as inherited lineage, never relabeled as new code.
+    policy, rights = local_source_review(source, cancelling_body["source"], project,
+                                        policy_id="test-cancellation-origin")
+    cancelling_body["extensions"]["artifact_rights"] = rights
+    policies = json.loads(backend._execution_rights_authority.policies_json)
+    policies[policy["policy_id"]] = policy
+    policy_store = write_reviewed_policies(backend.root / "test-reviews.sqlite3", policies)
+    cancelling_backend = backend.with_source_workspace(source, trusted=True, dependency_paths={}).with_execution_rights(
+        project_id=project, policies=policies, policy_store_path=policy_store)
     cancelling_request = request(cancelling_body, project, ["data", "pause", "evaluate"], [binding(checkpoint, "evaluate", "checkpoint")])
     cancelling_backend.invoke("run.submit", cancelling_request)
     cancelled = cancelling_backend.invoke("run.cancel", cancelling_request)

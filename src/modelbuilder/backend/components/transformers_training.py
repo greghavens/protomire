@@ -86,7 +86,7 @@ def catalog_entries():
         entries.append({**descriptor, "inputs": ports,
             "outputs": [{"name": name, "type": kind} for name, kind in outputs],
             "adapter": {"module": __name__, "entrypoint": name,
-                "source_binding": "Pin the wrapper in your project's trusted source closure; install the optional Trainer profile.",
+                "source_binding": "Pin the wrapper and select the reviewed Trainer environment profile; supported packaged backends include this overlay.",
                 "example_source": "examples/transformers_training/adapter.py"}, "component_digest": identity(descriptor)})
     return entries
 
@@ -101,7 +101,7 @@ def _versions():
     try:
         return {name: importlib.metadata.version(name) for name in names}
     except importlib.metadata.PackageNotFoundError as error:
-        raise ValueError("Transformers Trainer requires the optional --trainer backend profile") from error
+        raise ValueError("The selected backend requires the pinned Trainer overlay; select its reviewed environment profile") from error
 
 
 @contextmanager
@@ -538,7 +538,7 @@ def export(*, inputs, parameters, context):
             expected = model(**{key: torch.tensor([row[key] for row in features]) for key in features[0]}).logits
         environment = {key: value for key, value in os.environ.items() if key not in {"PYTHONPATH", "PYTHONHOME"}}
         environment.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", OMP_NUM_THREADS="1")
-        subprocess.run([sys.executable, "-I", str(output / "loader.py"), str(output)], check=True,
+        subprocess.run([sys.executable, "-I", "-B", str(output / "loader.py"), str(output)], check=True,
                        capture_output=True, text=True, timeout=parameters["verification_timeout_seconds"], env=environment)
         actual_path = output / "parity-actual.pt"
         actual = torch.load(actual_path, map_location="cpu", weights_only=True)

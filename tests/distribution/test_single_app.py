@@ -29,6 +29,10 @@ def payload(tmp_path):
     (root / "profiles").mkdir()
     shutil.copyfile(lock, root / "profiles" / lock.name)
     value.update(hub_python="hub-python", hub_status="bundled", hub_profile="profiles/" + lock.name, hub_lock_sha256=packaging.digest(lock))
+    trainer = ROOT / "requirements/profiles/trainer.lock"
+    shutil.copyfile(trainer, root / "profiles/trainer.lock")
+    value["trainer_profile"] = {"status": "bundled", "path": "profiles/trainer.lock", "sha256": packaging.digest(trainer),
+                                "backend_lock_sha256": packaging.digest(packaging.lock_path(ROOT, "backend", "linux-x64"))}
     value["files"] = packaging.inventory(root)
     (root / "runtime.json").write_text(json.dumps(value))
     return root
@@ -52,6 +56,10 @@ def app_fixture(root, target):
 def retarget(payload, target):
     value = json.loads((payload / "runtime.json").read_text())
     value["target"] = target
+    if packaging.backend_reason(target):
+        value["trainer_profile"] = {"status": "unsupported_target", "reason": packaging.backend_reason(target)}
+    else:
+        value["trainer_profile"]["backend_lock_sha256"] = packaging.digest(packaging.lock_path(ROOT, "backend", target))
     previous = payload / value["hub_profile"]
     previous.unlink()
     lock = packaging.lock_path(ROOT, "hub", target)
@@ -109,7 +117,8 @@ def test_inventory_rejects_external_symlink(payload, tmp_path):
         packaging.inventory(payload)
 
 
-def test_application_not_built_cannot_be_packaged(tmp_path):
+def test_application_not_built_cannot_be_packaged(tmp_path, monkeypatch):
+    monkeypatch.setattr(packaging, "detect_target", lambda: "linux-x64")
     app = app_fixture(tmp_path / "upstream", "linux-x64")
     with pytest.raises(ValueError, match="staged single-app"):
         packaging.package(app, tmp_path / "output", "linux-x64")
@@ -226,6 +235,7 @@ def test_seal_probes_only_after_original_location_disappears_and_restores(payloa
         return {"version": [3, 12, 14], "modules": {"modelbuilder.hub_sdk_worker": "worker.py"}}
     monkeypatch.setattr(packaging, "probe_python", fake_probe)
     monkeypatch.setattr(packaging, "probe_hub", lambda moved, manifest, worker: {"offline_worker": "passed"})
+    monkeypatch.setattr(packaging, "probe_trainer", lambda moved, manifest: {"native_execution": "requires_native_acceptance"})
     monkeypatch.setattr(packaging.subprocess, "check_output", lambda command, **kwargs: str(Path(command[0]).parent / "git-helpers") + "\n")
     def fake_restore(git, archive, destination, commit, shallow):
         assert not payload.exists() and " relocated " in str(archive)
@@ -393,6 +403,11 @@ def test_builder_installs_target_hub_closure_offline_without_application_wheel(t
     monkeypatch.setattr(builder.subprocess,'run',lambda command,**kwargs:calls.append(command))
     monkeypatch.setattr(builder,'seal_runtime',lambda root,target:json.loads((root/'runtime.json').read_text()))
     manifest=builder.build_runtime(inputs,tmp_path/'output')
+    trainer=[command for command in calls if command[-1].endswith('trainer.lock')]
+    assert len(trainer)==1 and 'backend-python' in trainer[0][0]
+    assert all(flag in trainer[0] for flag in ['-B','--no-index','--no-deps','--only-binary=:all:','--require-hashes'])
+    assert manifest['trainer_profile']['status']=='bundled'
+    assert manifest['trainer_profile']['sha256']==packaging.digest(ROOT/'requirements/profiles/trainer.lock')
     assert manifest['hub_status']=='bundled' and manifest['hub_profile']=='profiles/hub-linux-x64.lock'
     assert manifest['hub_python_provenance']['version']=='3.12.14'
     hub=[command for command in calls if 'hub-python' in command[0]]
@@ -400,3 +415,47 @@ def test_builder_installs_target_hub_closure_offline_without_application_wheel(t
     assert all(flag in hub[0] for flag in ['--no-index','--only-binary=:all:','--require-hashes','--isolated'])
     assert hub[0][-1].endswith('hub-linux-x64.lock')
     assert packaging.digest(tmp_path/'output'/manifest['hub_profile'])==manifest['hub_lock_sha256']
+
+
+def test_mandatory_hub_os_floor_is_preserved_while_optional_mlx_is_separate():
+    assert builder.required_macos_floor({"service":"11.0", "backend":"14.0", "hub":"15.0", "mlx":"26.0"}) == "15.0"
+
+
+def test_trainer_overlay_required_exact_and_unsupported_targets_explicit(payload):
+    value=json.loads((payload/'runtime.json').read_text())
+    assert packaging.validate_trainer_profile(payload,value,'linux-x64')['status']=='bundled'
+    missing={**value,'trainer_profile':{}}
+    with pytest.raises(ValueError,match='exact overlay'):
+        packaging.validate_trainer_profile(payload,missing,'linux-x64')
+    wrong={**value,'trainer_profile':{**value['trainer_profile'],'backend_lock_sha256':'0'*64}}
+    with pytest.raises(ValueError,match='complete target backend'):
+        packaging.validate_trainer_profile(payload,wrong,'linux-x64')
+    for target in ['win32-x64','win32-arm64','darwin-x64','linux-armhf']:
+        assert packaging.plan(target)['trainer_profile']['status']=='unsupported_target'
+        with pytest.raises(ValueError,match='unsupported local-backend'):
+            packaging.validate_trainer_profile(payload,value,target)
+
+
+def test_trainer_probe_runs_from_moved_prefix_and_rejects_wrong_installed_overlay(payload,monkeypatch):
+    value=json.loads((payload/'runtime.json').read_text())
+    calls=[]
+    def probe(root,python,modules,version):
+        calls.append((root,python,modules,version))
+        return {'modules':dict.fromkeys(modules,'fixture.py')}
+    monkeypatch.setattr(packaging,'probe_python',probe)
+    import re
+    versions={}
+    for lock in [packaging.lock_path(ROOT,'backend','linux-x64'),ROOT/'requirements/profiles/trainer.lock']:
+        versions.update(dict(re.findall(r'^([A-Za-z0-9_.-]+)==([A-Za-z0-9.+!-]+)(?:\s|$)',lock.read_text(),re.M)))
+    class Result:
+        stdout=json.dumps({name:{'version':version,'root':str(payload)} for name,version in versions.items()})
+    def run(command,**kwargs):
+        assert command[:3]==[str(payload/'backend'),'-I','-B']
+        return Result()
+    monkeypatch.setattr(packaging.subprocess,'run',run)
+    assert packaging.probe_trainer(payload,value)['packages']['accelerate']=='1.11.0'
+    assert calls[0][2]==['accelerate','transformers.trainer']
+    versions['accelerate']='0.0.0'
+    Result.stdout=json.dumps({name:{'version':version,'root':str(payload)} for name,version in versions.items()})
+    with pytest.raises(ValueError,match='sealed hash locks'):
+        packaging.probe_trainer(payload,value)

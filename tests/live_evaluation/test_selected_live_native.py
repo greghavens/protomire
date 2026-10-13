@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from modelbuilder.api import create_app
 from modelbuilder.models import Actor
 from modelbuilder.service import OperationService
+from tests.integration.native_fixture_support import synthetic_review, register_project_review
 from modelbuilder.backend import ZenMLBackend
 from modelbuilder.backend.common import read_json
 
@@ -42,10 +43,13 @@ def test_selected_training_evaluator_cut_publishes_scores_before_later_training_
     for node in recipe["nodes"]:
         if isinstance(node.get("implementation_ref"), dict):
             node["implementation_ref"]["commit"] = commit
+        if node["kind"] == "dataset.synthetic":
+            node.setdefault("provenance", {})["intended_use"] = "train"
         if node["kind"] == "model.train":
             node["parameters"].update(steps=4 if trainer_only else 12, step_delay=1.2)
     recipe.pop("project_id", None)
     recipe.pop("recipe_id", None)
+    review = synthetic_review(recipe, "pending-live", source)
     backend = ZenMLBackend(tmp_path / "native", python_executable=str(PYTHON), source_root=source)
     service = OperationService(tmp_path / "service.sqlite", backend)
     client = TestClient(create_app(service, {"test-owner": Actor("owner", {"read", "modify", "execute"})}))
@@ -54,6 +58,7 @@ def test_selected_training_evaluator_cut_publishes_scores_before_later_training_
         assert response.status_code == 200, response.text
         return response.json()
     project = call("project.create", slug="selected-live", model_name="CPU fixture", recipe=recipe, idempotency_key="project")
+    register_project_review(service, review, project["project_id"])
     recipe = call("recipe.get", project_id=project["project_id"], recipe_id=project["recipe_id"])
     base = {"project_id": project["project_id"], "recipe_id": project["recipe_id"], "expected_revision": recipe["revision"], "trusted": True}
     nodes, pins = ["data", "initial", "train", "evaluate"], []

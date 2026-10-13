@@ -8,6 +8,9 @@ import time
 
 import pytest
 
+from tests.integration.native_fixture_support import synthetic_review
+from tests.components.rights_test_support import write_reviewed_policies
+
 ROOT = Path(__file__).resolve().parents[2]
 pytestmark = [pytest.mark.integration, pytest.mark.skipif(
     not (ROOT / ".venv-backend/bin/python").is_file(), reason="Pinned backend is not installed")]
@@ -50,6 +53,8 @@ async def test_mcp_real_training_and_service_crash(tmp_path):
                 if node["kind"] == "model.train":
                     node["parameters"]["steps"] = 30
                     node["parameters"]["step_delay"] = 0.15
+            policy = synthetic_review(manifest, project_id, ROOT)
+            write_reviewed_policies(directory / "service.sqlite3", {policy["policy_id"]: policy})
             recipe = await call("recipe_create", {"project_id": project_id, "recipe": manifest,
                 "expected_revision": draft["revision"], "idempotency_key": "r"})
             assert recipe["recipe_id"] == draft["recipe_id"] == project["recipe_id"]

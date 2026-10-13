@@ -365,7 +365,7 @@ def live_branch_setup(tmp_path, gate_value, evaluate, cancel):
         'implementation_ref': {**gate_ref, 'module': 'live_gate', 'entrypoint': 'gate', 'commit': commit},
         'inputs': [], 'outputs': [{'name': 'allowed', 'type': 'bool'}], 'parameters': {'value': gate_value},
         'environment_ref': 'default', 'resource_request': {'gpu': 0}, 'timeout': 30,
-        'retry': {'max_attempts': 1, 'backoff_seconds': 0}, 'cache_policy': 'disabled', 'provenance': {}})
+        'retry': {'max_attempts': 1, 'backoff_seconds': 0}, 'cache_policy': 'disabled', 'provenance': {'intended_use': 'train'}})
     for node in recipe['nodes']:
         if node['id'] in {'train', 'evaluate'}:
             node['condition'] = {'source_node': 'gate', 'source_port': 'allowed',
@@ -374,8 +374,10 @@ def live_branch_setup(tmp_path, gate_value, evaluate, cancel):
             node['parameters'].update(steps=30 if cancel else (12 if evaluate and gate_value else 3),
                                       step_delay=1.2 if evaluate and gate_value else 0)
     backend = ZenMLBackend(tmp_path / 'state', python_executable=str(PYTHON), source_root=source, trusted_code_roots=[str(source)])
-    return backend, {'project_id': project, 'recipe': recipe, 'trusted': True, 'max_runtime_seconds': 150,
-                     'execution': {'node_ids': ['data', 'initial', 'gate', 'train', 'evaluate'], 'input_bindings': []}}
+    payload = {'project_id': project, 'recipe': recipe, 'trusted': True, 'max_runtime_seconds': 150,
+               'execution': {'node_ids': ['data', 'initial', 'gate', 'train', 'evaluate'], 'input_bindings': []}}
+    from tests.integration.native_fixture_support import authorized_backend
+    return authorized_backend(backend, payload), payload
 
 
 @pytest.mark.parametrize('gate_value,evaluate,cancel', [(True, True, False), (True, False, False), (False, True, False), (True, True, True)])
@@ -421,6 +423,12 @@ def test_native_conditional_live_evaluation_honors_gate_before_first_checkpoint(
             assert seen and observed_step is not None, (evaluations, events)
             for row in seen:
                 assert row['evaluation_records']['validation_loss']['treatment']['checkpoint'] == row['checkpoint_digest']
+                from modelbuilder.backend.components import read_checkpoint
+                snapshot = job / 'live_evaluation/checkpoints' / row['checkpoint_id']
+                manifest = read_checkpoint(snapshot)
+                assert not manifest['rights']['unresolved']
+                assert manifest['rights']['sources'] == payload['recipe']['extensions']['artifact_rights']['sources']
+                assert hashlib.sha256((snapshot / 'checkpoint.pt').read_bytes()).hexdigest() == row['checkpoint_digest']
             assert result['conditional_execution']['evaluate']['status'] == 'eligible'
             later = list_events(job)['events']
             if not cancel:
@@ -433,3 +441,44 @@ def test_native_conditional_live_evaluation_honors_gate_before_first_checkpoint(
     finally:
         if not read_json(job / 'state.json').get('worker_reaped'):
             backend.invoke('run.cancel', request)
+
+
+@pytest.mark.parametrize('change', ['missing_rights', 'revoked'])
+def test_builtin_live_subprocess_blocks_unreviewed_or_revoked_snapshot(tmp_path, change):
+    """Use the actual evaluator process; no mock of dispatch or Torch deserialization."""
+    script = '''import json,sys
+from pathlib import Path
+sys.path[:0] = [sys.argv[1], str(Path(sys.argv[1]) / 'src')]
+from tests.live_evaluation.test_fixture_snapshot_rights import fixture
+from modelbuilder.backend.live_evaluation import LiveEvaluationCoordinator, list_evaluations
+from modelbuilder.store import SQLiteStore
+from modelbuilder.hub_rights import digest
+root, descriptor, policy, spec = fixture(Path(sys.argv[2]))
+change = sys.argv[3]
+if change == 'missing_rights':
+    descriptor.pop('rights')
+    (root / 'checkpoint.manifest.json').write_text(json.dumps(descriptor))
+else:
+    policy.update(status='revoked', revision=2)
+    policy['review_digest'] = digest({key:value for key,value in policy.items() if key != 'review_digest'})
+    store = SQLiteStore(spec['rights_authorization']['policy_store_guard']['path'])
+    store.put('hub_license_policy', policy['policy_id'], policy['project_id'], policy, expected_revision=1)
+    store.close()
+job = Path(sys.argv[2]) / 'native-evaluator'
+coordinator = LiveEvaluationCoordinator(job, 'train', {'kind':'fixture', 'spec':spec, 'data':{}, 'parameters':{}}, timeout_seconds=30)
+try:
+    coordinator.checkpoint_ready(root, step=2, purpose='last')
+finally:
+    coordinator.close()
+rows = list_evaluations(job)['evaluations']
+assert len(rows) == 1 and rows[0]['status'] == 'failed', rows
+expected = 'no reviewed rights lineage' if change == 'missing_rights' else 'reviewed policy revision or status changed'
+assert expected in rows[0]['error']['message'], rows
+assert rows[0]['metrics'] == {} and rows[0]['evaluation_records'] == {}, rows
+assert not list((job / 'evaluations').glob('*/output/result.json'))
+print(json.dumps(rows[0]))
+'''
+    completed = subprocess.run([str(PYTHON), '-I', '-B', '-c', script, str(ROOT), str(tmp_path), change],
+                               capture_output=True, text=True, timeout=60)
+    assert completed.returncode == 0, (completed.stdout, completed.stderr)
+    assert json.loads(completed.stdout.splitlines()[-1])['status'] == 'failed'

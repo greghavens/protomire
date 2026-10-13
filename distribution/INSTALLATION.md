@@ -214,3 +214,23 @@ planned bytes and available/reserved space at start and retry. Lowering or
 changing the setting invalidates old publication previews/approvals and requests
 cancellation of active project transfers, with the same reconciliation caveat as
 account changes.
+
+### Bundled Trainer and immutable runtime files
+
+Supported packaged backends (Linux x64/arm64 and macOS arm64) include the
+reviewed `trainer.lock` overlay in addition to the complete native backend lock.
+The builder installs it from the hash-verified offline wheelhouse. Sealing moves
+the runtime and verifies both lock identities, exact installed versions and
+package locations, including `accelerate` and Transformers Trainer imports.
+Other targets report the backend/Trainer capability as unsupported. Recipes can
+select the corresponding reviewed environment profile, which records both the
+base `lock_file` and `trainer_profile` in source and replay identity. Import and
+metadata checks do not substitute for native bundled Trainer/MPS acceptance.
+
+Managed Python launches disable bytecode with `-B` (including isolated `-I`
+launches, which ignore Python environment variables). Service/backend mutable
+cache and temporary files use private app state outside the sealed payload.
+Strict verification rejects added executable or bytecode files; it never makes
+exceptions for arbitrary unsealed caches. Native acceptance drivers must also
+use `-B` when running the bundled interpreters. The mandatory Hub profile counts
+toward the base macOS minimum; the optional MLX minimum remains independent.

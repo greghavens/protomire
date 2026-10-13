@@ -1,0 +1,89 @@
+{
+  "candidate": "e658e32a4c3e20750b3f389ddf2b3886d6bcc343",
+  "runtime": "9ade0e893a4ffaa3ba81c78d463fd7dbc70735ec",
+  "source_files": 149,
+  "complete_product": false,
+  "aggregate": {
+    "exit_code": 1,
+    "light": {
+      "passed": 2546,
+      "skipped": 140,
+      "deselected": 86
+    },
+    "frontend": {
+      "passed": 480
+    },
+    "offline_hub_sdk": {
+      "passed": 16
+    },
+    "native_groups": [
+      {
+        "name": "cpu-lifecycle",
+        "status": "canceled",
+        "returncode": -15
+      },
+      {
+        "name": "integration",
+        "status": "failed",
+        "returncode": 1
+      },
+      {
+        "name": "cpu-components",
+        "status": "not_started",
+        "returncode": null
+      },
+      {
+        "name": "cpu-concurrency",
+        "status": "not_started",
+        "returncode": null
+      }
+    ],
+    "integration": {
+      "passed": 25,
+      "failed": 26,
+      "deselected": 43
+    },
+    "cleanup": {
+      "complete": true,
+      "signaled_processes": 3
+    }
+  },
+  "independent_reviewed_custom_replay": {
+    "checks_passed": 35,
+    "checks_total": 35,
+    "exact_outputs": 10,
+    "fresh_environments": 4,
+    "source_files_verified": 149,
+    "installed_service_files_verified": 111,
+    "installed_backend_files_verified": 86,
+    "workers_terminated": true
+  },
+  "mac_interim": {
+    "moved_prefix_files": 47466,
+    "managed_lifecycle_mcp_passed": 5,
+    "frontend_passed": 480,
+    "mps_bootstrap_not_bundled_passed": 1,
+    "mlx_corrected_invocation_passed": 4,
+    "mlx_corrected_invocation_failed": 2,
+    "mlx_initial_full_lora_pipeline_passed": true,
+    "mlx_warmstart_new_dataset_review_blocked": true,
+    "gui_locked": true,
+    "installer_pass": false
+  },
+  "genuine_regressions": [
+    "Internal cache revalidation rejected persisted rights fields",
+    "Builtin live checkpoint snapshots omitted checkpoint manifest/rights",
+    "Mac internal license temporary path rejected OS alias",
+    "Bundled backend omitted Trainer overlay"
+  ],
+  "external_pretrained_rights": "unresolved; no fabricated approval",
+  "first_run_evidence_sha256": {
+    "unit-service-mcp.xml": "c3cab5c8920aa0026352ebb339b1fa95b64e3c4f9887ebc04860c8f41e592e66",
+    "aggregate.log": "ed5ced43e9a053c02c19edd7d2d6e0f6a6457638bd534c2f515b994b3ebd2ec6",
+    "native-runner.json": "b223c86d38b74dd4f2a0880e7eb737ce248a4f821818c2964f37fcc82ff2fe1e",
+    "integration.xml": "5a6c7219df1e9fefaa464cb5a89c0442440686a456a58ffbaf7d15660fe7b0f9",
+    "integration.log": "558884d22a5ad17141d798d86c715e603522edd1db6ded56c617a76c0bbf1387",
+    "hub-sdk.xml": "9de81f2b9145ef18f89e542257cf8d2f197363c9296af2f2473eead575e5c62e",
+    "cpu-lifecycle.log": "96f24b899586849fa4f8e060bf2687ed10ce3ecd6908da87b413dacaf00621e2"
+  }
+}

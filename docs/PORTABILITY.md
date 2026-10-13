@@ -4,15 +4,41 @@
 
 1. `export` verifies selected source against an existing Git commit and produces an integrity-checked recipe archive.
 2. `import` validates and extracts only declared, hash-checked text into a new directory. `wheel` packages those bytes as ordinary wheels without importing bundled modules or running build hooks. Neither installs dependencies, fetches resources, or executes model code.
-3. `run --trust-repository-source` is a separate, explicit action for reviewed repository-owned CPU fixtures. It uses the same `OperationService` import/submit/status operations as the IDE and MCP. It is not an untrusted-code sandbox.
+3. `prepare` imports into a new receiving project and records a non-executing plan. `plan` rechecks that preparation. `run-prepared --trust-repository-source` separately submits an exact current reviewed revision/digest through the normal service. Source trust never grants asset rights. The original `run` convenience command still creates a fresh project, and now records a structured blocked result before submission when rights are missing. None of these commands is an untrusted-code sandbox.
 
 The archive includes the full application Python source, both base dependency locks, all target-specific and optional profile locks, `pyproject.toml`, and the replay command. No original absolute paths, datasets, model weights, secrets, installed environments, or `.pth` path-sharing files are included. Git revision plus per-file SHA256 identify the source; a bundle hash alone does not authenticate its publisher.
 
+## Receiving-project rights review and replay
+
+An unreviewed custom fixture now blocks in `run.plan` before launch: its connected builtin dataset/checkpoint outputs would carry unresolved local-origin lineage. A synthetic label, repository ownership claim, source-trust flag, or a policy object inside recipe extensions does not authorize use. Public pretrained resources still require exact reviewed license evidence for every declared upstream file. `prepare` and `plan` never submit, grant rights, download resources, or launch native workers; `BLOCKED` is a useful preview result, not execution success.
+
+```sh
+SERVICE_PYTHON -I SOURCE/scripts/replay_bundle.py prepare SOURCE \
+  --data-dir NEW_DATA --backend-python BACKEND_PYTHON \
+  --trust-repository-source --output prepared.json
+SERVICE_PYTHON -I SOURCE/scripts/replay_bundle.py plan prepared.json \
+  --trust-repository-source --output plan.json
+# Only after a separate authorized review in the SAME receiving project:
+SERVICE_PYTHON -I SOURCE/scripts/replay_bundle.py run-prepared prepared.json \
+  --expected-revision REVIEWED_REVISION --expected-digest REVIEWED_DIGEST \
+  --trust-repository-source --output execution.json
+```
+
+Use `execution_revision` and `execution_digest` from a fresh executable plan. Preparation records project, recipe, source, interpreter and store identity in that receiving store; editing the JSON receipt cannot supply policy authority. Reopening checks the original immutable transport and allows only explicit rights/usage-context changes to the owned recipe. Source, graph, environment, parameters or other changes require a new preparation. Normal submission checks current project policies, exact source closure, use context and revocation again, including at native dispatch. The CLI actor retains only read/modify/execute scopes.
+
+The currently supported authorized source-review path is an operator-configured, project-bound Git checkout: `project.source.bind`, `hub.license.local.inspect` (all pinned source files plus actual selected terms), `hub.license.review` (an independently authorized publish-scope reviewer explicitly supplies terms, uses, context and obligations), then `hub.source.policy.bind`. Configure the receiving service's source workspace alias and project-specific Hub publication source alias to the same exact root. This is a local review, not a provider publication. It changes only the receiving project's policy and future recipe lineage; historical revisions remain intact.
+
+**Remaining gate:** extracted portable snapshots intentionally have no Git repository. The current source-review API requires a bound Git checkout, so `prepare` can inspect and truthfully block a Git-free snapshot but cannot itself establish a new source-origin review for it. A separately authorized snapshot-evidence review intake is not implemented. Do not write policy rows by hand or import an arbitrary policy JSON as a workaround. Existing reviewed receiving-project policies are read from their durable service store, never trusted from the bundle.
+
+Retries for the same preparation + execution revision + digest reconcile the same service idempotency key. Receipts state whether that operation was already recorded before the submit call. An explicitly selected later reviewed recipe revision has a different key; uncertain retries never silently choose a new one. Failures at preparation, import, plan or submit write the requested JSON, including the error and transcript. A submit exception records `submit_attempted: true`, `submitted: null` until acknowledgment, and any service operation ID/dispatch state; it never claims an uncertain launch did not happen. Timeout receipts preserve cancellation/termination uncertainty.
+
+Strict output comparison includes provenance bytes. Independently created reviews can have different policy IDs and timestamps, so a successful authorized run does not by itself establish byte-for-byte equivalence with another independently reviewed run. Historical exact replay evidence used explicitly test-owned matching provenance, and is not new user or third-party rights approval.
+
 ## One model project, one recipe identity
 
-The replay creates a model project, reads its already-owned recipe, and imports the portable training/evaluation pipeline as the next immutable revision of that same recipe. It sends `bundle_json` through the strict raw-JSON operation contract with `expected_revision`. Import remains inert; the explicit run action executes the imported revision.
+The replay creates a model project, reads its already-owned recipe, and imports the portable training/evaluation pipeline as the next immutable revision of that same recipe. It sends `bundle_json` through the strict raw-JSON operation contract with `expected_revision`. Import remains inert; the explicit run action executes the selected current revision after independent receiving-project rights review.
 
-The harness verifies that the project retains its recipe ID, exactly one recipe remains listed, the original revision is unchanged, and execution provenance identifies the exact imported recipe ID, revision and digest. Origin and replay have different project IDs because their application/native stores are independent; each project has one stable recipe identity throughout its own lifecycle. The `model.initialize` node explicitly selects the custom or pretrained fixture. Dataset compatibility is validated separately.
+The harness verifies that the project retains its recipe ID, exactly one recipe remains listed, the original revision is unchanged, and execution provenance identifies the exact selected execution recipe ID, revision and digest while retaining the imported identity separately. Origin and replay have different project IDs because their application/native stores are independent; each project has one stable recipe identity throughout its own lifecycle. The `model.initialize` node explicitly selects the custom or pretrained fixture. Dataset compatibility is validated separately.
 
 ## Why there are two environments per execution
 
@@ -40,7 +66,7 @@ Here `NEW_EVIDENCE` must identify a new output directory. The harness checks its
 
 The separately captured `final-offline-installation.json` inventory is original-run evidence and is not regenerated by the reproduction script. Reruns retain fresh `uv` synchronization, installation and dependency-check logs under the new work directory, plus distribution inventories in the actual origin/replay records; a regenerated summary explicitly notes this structured-inventory limitation.
 
-The following Linux x64 custom-fixture walkthrough uses the same hash-locked service/backend profiles and optional Trainer overlay. It requires those packages in the local cache. Paths are local CLI arguments, not manifest fields.
+The following Linux x64 walkthrough prepares blocked shipping-fixture previews; it does not claim a reviewed replay succeeds. It uses the same hash-locked service/backend profiles and optional Trainer overlay. It requires those packages in the local cache. Paths are local CLI arguments, not manifest fields.
 
 ```bash
 set -euo pipefail
@@ -82,17 +108,16 @@ for name in .venv-portability-origin-backend .venv-replay-backend; do
 done
 
 # -I ignores caller PYTHONPATH/user site; neither environment is editable.
-.venv-portability-origin/bin/python -I "$WORK/origin-source/scripts/replay_bundle.py" run \
+.venv-portability-origin/bin/python -I "$WORK/origin-source/scripts/replay_bundle.py" prepare \
   "$WORK/origin-source" --data-dir "$WORK/origin-data" \
   --backend-python "$ROOT/.venv-portability-origin-backend/bin/python" \
-  --trust-repository-source --output evidence/portability/custom-origin.json
-.venv-replay/bin/python -I "$WORK/replay-source/scripts/replay_bundle.py" run \
+  --trust-repository-source --output evidence/portability/custom-origin-prepared.json
+.venv-replay/bin/python -I "$WORK/replay-source/scripts/replay_bundle.py" prepare \
   "$WORK/replay-source" --data-dir "$WORK/replay-data" \
   --backend-python "$ROOT/.venv-replay-backend/bin/python" \
-  --trust-repository-source --output evidence/portability/custom-replay.json
-.venv-replay/bin/python -I "$WORK/replay-source/scripts/replay_bundle.py" compare \
-  evidence/portability/custom-origin.json evidence/portability/custom-replay.json \
-  --output evidence/portability/custom-comparison.json
+  --trust-repository-source --output evidence/portability/custom-replay-prepared.json
+# These Git-free snapshots remain blocked pending an authorized review intake.
+# Compare only actual successful execution receipts, never preview receipts.
 ```
 
 Directories must be new; import and run intentionally refuse to overwrite them. Source packaging is inert, but installing even a reviewed wheel and executing Python require the operator's authorization. This example is local CPU only and creates no cloud resources.

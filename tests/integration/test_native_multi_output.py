@@ -20,6 +20,7 @@ def test_native_component_and_python_multiple_outputs(tmp_path, monkeypatch):
         'inputs': [{'name': 'trained', 'type': 'Path'}, {'name': 'metrics', 'type': 'dict'}],
         'outputs': [{'name': 'weight', 'type': 'float'}, {'name': 'updates', 'type': 'int'}], 'parameters': {}})
     recipe['nodes'][-1].update({key: train[key] for key in ('environment_ref', 'resource_request', 'cache_policy', 'timeout', 'retry', 'provenance')})
+    recipe['nodes'][-1]['provenance'] = {'intended_use': 'evaluate'}
     recipe['edges'] = [{'source_node': 'train', 'source_port': port, 'target_node': 'split', 'target_port': port}
                        for port in ('trained', 'metrics')]
     backend = ZenMLBackend(tmp_path / 'state', python_executable=str(fixture.PYTHON), source_root=source,
@@ -29,6 +30,7 @@ def test_native_component_and_python_multiple_outputs(tmp_path, monkeypatch):
         return service.invoke(name, payload, fixture.OWNER)
     try:
         project = call('project.create', slug='multiple', model_name='Multiple outputs', recipe=recipe, idempotency_key='project')
+        fixture.register_source_review(service, project, source, recipe)
         saved = call('recipe.get', project_id=project['project_id'], recipe_id=project['recipe_id'])
         submitted = call('run.submit', project_id=project['project_id'], recipe_id=project['recipe_id'],
                          expected_revision=1, trusted=True, idempotency_key='run')

@@ -32,7 +32,7 @@ def main(job: Path, lease_fd: int | None = None) -> None:
     from .tracking_bridge import training_environment, LiveTracking
     live_tracking = LiveTracking(job)
     with (job / "worker.log").open("a") as log:
-        process = subprocess.Popen([sys.executable, "-m", "modelbuilder.backend.worker", str(job)],
+        process = subprocess.Popen([sys.executable, "-B", "-m", "modelbuilder.backend.worker", str(job)],
                                    stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True,
                                    env=training_environment(),
                                    pass_fds=(lease_fd,) if lease_fd is not None else ())

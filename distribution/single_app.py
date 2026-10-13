@@ -70,6 +70,8 @@ def plan(target: str, root: Path = ROOT) -> dict:
             "core": "mandatory bundled operation service and per-consumer project-scoped read-only MCP",
             "build_status": "not_built", "release_status": "private_unsigned_development_only",
             "native_local_backend": backend_reason(target) or "requires_native_acceptance",
+            "trainer_profile": {"status": "unsupported_target" if backend_reason(target) else "required_bundled_overlay",
+                                "path": "requirements/profiles/trainer.lock", "native_execution": "not_run"},
             "requirements": ["native Code OSS package", "sealed relocatable Python/runtime payload", "bundled Git and notices",
                              "source bundle", "native artifact smoke and clean-machine acceptance"]}
 
@@ -151,6 +153,42 @@ def probe_hub(root: Path, manifest: dict, worker: str) -> dict:
     return {**result, "locked_packages": pins, "offline_worker": "passed"}
 
 
+def validate_trainer_profile(root: Path, manifest: dict, target: str) -> dict:
+    profile = manifest.get("trainer_profile", {})
+    if not isinstance(profile, dict):
+        raise ValueError("Trainer profile metadata is missing or invalid")
+    if backend_reason(target):
+        if profile.get("status") != "unsupported_target":
+            raise ValueError("Trainer must explicitly report the unsupported local-backend target")
+        return profile
+    expected = ROOT / "requirements/profiles/trainer.lock"
+    if (profile.get("status") != "bundled" or profile.get("path") != "profiles/trainer.lock"
+            or profile.get("sha256") != digest(expected)
+            or digest(relative_file(root, profile["path"])) != digest(expected)
+            or profile.get("backend_lock_sha256") != digest(lock_path(ROOT, "backend", target))):
+        raise ValueError("Bundled Trainer requires the exact overlay and complete target backend lock")
+    return profile
+
+
+def probe_trainer(root: Path, manifest: dict) -> dict:
+    result = probe_python(root, manifest["backend_python"], ["accelerate", "transformers.trainer"], manifest["python_version"])
+    python = relative_file(root, manifest["backend_python"])
+    pins = {}
+    for profile in (lock_path(ROOT, "backend", manifest["target"]), ROOT / "requirements/profiles/trainer.lock"):
+        for name, version in re.findall(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9.+!-]+)(?:\s|$)", profile.read_text(), re.M):
+            if name in pins and pins[name] != version:
+                raise ValueError("Trainer overlay conflicts with its complete backend profile")
+            pins[name] = version
+    code = ("import importlib.metadata as m,json; names=" + repr(list(pins)) + "; "
+            "print(json.dumps({name:{'version':m.version(name),'root':str(m.distribution(name).locate_file(''))} for name in names}))")
+    found = json.loads(subprocess.run([str(python), "-I", "-B", "-c", code], capture_output=True, text=True,
+                                     check=True, timeout=30, env={key: value for key, value in os.environ.items() if key in {"PATH", "SYSTEMROOT", "WINDIR", "LANG"}}).stdout)
+    if any(found.get(name, {}).get("version") != version or not Path(found[name]["root"]).resolve().is_relative_to(root.resolve()) for name, version in pins.items()):
+        raise ValueError("Installed Trainer/backend closure differs from its sealed hash locks")
+    return {**result, "packages": pins, "profile_sha256": manifest["trainer_profile"]["sha256"],
+            "backend_lock_sha256": manifest["trainer_profile"]["backend_lock_sha256"], "native_execution": "requires_native_acceptance"}
+
+
 def seal_runtime(root: Path, target: str) -> dict:
     """Seal builder-supplied, reviewed native runtime trees; no network resolution."""
     target = validate_target(target)
@@ -170,6 +208,7 @@ def seal_runtime(root: Path, target: str) -> dict:
         raise ValueError("Runtime interpreter declaration must match the repository's exact Python pin")
     safe_version(manifest.get("application_version"))
     hub_profile = validate_hub_profile(root, manifest, target)
+    validate_trainer_profile(root, manifest, target)
     provenance_fields = ["service_python_provenance", "git_provenance"]
     if hub_profile:
         provenance_fields.append("hub_python_provenance")
@@ -198,6 +237,7 @@ def seal_runtime(root: Path, target: str) -> dict:
         probes = {"service": probe_python(moved, manifest["service_python"], ["modelbuilder.api", "modelbuilder.mcp_server", "psutil"] + (["modelbuilder.hub_sdk_worker"] if hub_profile else []), expected_version)}
         if backend_reason(target) is None:
             probes["backend"] = probe_python(moved, manifest["backend_python"], ["modelbuilder.backend.sdk", "zenml", "torch"], expected_version)
+            probes["trainer"] = probe_trainer(moved, manifest)
         if hub_profile:
             probes["hub"] = probe_hub(moved, manifest, probes["service"]["modules"]["modelbuilder.hub_sdk_worker"])
         if manifest.get("mlx_python"):
@@ -258,6 +298,7 @@ def validate_payload(payload: Path, target: str) -> dict:
     if manifest.get("python_version") != (ROOT / ".python-version").read_text().strip():
         raise ValueError("Runtime does not declare the exact pinned interpreter version")
     validate_hub_profile(payload, manifest, target)
+    validate_trainer_profile(payload, manifest, target)
     verify_runtime(payload, manifest)
     if manifest["files"] != inventory(payload):
         raise ValueError("Runtime contains unlisted or missing files; reseal after review")

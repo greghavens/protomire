@@ -160,7 +160,7 @@ def _cleanup(processes, *, grace=2.0, deadline=8.0):
         time.sleep(.05)
 
 
-def run_groups(groups, root, report, *, timeout=MAX_SECONDS):
+def run_groups(groups, root, report, *, timeout=MAX_SECONDS, continue_on_failure=False):
     """Each group is a complete existing pytest selection; run no more than two."""
     # Clear every planned receipt before launch, including groups that may never
     # start after an earlier failure. CI must not upload an older passing receipt.
@@ -227,7 +227,8 @@ def run_groups(groups, root, report, *, timeout=MAX_SECONDS):
                 failed |= record["status"] != "passed"
             if failed:
                 exit_code, reason = 1, "group_failed"
-                break
+                if not continue_on_failure:
+                    break
             if now >= next_heartbeat:
                 print(f"Native queue: {len(running)} running, {len(pending)} waiting; elapsed {int(now - started)}s", flush=True)
                 next_heartbeat = now + 30
@@ -247,6 +248,7 @@ def run_groups(groups, root, report, *, timeout=MAX_SECONDS):
         report.parent.mkdir(parents=True, exist_ok=True)
         report.write_text(json.dumps({"concurrency": 2, "deadline_seconds": timeout, "status": reason,
             "elapsed_seconds": round(time.monotonic() - started, 3), "groups": records,
+            "continue_on_failure": continue_on_failure,
             "cleanup": cleanup, "exit_code": exit_code}, indent=2) + "\n")
         for signum, handler in previous_handlers.items():
             signal.signal(signum, handler)
@@ -291,6 +293,8 @@ def main(argv=None):
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--python", type=Path, default=Path(sys.executable))
     parser.add_argument("--timeout-seconds", type=int, default=MAX_SECONDS)
+    parser.add_argument("--continue-on-failure", action="store_true",
+                        help="Collect remaining groups after a failed group; retain failing exit status and deadline")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     evidence = root / "evidence/tests"
@@ -302,7 +306,8 @@ def main(argv=None):
     report.write_text(json.dumps({"status": "starting", "concurrency": 2}) + "\n")
     temporary = Path(tempfile.mkdtemp(prefix="modelbuilder-native-tests-"))
     try:
-        return run_groups(build_groups(root, args.python, temporary), root, report, timeout=args.timeout_seconds)
+        return run_groups(build_groups(root, args.python, temporary), root, report, timeout=args.timeout_seconds,
+                          continue_on_failure=args.continue_on_failure)
     except Exception as error:
         report.write_text(json.dumps({"status": "setup_failed", "exit_code": 1,
             "error": type(error).__name__, "message": str(error), "groups": []}, indent=2) + "\n")

@@ -175,7 +175,7 @@ def isolated_command(module: str, *arguments: str) -> list[str]:
     """Start only an explicitly named platform module from this installed tree."""
     bootstrap = ("import importlib,sys; sys.path.insert(0, sys.argv.pop(1)); "
                  "importlib.import_module(sys.argv.pop(1)).main()")
-    return [sys.executable, "-I", "-c", bootstrap,
+    return [sys.executable, "-I", "-B", "-c", bootstrap,
             str(Path(__file__).resolve().parents[2]), module, *map(str, arguments)]
 
 

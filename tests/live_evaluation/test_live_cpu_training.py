@@ -11,21 +11,27 @@ torch = pytest.importorskip("torch", reason="Real CPU live evaluation requires t
 from modelbuilder.backend import fixtures  # noqa: E402
 from modelbuilder.backend.live_evaluation import LiveEvaluationCoordinator, list_evaluations, list_events  # noqa: E402
 
+from tests.live_evaluation.fixture_rights import reviewed_fixture  # noqa: E402
+from modelbuilder.backend.fixture_artifacts import input_rights  # noqa: E402
+
 pytestmark = pytest.mark.integration
 
 
 def test_two_real_checkpoint_evaluations_arrive_while_training_is_running(tmp_path):
     job = tmp_path / "cpu-run"
     data = fixtures.dataset({"fixture": "custom", "count": 80})
-    initial = fixtures.initialize(data, {"fixture": "custom", "width": 4}, tmp_path / "initial")
-    coordinator = LiveEvaluationCoordinator(job, "train", {"kind": "fixture", "data": data, "parameters": {}},
+    data, evaluator_spec = reviewed_fixture(tmp_path, data)
+    initial = fixtures.initialize(data, {"fixture": "custom", "width": 4,
+        "_artifact_rights": input_rights(evaluator_spec, data)}, tmp_path / "initial")
+    coordinator = LiveEvaluationCoordinator(job, "train", {"kind": "fixture", "data": data, "parameters": {}, "spec": evaluator_spec},
                                           max_concurrency=1, timeout_seconds=30)
     failures = []
 
     def train():
         try:
             fixtures.train(data, initial, {"steps": 8, "step_delay": 0.8, "checkpoint_interval_steps": 2,
-                                           "_checkpoint_ready": coordinator.checkpoint_ready}, tmp_path / "training")
+                                           "_checkpoint_ready": coordinator.checkpoint_ready,
+                                           "_artifact_rights": input_rights(evaluator_spec, data, [initial])}, tmp_path / "training")
         except BaseException as error:
             failures.append(error)
 

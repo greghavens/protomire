@@ -74,7 +74,7 @@ class HuggingFaceProvider:
             env["HF_HOME"] = temporary
             output = Path(temporary) / "result.json"
             request["result_path"] = str(output)
-            process = subprocess.Popen([self.python, "-I", str(worker)], stdin=subprocess.PIPE,
+            process = subprocess.Popen([self.python, "-I", "-B", str(worker)], stdin=subprocess.PIPE,
                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
             try:
                 process.stdin.write(json.dumps(request, allow_nan=False).encode())

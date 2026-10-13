@@ -219,3 +219,11 @@ Before upgrading an existing local installation, retain a backup of its applicat
 | MCP starts but shows no successful calls | Verify the independent-client trace, service URL, token scopes, and timeout. A process launch or tool list is not an execution acceptance result. |
 
 This increment has no public recipe marketplace, paid remote provider, budget ledger/invoice reconciliation, automatic paper watch, enterprise tenancy, distributed training, or generic safe sandbox for untrusted Python. Custom Python remains a first-class recipe representation, but actual execution is limited to explicitly trusted, hash-verified operator-configured code or shipped fixtures. Import never grants execution trust. Models and datasets are not republished or mirrored into a new hosting service. No Biff repository is modified or trained.
+
+### Collect all native diagnostic groups
+
+Set `MODELBUILDER_NATIVE_COLLECT_ALL=1` with
+`MODELBUILDER_NATIVE_TEST_PROCESSES=2` to continue the bounded local native queue
+after a group fails. This diagnostic mode preserves the failing exit code,
+per-group receipts, the 2,100-second overall deadline and descendant cleanup.
+It does not turn blocked fixtures into passes. The default remains fail-fast.

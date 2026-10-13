@@ -256,26 +256,29 @@ def _snapshot(job: Path, node_id: str, source: Path, step: int | None, purpose: 
         raise ValueError("Checkpoint-ready requires a complete checkpoint directory")
     if source.resolve().is_relative_to(_root(job).resolve()):
         raise ValueError("Cannot republish a live evaluation snapshot as mutable training output")
+    from .components import read_checkpoint
+    descriptor = read_checkpoint(source)
+    if device != "cpu" and "exact_state" in descriptor["resume_modes"]:
+        raise ValueError("Accelerator checkpoint cannot advertise unverified exact_state continuation")
+    names = [asset["path"] for asset in descriptor["assets"]] + ["checkpoint.manifest.json"]
+    if step is None:
+        step = descriptor["step"]
+    if descriptor["step"] != step:
+        raise ValueError("Checkpoint-ready step differs from committed descriptor")
     if evaluator_kind == "fixture":
+        # Preserve the fixture's exact selected .pt identity while publishing its
+        # complete, verified descriptor and all parent rights. A ready marker is
+        # timing evidence only and can never substitute for the committed manifest.
+        from .fixture_artifacts import selected_identity
         if purpose not in {"last", "best"}:
             raise ValueError("Fixture live checkpoint purpose must be last or best")
-        names = ["best.pt" if purpose == "best" else "checkpoint.pt"]
-        descriptor = None
+        checkpoint_digest = selected_identity(descriptor, purpose)
     else:
-        from .components import read_checkpoint
-        descriptor = read_checkpoint(source)
-        if device != "cpu" and "exact_state" in descriptor["resume_modes"]:
-            raise ValueError("Accelerator checkpoint cannot advertise unverified exact_state continuation")
-        names = [asset["path"] for asset in descriptor["assets"]] + ["checkpoint.manifest.json"]
-        if step is None:
-            step = descriptor["step"]
-        if descriptor["step"] != step:
-            raise ValueError("Checkpoint-ready step differs from committed descriptor")
         purpose = descriptor["purpose"]
+        checkpoint_digest = _digest(descriptor)
     if isinstance(step, bool) or not isinstance(step, int) or step < 0:
         raise ValueError("Checkpoint-ready step must be a nonnegative integer")
     before = _inventory(source, names)
-    checkpoint_digest = _digest(descriptor) if descriptor is not None else before[0]["sha256"]
     checkpoint_id = _digest([Path(job).name, node_id, step, purpose, checkpoint_digest])
     parent = _root(job) / "checkpoints"
     parent.mkdir(parents=True, exist_ok=True)

@@ -194,7 +194,11 @@ def execute(action, p, api, *, token=False, sdk=None, session_budget=None):
             raise WorkerError("hub_budget_exceeded")
         documents = []
         for item in candidates:
-            with tempfile.TemporaryDirectory(prefix="modelbuilder-license-") as temporary:
+            # Canonicalize only the OS-selected parent BEFORE allocating our own
+            # exclusive directory (macOS /var is an alias of /private/var).
+            # Caller staging and returned/provider paths remain strictly no-follow.
+            temporary_root = Path(tempfile.gettempdir()).resolve(strict=True)
+            with tempfile.TemporaryDirectory(prefix="modelbuilder-license-", dir=temporary_root) as temporary:
                 result = execute("download", {**p, "commit": repo["commit"], "files": [item], "staging_dir": temporary}, api, sdk=sdk, token=token, session_budget=session_budget)
                 path = result["files"][0]["local_path"]
                 with safe_open(path) as handle:

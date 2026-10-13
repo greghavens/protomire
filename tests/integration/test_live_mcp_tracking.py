@@ -25,6 +25,9 @@ from uuid import UUID
 import httpx
 import pytest
 
+from tests.integration.native_fixture_support import synthetic_review
+from tests.components.rights_test_support import write_reviewed_policies
+
 
 ROOT = Path(__file__).resolve().parents[2]
 BACKEND_PYTHON = ROOT / ".venv-backend/bin/python"
@@ -165,6 +168,8 @@ async def test_source_pinned_mcp_live_evaluation_and_offline_tracking(tmp_path, 
                     node["parameters"].update(steps=STEPS, step_delay=2.5)
                 elif node["kind"] == "dataset.synthetic":
                     node["parameters"]["count"] = 80
+            policy = synthetic_review(manifest, project["project_id"], ROOT)
+            write_reviewed_policies(directory / "service.sqlite3", {policy["policy_id"]: policy})
             recipe = await call("recipe_create", {"project_id": project["project_id"], "recipe": manifest,
                                                    "expected_revision": draft["revision"], "idempotency_key": "recipe"})
             assert recipe["source"] == pinned_source

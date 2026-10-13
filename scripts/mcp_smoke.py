@@ -34,8 +34,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ServiceProcess:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, *, owner_scopes=None):
         self.root = root
+        self.owner_scopes = list(owner_scopes) if owner_scopes is not None else ["read", "modify", "execute"]
         self.owner = secrets.token_urlsafe(32)
         self.reader = secrets.token_urlsafe(32)
         with socket.socket() as listener:
@@ -53,7 +54,7 @@ class ServiceProcess:
             "PYTHONPATH": str(ROOT / "src"),
             "MODELBUILDER_DB_PATH": str(self.root / "service.sqlite3"),
             "MODELBUILDER_TOKENS_JSON": json.dumps({
-                self.owner: {"id": "mcp-acceptance-owner", "scopes": ["read", "modify", "execute"]},
+                self.owner: {"id": "mcp-acceptance-owner", "scopes": self.owner_scopes},
                 self.reader: {"id": "mcp-acceptance-reader", "scopes": ["read"]},
             }),
             "MODELBUILDER_HOST": "127.0.0.1", "MODELBUILDER_PORT": str(self.port),

@@ -12,6 +12,7 @@ from modelbuilder.backend import ZenMLBackend
 from modelbuilder.backend.common import read_json
 from modelbuilder.models import Actor, ServiceError
 from modelbuilder.service import OperationService
+from tests.components.rights_test_support import USAGE_CONTEXT, local_source_review
 
 ROOT = Path(__file__).resolve().parents[2]
 PYTHON = Path(os.environ.get("MODELBUILDER_BACKEND_PYTHON", str(ROOT / ".venv-backend/bin/python")))
@@ -44,7 +45,7 @@ def train(*, inputs, parameters, context):
         "identities": context["identities"], "resume_modes": ["exact_state", "warm_start"],
         "state": ["model", "optimizer", "scheduler", "rng", "data_cursor"],
         "assets": [{"path": "state.json", "sha256": hashlib.sha256((target / "state.json").read_bytes()).hexdigest()}],
-        "metrics": {"loss": loss, "weight": weight}}
+        "metrics": {"loss": loss, "weight": weight}, "rights": context["declared_artifact_rights"]}
     (target / "checkpoint.manifest.json").write_text(json.dumps(descriptor))
     return {"trained": target}
 '''
@@ -70,7 +71,14 @@ def source_recipe(tmp_path, alias, slope):
         "source": {"repository": "https://example.invalid/" + alias, "commit": commit, "files": [{"path": "harness.py", "sha256": digest}]},
         "nodes": [node], "edges": [], "resources": [], "external_dependencies": [], "environment": {"python": "3.12", "requirements": ["zenml==0.97.0"]},
         "evaluation": {}, "outputs": []}
+    _, envelope = local_source_review(source, recipe["source"], recipe["project_id"], policy_id="test-source-" + alias)
+    recipe["extensions"] = {"usage_context": deepcopy(USAGE_CONTEXT), "artifact_rights": envelope}
     return source, recipe
+
+
+def register_source_review(service, project, source, recipe):
+    policy, _ = local_source_review(source, recipe["source"], project["project_id"], policy_id="test-source-" + recipe["name"])
+    service.store.put("hub_license_policy", policy["policy_id"], project["project_id"], policy)
 
 
 def wait(service, project, run):
@@ -105,6 +113,7 @@ def test_two_source_bound_models_native_execution_history_and_resume(tmp_path):
             node["implementation_ref"]["commit"] = "0" * 40
         project = service.invoke("project.create", {"slug": alias, "model_name": alias, "source_alias": alias,
             "source_repository_id": identity["repository_id"], "trusted": True, "recipe": unpinned, "idempotency_key": alias}, OWNER)
+        register_source_review(service, project, source, recipe)
         projects[alias] = project
         fields = {"project_id": project["project_id"], "recipe_id": project["recipe_id"], "expected_revision": 1,
             "expected_project_revision": 1, "source_repository_id": identity["repository_id"],

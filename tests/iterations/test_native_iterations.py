@@ -172,7 +172,13 @@ def training_setup(tmp_path, *, delay=0):
     body['edges'] = [{'source_node': 'train', 'source_port': 'trained', 'target_node': 'evaluate', 'target_port': 'trained'}]
     body['bounded_iterations'] = [{'id': 'improve', 'node_ids': ['train', 'evaluate'], 'max_iterations': 2,
         'state': [{'source_node': 'train', 'source_port': 'trained', 'target_node': 'train', 'target_port': 'previous', 'resume_mode': 'warm_start'}]}]
-    return backend, payload
+    from tests.components.rights_test_support import USAGE_CONTEXT, local_source_review, write_reviewed_policies
+    policy, rights = local_source_review(source, body['source'], payload['project_id'])
+    body['extensions'] = {'usage_context': copy.deepcopy(USAGE_CONTEXT), 'artifact_rights': rights}
+    policies = {policy['policy_id']: policy}
+    policy_store = write_reviewed_policies(tmp_path / 'fixture-reviews.sqlite3', policies)
+    return backend.with_execution_rights(project_id=payload['project_id'], policies=policies,
+                                        policy_store_path=policy_store), payload
 
 
 def test_native_training_evaluation_feedback_exact_checkpoint_selectors_and_warm_start(tmp_path):

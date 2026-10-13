@@ -103,6 +103,18 @@ def verify_runtime(root: Path, manifest: dict) -> None:
     files = manifest.get("files")
     if not isinstance(files, dict) or not files:
         raise CoreError("Bundled core runtime has no integrity inventory")
+    actual_names = set()
+    for entry in root.rglob("*"):
+        if entry == root / "runtime.json":
+            continue
+        if entry.is_symlink() and not entry.resolve().is_relative_to(root.resolve()):
+            raise CoreError("Bundled runtime contains an unsealed redirected entry")
+        if entry.is_file():
+            actual_names.add(entry.relative_to(root).as_posix())
+        elif not entry.is_dir():
+            raise CoreError("Bundled runtime contains an unsealed filesystem entry")
+    if actual_names != set(files):
+        raise CoreError("Bundled runtime contains unlisted or missing files; reinstall or reseal the reviewed payload")
     for name, expected in files.items():
         path = relative_file(root, name)
         with path.open("rb") as handle:
@@ -116,6 +128,16 @@ def service_environment() -> dict[str, str]:
     # Git overrides, proxy redirect or inherited assistant credentials.
     allowed = {"PATH", "LANG", "LC_ALL", "TZ", "SYSTEMROOT", "WINDIR", "TMPDIR", "TMP", "TEMP", "HOME", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "DBUS_SESSION_BUS_ADDRESS", "XDG_RUNTIME_DIR"}
     return {key: value for key, value in os.environ.items() if key in allowed}
+
+
+def runtime_environment(state: Path) -> dict[str, str]:
+    """Caches live in private app state; HOME remains the OS-keyring identity."""
+    cache = private_directory(state / "cache")
+    temporary = private_directory(cache / "tmp")
+    env = service_environment()
+    env.update(XDG_CACHE_HOME=str(cache), HF_HOME=str(cache / "huggingface"), TORCH_HOME=str(cache / "torch"),
+               TMPDIR=str(temporary), TEMP=str(temporary), TMP=str(temporary), PYTHONDONTWRITEBYTECODE="1")
+    return env
 
 
 def restore_source(git: Path, archive: Path, destination: Path, commit: str,
@@ -372,9 +394,9 @@ def acquire(root: Path, state: Path) -> dict:
         return session
     # The spawned service takes the lifetime lock. Simultaneous windows may
     # launch contenders; losers exit without changing state or binding ports.
-    subprocess.Popen([sys.executable, "-I", str(Path(__file__).resolve()), "serve", "--runtime-root", str(root),
+    subprocess.Popen([sys.executable, "-I", "-B", str(Path(__file__).resolve()), "serve", "--runtime-root", str(root),
                       "--state-dir", str(state)], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, env=service_environment(), start_new_session=True, close_fds=True)
+                     stderr=subprocess.DEVNULL, env=runtime_environment(state), start_new_session=True, close_fds=True)
     deadline = time.monotonic() + START_TIMEOUT
     while time.monotonic() < deadline:
         session = discover(state)

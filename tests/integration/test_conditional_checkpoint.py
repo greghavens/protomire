@@ -21,7 +21,7 @@ pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_native_conditions_preserve_selected_checkpoint_and_explicit_comparison(tmp_path):
+def test_native_conditions_preserve_selected_checkpoint_and_explicit_comparison(tmp_path, monkeypatch):
     source = tmp_path / "source"
     for relative in ("src/modelbuilder/backend/fixtures.py", "requirements/backend.lock"):
         target = source / relative
@@ -34,13 +34,14 @@ def test_native_conditions_preserve_selected_checkpoint_and_explicit_comparison(
     commit = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
     files = [{"path": name, "sha256": hashlib.sha256((source / name).read_bytes()).hexdigest()}
              for name in ("src/modelbuilder/backend/fixtures.py", "gate.py")]
+    monkeypatch.setitem(recipe.__globals__, "SOURCE_ROOT", source)
     body = recipe(steps=3)
     project = str(uuid.uuid4())
     body.update(project_id=project, recipe_id=str(uuid.uuid4()), revision=1)
     body["source"].update(repository="urn:sha256:" + files[0]["sha256"], commit=commit, files=files)
     body["nodes"].append({"id": "gate", "kind": "code.python", "inputs": [],
-        "outputs": [{"name": "allowed", "type": "bool"}], "parameters": {}, "timeout": 30, "cache_policy": "enabled",
-        "environment_ref": "default", "resource_request": {"gpu": 0}, "retry": {"max_attempts": 1, "backoff_seconds": 0}, "provenance": {},
+        "outputs": [{"name": "allowed", "type": "bool"}], "parameters": {}, "timeout": 30, "cache_policy": "disabled",
+        "environment_ref": "default", "resource_request": {"gpu": 0}, "retry": {"max_attempts": 1, "backoff_seconds": 0}, "provenance": {"intended_use": "evaluate"},
         "implementation_ref": {**files[1], "module": "conditional_checkpoint_gate", "entrypoint": "gate", "commit": commit}})
     evaluation = next(node for node in body["nodes"] if node["id"] == "evaluate")
     evaluation["condition"] = {"source_node": "gate", "source_port": "allowed", "equals": True}
@@ -55,8 +56,12 @@ def test_native_conditions_preserve_selected_checkpoint_and_explicit_comparison(
     actor = Actor("conditional-checkpoint-owner", {"read", "modify", "execute"})
     def call(operation, **payload):
         return service.invoke(operation, payload, actor)
+    # Governed checkpoint evaluations recheck current reviews on every invocation.
+    from tests.integration.native_fixture_support import synthetic_review, register_project_review
+    policy = synthetic_review(body, project, source)
     created = call("project.create", slug="conditional-checkpoint", model_name="Conditional checkpoint", recipe=body, idempotency_key="project")
     project = created["project_id"]
+    register_project_review(service, policy, project)
     common = {"project_id": project, "recipe_id": created["recipe_id"]}
     def submit(nodes, bindings=()):
         payload = {**common, "expected_revision": 1, "trusted": True,

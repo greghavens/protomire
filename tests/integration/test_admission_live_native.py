@@ -20,6 +20,7 @@ from modelbuilder.backend import admission
 from modelbuilder.backend.common import read_json
 from modelbuilder.models import Actor
 from modelbuilder.service import OperationService
+from tests.integration.native_fixture_support import synthetic_review, register_project_review
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -54,6 +55,7 @@ def test_native_checkpoint_ingestion_during_held_admission(tmp_path, monkeypatch
             node["implementation_ref"]["commit"] = commit
         if node["kind"] == "model.train":
             node["parameters"].update(steps=30, step_delay=.6)
+    review = synthetic_review(recipe, "pending-live", source)
     backend = ZenMLBackend(tmp_path / "native", python_executable=str(python), source_root=source)
     service = OperationService(tmp_path / "service.sqlite3", backend)
     independent = OperationService(service.store.path, backend)
@@ -62,6 +64,7 @@ def test_native_checkpoint_ingestion_during_held_admission(tmp_path, monkeypatch
         return service.invoke(operation, payload, actor)
     project = call("project.create", slug="native-admission", model_name="Live CPU admission",
                    recipe=recipe, idempotency_key="project")
+    register_project_review(service, review, project["project_id"])
     base = {"project_id": project["project_id"], "recipe_id": project["recipe_id"],
             "expected_revision": 1, "trusted": True,
             "execution": {"node_ids": ["data", "initial", "train", "evaluate"], "input_bindings": []}}

@@ -25,8 +25,9 @@ def review(service, payload):
     paths = set(payload["paths"])
     required = {node["implementation_ref"]["path"] for node in current["nodes"]
                 if isinstance(node["implementation_ref"], dict) and "path" in node["implementation_ref"]}
-    if current["environment"].get("lock_file"):
-        required.add(current["environment"]["lock_file"]["path"])
+    for profile in ("lock_file", "mlx_profile", "trainer_profile"):
+        if current["environment"].get(profile):
+            required.add(current["environment"][profile]["path"])
     if required - paths:
         raise ServiceError("source_closure_incomplete", "Include the recipe's implementation and environment lock files",
                            {"required_paths": sorted(required - paths)})

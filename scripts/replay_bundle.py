@@ -232,41 +232,77 @@ def runtime_identity(backend: bool = False) -> dict:
     return result
 
 
-def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: Path,
-               *, trusted: bool = False, pretrained_path: Path | None = None, timeout: float = 600) -> dict:
-    if not trusted:
-        raise ValueError("Execution requires --trust-repository-source after operator review; import is inert")
-    if data_dir.exists():
-        raise ValueError("Replay requires a new metadata/artifact directory")
+PREPARATION_SCHEMA = "modelbuilder.replay-preparation/v1"
+
+
+def _error_record(error):
+    return {"type": type(error).__name__, "code": getattr(error, "code", "replay_error"),
+            "message": str(error), "details": getattr(error, "details", {})}
+
+
+def _replay_result(output, state, action):
+    """All replay stages, including pre-submit failures, leave structured evidence."""
+    try:
+        return action()
+    except Exception as error:
+        details = getattr(error, "details", {})
+        if state.get("submit_attempted") and isinstance(details, dict):
+            state.update({key: details[key] for key in ("operation_id", "dispatch_state") if key in details})
+        write_json(output, {"status": "FAIL", "stage": state.get("stage", "prepare"),
+                            "submitted": state.get("submitted", False), "submit_attempted": state.get("submit_attempted", False),
+                            "error": _error_record(error),
+                            "transcript": state.get("transcript", []),
+                            **{key: state[key] for key in ("preparation", "plan", "operation_id", "dispatch_state", "submission") if key in state},
+                            **state.get("failure", {})})
+        raise
+    finally:
+        if state.get("service") is not None:
+            state["service"].store.close()
+
+
+def _session(source_root, data_dir, backend_python, pretrained_path, state, *, trusted=False):
     from modelbuilder.backend import ZenMLBackend
     from modelbuilder.models import Actor
-    from modelbuilder.recipe import export_bundle
     from modelbuilder.service import OperationService
-    report = verify_source(source_root)
-    data_dir.mkdir(parents=True)
     backend = ZenMLBackend(data_dir, python_executable=str(backend_python.absolute()), source_root=source_root,
                            pretrained_path=str(pretrained_path.resolve()) if pretrained_path else None)
     service = OperationService(db_path=data_dir / "application.sqlite3", backend=backend, source_root=source_root)
+    state["service"] = service
     actor = Actor(id="portable-replay-operator", scopes=frozenset({"read", "modify", "execute"}))
-    transcript = []
+    transcript = state.setdefault("transcript", [])
 
     def call(operation: str, payload: dict) -> dict:
-        result = service.invoke(operation, payload, actor)
+        try:
+            result = service.invoke(operation, payload, actor)
+        except Exception as error:
+            transcript.append({"operation": operation, "error": _error_record(error)})
+            raise
         transcript.append({"operation": operation, "result": result})
         return result
 
+    return {"source_root": source_root, "data_dir": data_dir, "backend_python": backend_python,
+            "pretrained_path": pretrained_path, "service": service, "backend": backend, "call": call,
+            "trusted": trusted, "state": state, "transcript": transcript}
+
+
+def _prepare_session(source_root, data_dir, backend_python, pretrained_path, state, *, trusted):
+    from modelbuilder.models import new_id
+    from modelbuilder.recipe import export_bundle
+    if data_dir.exists():
+        raise ValueError("Replay preparation requires a new metadata/artifact directory")
+    report = verify_source(source_root)
+    data_dir.mkdir(parents=True)
+    session = _session(source_root, data_dir, backend_python, pretrained_path, state, trusted=trusted)
+    call = session["call"]
     project = call("project.create", {"slug": "portable-cpu", "model_name": report["recipe"]["name"],
                                       "idempotency_key": "portable:project"})
     pid = project["project_id"]
     current = call("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"]})
     raw_bundle = json.dumps(export_bundle(report["recipe"], source_root=source_root), allow_nan=False)
     imported = call("recipe.import", {"project_id": pid, "bundle_json": raw_bundle,
-                                      "expected_revision": current["revision"],
-                                      "idempotency_key": "portable:import"})
-    if imported["recipe_id"] != project["recipe_id"]:
-        raise AssertionError("Import created an independent recipe instead of updating the model project recipe")
-    if imported["revision"] != current["revision"] + 1:
-        raise AssertionError("Import did not create the next immutable revision of the owned recipe")
+                                      "expected_revision": current["revision"], "idempotency_key": "portable:import"})
+    if imported["recipe_id"] != project["recipe_id"] or imported["revision"] != current["revision"] + 1:
+        raise AssertionError("Import did not advance the single owned recipe identity")
     if imported["import_report"]["execution_allowed"] is not False:
         raise AssertionError("Import unexpectedly authorized execution")
     original_revision = call("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"],
@@ -274,9 +310,173 @@ def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: 
     recipes = call("recipe.list", {"project_id": pid})
     if original_revision != current or [item["recipe_id"] for item in recipes["recipes"]] != [project["recipe_id"]]:
         raise AssertionError("Import changed historical recipe content or created another recipe identity")
+    execution_recipe = call("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"]})
+    preparation = {"schema_version": PREPARATION_SCHEMA, "preparation_id": new_id(), "revision": 1,
+                   "project_id": pid, "recipe_id": project["recipe_id"],
+                   "source_root": str(source_root.resolve()), "data_dir": str(data_dir.resolve()),
+                   "backend_python": str(backend_python.absolute()),
+                   "pretrained_path": str(pretrained_path.resolve()) if pretrained_path else None,
+                   "transport_recipe_digest": report["digest"], "source_commit": report["recipe"]["source"]["commit"],
+                   "initial_recipe": current, "imported_recipe": execution_recipe}
+    # This records only replay identity/configuration. It is never license authority.
+    session["service"].store.put("replay_preparation", preparation["preparation_id"], pid, preparation)
+    state["preparation"] = preparation
+    session.update(report=report, project=project, pid=pid, current=current, imported=imported,
+                   original_revision=original_revision, recipes=recipes, execution_recipe=execution_recipe,
+                   preparation=preparation)
+    return session
+
+
+def _recipe_without_review(recipe):
+    from copy import deepcopy
+    result = deepcopy(recipe)
+    for key in ("digest", "revision", "created_at", "updated_at"):
+        result.pop(key, None)
+    extensions = result.get("extensions", {})
+    for key in ("artifact_rights", "usage_context"):
+        extensions.pop(key, None)
+    if not extensions:
+        result.pop("extensions", None)
+    return result
+
+
+def _load_session(prepared_path, state, *, trusted):
+    from modelbuilder.models import ServiceError
+    from modelbuilder.store import SQLiteStore
+    prepared = json.loads(prepared_path.read_text())["preparation"]
+    if prepared.get("schema_version") != PREPARATION_SCHEMA:
+        raise ValueError("Unsupported replay preparation")
+    data_dir = Path(prepared["data_dir"])
+    database = data_dir / "application.sqlite3"
+    if not database.is_file():
+        raise ValueError("Receiving project policy store is unavailable")
+    store = SQLiteStore(database)
+    try:
+        authoritative = store.get("replay_preparation", prepared["preparation_id"])
+        if authoritative != prepared:
+            raise ValueError("Preparation differs from the receiving project's recorded identity")
+    finally:
+        store.close()
+    state["preparation"] = prepared
+    source_root = Path(prepared["source_root"])
+    report = verify_source(source_root)
+    if report["digest"] != prepared["transport_recipe_digest"]:
+        raise ValueError("Transported recipe changed after replay preparation")
+    session = _session(source_root, data_dir, Path(prepared["backend_python"]),
+                       Path(prepared["pretrained_path"]) if prepared["pretrained_path"] else None, state, trusted=trusted)
+    call, pid = session["call"], prepared["project_id"]
+    project = call("project.get", {"project_id": pid})
+    current = call("recipe.get", {"project_id": pid, "recipe_id": prepared["recipe_id"]})
+    if project["recipe_id"] != prepared["recipe_id"] or _recipe_without_review(current) != _recipe_without_review(prepared["imported_recipe"]):
+        raise ServiceError("replay_recipe_changed", "Prepared source, graph or execution settings changed; prepare a new replay", status_code=409)
+    binding = project.get("source_binding")
+    if binding:
+        # The operator's explicit trust applies only to this recorded root. The
+        # existing source resolver still checks the exact Git repository identity.
+        from modelbuilder.source_workspace import SourceWorkspaces
+        session["service"].source_workspaces = SourceWorkspaces({binding["alias"]: {
+            "path": str(source_root), "trusted": trusted, "project_ids": [pid]}})
+    original = call("recipe.get", {"project_id": pid, "recipe_id": prepared["recipe_id"],
+                                   "revision": prepared["initial_recipe"]["revision"]})
+    recipes = call("recipe.list", {"project_id": pid})
+    session.update(report=report, project=project, pid=pid, current=prepared["initial_recipe"],
+                   imported=prepared["imported_recipe"], original_revision=original, recipes=recipes,
+                   execution_recipe=current, preparation=prepared)
+    return session
+
+
+def _plan_session(session):
+    state = session["state"]
+    state["stage"] = "plan"
+    recipe = session["execution_recipe"]
+    from modelbuilder.models import ServiceError
+    try:
+        plan = session["call"]("run.plan", {"project_id": session["pid"], "recipe_id": recipe["recipe_id"],
+                                           "trusted": session["trusted"]})
+    except ServiceError as error:
+        plan = {"executable": False, "blocked_reasons": [_error_record(error)]}
+    latest = session["call"]("recipe.get", {"project_id": session["pid"], "recipe_id": recipe["recipe_id"]})
+    if (latest["revision"], latest["digest"]) != (recipe["revision"], recipe["digest"]):
+        plan = {"executable": False, "blocked_reasons": [{"code": "replay_recipe_changed",
+                "message": "Recipe changed while planning; inspect the current revision again", "details": {}}]}
+    state["plan"] = plan
+    return {"status": "PREPARED" if plan.get("executable") is True else "BLOCKED", "execution_allowed": False,
+            "submitted": False, "preparation": session["preparation"], "plan": plan,
+            "execution_revision": recipe["revision"], "execution_digest": recipe["digest"],
+            "transcript": session["transcript"]}
+
+
+def prepare_recipe(source_root, data_dir, backend_python, output, *, trusted=False, pretrained_path=None):
+    state = {"stage": "prepare"}
+    def action():
+        result = _plan_session(_prepare_session(source_root, data_dir, backend_python, pretrained_path, state, trusted=trusted))
+        write_json(output, result)
+        return result
+    return _replay_result(output, state, action)
+
+
+def plan_prepared(prepared_path, output, *, trusted=False):
+    state = {"stage": "load_preparation"}
+    def action():
+        result = _plan_session(_load_session(prepared_path, state, trusted=trusted))
+        write_json(output, result)
+        return result
+    return _replay_result(output, state, action)
+
+
+def _require_plan(session):
+    from modelbuilder.models import ServiceError
+    result = _plan_session(session)
+    if result["plan"].get("executable") is not True:
+        reasons = result["plan"].get("blocked_reasons", [])
+        first = reasons[0] if reasons else {}
+        raise ServiceError(first.get("code", "replay_blocked"), first.get("message", "Replay preflight is blocked"),
+                           {"blocked_reasons": reasons}, 409)
+
+
+def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: Path,
+               *, trusted: bool = False, pretrained_path: Path | None = None, timeout: float = 600) -> dict:
+    state = {"stage": "prepare"}
+    def action():
+        if not trusted:
+            raise ValueError("Execution requires --trust-repository-source after operator review; import is inert")
+        session = _prepare_session(source_root, data_dir, backend_python, pretrained_path, state, trusted=trusted)
+        _require_plan(session)
+        return _execute_session(session, output, timeout)
+    return _replay_result(output, state, action)
+
+
+def run_prepared(prepared_path, output, *, expected_revision, expected_digest, trusted=False, timeout=600):
+    state = {"stage": "load_preparation"}
+    def action():
+        from modelbuilder.models import ServiceError
+        if not trusted:
+            raise ValueError("Execution requires --trust-repository-source after operator review; preparation is inert")
+        session = _load_session(prepared_path, state, trusted=trusted)
+        recipe = session["execution_recipe"]
+        if recipe["revision"] != expected_revision or recipe["digest"] != expected_digest:
+            raise ServiceError("replay_recipe_changed", "Reviewed recipe revision or digest changed; plan again", status_code=409)
+        _require_plan(session)
+        return _execute_session(session, output, timeout)
+    return _replay_result(output, state, action)
+
+
+def _execute_session(session, output, timeout):
+    source_root, data_dir, backend_python, pretrained_path = (session[key] for key in
+        ("source_root", "data_dir", "backend_python", "pretrained_path"))
+    report, project, pid, current, imported, original_revision, recipes, execution_recipe = (session[key] for key in
+        ("report", "project", "pid", "current", "imported", "original_revision", "recipes", "execution_recipe"))
+    call, backend, transcript, state = (session[key] for key in ("call", "backend", "transcript", "state"))
+    key = "portable:run:" + session["preparation"]["preparation_id"] + ":" + str(execution_recipe["revision"]) + ":" + execution_recipe["digest"]
+    prior = session["service"].store.connection.execute(
+        "SELECT result FROM idempotency WHERE actor_id=? AND key=?", ("portable-replay-operator", key)).fetchone()
+    submission = {"idempotency_key": key, "existing_operation_recorded_before_submit": prior is not None,
+                  "retry_semantics": "same_preparation_revision_digest_reconciles_existing_operation"}
+    state.update(stage="submit", submit_attempted=True, submitted=None, submission=submission)
     submitted = call("run.submit", {"project_id": pid, "recipe_id": imported["recipe_id"],
-                                    "expected_revision": imported["revision"], "trusted": True,
-                                    "idempotency_key": "portable:run"})
+                                    "expected_revision": execution_recipe["revision"], "trusted": True,
+                                    "idempotency_key": key})
+    state.update(stage="poll", submitted=True, operation_id=submitted["operation_id"])
     deadline = time.monotonic() + timeout
     payload = {"project_id": pid, "operation_id": submitted["operation_id"]}
     while True:
@@ -285,26 +485,28 @@ def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: 
             break
         if time.monotonic() > deadline:
             try:
-                cancelled = call("run.cancel", {**payload, "idempotency_key": "portable:timeout-cancel"})
+                cancelled = call("run.cancel", {**payload, "idempotency_key": "portable:timeout-cancel:" + submitted["operation_id"]})
             except Exception as error:
-                write_json(output, {"status": "FAIL", "reason": "timeout", "transcript": transcript,
+                state["failure"] = {"status": "FAIL", "reason": "timeout", "transcript": transcript,
                                     "cancellation_error": {"type": type(error).__name__, "message": str(error)},
-                                    "termination_confirmed": False})
+                                    "termination_confirmed": False}
                 raise TimeoutError("Replay timed out; cancellation failed, so worker termination is unconfirmed") from error
-            write_json(output, {"status": "FAIL", "reason": "timeout", "cancellation": cancelled, "transcript": transcript})
+            state["failure"] = {"status": "FAIL", "reason": "timeout", "cancellation": cancelled, "transcript": transcript}
             raise TimeoutError("Replay timed out; cancellation result recorded")
         time.sleep(1)
     if status["status"] != "succeeded":
-        write_json(output, {"status": "FAIL", "run": status, "transcript": transcript,
-                            "logs": call("run.logs", payload)})
+        state["failure"] = {"status": "FAIL", "run": status, "transcript": transcript,
+                            "logs": call("run.logs", payload)}
         raise RuntimeError("Replay failed; see result and native worker logs")
+    state["stage"] = "verify_results"
     recipe_identity = {"project_id": pid, "project_recipe_id": project["recipe_id"],
                        "imported_recipe_id": imported["recipe_id"], "listed_recipe_ids": [r["recipe_id"] for r in recipes["recipes"]],
                        "initial_revision": current["revision"], "imported_revision": imported["revision"],
                        "original_revision_unchanged": original_revision == current,
                        "run_recipe_id": status.get("recipe_id"), "run_recipe_revision": status.get("recipe_revision"),
                        "run_recipe_digest": status.get("recipe_digest"), "native_executed_recipe_digest": status.get("executed_recipe_digest"),
-                       "imported_recipe_digest": imported["digest"]}
+                       "imported_recipe_digest": imported["digest"],
+                       "execution_revision": execution_recipe["revision"], "execution_digest": execution_recipe["digest"]}
     if not valid_recipe_identity(recipe_identity):
         raise AssertionError("Run provenance does not identify the single owned recipe and its exact imported revision")
     # Probe the same interpreter/environment used by SDK and native workers.
@@ -330,12 +532,12 @@ def run_recipe(source_root: Path, data_dir: Path, backend_python: Path, output: 
     hashes = {str(path.relative_to(job / "outputs")): sha256(path.read_bytes())
               for path in sorted((job / "outputs").rglob("*")) if path.is_file()}
     result = {"status": "PASS", "source_commit": report["recipe"]["source"]["commit"],
-              "transport_recipe_digest": report["digest"], "executed_recipe_digest": imported["digest"],
+              "transport_recipe_digest": report["digest"], "executed_recipe_digest": execution_recipe["digest"],
               "source_root": str(source_root.resolve()), "data_dir": str(data_dir.resolve()),
               "import_execution_allowed": False, "import_transport": "bundle_json", "service_identity": service_identity,
               "backend_identity": backend_identity, "run": status, "output_sha256": hashes,
               "installed_source_verified": True, "external_resource_sha256": external_hashes,
-              "recipe_identity": recipe_identity,
+              "recipe_identity": recipe_identity, "preparation": session["preparation"], "submission": submission,
               "transcript": transcript, "unresolved_dependencies_at_import": report["unresolved_dependencies"]}
     write_json(output, result)
     return result
@@ -349,10 +551,11 @@ def valid_recipe_identity(identity: dict) -> bool:
                 and identity.get("original_revision_unchanged") is True
                 and type(identity.get("initial_revision")) is int
                 and identity.get("imported_revision") == identity["initial_revision"] + 1
-                and identity.get("run_recipe_revision") == identity["imported_revision"]
+                and identity.get("run_recipe_revision") == identity.get("execution_revision", identity["imported_revision"])
+                and identity.get("run_recipe_revision", 0) >= identity["imported_revision"]
                 and identity.get("imported_recipe_digest")
-                and identity.get("run_recipe_digest") == identity["imported_recipe_digest"]
-                and identity.get("native_executed_recipe_digest") == identity["imported_recipe_digest"])
+                and identity.get("run_recipe_digest") == identity.get("execution_digest", identity["imported_recipe_digest"])
+                and identity.get("native_executed_recipe_digest") == identity.get("execution_digest", identity["imported_recipe_digest"]))
 
 
 def comparable_metrics(record: dict) -> dict:
@@ -499,6 +702,22 @@ def main() -> None:
     run.add_argument("--output", type=Path, required=True)
     run.add_argument("--pretrained-path", type=Path)
     run.add_argument("--trust-repository-source", action="store_true")
+    prepare = commands.add_parser("prepare", help="Import and plan; never submit or approve rights")
+    for target in (prepare,):
+        target.add_argument("source_root", type=Path)
+        target.add_argument("--data-dir", type=Path, required=True)
+        target.add_argument("--backend-python", type=Path, required=True)
+        target.add_argument("--output", type=Path, required=True)
+        target.add_argument("--pretrained-path", type=Path)
+        target.add_argument("--trust-repository-source", action="store_true")
+    for name in ("plan", "run-prepared"):
+        target = commands.add_parser(name)
+        target.add_argument("prepared", type=Path)
+        target.add_argument("--output", type=Path, required=True)
+        target.add_argument("--trust-repository-source", action="store_true")
+        if name == "run-prepared":
+            target.add_argument("--expected-revision", type=int, required=True)
+            target.add_argument("--expected-digest", required=True)
     identity = commands.add_parser("identity")
     identity.add_argument("--backend", action="store_true")
     compare = commands.add_parser("compare")
@@ -518,6 +737,14 @@ def main() -> None:
         result = run_recipe(args.source_root.resolve(), args.data_dir.resolve(), args.backend_python,
                             args.output, trusted=args.trust_repository_source, pretrained_path=args.pretrained_path)
         result = {key: result[key] for key in ("status", "source_commit", "transport_recipe_digest", "data_dir")}
+    elif args.command == "prepare":
+        result = prepare_recipe(args.source_root.resolve(), args.data_dir.resolve(), args.backend_python,
+                                args.output, trusted=args.trust_repository_source, pretrained_path=args.pretrained_path)
+    elif args.command == "plan":
+        result = plan_prepared(args.prepared, args.output, trusted=args.trust_repository_source)
+    elif args.command == "run-prepared":
+        result = run_prepared(args.prepared, args.output, expected_revision=args.expected_revision,
+                              expected_digest=args.expected_digest, trusted=args.trust_repository_source)
     elif args.command == "identity":
         result = runtime_identity(args.backend)
     else:
@@ -530,4 +757,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        print(json.dumps({"status": "FAIL", "error": _error_record(error)}, indent=2), file=sys.stderr)
+        raise SystemExit(1) from None

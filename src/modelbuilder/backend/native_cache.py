@@ -125,6 +125,34 @@ def _read_native_json(uri: str, root: Path):
             os.close(handle)
 
 
+def _validate_cache_request(backend, request: dict):
+    """Revalidate a private persisted job without admitting public authority fields.
+
+    Reviewed assets remain uncacheable. Only the two worker-owned envelope fields
+    are removed after their integrity and exact asset-free intent are verified;
+    ordinary public admission still checks source/dependency bytes and bindings.
+    """
+    from .execution_rights import prepare_authorization, recheck_authorization
+    from .admission import validate_execution
+    from ..execution import selection, selected_recipe
+
+    authorization = request.get("rights_authorization")
+    recheck_authorization(authorization, project_id=request.get("project_id"))
+    receipt = authorization["receipt"]
+    if (receipt.get("scope") != "no_declared_external_asset_inputs"
+            or authorization["policies"] or receipt.get("native_input_rights")):
+        raise BackendError("license_cache_unavailable", "Reviewed asset execution cannot reuse native value caches")
+    public = {key: value for key, value in request.items()
+              if key not in {"rights_authorization", "rights_extensions"}}
+    recipe = selected_recipe(request["recipe"], selection(request["recipe"], request.get("execution")))
+    regenerated = prepare_authorization(backend, public, recipe)["receipt"]
+    fields = ("project_id", "scope", "declarations", "nodes", "native_input_rights")
+    if (any(receipt.get(key) != regenerated.get(key) for key in fields)
+            or request.get("rights_extensions") != regenerated["declarations"]["extensions"]):
+        raise BackendError("license_policy_changed", "Cached source, nodes or rights declarations differ from the admitted receipt")
+    validate_execution(backend, public)
+
+
 def verify_cached_outputs(expected_identity: str, node_id: str) -> str:
     """ZenML public cache_func: fail closed on corrupt existing candidates.
 
@@ -134,7 +162,6 @@ def verify_cached_outputs(expected_identity: str, node_id: str) -> str:
     from zenml.client import Client
     from .native_inputs import validate_native_type
     from .adapter import ZenMLBackend
-    from .admission import validate_execution
     from .components.runtime import runtime_environment
     from ..execution import selection
     client = Client()
@@ -145,7 +172,7 @@ def verify_cached_outputs(expected_identity: str, node_id: str) -> str:
         source_root=request["source_root"], trusted_code_roots=request["trusted_code_roots"],
         dependency_paths=request.get("dependency_paths", {}))
     backend.dataset_source_guards = request.get("dataset_source_guards", {})
-    validate_execution(backend, request)
+    _validate_cache_request(backend, request)
     node = next(node for node in request["recipe"]["nodes"] if node["id"] == node_id)
     execution = {**selection(request["recipe"], request.get("execution")),
                  "input_bindings": request.get("resolved_input_bindings", [])}

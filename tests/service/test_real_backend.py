@@ -12,6 +12,7 @@ import pytest
 from modelbuilder.backend import ZenMLBackend
 from modelbuilder.models import Actor, ServiceError
 from modelbuilder.service import OperationService
+from tests.integration.native_fixture_support import synthetic_review
 
 ROOT = Path(__file__).resolve().parents[2]
 BACKEND_PYTHON = ROOT / ".venv-backend/bin/python"
@@ -39,6 +40,8 @@ def test_shared_service_native_execution_resume_research_and_scope(tmp_path):
     for node in manifest["nodes"]:
         if node["kind"] == "model.train":
             node["parameters"]["steps"] = 4
+    policy = synthetic_review(manifest, project_id, ROOT)
+    service.store.put("hub_license_policy", policy["policy_id"], project_id, policy)
     recipe = invoke("recipe.create", {"project_id": project_id, "recipe": manifest, "expected_revision": 1, "idempotency_key": "recipe"})
     plan = invoke("run.plan", {"project_id": project_id, "recipe_id": recipe["recipe_id"], "trusted": True})
     assert plan["executable"] is True

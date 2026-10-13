@@ -301,8 +301,18 @@ def verify_environment(backend, recipe: dict) -> dict:
     if environment.get("oci_digest"):
         raise BackendError("capability_unavailable", "OCI environments are unsupported by the local interpreter executor")
     requirements = list(environment.get("requirements", []))
-    lock = environment.get("lock_file")
-    if lock:
+    locks = {}
+    for field in ("lock_file", "trainer_profile"):
+        lock = environment.get(field)
+        if not lock:
+            continue
+        if field == "trainer_profile" and not environment.get("lock_file"):
+            raise BackendError("dependency_mismatch", "Trainer overlay requires the complete backend lock")
+        if field == "trainer_profile":
+            from .trainer_profile import TRAINER_PROFILE_SHA256
+            if lock["sha256"] != TRAINER_PROFILE_SHA256:
+                raise BackendError("dependency_mismatch", "Trainer overlay must match the reviewed pinned profile")
+        locks[field] = dict(lock)
         path = (backend.repository / lock["path"]).resolve()
         if not path.is_relative_to(backend.repository) or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != lock["sha256"]:
             raise BackendError("dependency_mismatch", "Environment lock is missing or changed", {"path": lock["path"]})
@@ -332,7 +342,7 @@ def verify_environment(backend, recipe: dict) -> dict:
     if response.get("error"):
         error = response["error"]
         raise BackendError(error["code"], error["message"], error.get("details"))
-    return response
+    return {**response, "lock_profiles": locks}
 
 
 def validate_recipe_settings(recipe: dict) -> int:
@@ -404,6 +414,15 @@ def environment_profiles(backend) -> list[dict]:
                              "devices": ["cpu", "mps"] if target == "darwin-arm64" else ["cpu"],
                              "environment": {"python": "3.12.14", "requirements": ["numpy==2.2.6", f"torch=={torch_pin}", "transformers==4.57.1", "zenml[server]==0.97.0"],
                                              "lock_file": {"path": relative, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}}})
+    from .trainer_profile import TRAINER_PROFILE_PATH, TRAINER_PROFILE_SHA256, TRAINER_REQUIREMENT
+    trainer_path = backend.repository / TRAINER_PROFILE_PATH
+    if trainer_path.is_file() and hashlib.sha256(trainer_path.read_bytes()).hexdigest() == TRAINER_PROFILE_SHA256:
+        trainer = {"path": TRAINER_PROFILE_PATH, "sha256": TRAINER_PROFILE_SHA256}
+        for base in list(profiles):
+            profiles.append({**base, "variant": "trainer", "framework": "transformers",
+                             "overlay_status": "requires_environment_verification", "native_execution": "submission_required",
+                             "environment": {**base["environment"], "requirements": [*base["environment"]["requirements"], TRAINER_REQUIREMENT],
+                                             "trainer_profile": trainer}})
     from .placement import CUDA_PROFILES
     for target, lock in CUDA_PROFILES.items():
         path = backend.repository / lock["path"]

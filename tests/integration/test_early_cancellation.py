@@ -160,7 +160,8 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
         "sha256": hashlib.sha256(pause.read_bytes()).hexdigest()}, "inputs": [{"name": "checkpoint", "type": "Path"}],
         "outputs": [{"name": "result", "type": "str"}], "parameters": {}, "timeout": 120,
         "environment_ref": "default", "resource_request": {"gpu": 0},
-        "retry": {"max_attempts": 1, "backoff_seconds": 0}, "cache_policy": "disabled", "provenance": {}})
+        "retry": {"max_attempts": 1, "backoff_seconds": 0}, "cache_policy": "disabled",
+        "provenance": {"intended_use": "evaluate"}})
     recipe["edges"].append({"source_node": "train", "source_port": "checkpoint", "target_node": "pause", "target_port": "checkpoint"})
     backend = ZenMLBackend(tmp_path / "data", python_executable=str(PYTHON), source_root=source, trusted_code_roots=[str(source)])
     project_id = str(uuid.uuid4())
@@ -168,6 +169,8 @@ def test_resume_waits_for_pending_cancel_even_with_native_checkpoint(tmp_path):
     recipe = validate_recipe(recipe)
     request = {"project_id": project_id, "operation_id": str(uuid.uuid4()), "trusted": True, "recipe": recipe,
                "idempotency_key": str(uuid.uuid4()), "max_runtime_seconds": 90}
+    from tests.integration.native_fixture_support import authorized_backend
+    backend = authorized_backend(backend, request)
     backend.invoke("run.submit", request)
     marker = backend.root / "jobs" / request["operation_id"] / "pause-started.json"
     deadline = time.monotonic() + 45

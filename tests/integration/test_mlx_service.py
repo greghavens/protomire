@@ -523,6 +523,21 @@ def test_registered_project_mlx_native_pipeline(tmp_path, mode):
             manifest=manifest2,
             idempotency_key="new-train-data",
         )
+        # A new immutable row source is outside the earlier review's byte
+        # closure, even though this test authored both versions.
+        from modelbuilder.models import ServiceError
+        policy_binding = {"project_id": pid, "dataset_id": version["dataset_id"], "dataset_revision": 2,
+                          "intended_use": "train", "usage_context": USAGE_CONTEXT}
+        with pytest.raises(ServiceError, match="outside the selected reviewed policy"):
+            call("hub.dataset.policy.bind", **policy_binding, source_policies={"rows": data_review["policy_id"]},
+                 idempotency_key="reject-old-dataset-rights")
+        files2 = [{"path": path2.name, "sha256": hashlib.sha256(path2.read_bytes()).hexdigest(),
+                   "size_bytes": path2.stat().st_size}]
+        data_review2, _ = local_review(pid, commit=identity(files2), policy_id="mlx-authored-dataset-v2", repo_type="dataset",
+            source_files=files2, repo_id="urn:modelbuilder:test-authored-mlx-data")
+        register_project_review(service, data_review2, pid)
+        call("hub.dataset.policy.bind", **policy_binding, source_policies={"rows": data_review2["policy_id"]},
+             idempotency_key="dataset-v2-rights")
         rebound = call(
             "dataset.bind",
             project_id=pid,
@@ -572,6 +587,9 @@ def test_registered_project_mlx_native_pipeline(tmp_path, mode):
             time.sleep(0.25)
         assert warm["status"] == "succeeded", (warm, (resumed_job / "worker.log").read_text()[-16000:])
         warm_checkpoint = read_checkpoint(resumed_job / "outputs/train/checkpoint-000001")
+        assert not warm_checkpoint["rights"]["unresolved"]
+        assert {item["license_policy_id"] for item in warm_checkpoint["rights"]["sources"]} == {
+            model_review["policy_id"], data_review["policy_id"], data_review2["policy_id"]}
         assert warm_checkpoint["identities"]["architecture"] == trained["identities"]["architecture"]
         assert warm_checkpoint["identities"]["training"] != trained["identities"]["training"]
         assert warm_checkpoint["identities"]["data"] != trained["identities"]["data"]

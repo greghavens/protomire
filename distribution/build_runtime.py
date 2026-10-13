@@ -45,6 +45,12 @@ def extract_input(base: Path, item: dict, destination: Path) -> Path:
     return relative_file(destination, item["executable"])
 
 
+def required_macos_floor(floors: dict[str, str]) -> str:
+    # Hub is mandatory on supported targets. Only optional MLX is excluded.
+    return max((floor for component, floor in floors.items() if component != "mlx"),
+               key=lambda value: tuple(map(int, value.split("."))))
+
+
 def build_runtime(inputs_file: Path, output: Path) -> dict:
     inputs = json.loads(inputs_file.read_text())
     base = inputs_file.resolve().parent
@@ -95,6 +101,8 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
     output.mkdir(parents=True)
     manifest = {"schema_version": 1, "target": target, "source_commit": inputs["source_commit"],
                 "source_bundle": "source.bundle", "application_version": application_version, "python_version": expected_python, "native_local_backend": backend_reason(target) or "requires_native_acceptance"}
+    manifest["trainer_profile"] = {"status": "unsupported_target", "reason": backend_reason(target)} if backend_reason(target) else None
+    manifest["cache_policy"] = {"bytecode": "disabled", "mutable_cache": "private_state"}
     manifest["hub_status"] = "bundled" if target in HUB_TARGETS else "unsupported_target"
     shutil.copytree(notices, output / "notices")
     for component in components:
@@ -106,7 +114,7 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
         lock = ROOT / "requirements/profiles/mlx-darwin-arm64.lock" if component == "mlx" else lock_path(ROOT, component, target)
         # Exact target locks already contain wheel hashes. --only-binary rejects
         # build hooks; --no-index forbids an accidental network dependency fetch.
-        command = [str(interpreter), "-I", "-m", "pip", "--isolated", "install", "--no-index", "--no-compile",
+        command = [str(interpreter), "-I", "-B", "-m", "pip", "--isolated", "install", "--no-index", "--no-compile",
                    "--only-binary=:all:", "--find-links", str(wheelhouse.resolve()), "--require-hashes", "-r", str(lock)]
         env = {key: value for key, value in os.environ.items() if key in {"PATH", "SYSTEMROOT", "WINDIR", "LANG", "TMP", "TEMP", "TMPDIR"}}
         subprocess.run(command, env=env, check=True)
@@ -114,11 +122,19 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
             wheel_requirements = output / ("." + component + "-application.txt")
             wheel_requirements.write_text(wheel.as_uri() + " --hash=sha256:" + item["wheel"]["sha256"] + "\n")
             try:
-                subprocess.run([str(interpreter), "-I", "-m", "pip", "--isolated", "install", "--no-index", "--no-deps", "--no-compile",
+                subprocess.run([str(interpreter), "-I", "-B", "-m", "pip", "--isolated", "install", "--no-index", "--no-deps", "--no-compile",
                                 "--require-hashes", "-r", str(wheel_requirements)], env=env, check=True)
             finally:
                 wheel_requirements.unlink()
-        subprocess.run([str(interpreter), "-I", "-m", "pip", "--isolated", "check"], env=env, check=True)
+        if component == "backend":
+            overlay = ROOT / "requirements/profiles/trainer.lock"
+            subprocess.run([str(interpreter), "-I", "-B", "-m", "pip", "--isolated", "install", "--no-index", "--no-deps", "--no-compile",
+                            "--only-binary=:all:", "--find-links", str(wheelhouse.resolve()), "--require-hashes", "-r", str(overlay)], env=env, check=True)
+            (output / "profiles").mkdir(exist_ok=True)
+            shutil.copyfile(overlay, output / "profiles/trainer.lock")
+            manifest["trainer_profile"] = {"status": "bundled", "path": "profiles/trainer.lock", "sha256": digest(overlay),
+                                           "backend_lock_sha256": digest(lock), "native_execution": "requires_native_acceptance"}
+        subprocess.run([str(interpreter), "-I", "-B", "-m", "pip", "--isolated", "check"], env=env, check=True)
         manifest[component + "_python"] = interpreter.relative_to(output).as_posix()
         manifest[component + "_lock_sha256"] = digest(lock)
         if component == "hub":
@@ -137,7 +153,7 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
         manifest["source_bundle_shallow"] = "source.bundle.shallow"
     if target.startswith("darwin-"):
         floors = {component: macos_floor(output / (component + "-python"), inputs[component]["python"].get("minimum_os")) for component in components}
-        manifest["minimum_os"] = max((floor for component, floor in floors.items() if component not in {"mlx", "hub"}), key=lambda value: tuple(map(int, value.split("."))))
+        manifest["minimum_os"] = required_macos_floor(floors)
         if "mlx" in floors:
             manifest["mlx_minimum_os"] = floors["mlx"]
     (output / "runtime.json").write_text(json.dumps(manifest, indent=2) + "\n")

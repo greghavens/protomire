@@ -154,7 +154,7 @@ def execute(operation, *, inputs, parameters, context):
     with (
         (output / "mlx-worker.log").open("wb") as log,
         subprocess.Popen(
-            [python, "-I", str(source / "mlx_worker.py")],
+            [python, "-I", "-B", str(source / "mlx_worker.py")],
             cwd=source,
             env=env,
             stdin=subprocess.PIPE,

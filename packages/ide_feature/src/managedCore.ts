@@ -46,7 +46,7 @@ export class ManagedCore {
     if(this.current)return Promise.resolve(this.current);
     if(this.pending)return this.pending;
     const pending=new Promise<CoreConnection>((resolve,reject)=>{
-      const child=this.launcher(this.paths.python,['-I',this.paths.entrypoint,'lease','--runtime-root',this.paths.runtimeRoot,'--state-dir',this.paths.stateDir],{env:coreEnvironment(process.env),windowsHide:true,stdio:'pipe'}) as ChildProcessWithoutNullStreams;
+      const child=this.launcher(this.paths.python,['-I','-B',this.paths.entrypoint,'lease','--runtime-root',this.paths.runtimeRoot,'--state-dir',this.paths.stateDir],{env:coreEnvironment(process.env),windowsHide:true,stdio:'pipe'}) as ChildProcessWithoutNullStreams;
       this.child=child;let output='',settled=false;
       const timer=setTimeout(()=>fail('The bundled core did not become ready. Check the installation and private app storage.'),this.timeoutMs);
       const fail=(message:string)=>{if(!settled){settled=true;clearTimeout(timer);reject(new Error(message));}child.stdin.end();child.kill();if(this.child===child){this.child=undefined;this.current=undefined;this.pending=undefined;}};
@@ -82,7 +82,7 @@ export class ManagedCore {
     return new Promise(resolve=>{
       let output='',settled=false;
       const finish=(status:'stored'|'not_stored'|'uncertain',code:string)=>{if(settled)return;settled=true;clearTimeout(timer);resolve({status,code});};
-      const child=this.launcher(python,['-I',helper],{env:coreEnvironment(process.env),windowsHide:true,stdio:'pipe'}) as ChildProcessWithoutNullStreams;
+      const child=this.launcher(python,['-I','-B',helper],{env:coreEnvironment(process.env),windowsHide:true,stdio:'pipe'}) as ChildProcessWithoutNullStreams;
       this.credentialChildren.add(child);
       const timer=setTimeout(()=>{child.kill();finish('uncertain','secure_store_timeout');},60000);
       child.stderr.resume();child.stdin.on('error',()=>finish('uncertain','secure_store_interrupted'));
@@ -126,7 +126,7 @@ export class ManagedCore {
   /** External consumers launch their own stdio process and receive only project-scoped read access. */
   mcpCommand(projectId:string):{command:string;args:string[]}{
     if(!/^[a-zA-Z0-9_-]{1,128}$/.test(projectId))throw new Error('A specific model project is required for assistant access.');
-    return {command:this.paths.python,args:['-I',this.paths.entrypoint,'mcp','--runtime-root',this.paths.runtimeRoot,'--state-dir',this.paths.stateDir,'--project-id',projectId]};
+    return {command:this.paths.python,args:['-I','-B',this.paths.entrypoint,'mcp','--runtime-root',this.paths.runtimeRoot,'--state-dir',this.paths.stateDir,'--project-id',projectId]};
   }
   dispose(){for(const child of this.credentialChildren)child.kill();this.credentialChildren.clear();this.disposed=true;this.cancelStartup?.();this.cancelStartup=undefined;this.current=undefined;this.child?.stdin.end();this.child=undefined;}
 }

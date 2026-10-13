@@ -219,7 +219,23 @@ def test_fresh_attempt_does_not_reuse_poisoned_sdk_cache(boundary, tmp_path):
     assert Path(two["files"][0]["local_path"]).read_bytes() == CONTENT and len(transport.calls) > before
 
 
-def test_actual_sdk_captures_full_license_notice_text_at_immutable_revision(boundary):
+@pytest.mark.parametrize("aliased_internal_temp_root", [False, True])
+def test_actual_sdk_captures_full_license_notice_text_at_immutable_revision(boundary, tmp_path, monkeypatch, aliased_internal_temp_root):
+    import tempfile
+    allocated = []
+    if aliased_internal_temp_root:
+        physical = tmp_path / "physical-os-temp"
+        physical.mkdir()
+        alias = tmp_path / "os-temp-alias"
+        alias.symlink_to(physical, target_is_directory=True)
+        monkeypatch.setattr(tempfile, "gettempdir", lambda: str(alias))
+        original_temporary = tempfile.TemporaryDirectory
+
+        def temporary(*args, **kwargs):
+            result = original_temporary(*args, **kwargs)
+            allocated.append(Path(result.name))
+            return result
+        monkeypatch.setattr(tempfile, "TemporaryDirectory", temporary)
     transport, api = boundary
     original = transport.send
     documents = {"LICENSE": b"Synthetic authored test bytes: permitted only for this deterministic fixture.\n", "NOTICE.txt": b"Attribution: test fixture author.\n"}
@@ -253,6 +269,10 @@ def test_actual_sdk_captures_full_license_notice_text_at_immutable_revision(boun
         assert item["sha256"] == hashlib.sha256(documents[item["path"]]).hexdigest()
         assert f"/blob/{COMMIT}/" in item["source_url"]
     assert all("Authorization" not in str(body) for _, _, body in transport.calls)
+    if aliased_internal_temp_root:
+        assert allocated and all(path.parent == physical.resolve() for path in allocated)
+        assert all(not path.exists() for path in allocated)
+        assert list(physical.iterdir()) == [] and alias.is_symlink()
 
 
 def test_actual_sdk_regular_upload_guard_cannot_allocate_large_base64_payload():
@@ -265,3 +285,18 @@ def test_actual_sdk_regular_upload_guard_cannot_allocate_large_base64_payload():
         operation.b64content()
     assert error.value.code == "hub_upload_memory_budget"
     assert not handle.closed
+
+
+def test_caller_staging_symlink_ancestor_stays_rejected_before_sdk_request(boundary, tmp_path):
+    transport, api = boundary
+    physical = tmp_path / "physical-caller-root"
+    physical.mkdir()
+    (physical / "sdk").mkdir()
+    alias = tmp_path / "caller-root-alias"
+    alias.symlink_to(physical, target_is_directory=True)
+    with pytest.raises(WorkerError) as error:
+        execute("download", {"repo_id": "owner/tiny", "repo_type": "model", "commit": COMMIT,
+                             "files": [{"path": "file.txt", "size_bytes": len(CONTENT)}],
+                             "staging_dir": str(alias / "sdk")}, api, sdk=sdk, token=False)
+    assert error.value.code == "hub_verification_failed"
+    assert transport.calls == [] and list((physical / "sdk").iterdir()) == []

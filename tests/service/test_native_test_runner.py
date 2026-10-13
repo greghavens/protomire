@@ -369,7 +369,7 @@ if mode!='missing':(root/(name+'.xml')).write_text('<testsuite tests="1"/>')
 '''
 
 
-def launch(tmp_path, specs, *, timeout=5):
+def launch(tmp_path, specs, *, timeout=5, continue_on_failure=False):
     worker = tmp_path / "worker.py"
     worker.write_text(WORKER)
     bootstrap = tmp_path / "runner.py"
@@ -377,10 +377,10 @@ def launch(tmp_path, specs, *, timeout=5):
 from pathlib import Path
 spec=importlib.util.spec_from_file_location("native_test_runner",sys.argv[1]);m=importlib.util.module_from_spec(spec);sys.modules[spec.name]=m;spec.loader.exec_module(m)
 root=Path(sys.argv[2]);groups=[m.Group(name,(sys.executable,str(root/'worker.py'),mode,name,str(root),str(delay)),dict(os.environ),root/(name+'.log'),root/(name+'.xml')) for name,mode,delay in json.loads(sys.argv[3])]
-raise SystemExit(m.run_groups(groups,root,root/'report.json',timeout=float(sys.argv[4])))
+raise SystemExit(m.run_groups(groups,root,root/'report.json',timeout=float(sys.argv[4]),continue_on_failure=sys.argv[5]=='1'))
 ''')
     return subprocess.Popen([sys.executable, "-I", str(bootstrap), str(ROOT / "scripts/native_test_runner.py"),
-                             str(tmp_path), json.dumps(specs), str(timeout)], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             str(tmp_path), json.dumps(specs), str(timeout), str(int(continue_on_failure))], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             text=True)
 
 
@@ -550,3 +550,24 @@ def test_scientific_native_node_ids_have_exact_serial_concurrent_routes():
         f"{native_path}::{plain}", f"{native_path}::{compared}[False-False]",
         f"{native_path}::{compared}[True-False]", f"{native_path}::{compared}[False-True]",
     }
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Concurrent runner requires Linux containment")
+def test_diagnostic_collection_runs_remaining_groups_but_keeps_failure(tmp_path):
+    process = launch(tmp_path, [("broken", "missing", 0), ("slow", "pass", .3),
+                               ("next", "pass", 0), ("last", "pass", 0)], continue_on_failure=True)
+    code, report, _ = finish(process, tmp_path)
+    assert code == 1 and report["status"] == "group_failed"
+    assert report["continue_on_failure"] is True and report["cleanup"]["complete"]
+    states = {row["name"]: row["status"] for row in report["groups"]}
+    assert states == {"broken": "failed", "slow": "passed", "next": "passed", "last": "passed"}
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Concurrent runner requires Linux containment")
+def test_diagnostic_collection_still_obeys_deadline_and_reaps_children(tmp_path):
+    process = launch(tmp_path, [("native", "descendant", 0), ("broken", "missing", 0)],
+                     timeout=.4, continue_on_failure=True)
+    code, report, _ = finish(process, tmp_path)
+    assert code == 124 and report["status"] == "deadline_exceeded"
+    assert report["cleanup"]["complete"]
+    assert not Path(f"/proc/{int((tmp_path / 'detached.pid').read_text())}").exists()

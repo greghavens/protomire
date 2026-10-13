@@ -404,3 +404,28 @@ def test_reviewed_source_origin_is_exact_before_import_and_allows_new_parameters
     with pytest.raises(RuntimeError, match="source closure changed after admission"):
         execute("component", {}, native)
     assert not marker.exists()
+
+
+@pytest.mark.parametrize("feedback", [False, True])
+@pytest.mark.parametrize("malformed", [False, True])
+def test_known_generated_builtin_lineage_is_blocked_before_dispatch(feedback, malformed):
+    recipe = {"nodes": [{"id": "data", "kind": "dataset.synthetic"},
+                        {"id": "train", "kind": "model.train"}], "resources": [], "extensions": {}}
+    edge = {"source_node": "data", "source_port": "data", "target_node": "train", "target_port": "data"}
+    if feedback:
+        recipe["bounded_iterations"] = [{"id": "repeat", "max_iterations": 2, "state": [edge]}]
+    else:
+        recipe["edges"] = [edge]
+    if malformed:
+        recipe["extensions"]["artifact_rights"] = None
+    with pytest.raises(BackendError) as caught:
+        rights.prepare_authorization(SimpleNamespace(), {"project_id": "test"}, recipe)
+    assert caught.value.code == "license_rights_unreviewed"
+
+
+def test_single_iteration_feedback_does_not_imply_an_asset_consumer():
+    recipe = {"nodes": [{"id": "data", "kind": "dataset.synthetic"}], "resources": [],
+              "bounded_iterations": [{"id": "once", "max_iterations": 1, "state": [
+                  {"source_node": "data", "source_port": "data", "target_node": "data", "target_port": "data"}]}]}
+    result = rights.prepare_authorization(SimpleNamespace(), {"project_id": "test"}, recipe)
+    assert result["receipt"]["scope"] == "no_declared_external_asset_inputs"

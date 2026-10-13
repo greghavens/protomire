@@ -13,7 +13,7 @@ export interface AssistantSetupPaths {python:string;helper:string;serviceUrl:str
 export function assistantSetupArguments(action:string,client:AssistantClient,paths:AssistantSetupPaths,approval?:string):string[]{
   if(!['catalog','doctor','preview-install','install','preview-config','configure','preview-project','apply-project','preview-rollback','rollback-project'].includes(action))throw new Error('Unsupported assistant setup action.');
   if(!isAbsolute(paths.python)||!isAbsolute(paths.helper))throw new Error('Assistant setup requires absolute interpreter and helper paths.');
-  const args=[paths.helper,action];
+  const args=['-B',paths.helper,action];
   if(action!=='catalog')args.push('--client',client);
   if(paths.extensionsDir&&['catalog','doctor','preview-install','install'].includes(action))args.push('--extensions-dir',paths.extensionsDir);
   if(['preview-install','install'].includes(action)){

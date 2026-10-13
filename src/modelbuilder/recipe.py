@@ -191,6 +191,7 @@ RECIPE_SCHEMA = {
                                 "requirements": {"type": "array", "items": {"type": "string"}, "uniqueItems": True},
                                 "lock_file": FILE_REF_SCHEMA,
                                 "mlx_profile": FILE_REF_SCHEMA,
+                                "trainer_profile": FILE_REF_SCHEMA,
                                 "device": {"type": "string", "pattern": r"^(cpu|mps|mlx-cpu|mlx-metal|cuda:(0|[1-9][0-9]{0,2}))$"},
                                 "oci_digest": {"type": "string", "pattern": r"^sha256:[0-9a-f]{64}$"}},
                                ["python", "requirements"]),
@@ -543,8 +544,9 @@ def _file_references(recipe: dict) -> dict[str, str]:
     refs = list(recipe["source"].get("files", []))
     if "lock_file" in recipe["environment"]:
         refs.append(recipe["environment"]["lock_file"])
-    if "mlx_profile" in recipe["environment"]:
-        refs.append(recipe["environment"]["mlx_profile"])
+    for overlay in ("mlx_profile", "trainer_profile"):
+        if overlay in recipe["environment"]:
+            refs.append(recipe["environment"][overlay])
     for node in recipe["nodes"]:
         implementation = node["implementation_ref"]
         if isinstance(implementation, dict) and "path" in implementation:
@@ -664,7 +666,7 @@ def pin_source_files(recipe: dict, source_root: str | Path, paths: list[str], co
             implementation["commit"] = commit
             if implementation.get("path") in hashes:
                 implementation["sha256"] = hashes[implementation["path"]]
-    for profile in ("lock_file", "mlx_profile"):
+    for profile in ("lock_file", "mlx_profile", "trainer_profile"):
         if result["environment"].get(profile, {}).get("path") in hashes:
             result["environment"][profile]["sha256"] = hashes[result["environment"][profile]["path"]]
     return normalize_recipe(result)

@@ -22,6 +22,7 @@ from modelbuilder.backend import ZenMLBackend
 from modelbuilder.backend.common import read_json
 from modelbuilder.models import Actor, ServiceError
 from modelbuilder.service import OperationService
+from tests.components.rights_test_support import USAGE_CONTEXT, local_source_review, review_local_dataset
 
 ROOT = Path(__file__).resolve().parents[2]
 PYTHON = Path(os.environ.get("MODELBUILDER_BACKEND_PYTHON", str(ROOT / ".venv-backend/bin/python")))
@@ -38,6 +39,7 @@ import shutil
 import torch
 from modelbuilder.backend.components import identity, read_checkpoint
 from modelbuilder.evaluation import make_evaluation_record
+from modelbuilder.artifact_rights import combine_parent_rights
 
 LOADER = """from pathlib import Path
 import torch
@@ -84,7 +86,9 @@ def fit(*, inputs, parameters, context):
     (output / 'report.json').write_text(json.dumps(report))
     checkpoint = {'schema_version': 'modelbuilder.checkpoint/v1', 'identities': context['identities'],
                   'resume_modes': [], 'assets': [asset(output, 'model.pt'), asset(output, 'report.json')],
-                  'step': parameters['updates'], 'purpose': 'inference', 'metrics': {'loss': final}}
+                  'step': parameters['updates'], 'purpose': 'inference', 'metrics': {'loss': final},
+                  'rights': combine_parent_rights([{'artifact_id': 'declared-origin', 'rights': context['declared_artifact_rights']},
+                      {'artifact_id': 'input-dataset', 'rights': data['rights']}])}
     (output / 'checkpoint.manifest.json').write_text(json.dumps(checkpoint))
     return {'checkpoint': output, 'metrics': {'train_loss': final, 'initial_loss': initial,
         'updates': parameters['updates'], 'dataset_version_id': data['consumption']['version_id']}}
@@ -126,7 +130,7 @@ def export(*, inputs, parameters, context):
     (output / 'parity.json').write_text(json.dumps({'predictions': actual.tolist(),
         'sample_ids': data['split']['sample_ids'], 'max_abs_difference': difference}))
     manifest = {'schema_version': 'modelbuilder.export/v1',
-        'selected_checkpoint': identity(read_checkpoint(checkpoint)),
+        'selected_checkpoint': identity(read_checkpoint(checkpoint)), 'rights': read_checkpoint(checkpoint)['rights'],
         'loader': {'path': 'loader.py', 'entrypoint': 'load'},
         'signature': {'inputs': [{'name': 'text_length', 'shape': [None, 1], 'dtype': 'float32'}],
                       'outputs': [{'name': 'prediction', 'shape': [None, 1], 'dtype': 'float32'}]},
@@ -208,9 +212,11 @@ def tree_bytes(root):
 
 
 @pytest.mark.parametrize("stale_evidence", [False, True])
-def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_path, stale_evidence):
+def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_path, stale_evidence, monkeypatch):
     source, data_root = tmp_path / "authored-model", tmp_path / "external-data"
     body, manifest = authored_recipe(source), dataset_manifest(data_root)
+    _, origin = local_source_review(source, body["source"], policy_id="test-bound-source")
+    body["extensions"] = {"usage_context": deepcopy(USAGE_CONTEXT), "artifact_rights": origin}
     if stale_evidence:
         for node in body["nodes"]:
             if node.get("component", {}).get("role") == "evaluation":
@@ -223,6 +229,8 @@ def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_pat
         "recipe": body, "source_alias": "authored", "source_repository_id": source_identity["repository_id"],
         "trusted": True, "idempotency_key": "project"}, OWNER)
     pid = project["project_id"]
+    policy, _ = local_source_review(source, body["source"], pid, policy_id="test-bound-source")
+    service.store.put("hub_license_policy", policy["policy_id"], pid, policy)
     service.store.close()
     service = OperationService(tmp_path / "service.sqlite", backend, source_roots=roots,
                                dataset_roots={pid: {"data": str(data_root)}})
@@ -239,6 +247,7 @@ def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_pat
                       confirm_pin=True, idempotency_key="pin")
         assert pinned["revision"] == 2 and not pinned["execution_allowed"]
         version = call("dataset.register", project_id=pid, manifest=manifest, idempotency_key="dataset")
+        review_local_dataset(service, version, data_root, OWNER)
         changed = deepcopy(manifest)
         changed["description"] = "Newer metadata must not redirect a pinned dataset revision"
         newer = call("dataset.version", project_id=pid, dataset_id=version["dataset_id"], expected_revision=1,
@@ -361,12 +370,12 @@ def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_pat
         # Hold the real backend preparation before its expensive native reads.
         # Live journal polls and an independent SQLite writer must still finish.
         entered, release = threading.Event(), threading.Event()
-        original_prepare = backend.prepare_promotion
-        def held_prepare(payload, actor=None):
+        original_prepare = type(backend).prepare_promotion
+        def held_prepare(authorized_backend, payload, actor=None):
             entered.set()
             assert release.wait(20), "Preparation release timed out"
-            return original_prepare(payload, actor)
-        backend.prepare_promotion = held_prepare
+            return original_prepare(authorized_backend, payload, actor)
+        monkeypatch.setattr(type(backend), "prepare_promotion", held_prepare)
         with ThreadPoolExecutor(max_workers=2) as pool:
             future = pool.submit(call, "model.version.promote", project_id=pid,
                 model_version_id=trained["model_version_ref"], decision_id=decision["decision_id"],
@@ -386,7 +395,7 @@ def test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release(tmp_pat
             finally:
                 release.set()
             promoted = future.result(timeout=90)
-        backend.prepare_promotion = original_prepare
+        monkeypatch.setattr(type(backend), "prepare_promotion", original_prepare)
         assert promoted["model_version_id"] == trained["model_version_ref"]
         assert promoted["selected_run_id"] == compared["selected_run_id"]
         assert promoted["metadata"]["selection_decision"]["selection_rule"]["evaluations"] == explicit

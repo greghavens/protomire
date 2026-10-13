@@ -4,7 +4,31 @@
 
 Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
-## 2026-10-13 expanded implementation: acceptance in progress
+## Corrective source batch: full acceptance pending
+
+The preceding `e658e32` aggregate **failed**, and its
+[compact receipt](../evidence/product-completion-20261013/acceptance-e658e32/README.md)
+preserves that outcome. Production corrections restore asset-free native cache
+revalidation, include exact manifests/rights in builtin live snapshots,
+canonicalize only internally allocated Mac Hub temporary roots, bundle the pinned
+Trainer overlay, and prevent managed Python bytecode writes into sealed payloads.
+Portable replay now reports blocked preflight truthfully and offers a receiving-
+project preparation/review/resume flow; Git-free snapshot review intake remains
+unsupported. No untrusted policy JSON becomes authority.
+
+Tests now explicitly review repository-owned synthetic source/data and re-review
+changed dataset revisions. Existing negative rights, revocation, source integrity,
+concurrency and early-evaluation checks remain. The complete corrected aggregate,
+installed-wheel replay, bundled Mac Trainer/MLX and installer acceptance must be
+rerun before a release claim. Linux AppImage assembly is separately blocked by
+missing offline editor/backend/toolchain inputs; recovered service/Hub wheels do
+not constitute an AppImage or Bazzite acceptance.
+
+## Historical e658e32 implementation and partial results
+
+Candidate `e658e32a4c3e20750b3f389ddf2b3886d6bcc343` is published on `main`.
+Both shipping recipes pin runtime `9ade0e893a4ffaa3ba81c78d463fd7dbc70735ec`
+and its complete **149-file** source/lock closure.
 
 The newest source adds guided project creation, native Hub repository workflows,
 managed Hub credentials/runtime packaging, exact asset/source rights review,
@@ -13,11 +37,16 @@ citation-bound research retrieval. These are implemented source paths, but the
 complete product and installer acceptance remain unfinished.
 
 Local combined frontend: **480 passed**, zero failures/skips, with TypeScript
-and build checks. The preceding combined light diagnostic had **2,525 passed,
-141 skipped, 86 deselected** and two stale shipping-source-pin failures; source
-repinning and the full new-candidate aggregate are still pending. Focused native
-CPU training, evaluation, warm-start, scientific blend/gate and export tests ran
-in isolated integration stages; they do not replace a new frozen aggregate.
+and build checks. After source repinning, the frozen local aggregate light stage
+passed **2,546 tests**, with **140 skipped and 86 deselected**, in 158.26 seconds.
+The separate socket-blocked Hub SDK stage passed **16 tests**. Native component
+authoring executed its new source-pinned component through ZenML, learned the
+expected affine state after 100 updates and left native owners quiescent.
+The native queue later failed; the explicit test-owned custom installed-wheel
+replay passed 35/35 comparisons and 10 exact output hashes. These completed stages
+do not establish a successful aggregate or installer.
+Focused native CPU training, evaluation, warm-start, scientific blend/gate and
+export tests also ran in isolated integration stages.
 
 The anonymous locked Hub SDK public probe failed at DNS resolution before any
 provider bytes arrived. Socket-blocked SDK tests are not online provider

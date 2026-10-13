@@ -141,6 +141,8 @@ def test_timeout_uses_valid_cancel_contract_and_always_records_evidence(snapshot
 
         def invoke(self, operation, payload, actor):
             calls.append((operation, payload))
+            if operation == "run.plan":
+                return {"executable": True, "blocked_reasons": []}
             if operation == "run.cancel" and cancel_fails:
                 raise RuntimeError("Simulated transport loss")
             return {"operation_id": payload["operation_id"], "backend_run_id": "native-contract-test",
@@ -153,7 +155,7 @@ def test_timeout_uses_valid_cancel_contract_and_always_records_evidence(snapshot
     evidence = json.loads(output.read_text())
     assert evidence["status"] == "FAIL" and evidence["reason"] == "timeout"
     cancellation = next(payload for operation, payload in calls if operation == "run.cancel")
-    assert cancellation["idempotency_key"] == "portable:timeout-cancel"
+    assert cancellation["idempotency_key"] == "portable:timeout-cancel:" + cancellation["operation_id"]
     if cancel_fails:
         assert evidence["termination_confirmed"] is False and evidence["cancellation_error"]
     else:

@@ -113,6 +113,12 @@ class ZenMLBackend:
         env = {key: value for key, value in os.environ.items() if key in allowed}
         env["HOME"] = str(self.root / "home")
         Path(env["HOME"]).mkdir(parents=True, exist_ok=True)
+        cache = self.root / "cache"
+        temporary = cache / "tmp"
+        temporary.mkdir(parents=True, exist_ok=True)
+        env.update(XDG_CACHE_HOME=str(cache), HF_HOME=str(cache / "huggingface"),
+                   TORCH_HOME=str(cache / "torch"), TMPDIR=str(temporary), TEMP=str(temporary), TMP=str(temporary),
+                   PYTHONDONTWRITEBYTECODE="1")
         env.update(PYTHONPATH=str(self.package_root), PYTHONSAFEPATH="1",
                    MODELBUILDER_PRETRAINED_PATH=str(self.pretrained_path),
                    ZENML_CONFIG_PATH=str(self.root / "zenml-config"), ZENML_LOCAL_STORES_PATH=str(self.root / "zenml-stores"),
@@ -151,7 +157,7 @@ class ZenMLBackend:
         write_json(path, {"operation": operation, "payload": payload, "root": str(self.root), "result": str(result)})
         with path.with_suffix(".log").open("w") as log:
             try:
-                completed = subprocess.run([self.python, "-P", "-m", "modelbuilder.backend.sdk", str(path)], env=self._env(),
+                completed = subprocess.run([self.python, "-P", "-B", "-m", "modelbuilder.backend.sdk", str(path)], env=self._env(),
                                            cwd=self.root, stdout=log, stderr=subprocess.STDOUT, timeout=90, pass_fds=pass_fds)
             except subprocess.TimeoutExpired as error:
                 raise BackendError("backend_timeout", "ZenML read did not complete", {"request_id": request_id}) from error
@@ -202,7 +208,7 @@ try:
 except Exception as error:
  result={'error':{'code':getattr(error,'code','artifact_binding_denied'),'message':str(error),'details':getattr(error,'details',{})}}
 print(json.dumps(result))"""
-            completed = subprocess.run([self.python, "-P", "-c", code], input=json.dumps({"payload": payload, "jobs": jobs}),
+            completed = subprocess.run([self.python, "-P", "-B", "-c", code], input=json.dumps({"payload": payload, "jobs": jobs}),
                 text=True, capture_output=True, cwd=self.root, env=self._env(), timeout=90)
             try:
                 result = json.loads(completed.stdout.strip().splitlines()[-1])
@@ -476,7 +482,7 @@ print(json.dumps(result))"""
             _durable_launch_record(job / "spawn_attempt.json", attempt)
             try:
                 with (job / "supervisor.log").open("a") as log:
-                    process = subprocess.Popen([handle._python, "-P", "-m", "modelbuilder.backend.supervisor", str(job), str(lease.fileno())],
+                    process = subprocess.Popen([handle._python, "-P", "-B", "-m", "modelbuilder.backend.supervisor", str(job), str(lease.fileno())],
                                                cwd=self.root, env=dict(handle._environment), stdout=log, stderr=subprocess.STDOUT,
                                                start_new_session=True, stdin=subprocess.DEVNULL, pass_fds=(lease.fileno(),))
             except OSError as error:

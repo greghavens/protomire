@@ -662,7 +662,7 @@ def export(*, inputs, parameters, context):
     expected = logits.tolist()
     write_json(path / "parity-input.json", {"tokens": tokens, "device": parameters["device"]})
     subprocess.run(
-        [sys.executable, "-I", str(path / "loader.py"), str(path)],
+        [sys.executable, "-I", "-B", str(path / "loader.py"), str(path)],
         check=True,
         capture_output=True,
         timeout=60,

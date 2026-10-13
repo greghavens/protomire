@@ -116,6 +116,9 @@ def test_cached_candidate_checks_are_read_only_and_fail_closed(tmp_path, monkeyp
     request = {"project_id": "project", "root": str(tmp_path / "backend"), "source_root": str(tmp_path),
         "trusted_code_roots": [str(tmp_path)], "recipe": {"recipe_id": "recipe", "revision": 1,
         "project_id": "project", "source": {"commit": "a" * 40}, "nodes": [node()], "edges": []}}
+    from modelbuilder.backend.execution_rights import prepare_authorization
+    request["rights_authorization"] = prepare_authorization(NS(), request, request["recipe"])
+    request["rights_extensions"] = request["rights_authorization"]["receipt"]["declarations"]["extensions"]
     execution = {"node_ids": ["prepare"], "input_bindings": []}
     expected = cache_identity(request, node(), execution, {})
     store = Path(request["root"]) / "zenml-stores" / "artifact"
@@ -145,7 +148,8 @@ def test_cached_candidate_checks_are_read_only_and_fail_closed(tmp_path, monkeyp
     monkeypatch.setattr("modelbuilder.backend.admission.validate_execution", lambda backend, body: admitted.append(body))
     monkeypatch.setattr("modelbuilder.backend.components.runtime.runtime_environment", lambda: {})
     assert verify_cached_outputs(expected, "prepare") == expected
-    assert admitted == [request]
+    assert admitted == [{key: value for key, value in request.items()
+                         if key not in {"rights_authorization", "rights_extensions"}}]
     assert calls[0]["project"] == "native-project" and calls[0]["status"] == "completed"
     assert calls[0]["size"] == native_cache.MAX_CACHE_CANDIDATES
     page.total = native_cache.MAX_CACHE_CANDIDATES + 1
@@ -215,3 +219,93 @@ def test_execution_and_condition_source_belong_to_runtime_closure(tmp_path):
     assert changed != initial
     (tmp_path / "execution.py").write_text("changed selection")
     assert runtime_source_identity(tmp_path) != changed
+
+
+def _persisted_cache_request():
+    from modelbuilder.backend.execution_rights import prepare_authorization
+    request = {"project_id": "test-project", "recipe": {"source": {"commit": "a" * 40},
+               "nodes": [node()], "edges": []}}
+    request["rights_authorization"] = prepare_authorization(NS(), request, request["recipe"])
+    request["rights_extensions"] = request["rights_authorization"]["receipt"]["declarations"]["extensions"]
+    return request
+
+
+def test_internal_cache_revalidation_keeps_public_authority_rejected(monkeypatch):
+    from modelbuilder.backend.execution_rights import prepare_authorization, RESERVED_FIELDS
+    from modelbuilder.backend.native_cache import _validate_cache_request
+    request = _persisted_cache_request()
+    calls = []
+    monkeypatch.setattr("modelbuilder.backend.admission.validate_execution", lambda backend, body: calls.append(body))
+    _validate_cache_request(NS(), request)
+    assert len(calls) == 1 and not RESERVED_FIELDS.intersection(calls[0])
+    for field in RESERVED_FIELDS:
+        public = {**calls[0], field: request["rights_authorization"]}
+        with pytest.raises(BackendError) as rejected:
+            prepare_authorization(NS(), public, public["recipe"])
+        assert rejected.value.code == "license_authority_unavailable"
+    # Even the internal cache path strips only its two documented persisted fields.
+    with pytest.raises(BackendError, match="internal service authority"):
+        _validate_cache_request(NS(), {**request, "reviewed_license_policies": {}})
+
+
+@pytest.mark.parametrize("change", ["missing_receipt", "digest", "project", "source", "node", "extensions", "protected_input"])
+def test_internal_cache_revalidation_rejects_receipt_or_intent_drift(monkeypatch, change):
+    from modelbuilder.backend.native_cache import _validate_cache_request
+    request = _persisted_cache_request()
+    calls = []
+    monkeypatch.setattr("modelbuilder.backend.admission.validate_execution", lambda *args: calls.append(args))
+    if change == "missing_receipt":
+        request.pop("rights_authorization")
+    elif change == "digest":
+        request["rights_authorization"]["receipt"]["digest"] = "f" * 64
+    elif change == "project":
+        request["project_id"] = "another-project"
+    elif change == "source":
+        request["recipe"]["source"] = {"commit": "b" * 40}
+    elif change == "node":
+        request["recipe"]["nodes"] = [node(parameters={"changed": True})]
+    elif change == "extensions":
+        request["rights_extensions"] = {"usage_context": {"purpose": "changed"}}
+    else:
+        request["resolved_input_bindings"] = [{"node_id": "prepare", "rights_required": True}]
+    with pytest.raises(BackendError):
+        _validate_cache_request(NS(), request)
+    assert calls == []
+
+
+def test_internal_cache_revalidation_refuses_reviewed_assets_and_rechecks_revocation(tmp_path, monkeypatch):
+    from modelbuilder.backend.execution_rights import bind_authority, prepare_authorization
+    from modelbuilder.backend.native_cache import _validate_cache_request
+    from modelbuilder.hub_rights import digest
+    from modelbuilder.store import SQLiteStore
+    from tests.components.rights_test_support import USAGE_CONTEXT, local_review, write_reviewed_policies
+    import hashlib
+    weight_bytes = b"test-authored inert model bytes"
+    (tmp_path / "weights.bin").write_bytes(weight_bytes)
+    weight_hash = hashlib.sha256(weight_bytes).hexdigest()
+    policy, rights = local_review(source_files=[{"path": "weights.bin", "sha256": weight_hash, "size_bytes": len(weight_bytes)}])
+    policies = {policy["policy_id"]: policy}
+    store = write_reviewed_policies(tmp_path / "reviews.sqlite3", policies)
+    backend = NS(_execution_rights_authority=bind_authority("test-project", policies, store))
+    recipe = {"source": {"commit": "a" * 40}, "nodes": [node(cache_policy="disabled", provenance={"intended_use": "train"})],
+              "edges": [], "resources": [{"id": "model", "kind": "model", "sha256": weight_hash, "metadata": {"rights": rights}}],
+              "extensions": {"usage_context": USAGE_CONTEXT}}
+    request = {"project_id": "test-project", "recipe": recipe}
+    request["rights_authorization"] = prepare_authorization(backend, request, recipe, durable=True)
+    request["rights_extensions"] = request["rights_authorization"]["receipt"]["declarations"]["extensions"]
+    calls = []
+    monkeypatch.setattr("modelbuilder.backend.admission.validate_execution", lambda *args: calls.append(args))
+    with pytest.raises(BackendError) as governed:
+        _validate_cache_request(NS(), request)
+    assert governed.value.code == "license_cache_unavailable"
+    revoked = {**policy, "revision": 2, "status": "revoked"}
+    revoked["review_digest"] = digest({key: value for key, value in revoked.items() if key != "review_digest"})
+    db = SQLiteStore(store)
+    try:
+        db.put("hub_license_policy", policy["policy_id"], "test-project", revoked, expected_revision=1)
+    finally:
+        db.close()
+    with pytest.raises(BackendError) as stale:
+        _validate_cache_request(NS(), request)
+    assert stale.value.code == "license_policy_changed"
+    assert calls == []

@@ -14,6 +14,7 @@ import pytest
 import httpx
 
 from test_registry import make_manifest
+from tests.components.rights_test_support import USAGE_CONTEXT
 
 ROOT = Path(__file__).resolve().parents[2]
 BACKEND_PYTHON = Path(os.environ.get("MODELBUILDER_BACKEND_PYTHON", ROOT / ".venv-backend/bin/python"))
@@ -22,6 +23,7 @@ HARNESS = '''from pathlib import Path
 import json
 import hashlib
 import torch
+from modelbuilder.artifact_rights import combine_parent_rights
 
 def fit(inputs, parameters, context):
     train, dev, heldout = (inputs[key] for key in ('train', 'dev', 'heldout'))
@@ -53,7 +55,9 @@ def fit(inputs, parameters, context):
     (destination / 'report.json').write_text(json.dumps(report))
     checkpoint = {'schema_version': 'modelbuilder.checkpoint/v1', 'identities': context['identities'],
                   'resume_modes': [], 'assets': [{'path': 'model.pt', 'sha256': hashlib.sha256((destination / 'model.pt').read_bytes()).hexdigest()}],
-                  'step': 300, 'purpose': 'inference', 'metrics': {'loss': final}}
+                  'step': 300, 'purpose': 'inference', 'metrics': {'loss': final},
+                  'rights': combine_parent_rights([{'artifact_id': 'source-and-declarations', 'rights': context['declared_artifact_rights']},
+                       *[{'artifact_id': name, 'rights': inputs[name]['rights']} for name in ('train', 'dev', 'heldout')]])}
     (destination / 'checkpoint.manifest.json').write_text(json.dumps(checkpoint))
     return {'trained': destination}
 '''
@@ -66,6 +70,8 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
     source = tmp_path / "independent-model"
     source.mkdir()
     (source / "harness.py").write_text(HARNESS)
+    terms = "Test-authored synthetic fixture source and rows. Permission is granted to train and evaluate these exact bytes in isolated offline tests only. No external assets or distribution permission is included.\n"
+    (source / "LICENSE.txt").write_text(terms)
     subprocess.run(["git", "init", "-q", str(source)], check=True)
     subprocess.run(["git", "-C", str(source), "add", "."], check=True)
     subprocess.run(["git", "-C", str(source), "-c", "user.name=Data Acceptance", "-c", "user.email=data@example.invalid",
@@ -77,12 +83,13 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
     rows = [{"id": f"{split}-{i}", "text": "x" * i, "label": 2 * i + 1}
             for split, indices in [("train", range(1, 7)), ("dev", range(7, 9)), ("heldout", range(9, 11))] for i in indices]
     manifest = make_manifest(data_root, rows=rows, fmt=fmt)
+    (data_root / "LICENSE.txt").write_text(terms)
     spec = spec_from_file_location("native_dataset_mcp_harness", ROOT / "scripts/mcp_smoke.py")
     harness = module_from_spec(spec)
     spec.loader.exec_module(harness)
     state = tmp_path / "service-state"
     state.mkdir()
-    process = harness.ServiceProcess(state)
+    process = harness.ServiceProcess(state, owner_scopes=["read", "modify", "execute", "publish"])
     config = tmp_path / "operator.json"
     operator = {"source_root": str(source), "trusted_code_roots": [str(source)], "python_executable": str(BACKEND_PYTHON)}
     config.write_text(json.dumps(operator))
@@ -101,6 +108,7 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
             # Operator admission config supplies root aliases only. It never supplies
             # a portable-reference file or dependency map, and never writes the DB.
             operator["dataset_roots"] = {pid: {"data": str(data_root)}}
+            operator["hub"] = {"publication_roots": {pid: {"authored-data": str(data_root), "authored-source": str(source)}}}
             config.write_text(json.dumps(operator))
             process.restart()
             version = await call_http("dataset.register", {"project_id": pid, "manifest": manifest, "idempotency_key": "register"})
@@ -109,6 +117,25 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
             newer = await call_http("dataset.version", {"project_id": pid, "dataset_id": version["dataset_id"],
                 "expected_revision": 1, "manifest": changed, "idempotency_key": "next"})
             assert newer["revision"] == 2
+            async def review_fixture(alias, repo_type, paths, **identity):
+                evidence = await call_http("hub.license.local.inspect", {"project_id": pid,
+                    "source_alias": alias, "repo_type": repo_type, "files": [*paths, "LICENSE.txt"],
+                    "max_bytes": 1024 * 1024, "declared_license": "unknown", **identity,
+                    "idempotency_key": "inspect-" + alias})
+                assert evidence["evidence"]["documents"][0]["text"] == terms
+                return await call_http("hub.license.review", {"project_id": pid,
+                    "evidence_id": evidence["evidence_id"], "evidence_digest": evidence["evidence_digest"],
+                    "license_document_paths": ["LICENSE.txt"], "permitted_uses": ["train", "evaluate"],
+                    "intended_context": "Explicit review of this test's authored synthetic fixtures only",
+                    "reviewed_usage_context": USAGE_CONTEXT, "required_files": [], "required_attributions": [],
+                    "allowed_destination_licenses": [], "gated_terms_acknowledged": False, "confirm_review": True,
+                    "idempotency_key": "review-" + alias})
+            data_policy = await review_fixture("authored-data", "dataset", [item["path"] for item in manifest["sources"]])
+            data_binding = await call_http("hub.dataset.policy.bind", {"project_id": pid,
+                "dataset_id": version["dataset_id"], "dataset_revision": 1,
+                "source_policies": {item["id"]: data_policy["policy_id"] for item in manifest["sources"]},
+                "intended_use": "train", "usage_context": USAGE_CONTEXT, "idempotency_key": "review-dataset"})
+            assert not data_binding["rights"]["unresolved"]
             shared = {"environment_ref": "default", "resource_request": {"gpu": 0}, "timeout": 120,
                       "retry": {"max_attempts": 1, "backoff_seconds": 0}, "cache_policy": "disabled", "provenance": {}}
             node = {**shared, "id": "fit", "kind": "component.run", "implementation_ref": {"module": "harness", "entrypoint": "fit",
@@ -125,6 +152,17 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
                       "environment": {"python": "3.12", "requirements": ["zenml==0.97.0"]}, "evaluation": {}, "outputs": []}
             current = await call_http("recipe.update", {"project_id": pid, "recipe_id": project["recipe_id"], "recipe": recipe,
                                      "expected_revision": 1, "idempotency_key": "recipe"})
+            available = await call_http("project.source.list", {"project_id": pid})
+            repository_id = next(item["repository_id"] for item in available["sources"] if item["alias"] == "default")
+            project = await call_http("project.source.bind", {"project_id": pid, "expected_revision": project["revision"],
+                "source_alias": "default", "source_repository_id": repository_id, "trusted": True, "idempotency_key": "source-binding"})
+            source_policy = await review_fixture("authored-source", "source", ["harness.py"],
+                source_repository_id=repository_id, source_commit=commit)
+            origin = await call_http("hub.source.policy.bind", {"project_id": pid, "recipe_id": current["recipe_id"],
+                "expected_revision": current["revision"], "expected_project_revision": project["revision"],
+                "license_policy_id": source_policy["policy_id"], "intended_use": "train", "usage_context": USAGE_CONTEXT,
+                "idempotency_key": "review-source"})
+            current = origin["recipe"]
             async with process.mcp() as session:
                 await session.initialize()
                 assert "dataset_bind" in {tool.name for tool in (await session.list_tools()).tools}
@@ -141,7 +179,7 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
                     assert bound["execution_started"] is False
                     assert await call_mcp("dataset_bind", request) == bound
                     current = bound["recipe"]
-                assert current["recipe_id"] == project["recipe_id"] and current["revision"] == 5
+                assert current["recipe_id"] == project["recipe_id"] and current["revision"] == 6
                 if fmt == "parquet":
                     assert "pyarrow==25.0.0" in current["environment"]["requirements"]
                 assert str(data_root) not in json.dumps(current) and str(source) not in json.dumps(current)
@@ -166,6 +204,11 @@ async def test_registered_dataset_native_import_and_actual_model_consumption(tmp
                 assert status["status"] == "succeeded", (status, (job / "worker.log").read_text()[-12000:])
                 report = json.loads((output / "report.json").read_text())
                 assert report["final_loss"] < report["initial_loss"] * .01
+                checkpoint = json.loads((output / "checkpoint.manifest.json").read_text())
+                assert not checkpoint["rights"]["unresolved"]
+                assert {item["license_policy_id"] for item in checkpoint["rights"]["sources"]} == {
+                    data_policy["policy_id"], source_policy["policy_id"]}
+                assert checkpoint["assets"][0]["sha256"] == hashlib.sha256((output / "model.pt").read_bytes()).hexdigest()
                 assert len(report["actual_consumed_ids"]) == 300 * 6
                 assert set(report["actual_consumed_ids"]) == set(version["splits"][0]["sample_ids"])
                 assert report["data_identity"]["content_digest"] == version["content_digest"]

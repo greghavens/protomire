@@ -1,0 +1,85 @@
+{
+  "scope": "Focused repair of actual full-CI live-discovery fixture failure; not aggregate CI or accelerator hardware acceptance",
+  "candidate_commit": "bdafebeb736a3839294755c2f2ba223a42cdd5b4",
+  "runtime_commit": "d51a90d",
+  "changed_file": "tests/integration/test_live_reads_during_discovery.py",
+  "changed_file_sha256": "1c9e4bf2e60b7ad96f3c5eb7ec66847f52a3474dd33ac6f679add16bc0bd0a2b",
+  "runtime_changed": false,
+  "diagnosis": "Original placement-only fixture asserted every probe device was mps. Current discovery correctly inspects mps and cuda:0 without allocation. Traced cuda:0 AssertionError before hardware snapshot; actual original test failure reproduced.",
+  "fix": "Discovery fixture permits exactly mps and cuda:0, verifies each non-allocating call, and keeps the held prepared plan restricted to exactly one mps call. Original live CPU training/evaluation, locking, timing and independent writer assertions remain unchanged.",
+  "checks": {
+    "original-repro": {
+      "tests": "1",
+      "failures": "1",
+      "errors": "0",
+      "skipped": "0",
+      "time": "4.107"
+    },
+    "placement-fixed": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "15.746"
+    },
+    "all-cases": {
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "42.239"
+    },
+    "placement-service": {
+      "tests": "86",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "2.786"
+    },
+    "placement-backend": {
+      "tests": "95",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1",
+      "time": "6.415"
+    }
+  },
+  "lint": "Full ruff check src tests scripts distribution passed; git diff --check passed",
+  "live_receipts": [
+    {
+      "observed_steps_while_training": [
+        2,
+        4
+      ],
+      "compute_and_content_pending": true,
+      "cross_connection_write_completed": true,
+      "recipe_revision": 1,
+      "held_preparation": "none"
+    },
+    {
+      "observed_steps_while_training": [
+        2,
+        4
+      ],
+      "compute_and_content_pending": true,
+      "cross_connection_write_completed": true,
+      "recipe_revision": 1,
+      "held_preparation": "parquet"
+    },
+    {
+      "observed_steps_while_training": [
+        2,
+        4
+      ],
+      "compute_and_content_pending": true,
+      "cross_connection_write_completed": true,
+      "recipe_revision": 2,
+      "held_preparation": "placement"
+    }
+  ],
+  "limitations": [
+    "Full aggregate CI not rerun by this worker.",
+    "Real CUDA hardware acceptance skipped because this CPU backend host has no available CUDA device.",
+    "Controlled discovery/content/placement fixtures do not establish native ZenML admission acceptance."
+  ]
+}

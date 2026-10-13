@@ -1,0 +1,8 @@
+{
+  "wheel": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-wheels/modelbuilder-0.1.0-py3-none-any.whl",
+  "sha256": "7049db8f76c7b1137278d710c21e6b6b1281b7d27548ebef44db58883b354cee",
+  "kind": "service",
+  "source_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+  "build_hooks_executed": false,
+  "files": 85
+}

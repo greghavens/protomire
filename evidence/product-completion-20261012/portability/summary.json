@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "source_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+  "source_files": 106,
+  "comparisons": {
+    "custom": {
+      "status": "PASS",
+      "checks_passed": 35,
+      "checks_total": 35,
+      "exact_output_files": 8
+    },
+    "pretrained": {
+      "status": "PASS",
+      "checks_passed": 35,
+      "checks_total": 35,
+      "exact_output_files": 12
+    }
+  },
+  "verified": [
+    "Four fresh environments, independent source trees and native data/artifact stores",
+    "All committed source files and installed wheel bytes verified before and after execution",
+    "No editable installs, PYTHONPATH, checkout imports, or shared .pth paths",
+    "Both wheel builds are deterministic and execute no build hooks",
+    "Hash-locked backend Trainer overlay installed offline with --no-deps and compatible pip checks",
+    "Source-free imports include streaming, loops, bounded dependency helpers, Trainer/inference and Modal modules",
+    "Both installed service wheels executed actual self-authored PDF extraction through Poppler",
+    "All four native workers reaped, process groups terminated and supervisors reconciled"
+  ],
+  "portability_tests": {
+    "passed": 182,
+    "skipped": 0,
+    "deselected": 0,
+    "junit": "final-portability.xml"
+  },
+  "limitations": [
+    "Same Linux x64 CPU host; no cross-platform, GPU, remote execution or hostile-code isolation acceptance",
+    "Native replay workloads are repository custom-PyTorch and pretrained-small fixtures, not general Trainer training acceptance",
+    "Optional PyArrow cache absent from new environments; actual eager and streaming helper subprocess tests used the existing pinned PyArrow environment",
+    "PDF system tool versions are recorded; they are system prerequisites, not Python wheel dependencies"
+  ],
+  "reproduction": "replay-exact-runtime.sh",
+  "post_verification": "verify-final-replay.py"
+}

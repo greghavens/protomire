@@ -1,0 +1,56 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 1 item
+
+tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] 
+ACTUAL EXECUTION.TARGETS FUTURE EXCEPTION CHAIN:
+Traceback (most recent call last):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/f9ccb8889bfe/modelbuilder/tests/integration/test_live_reads_during_discovery.py", line 65, in call
+    return service.invoke(operation, payload, actor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/service.py", line 253, in invoke
+    raise error from exc
+  File "/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/service.py", line 166, in invoke
+    return self._execution(operation, payload, actor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/service.py", line 966, in _execution
+    result = self._call_backend(op, enriched, actor, prepared_promotion=prepared_promotion)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/service.py", line 839, in _call_backend
+    raise ServiceError("backend_error", "Execution backend could not complete the operation", {"exception": type(exc).__name__}, 502) from exc
+modelbuilder.models.ServiceError: Execution backend could not complete the operation
+FAILED
+
+=================================== FAILURES ===================================
+_ test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] _
+tests/integration/test_live_reads_during_discovery.py:144: in test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
+    assert compute_entered.wait(3), compute.exception() if compute.done() else "Discovery did not reach fixture"
+E   AssertionError: ServiceError('Execution backend could not complete the operation')
+E   assert False
+E    +  where False = wait(3)
+E    +    where wait = <threading.Event at 0x7f7476165640: unset>.wait
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] - AssertionError: ServiceError('Execution backend could not complete the operation')
+assert False
+ +  where False = wait(3)
+ +    where wait = <threading.Event at 0x7f7476165640: unset>.wait
+======================== 1 failed, 2 warnings in 4.06s =========================

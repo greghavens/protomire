@@ -1,0 +1,125 @@
+{
+  "status": "PASS",
+  "runs": [
+    {
+      "fixture": "custom",
+      "role": "origin",
+      "state_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/custom-origin-data/backend/jobs/68705848-e74a-5861-913e-79f8dfd4ecff/state.json",
+      "state": {
+        "cancelled": false,
+        "process_group_terminated": true,
+        "reconciled_at": "2026-10-12T23:46:35.839926+00:00",
+        "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532619]",
+        "started_at": "2026-10-12T23:46:20.228081+00:00",
+        "supervisor_identity": "psutil:0x1.ab35c52ceb852p+30",
+        "supervisor_pid": 650,
+        "supervisor_state": "finished",
+        "termination": {
+          "confirmed": true,
+          "confirmed_at": "2026-10-12T23:46:33.985967+00:00",
+          "process_group_terminated": true,
+          "proof_source": "local_supervisor_wait_and_group_observation",
+          "reason": "completed",
+          "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532619]",
+          "worker_identity": "psutil:0x1.ab35c52d7ae14p+30",
+          "worker_pid": 651
+        },
+        "worker_exit_code": 0,
+        "worker_identity": "psutil:0x1.ab35c52d7ae14p+30",
+        "worker_pid": 651,
+        "worker_reaped": true,
+        "worker_terminated_at": "2026-10-12T23:46:33.985967+00:00"
+      }
+    },
+    {
+      "fixture": "custom",
+      "role": "replay",
+      "state_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/custom-replay-data/backend/jobs/68705848-e74a-5861-913e-79f8dfd4ecff/state.json",
+      "state": {
+        "cancelled": false,
+        "process_group_terminated": true,
+        "reconciled_at": "2026-10-12T23:47:04.899450+00:00",
+        "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532619]",
+        "started_at": "2026-10-12T23:46:49.124603+00:00",
+        "supervisor_identity": "psutil:0x1.ab35c5a051eb8p+30",
+        "supervisor_pid": 680,
+        "supervisor_state": "finished",
+        "termination": {
+          "confirmed": true,
+          "confirmed_at": "2026-10-12T23:47:02.974231+00:00",
+          "process_group_terminated": true,
+          "proof_source": "local_supervisor_wait_and_group_observation",
+          "reason": "completed",
+          "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532619]",
+          "worker_identity": "psutil:0x1.ab35c5a10a3d7p+30",
+          "worker_pid": 681
+        },
+        "worker_exit_code": 0,
+        "worker_identity": "psutil:0x1.ab35c5a10a3d7p+30",
+        "worker_pid": 681,
+        "worker_reaped": true,
+        "worker_terminated_at": "2026-10-12T23:47:02.974231+00:00"
+      }
+    },
+    {
+      "fixture": "pretrained",
+      "role": "origin",
+      "state_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/pretrained-origin-data/backend/jobs/68705848-e74a-5861-913e-79f8dfd4ecff/state.json",
+      "state": {
+        "cancelled": false,
+        "process_group_terminated": true,
+        "reconciled_at": "2026-10-12T23:47:40.207445+00:00",
+        "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532619]",
+        "started_at": "2026-10-12T23:47:13.551357+00:00",
+        "supervisor_identity": "psutil:0x1.ab35c60233333p+30",
+        "supervisor_pid": 712,
+        "supervisor_state": "finished",
+        "termination": {
+          "confirmed": true,
+          "confirmed_at": "2026-10-12T23:47:37.632069+00:00",
+          "process_group_terminated": true,
+          "proof_source": "local_supervisor_wait_and_group_observation",
+          "reason": "completed",
+          "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532619]",
+          "worker_identity": "psutil:0x1.ab35c602c28f6p+30",
+          "worker_pid": 713
+        },
+        "worker_exit_code": 0,
+        "worker_identity": "psutil:0x1.ab35c602c28f6p+30",
+        "worker_pid": 713,
+        "worker_reaped": true,
+        "worker_terminated_at": "2026-10-12T23:47:37.632069+00:00"
+      }
+    },
+    {
+      "fixture": "pretrained",
+      "role": "replay",
+      "state_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/pretrained-replay-data/backend/jobs/68705848-e74a-5861-913e-79f8dfd4ecff/state.json",
+      "state": {
+        "cancelled": false,
+        "process_group_terminated": true,
+        "reconciled_at": "2026-10-12T23:48:17.016507+00:00",
+        "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532619]",
+        "started_at": "2026-10-12T23:47:50.069671+00:00",
+        "supervisor_identity": "psutil:0x1.ab35c69447ae1p+30",
+        "supervisor_pid": 746,
+        "supervisor_state": "finished",
+        "termination": {
+          "confirmed": true,
+          "confirmed_at": "2026-10-12T23:48:14.453905+00:00",
+          "process_group_terminated": true,
+          "proof_source": "local_supervisor_wait_and_group_observation",
+          "reason": "completed",
+          "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532619]",
+          "worker_identity": "psutil:0x1.ab35c694d70a4p+30",
+          "worker_pid": 747
+        },
+        "worker_exit_code": 0,
+        "worker_identity": "psutil:0x1.ab35c694d70a4p+30",
+        "worker_pid": 747,
+        "worker_reaped": true,
+        "worker_terminated_at": "2026-10-12T23:48:14.453905+00:00"
+      }
+    }
+  ]
+}

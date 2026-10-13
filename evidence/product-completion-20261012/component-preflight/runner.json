@@ -1,0 +1,23 @@
+{
+  "concurrency": 2,
+  "deadline_seconds": 2100,
+  "status": "completed",
+  "elapsed_seconds": 357.96,
+  "groups": [
+    {
+      "name": "cpu-components",
+      "pid": 6,
+      "status": "passed",
+      "returncode": 0,
+      "log": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/product-completion-20261012/component-preflight/results.log",
+      "xml": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/product-completion-20261012/component-preflight/results.xml",
+      "started_seconds": 0.0,
+      "finished_seconds": 357.856
+    }
+  ],
+  "cleanup": {
+    "complete": true,
+    "signaled_processes": 0
+  },
+  "exit_code": 0
+}

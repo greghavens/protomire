@@ -1,0 +1,159 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 1 item
+
+tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] FAILED [100%]
+
+=================================== FAILURES ===================================
+_ test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] _
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-88/test_live_evaluation_reads_and0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fc13b54b740>
+held_preparation = 'placement'
+
+    @pytest.mark.parametrize("held_preparation", ["none", "parquet", "placement"])
+    def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held(tmp_path, monkeypatch, held_preparation):
+        hold_parquet = held_preparation == "parquet"
+        hold_placement = held_preparation == "placement"
+        if hold_parquet:
+            if os.environ.get("MODELBUILDER_REQUIRE_PARQUET") == "1":
+                import pyarrow as arrow
+                import pyarrow.parquet as parquet
+            else:
+                arrow = pytest.importorskip("pyarrow")
+                parquet = pytest.importorskip("pyarrow.parquet")
+        actor = Actor("live-io-owner", {"read", "modify", "execute"})
+        job = tmp_path / "actual-cpu-evaluations"
+        data = fixtures.dataset({"fixture": "custom", "count": 80})
+        initial = fixtures.initialize(data, {"fixture": "custom", "width": 4}, tmp_path / "initial")
+        coordinator = LiveEvaluationCoordinator(job, "train", {"kind": "fixture", "data": data, "parameters": {}},
+                                              max_concurrency=1, timeout_seconds=30)
+        failures = []
+        def train():
+            try:
+                fixtures.train(data, initial, {"steps": 16, "step_delay": 0.5, "checkpoint_interval_steps": 2,
+                                               "_checkpoint_ready": coordinator.checkpoint_ready}, tmp_path / "training")
+            except BaseException as exc:
+                failures.append(exc)
+        trainer = threading.Thread(target=train)
+        class LiveBackend(ZenMLBackend):
+            def invoke(self, operation, payload, actor=None):
+                if operation == "run.evaluations.list":
+                    return list_evaluations(job, limit=payload.get("limit"))
+                if operation == "run.status":
+                    return {"operation_id": payload["operation_id"], "backend_run_id": "local-live-harness",
+                            "status": "running" if trainer.is_alive() else "succeeded"}
+                return super().invoke(operation, payload, actor)
+        backend = LiveBackend(tmp_path / "backend", python_executable=sys.executable)
+        service = OperationService(tmp_path / "service.sqlite3", backend)
+        writer = OperationService(service.store.path)
+        def call(operation, payload):
+            return service.invoke(operation, payload, actor)
+        project = call("project.create", {"slug": "concurrent-live", "model_name": "One live model", "idempotency_key": "project"})
+        pid, operation_id = project["project_id"], str(uuid4())
+        with service.store.transaction():
+            service.store.put("operation", operation_id, pid, {"operation_id": operation_id, "project_id": pid,
+                "backend_run_id": "local-live-harness", "status": "running", "revision": 1,
+                "recipe_id": project["recipe_id"], "recipe_revision": 1, "recipe_digest": "controlled-harness"})
+        evidence = call("evidence.add", {"project_id": pid, "title": "Independent synthetic paper",
+                                         "source_identifier": "PMC123", "idempotency_key": "evidence"})
+        compute_entered, content_entered, release = threading.Event(), threading.Event(), threading.Event()
+        parquet_entered, placement_entered = threading.Event(), threading.Event()
+        placement_calls = []
+        expected_revision = 1
+        if hold_placement:
+            # The actual CPU harness remains tied to its original revision. A second
+            # revision plans a different device while those checkpoints are read.
+            recipe = call("recipe.get", {"project_id": pid, "recipe_id": project["recipe_id"]})
+            recipe["environment"]["device"] = "mps"
+            recipe["environment"]["lock_file"] = {"path": "requirements/profiles/backend-darwin-arm64.lock",
+                                                   "sha256": placement.MPS_LOCK_SHA256}
+            call("recipe.update", {"project_id": pid, "recipe_id": project["recipe_id"], "expected_revision": 1,
+                                   "recipe": recipe, "idempotency_key": "device-revision"})
+            expected_revision = 2
+            call("policy.update", {"project_id": pid, "expected_revision": 1,
+                 "changes": {"allowed_targets": ["local-cpu", "local-mps"]}, "idempotency_key": "mps-policy"})
+            def held_probe(_backend, device, *, allocate=False):
+                assert not service.store._lock._is_owned()
+                assert device == "mps" and allocate is False
+                if placement._PREPARED_PROBES.get() is None:
+                    # Discovery has its own held fixture below, separate from the plan.
+                    return {"device": device, "available": False, "reason": "Controlled discovery fixture"}
+                placement_calls.append((device, allocate))
+                placement_entered.set()
+                assert release.wait(25), "Held placement fixture was not released"
+                return {"device": device, "available": False, "reason": "Controlled unavailable MPS fixture"}
+            monkeypatch.setattr(placement, "_probe", held_probe)
+        if hold_parquet:
+            from modelbuilder.dataset import DatasetRegistry
+            root = tmp_path / "external-data"
+            root.mkdir()
+            path = root / "bounded.parquet"
+            parquet.write_table(arrow.table({"id": ["one"], "text": ["local synthetic data"]}), path)
+            manifest = {"name": "Local fixture", "benchmark": "local", "license": "CC0-1.0",
+                "provenance": {"source": "synthetic fixture"}, "id_column": "id",
+                "row_schema": {"type": "object", "properties": {"id": {"type": "string"}, "text": {"type": "string"}}},
+                "sources": [{"id": "data", "root_id": "local", "path": path.name, "format": "parquet",
+                             "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}],
+                "splits": [{"id": "train", "role": "train", "source_ids": ["data"]}]}
+            service._dataset_registry = DatasetRegistry(service.store, project_roots={pid: {"local": str(root)}})
+            original_decode = parquet_reader.read_parquet
+            def held_decode(*args, **kwargs):
+                parquet_entered.set()
+                assert not service.store.connection.in_transaction
+                assert release.wait(25), "Held dataset fixture was not released"
+                return original_decode(*args, **kwargs)
+            monkeypatch.setattr(parquet_reader, "read_parquet", held_decode)
+        def hardware():
+            compute_entered.set()
+            assert release.wait(25), "Held compute fixture was not released"
+            return {"scope": "controlled-held-probe"}
+        def article(_identifier):
+            content_entered.set()
+            assert release.wait(25), "Held content fixture was not released"
+            return b'''<article xmlns:xlink="http://www.w3.org/1999/xlink"><front><article-meta>
+    <article-id pub-id-type="pmc">PMC123</article-id><title-group><article-title>Independent synthetic paper</article-title></title-group>
+    <permissions><license xlink:href="https://creativecommons.org/licenses/by/4.0/"><license-p>Synthetic fixture.</license-p></license></permissions>
+    <abstract><p>Fixture only.</p></abstract></article-meta></front><body><sec><title>Methods</title><p>Read measured live evaluations.</p></sec></body></article>'''
+        monkeypatch.setattr(backend.hardware_discovery, "snapshot", hardware)
+        monkeypatch.setattr(research_content, "fetch_xml", article)
+        try:
+            with ThreadPoolExecutor(max_workers=5) as pool:
+                compute = pool.submit(call, "execution.targets", {"project_id": pid})
+                content = pool.submit(call, "research.text.fetch", {"project_id": pid, "evidence_id": evidence["evidence_id"],
+                    "expected_evidence_revision": 1, "provider": "europe_pmc", "source_identifier": "PMC123", "idempotency_key": "fetch"})
+                dataset = (pool.submit(call, "dataset.register", {"project_id": pid, "manifest": manifest,
+                           "idempotency_key": "held-dataset"}) if hold_parquet else None)
+                planned = (pool.submit(call, "run.plan", {"project_id": pid, "recipe_id": project["recipe_id"],
+                           "target": "local-mps", "trusted": True}) if hold_placement else None)
+                try:
+>                   assert compute_entered.wait(3), compute.exception() if compute.done() else "Discovery did not reach fixture"
+E                   AssertionError: ServiceError('Execution backend could not complete the operation')
+E                   assert False
+E                    +  where False = wait(3)
+E                    +    where wait = <threading.Event at 0x7fc13b624c20: unset>.wait
+
+tests/integration/test_live_reads_during_discovery.py:144: AssertionError
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/live-discovery-repair/original-repro.xml -
+=========================== short test summary info ============================
+FAILED tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] - AssertionError: ServiceError('Execution backend could not complete the operation')
+assert False
+ +  where False = wait(3)
+ +    where wait = <threading.Event at 0x7fc13b624c20: unset>.wait
+======================== 1 failed, 2 warnings in 4.11s =========================

@@ -1,0 +1,8 @@
+{
+  "wheel": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-wheels/modelbuilder_runtime-0.1.0-py3-none-any.whl",
+  "sha256": "0295760e5fb50b74519aafa3bbd09e89a2afee145275c4f159e7a2fb47d48ac9",
+  "kind": "backend",
+  "source_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+  "build_hooks_executed": false,
+  "files": 66
+}

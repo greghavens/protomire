@@ -1,0 +1,49 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/bin/python
+cachedir: /tmp/modelbuilder-native-tests-ebg148cl/integration/cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: platformdirs-4.12.4, anyio-4.15.1, asyncio-0.26.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 93 items / 43 deselected / 50 selected
+
+tests/service/test_real_backend.py::test_shared_service_native_execution_resume_research_and_scope PASSED [  2%]
+tests/integration/test_mcp_training.py::test_mcp_real_training_and_service_crash PASSED [  4%]
+tests/security/test_adversarial_review.py::test_native_sdk_cancellation_mapping_requires_positive_proof PASSED [  6%]
+tests/integration/test_source_bound_execution.py::test_unrelated_source_model_loss_checkpoint_export PASSED [  8%]
+tests/integration/test_source_bound_execution.py::test_node_timeout_terminates_native_descendant_group PASSED [ 10%]
+tests/integration/test_source_bound_execution.py::test_cancellation_metadata_lag_never_reports_terminal_failure PASSED [ 12%]
+tests/integration/test_native_multi_output.py::test_native_component_and_python_multiple_outputs PASSED [ 14%]
+tests/integration/test_project_source_execution.py::test_two_source_bound_models_native_execution_history_and_resume PASSED [ 16%]
+tests/integration/test_bound_dataset_checkpoint_release.py::test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release[False] PASSED [ 18%]
+tests/integration/test_bound_dataset_checkpoint_release.py::test_bound_dataset_checkpoint_evaluation_promotion_and_saved_release[True] PASSED [ 20%]
+tests/integration/test_source_deadline_hooks.py::test_platform_main_survives_source_loading_for_end_and_next_start_hooks PASSED [ 22%]
+tests/integration/test_live_mcp_tracking.py::test_source_pinned_mcp_live_evaluation_and_offline_tracking PASSED [ 24%]
+tests/datasets/test_mcp_dataset.py::test_independent_native_mcp_dataset_lifecycle_and_restart[eager] PASSED [ 26%]
+tests/datasets/test_mcp_dataset.py::test_independent_native_mcp_dataset_lifecycle_and_restart[streaming] PASSED [ 28%]
+tests/datasets/test_native_dataset.py::test_registered_dataset_native_import_and_actual_model_consumption[jsonl] PASSED [ 30%]
+tests/datasets/test_native_dataset.py::test_registered_dataset_native_import_and_actual_model_consumption[parquet] PASSED [ 32%]
+tests/native_cache/test_native_reuse.py::test_retry_reuses_completed_stages_with_original_native_provenance PASSED [ 34%]
+tests/native_cache/test_native_reuse.py::test_cancelled_pipeline_reuses_source_component_value_stages PASSED [ 36%]
+tests/conditions/test_native_conditions.py::test_actual_native_branch_cache_and_no_false_import[True] PASSED [ 38%]
+tests/conditions/test_native_conditions.py::test_actual_native_branch_cache_and_no_false_import[False] PASSED [ 40%]
+tests/conditions/test_native_conditions.py::test_native_conditional_stage_deadline_terminates_worker PASSED [ 42%]
+tests/conditions/test_native_conditions.py::test_explicit_cancel_stops_eligible_conditional_stage PASSED [ 44%]
+tests/conditions/test_native_conditions.py::test_native_nested_branches_required_skip_optional_join_and_recovery[True-False] PASSED [ 46%]
+tests/conditions/test_native_conditions.py::test_native_nested_branches_required_skip_optional_join_and_recovery[False-False] PASSED [ 48%]
+tests/conditions/test_native_conditions.py::test_native_nested_branches_required_skip_optional_join_and_recovery[False-True] PASSED [ 50%]
+tests/conditions/test_native_conditions.py::test_native_join_failure_never_mislabels_pending_downstream_as_skipped[exception] PASSED [ 52%]
+tests/conditions/test_native_conditions.py::test_native_join_failure_never_mislabels_pending_downstream_as_skipped[type] PASSED [ 54%]
+tests/conditions/test_native_conditions.py::test_native_optional_join_without_any_branch_has_no_placeholder_inputs[False] PASSED [ 56%]
+tests/conditions/test_native_conditions.py::test_native_optional_join_without_any_branch_has_no_placeholder_inputs[True] PASSED [ 58%]
+tests/conditions/test_native_conditions.py::test_official_mcp_native_branch_join_matches_http_and_persisted_recipe PASSED [ 60%]
+tests/conditions/test_native_conditions.py::test_native_conditional_live_evaluation_honors_gate_before_first_checkpoint[True-True-False] PASSED [ 62%]
+tests/conditions/test_native_conditions.py::test_native_conditional_live_evaluation_honors_gate_before_first_checkpoint[True-False-False] PASSED [ 64%]
+tests/conditions/test_native_conditions.py::test_native_conditional_live_evaluation_honors_gate_before_first_checkpoint[False-True-False] PASSED [ 66%]
+tests/conditions/test_native_conditions.py::test_native_conditional_live_evaluation_honors_gate_before_first_checkpoint[True-True-True] PASSED [ 68%]
+tests/integration/test_admission_live_native.py::test_native_checkpoint_ingestion_during_held_admission PASSED [ 70%]
+tests/live_evaluation/test_selected_live_native.py::test_selected_training_evaluator_cut_publishes_scores_before_later_training_checkpoint[False-False] PASSED [ 72%]
+tests/live_evaluation/test_selected_live_native.py::test_selected_training_evaluator_cut_publishes_scores_before_later_training_checkpoint[True-False] PASSED [ 74%]
+tests/live_evaluation/test_selected_live_native.py::test_selected_training_evaluator_cut_publishes_scores_before_later_training_checkpoint[False-True] PASSED [ 76%]
+tests/iterations/test_native_iterations.py::test_native_bound_early_exit_exact_state_lineage_and_reopen[99-3-bound] PASSED [ 78%]
+tests/iterations/test_native_iterations.py::test_native_bound_early_exit_exact_state_lineage_and_reopen[2-2-until] 

@@ -1,0 +1,45 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 1 item
+
+tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] 
+ACTUAL HELD_PROBE EXCEPTION: device='cuda:0' allocate=False line=92
+Traceback (most recent call last):
+  File "/workspace/scratch/f9ccb8889bfe/modelbuilder/tests/integration/test_live_reads_during_discovery.py", line 92, in held_probe
+    assert device == "mps" and allocate is False
+AssertionError: assert ('cuda:0' == 'mps'
+  
+  - mps
+  + cuda:0)
+FAILED
+
+=================================== FAILURES ===================================
+_ test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] _
+tests/integration/test_live_reads_during_discovery.py:144: in test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
+    assert compute_entered.wait(3), compute.exception() if compute.done() else "Discovery did not reach fixture"
+E   AssertionError: ServiceError('Execution backend could not complete the operation')
+E   assert False
+E    +  where False = wait(3)
+E    +    where wait = <threading.Event at 0x7f51a6a4ffe0: unset>.wait
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] - AssertionError: ServiceError('Execution backend could not complete the operation')
+assert False
+ +  where False = wait(3)
+ +    where wait = <threading.Event at 0x7f51a6a4ffe0: unset>.wait
+======================== 1 failed, 2 warnings in 4.15s =========================

@@ -1,0 +1,24 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 1 item
+
+tests/integration/test_live_reads_during_discovery.py::test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held[placement] PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/live-discovery-repair/placement-fixed.xml -
+======================== 1 passed, 2 warnings in 15.75s ========================

@@ -1,0 +1,24 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: platformdirs-4.12.4, anyio-4.15.1, asyncio-0.26.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 12 items
+
+tests/iterations/test_native_iterations.py::test_native_bound_early_exit_exact_state_lineage_and_reopen[99-3-bound] PASSED [  8%]
+tests/iterations/test_native_iterations.py::test_native_bound_early_exit_exact_state_lineage_and_reopen[2-2-until] PASSED [ 16%]
+tests/iterations/test_native_iterations.py::test_failed_iteration_preserves_completed_native_artifacts_without_downstream PASSED [ 25%]
+tests/iterations/test_native_iterations.py::test_iteration_timeout_uses_canonical_node_and_unique_invocation PASSED [ 33%]
+tests/iterations/test_native_iterations.py::test_native_training_evaluation_feedback_exact_checkpoint_selectors_and_warm_start PASSED [ 41%]
+tests/iterations/test_native_iterations.py::test_cancelled_iteration_recovers_its_exact_partial_training_checkpoint PASSED [ 50%]
+tests/iterations/test_native_iterations.py::test_final_iteration_skip_never_leaks_prior_body_output PASSED [ 58%]
+tests/iterations/test_native_iterations.py::test_selected_cut_can_bind_an_exact_earlier_iteration_artifact PASSED [ 66%]
+tests/iterations/test_native_iterations.py::test_official_mcp_iteration_matches_http_editor_schema_and_canonical_recipe PASSED [ 75%]
+tests/iterations/test_native_iterations.py::test_repeated_exports_select_exact_invocation_checkpoint_and_package PASSED [ 83%]
+tests/iterations/test_native_iterations.py::test_skipped_mandatory_iteration_control_fails_without_completed_outcome[True] PASSED [ 91%]
+tests/iterations/test_native_iterations.py::test_skipped_mandatory_iteration_control_fails_without_completed_outcome[False] PASSED [100%]
+
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/native-iterations/combined-d51a90d.xml -
+======================== 12 passed in 339.74s (0:05:39) ========================

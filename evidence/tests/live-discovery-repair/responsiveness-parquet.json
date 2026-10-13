@@ -1,0 +1,10 @@
+{
+  "observed_steps_while_training": [
+    2,
+    4
+  ],
+  "compute_and_content_pending": true,
+  "cross_connection_write_completed": true,
+  "recipe_revision": 1,
+  "held_preparation": "parquet"
+}

@@ -1,0 +1,28 @@
+{
+  "status": "PASS_HISTORICAL",
+  "source_commit": "49c0f34daabc6d3a64a28bbb0ef0b241037efca3",
+  "current_acceptance": false,
+  "reason": "Superseded pending an additional runtime control-status correction.",
+  "comparisons": {
+    "custom": {
+      "status": "PASS",
+      "checks_passed": 35,
+      "checks_total": 35,
+      "output_files_with_exact_hashes": 8
+    },
+    "pretrained": {
+      "status": "PASS",
+      "checks_passed": 35,
+      "checks_total": 35,
+      "output_files_with_exact_hashes": 12
+    }
+  },
+  "verified": [
+    "All 106 source files in four extracted snapshots match the exact commit before and after execution",
+    "Two service and two backend prefixes use non-editable installed wheels, no checkout imports",
+    "All worker groups terminated, native supervisors reconciled",
+    "Trainer accelerate==1.11.0 installed from hash-locked optional profile",
+    "Four installed-wheel import probes passed; both service installs executed a self-authored PDF through the installed Poppler helper"
+  ],
+  "late_pause_request": "Last worker had completed before durable cancellation reached it. All four runs succeeded naturally; no effective cancellation claim."
+}

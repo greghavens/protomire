@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "kind": "service",
+  "prefix": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service",
+  "module_locations": {
+    "modelbuilder.dataset_streaming": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/dataset_streaming.py",
+    "modelbuilder.parquet_stream": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/parquet_stream.py",
+    "modelbuilder.iterations": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/iterations.py",
+    "modelbuilder.backend.native_invocations": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/backend/native_invocations.py",
+    "modelbuilder.backend.dependency_files": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/backend/dependency_files.py",
+    "modelbuilder.backend.components.transformers_loader": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/backend/components/transformers_loader.py",
+    "modelbuilder.backend.components.transformers_training": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/backend/components/transformers_training.py",
+    "modelbuilder.backend.components.transformers_inference": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/backend/components/transformers_inference.py",
+    "modelbuilder.remote.modal_runtime": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/remote/modal_runtime.py",
+    "modelbuilder.remote.modal_provider": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/remote/modal_provider.py",
+    "modelbuilder.remote.modal_build_inputs": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/remote/modal_build_inputs.py",
+    "modelbuilder.service": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/service.py",
+    "modelbuilder.api": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/api.py",
+    "modelbuilder.mcp_server": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/mcp_server.py",
+    "modelbuilder.research_documents": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/research_documents.py",
+    "modelbuilder.research_document_decode": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-service/lib/python3.12/site-packages/modelbuilder/research_document_decode.py"
+  },
+  "catalog": [
+    "modelbuilder.examples",
+    "modelbuilder.local.generate",
+    "modelbuilder.local.judge",
+    "modelbuilder.local.prepare-dataset",
+    "modelbuilder.transformers.evaluate",
+    "modelbuilder.transformers.export",
+    "modelbuilder.transformers.generate",
+    "modelbuilder.transformers.judge",
+    "modelbuilder.transformers.prepare-dataset",
+    "modelbuilder.transformers.train"
+  ],
+  "installed_pdf_helper": {
+    "text": "Installed wheel PDF extraction.",
+    "tools": {
+      "pdfinfo": "pdfinfo version 25.03.0",
+      "pdftotext": "pdftotext version 25.03.0"
+    },
+    "pages": 1
+  }
+}

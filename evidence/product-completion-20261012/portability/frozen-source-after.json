@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "source_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+  "snapshots": [
+    {
+      "fixture": "custom",
+      "role": "origin",
+      "source_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+      "source_files": 106,
+      "matches_commit_after_execution": true,
+      "working_tree_still_matches_commit": true,
+      "installed_bytes_unchanged": true,
+      "output_files": 8
+    },
+    {
+      "fixture": "custom",
+      "role": "replay",
+      "source_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+      "source_files": 106,
+      "matches_commit_after_execution": true,
+      "working_tree_still_matches_commit": true,
+      "installed_bytes_unchanged": true,
+      "output_files": 8
+    },
+    {
+      "fixture": "pretrained",
+      "role": "origin",
+      "source_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+      "source_files": 106,
+      "matches_commit_after_execution": true,
+      "working_tree_still_matches_commit": true,
+      "installed_bytes_unchanged": true,
+      "output_files": 12
+    },
+    {
+      "fixture": "pretrained",
+      "role": "replay",
+      "source_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+      "source_files": 106,
+      "matches_commit_after_execution": true,
+      "working_tree_still_matches_commit": true,
+      "installed_bytes_unchanged": true,
+      "output_files": 12
+    }
+  ]
+}

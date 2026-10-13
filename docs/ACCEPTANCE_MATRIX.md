@@ -2,7 +2,33 @@
 
 > Owner-requested corrections are verified below: one fixed model project and one recipe identity with immutable revisions; recipe transfer belongs only in the native File menu. Original design inputs are unchanged. Earlier selector and workspace-transfer screenshots are historical, not accepted UI. This is technical verification, not a claim of owner acceptance or full-product completion.
 
-Current status updated 2026-10-12; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 checkpoint below is historical.
+Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
+
+## Current 2026-10-13 local aggregate and focused verification
+
+Runtime remains `d51a90d93df4a150c088c2d9800c340168b911b4`; shipping manifests at
+`bdafebeb736a3839294755c2f2ba223a42cdd5b4` retain the complete 106-file runtime/lock
+closure. Aggregate test checkpoint `4154a2fdd6e5fed67f840ba6c9316cf06ccb3e46`
+adds the test-only
+held-discovery correction and documentation updates, without changing runtime
+bytes or shipping pins.
+
+| Scope | Current status | Evidence and limits |
+|---|---|---|
+| Complete native bounded-iteration file | PASS, focused suite | `tests/iterations/test_native_iterations.py`: 12 passed, zero skipped, 339.737 seconds. All 14 native job workers reaped and process groups terminated; runtime/test hashes unchanged. `evidence/tests/native-iterations/combined-d51a90d.json`. |
+| Complete CPU component preflight | PASS, focused group with skips | 373 passed, 2 skipped; runner exit 0 and `cleanup.complete: true`. `evidence/product-completion-20261012/component-preflight/runner.json` and adjacent `results.xml`. |
+| Complete local aggregate rerun | PASS, declared Linux CPU selections; exit 0 | Light: 1,952 passed, 136 skipped, 63 deselected in 82.68 seconds. Frontend: 349 passed. Separate offline Modal SDK construction: 3 passed, without live provider calls. [Preserved final aggregate evidence](../evidence/product-completion-20261012/final-local-ci/summary.json). |
+| Final combined native queue | PASS, all groups exit 0 | Lifecycle: 24 passed in 1,219.55 seconds. Service/native integration: 50 passed, 43 deselected in 1,484.27 seconds. Components: 373 passed, 2 skipped in 338.99 seconds. Queue completed in 1,561.526 seconds; cleanup complete, zero signaled processes. Runner and per-group receipts are recorded in the [preserved final aggregate evidence](../evidence/product-completion-20261012/final-local-ci/summary.json). The two skips are accelerator-Trainer and actual-CUDA hardware gates. |
+| Mac backend/service checks | PASS, separate Mac-local selections | Apple M3 Max, arm64, macOS 26.6.2: 45 backend passes and 64 service passes after a local snapshot-path fix. Mac fixes are not yet integrated into frozen `d51a90d`; this is not complete Mac runtime acceptance. |
+| Mac native software smoke | PASS, 8 smoke checks; full GUI gates remain | Source-built Code - OSS passed 8 native software smoke checks. The earlier workspace-trust timeout remains an unsuccessful attempt; later smoke passes do not establish all native GUI gates. |
+| Accelerator execution and MLX | PARTIAL: mandatory Mac MPS test passed | The separate Mac task has 1 mandatory MPS test pass. Actual CUDA remains unverified. Mac-local fixes and standalone MLX work are not integrated into the frozen source; no integrated MLX acceptance is claimed. |
+
+Standalone, preflight, light and native selections overlap; their counts are
+not added as unique coverage. The successful final aggregate does not relabel
+earlier canceled or not-started groups as passes. No full-product completion,
+general accelerator acceptance or hosted CI pass is claimed. Separate Mac
+results and historical results below are not promoted to this frozen Linux
+runtime's aggregate acceptance.
 
 Historical checkpoint: Direct-main development, Linux x64 CPU execution evidence only. Status names are
 literal: PASS is demonstrated, FAIL is a tested unmet requirement, BLOCKED needs

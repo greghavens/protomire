@@ -1,0 +1,201 @@
+{
+  "completed_at": "2026-10-09T22:34:25.235159+00:00",
+  "evidence": {
+    "additional_isolation": "all-runs-isolation.json",
+    "comparisons": "custom-comparison.json, pretrained-comparison.json",
+    "installation": "installation-integrity.json",
+    "logs": "logs/",
+    "origin_replay_records": "custom-origin.json, custom-replay.json, pretrained-origin.json, pretrained-replay.json",
+    "pretrained_resources": "pretrained-resource-resolution.json"
+  },
+  "execution": "Four real trusted CPU runs with two independent service/backend wheel installations (four venvs), four extracted source trees and four independent application/ZenML stores",
+  "fixtures": {
+    "custom": {
+      "comparison_checks_passed": 31,
+      "comparison_checks_total": 31,
+      "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8",
+      "exact_metrics_equal": true,
+      "metrics": {
+        "accuracy": 0.8666666746139526,
+        "best_step": 30,
+        "brier": 0.13341984152793884,
+        "heldout_count": 30,
+        "train_count": 180,
+        "validation_count": 30,
+        "validation_loss": 0.24631698429584503
+      },
+      "origin_backend_run_id": "0a12fc4d-e317-4ef6-b566-7af72350038e",
+      "output_files": 6,
+      "output_sha256": {
+        "evaluate/metrics.json": "a4f5022efd3a8ec85a1ba647c6190f2e9a4958e6e9a5b7d523132a3b1671dbc5",
+        "export/model.pt": "be16324873f3c94b757a2133607592f99207b6cea174e7ed01343db4a4d848d2",
+        "export/parity.json": "3c7b2598547c009e971cfae2b8c9ee9aa7d1e23b328522eb30e380b7b30661c9",
+        "initial/checkpoint.pt": "a466cb3efb848386fc4cd4651dba7ffa92e2ff5869a308691b4182684e187977",
+        "train/best.pt": "a813b470896c4d8b280ef2d34dce5508d13d6448057601787a937bfde1a126f6",
+        "train/checkpoint.pt": "fceb1830acfcb9d39657c6621738e4ba65bec47170ecce44f1df766226f4716c"
+      },
+      "recipe_identity": "Each project retains its one owned recipe ID; import creates revision 2 while revision 1 remains unchanged; native execution matches the imported immutable revision and digest",
+      "replay_backend_run_id": "7a715c36-6e44-4b8e-ad19-2efa877d5cde",
+      "status": "PASS",
+      "transport_recipe_digest": "9e40222f8a965bc64b1d7e13515d566ac1524fd40414bdfb4e5dedae9fe04b24",
+      "unresolved_dependencies_at_import": [
+        {
+          "id": "source_license",
+          "reason": "license_review_required",
+          "required": true
+        },
+        {
+          "expected": "2.2.6",
+          "id": "numpy",
+          "reason": "environment_not_checked",
+          "required": true
+        },
+        {
+          "expected": "2.9.0+cpu",
+          "id": "torch",
+          "reason": "environment_not_checked",
+          "required": true
+        },
+        {
+          "expected": "4.57.1",
+          "id": "transformers",
+          "reason": "environment_not_checked",
+          "required": true
+        },
+        {
+          "expected": "0.97.0",
+          "id": "zenml",
+          "reason": "environment_not_checked",
+          "required": true
+        }
+      ]
+    },
+    "pretrained": {
+      "comparison_checks_passed": 31,
+      "comparison_checks_total": 31,
+      "dataset_sha256": "d677dcdcd6f2a73f8c4e4387fa7c2dafdaafc2deb124e275cf3a0f8d65d3ef6e",
+      "exact_metrics_equal": true,
+      "metrics": {
+        "accuracy": 1.0,
+        "best_step": 18,
+        "brier": 0.0006469727959483862,
+        "heldout_count": 8,
+        "train_count": 32,
+        "validation_count": 8,
+        "validation_loss": 0.025669865310192108
+      },
+      "origin_backend_run_id": "0e555fea-0ed6-4830-a09b-59b52692d706",
+      "output_files": 10,
+      "output_sha256": {
+        "evaluate/metrics.json": "fbc12402505cb27ae29df4e0393dc8e7a62716db28be4decc8d84dfe950a72ae",
+        "export/config.json": "74b4a4d06d94667e6d71e3cce4541f89d3f151d05380c6640d8c8c96c2a1de96",
+        "export/model.safetensors": "d6a3a635110f3640fa5fa3779a6a19c53aa1ff0e30052df17c14979f7202a66c",
+        "export/parity.json": "89037c7f703ea4d50bf20ca8af33ffa2f8cb56d977a092b27fef69379d092b58",
+        "export/special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+        "export/tokenizer_config.json": "e711904cac23112776b678356ccf702cf934babaa01125f698ac43bf9ad38e73",
+        "export/vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+        "initial/checkpoint.pt": "37bedf93d20b10c997055cf4e8deac2eaf6fd27ce0293dacec218764714f49a9",
+        "train/best.pt": "0766c3eee9c8e362dada99e01e47a5ad8149d0955d28dae224702120364d66fb",
+        "train/checkpoint.pt": "da576a55341c9282d145c05809b16035aaa6ebb59ec4897ed6c08354df2cd34e"
+      },
+      "recipe_identity": "Each project retains its one owned recipe ID; import creates revision 2 while revision 1 remains unchanged; native execution matches the imported immutable revision and digest",
+      "replay_backend_run_id": "641c70fb-aa8f-4671-91d3-6835d534c769",
+      "status": "PASS",
+      "transport_recipe_digest": "63e97a7ecc72c5f6996e6613af25d7fd44a32fb8de8c69ba8a46f82d235809e6",
+      "unresolved_dependencies_at_import": [
+        {
+          "id": "bert-tiny-config-json",
+          "reason": "external_reference_not_fetched",
+          "required": true,
+          "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/config.json"
+        },
+        {
+          "id": "bert-tiny-pytorch_model-bin",
+          "reason": "external_reference_not_fetched",
+          "required": true,
+          "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/pytorch_model.bin"
+        },
+        {
+          "id": "bert-tiny-vocab-txt",
+          "reason": "external_reference_not_fetched",
+          "required": true,
+          "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/vocab.txt"
+        },
+        {
+          "id": "source_license",
+          "reason": "license_review_required",
+          "required": true
+        },
+        {
+          "expected": "2.2.6",
+          "id": "numpy",
+          "reason": "environment_not_checked",
+          "required": true
+        },
+        {
+          "expected": "2.9.0+cpu",
+          "id": "torch",
+          "reason": "environment_not_checked",
+          "required": true
+        },
+        {
+          "expected": "4.57.1",
+          "id": "transformers",
+          "reason": "environment_not_checked",
+          "required": true
+        },
+        {
+          "expected": "0.97.0",
+          "id": "zenml",
+          "reason": "environment_not_checked",
+          "required": true
+        }
+      ]
+    }
+  },
+  "installation": {
+    "all_four_uv_pip_checks": "PASS",
+    "backend_module_count": 24,
+    "backend_wheel_distributions": 103,
+    "build_hooks_executed": false,
+    "download_cache_reuse": true,
+    "execution_pythonpath": null,
+    "independent_file_copies": true,
+    "service_download_note": "The first offline sync found uncached official wheels; authorized official registry downloads populated the cache, and the independent replay installation used it. No installed site-packages were copied.",
+    "service_module_count": 30,
+    "service_wheel_distributions": 71,
+    "system_site_packages": false
+  },
+  "limitations": [
+    "Same CPU host and operating system; no cross-platform, second-machine, GPU, remote execution or per-stage container claim",
+    "Explicitly trusted local repository source; no untrusted-code sandbox claim",
+    "Source license NOASSERTION remains unresolved for redistribution",
+    "Model resources are external immutable references, not embedded or redistributed in the archive",
+    "Earlier portability evidence and the preliminary 6ac78fc archive are superseded and were not used as this acceptance result"
+  ],
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "python": "3.12.14",
+  "reproduction": {
+    "execution_command": [
+      "/workspace/shared/current-runtime-replay-6ac78fc/run-final.sh"
+    ],
+    "immutable_resource_resolution": "Two separate copies of three existing, pinned TinyBERT files; every SHA256 checked before use and by each run",
+    "isolation_flags": [
+      "python -I",
+      "PYTHONPATH unset",
+      "UV_LINK_MODE=copy",
+      "OMP_NUM_THREADS=1",
+      "OPENBLAS_NUM_THREADS=1",
+      "MKL_NUM_THREADS=1"
+    ],
+    "prepare_command": [
+      "/workspace/shared/current-runtime-replay-6ac78fc/prepare-final.sh",
+      "76c0c288b0b5ae9f5273c61244d2c59df7e1f967"
+    ],
+    "prepared_sources_wheels_and_stores": "/workspace/shared/current-runtime-replay-6ac78fc/final-76c0c288b0b5ae9f5273c61244d2c59df7e1f967",
+    "runtime_working_directory": "/workspace/shared/current-runtime-replay-6ac78fc"
+  },
+  "source_commit": "76c0c288b0b5ae9f5273c61244d2c59df7e1f967",
+  "source_files": 46,
+  "status": "PASS"
+}

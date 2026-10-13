@@ -1,0 +1,43 @@
+{
+  "concurrency": 2,
+  "deadline_seconds": 2100,
+  "status": "completed",
+  "elapsed_seconds": 1561.526,
+  "groups": [
+    {
+      "name": "cpu-lifecycle",
+      "pid": 5831,
+      "status": "passed",
+      "returncode": 0,
+      "log": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-lifecycle.log",
+      "xml": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-lifecycle.xml",
+      "started_seconds": 0.0,
+      "finished_seconds": 1221.002
+    },
+    {
+      "name": "integration",
+      "pid": 5832,
+      "status": "passed",
+      "returncode": 0,
+      "log": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/integration.log",
+      "xml": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/integration.xml",
+      "started_seconds": 0.0,
+      "finished_seconds": 1484.795
+    },
+    {
+      "name": "cpu-components",
+      "pid": 10869,
+      "status": "passed",
+      "returncode": 0,
+      "log": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-components.log",
+      "xml": "/workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/cpu-components.xml",
+      "started_seconds": 1221.102,
+      "finished_seconds": 1561.422
+    }
+  ],
+  "cleanup": {
+    "complete": true,
+    "signaled_processes": 0
+  },
+  "exit_code": 0
+}

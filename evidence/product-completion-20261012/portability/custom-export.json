@@ -1,0 +1,8 @@
+{
+  "digest": "1bb4350cc8896346e8deb794cbd282dcb49004f3092958db95be9466f8192f02",
+  "bundle_digest": "4484b6705d543e15eef73e2715a69a3a969f4e54bc5f4b49d0b07dbd129b4f96",
+  "source_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+  "source_files": 106,
+  "archive_sha256": "507fa4d68ca12e9f2884e44f64526717210439f5fc8cd06f7ba305695ae5a717",
+  "execution_allowed": false
+}

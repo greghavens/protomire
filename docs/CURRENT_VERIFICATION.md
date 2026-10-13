@@ -1,27 +1,52 @@
 # Current verification and remaining gates
 
-## 2026-10-12 implementation in progress
+## 2026-10-13 local aggregate passed; product gates remain
 
-The full product remains incomplete. This working-tree checkpoint adds real
+The full product remains incomplete. This frozen runtime checkpoint implements
 Transformers Trainer/inference components, streaming datasets, conditional live
 execution, bounded native iteration, PDF/OCR research ingestion, a locked CUDA
-profile and an offline-tested native Modal bridge. These are implementation and
-focused-test results, not a replacement for final combined acceptance.
+profile and an offline-tested native Modal bridge. The **complete local aggregate
+passed with exit 0** for its declared Linux CPU selections. That result does not
+establish the remaining product, platform, GUI or provider acceptance gates.
 
 - The current combined light regression has **1,952 passed, 136 skipped and 63
-  deselected**, including the repinned shipping source closures. The preceding
-  1,916-pass attempt had two stale-pin failures; those were corrected by
+  deselected** in **82.68 seconds**, including the repinned shipping source
+  closures. The preceding 1,916-pass attempt had two stale-pin failures; those
+  were corrected by
   committing the runtime and regenerating both manifests, not weakening tests.
+- The final native queue completed in **1,561.526 seconds**: lifecycle
+  **24 passed** in **1,219.55 seconds**; service/native integration **50 passed,
+  43 deselected** in **1,484.27 seconds**; components **373 passed, 2 skipped** in
+  **338.99 seconds**. All groups exited 0; `cleanup.complete` is true with
+  **zero signaled processes**. The two component skips are the explicit
+  accelerator-Trainer and actual-CUDA hardware gates, not CPU execution passes.
+  See the [preserved final aggregate evidence](../evidence/product-completion-20261012/final-local-ci/summary.json)
+  for the runner and per-group terminal receipts.
+- Frontend checks have **349 passing tests**. The separate offline Modal SDK
+  construction suite has **3 passes**; its socket-blocked tests make no live
+  provider or billing claim. The preserved final aggregate evidence above
+  records these terminal results alongside the native queue.
 - Focused real CPU Trainer/native pipelines, streaming JSONL/Parquet consumption,
   general local inference and research HTTP/MCP extraction tests pass. Reports
   remain separately recorded; overlapping counts are not summed.
-- Native bounded-iteration tests demonstrate actual iterations, early exit,
-  checkpoint ancestry and explicit warm-start. Final parity/regression checks
-  are in progress. General concurrent native execution is still outstanding.
-- The CUDA profile installs and passes CPU-side admission checks. Actual GPU
-  execution is unverified because this environment exposes no GPU. MPS and other
-  platform acceptance remain hardware-specific gates.
-- Fresh Code - OSS source/toolchain preparation and native-header preparation
+- The complete `tests/iterations/test_native_iterations.py` file passed:
+  **12 passed, zero skipped, 339.737 seconds**. Its evidence verifies actual
+  iterations, early exit, checkpoint ancestry, explicit warm-start and HTTP/MCP
+  parity, including expected failure/cancellation paths. All **14 native job
+  workers were reaped and their process groups terminated**, as recorded in
+  `evidence/tests/native-iterations/combined-d51a90d.json`. Runtime and test hashes
+  were unchanged during that run. General parallel scheduling within
+  user-authored pipelines remains outstanding.
+- The earlier complete CPU component preflight passed: **373 passed, 2 skipped**,
+  exit **0**, with `cleanup.complete: true` in
+  `evidence/product-completion-20261012/component-preflight/runner.json` and counts
+  in the adjacent `results.xml`. This is one focused group, not a complete
+  aggregate pass. These results overlap other selections and are not summed.
+- The CUDA profile installs and passes CPU-side admission checks. Actual CUDA
+  execution is unverified because this Linux environment exposes no GPU. The
+  separate Mac task's mandatory MPS pass is scoped below; it does not establish
+  general accelerator or other-platform acceptance.
+- Fresh Linux Code - OSS source/toolchain and native-header preparation
   succeeded. The build stopped at an npm network policy denial. An offline-only
   retry then failed with `ENOTCACHED` for `vscode-uri-3.0.2.tgz`. Neither attempt
   establishes a current native build or GUI pass.
@@ -29,33 +54,44 @@ focused-test results, not a replacement for final combined acceptance.
   by source-image provenance and authoritative all-in billing/runtime limits.
   An account or spending approval alone does not resolve those design gates.
 - The host cannot establish the required isolated worker namespace. No hostile
-  code sandbox is claimed. Native GUI, macOS/Windows/ARM runtime, live vendor
-  assistant calls and online tracking remain separate unverified gates.
+  code sandbox is claimed. Full native GUI and cross-platform runtime
+  acceptance, live vendor assistant calls and online tracking remain separate
+  unverified gates; the partial Mac results below do not close them.
 - Hosted CI remains disabled by user instruction. All checks here run locally.
 
 Runtime source is now frozen at `d51a90d93df4a150c088c2d9800c340168b911b4`;
 shipping manifests are committed at `bdafebeb736a3839294755c2f2ba223a42cdd5b4`.
-Both manifests pin the complete **106-file** runtime/lock closure.
+Both manifests pin the complete **106-file** runtime/lock closure. The aggregate
+used test checkpoint `4154a2fdd6e5fed67f840ba6c9316cf06ccb3e46`, containing the test-only
+held-discovery correction and documentation updates; runtime bytes and shipping
+pins remain unchanged.
 
 Independent installed-wheel replay passed for both fixtures: **35/35 checks
 each**, exact hashes for eight custom and twelve pretrained output files, four
 fresh environments and native stores, before/after source and installed-byte
 verification, and verified worker termination. **182 portability tests** passed.
-The aggregate frontend has **349 passing tests**. Final combined native tests
-and publication verification remain pending. An npm registry policy denial
-interrupted the first aggregate before native tests; an explicit offline-only
+The complete local aggregate rerun has now **passed with exit 0**, including the
+combined native queue above. Publication verification remains pending. An npm
+registry policy denial interrupted the first aggregate before native tests; an explicit offline-only
 retry passed that stage. Its native queue then failed an existing held-discovery
 fixture after 23 lifecycle passes: the test asserted that every accelerator
 probe was MPS, although discovery now also checks CUDA. Exact tracing reproduced
 the stale assertion. The test-only fix retains lock, no-allocation, latency and
 live-read/write assertions; all three real CPU cases and 180 related checks pass,
 with one actual-CUDA hardware skip. Runtime bytes and shipping pins are unchanged.
-The complete native queue must rerun; its canceled and not-started groups are
-not passes. No hosted CI ran.
+The successful final rerun does not relabel the earlier canceled or not-started
+groups as passes. Standalone iteration, preflight, light and native selections
+intentionally overlap; their counts are not added as unique coverage. No hosted
+CI ran.
 
-A separate authorized Mac task is building and testing this exact candidate.
-MLX is newly requested and is not supplied by the existing PyTorch/MPS support;
-a distinct, verified integration is in progress. No MLX pass is claimed here.
+A separate authorized Mac task on **Apple M3 Max, arm64, macOS 26.6.2** has
+reported **1 mandatory MPS test passed**, **45 backend passes**, and **64 service
+passes after a Mac-local snapshot-path fix**. The source-built Code - OSS app
+passed **8 native software smoke checks**. An earlier GUI attempt timed out at
+workspace trust; the later smoke passes do not establish all native GUI gates.
+Mac-local fixes and standalone MLX work are **not yet integrated into the frozen
+runtime source**. These separate results are not promoted to this Linux
+aggregate, and no integrated MLX or full Mac GUI acceptance is claimed.
 
 The preceding report below is preserved as historical evidence, not applied
 to this source.

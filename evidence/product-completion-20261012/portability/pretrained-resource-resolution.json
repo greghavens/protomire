@@ -1,0 +1,90 @@
+{
+  "status": "PASS",
+  "resolution": "Independent copies of previously downloaded immutable resources, every SHA256 reverified; no downloads",
+  "resources": [
+    {
+      "copy": "origin",
+      "id": "bert-tiny-config-json",
+      "kind": "model",
+      "license": "MIT",
+      "private": false,
+      "redistribution_allowed": false,
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "sha256": "cf3179684f7c360dd6185962d480e7d426ceb8fe49f5db7b64bdc15dba0b8798",
+      "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/config.json",
+      "bytes": 285,
+      "resolved_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-bert-tiny/config.json",
+      "separate_file_copy": true
+    },
+    {
+      "copy": "origin",
+      "id": "bert-tiny-pytorch_model-bin",
+      "kind": "model",
+      "license": "MIT",
+      "private": false,
+      "redistribution_allowed": false,
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+      "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/pytorch_model.bin",
+      "bytes": 17756393,
+      "resolved_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-bert-tiny/pytorch_model.bin",
+      "separate_file_copy": true
+    },
+    {
+      "copy": "origin",
+      "id": "bert-tiny-vocab-txt",
+      "kind": "model",
+      "license": "MIT",
+      "private": false,
+      "redistribution_allowed": false,
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+      "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/vocab.txt",
+      "bytes": 231508,
+      "resolved_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-bert-tiny/vocab.txt",
+      "separate_file_copy": true
+    },
+    {
+      "copy": "replay",
+      "id": "bert-tiny-config-json",
+      "kind": "model",
+      "license": "MIT",
+      "private": false,
+      "redistribution_allowed": false,
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "sha256": "cf3179684f7c360dd6185962d480e7d426ceb8fe49f5db7b64bdc15dba0b8798",
+      "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/config.json",
+      "bytes": 285,
+      "resolved_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-bert-tiny/config.json",
+      "separate_file_copy": true
+    },
+    {
+      "copy": "replay",
+      "id": "bert-tiny-pytorch_model-bin",
+      "kind": "model",
+      "license": "MIT",
+      "private": false,
+      "redistribution_allowed": false,
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "sha256": "dab2c2bddcfb48ea430ef63fd76d46d67d704487844d967256a50dd7d7fd0a66",
+      "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/pytorch_model.bin",
+      "bytes": 17756393,
+      "resolved_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-bert-tiny/pytorch_model.bin",
+      "separate_file_copy": true
+    },
+    {
+      "copy": "replay",
+      "id": "bert-tiny-vocab-txt",
+      "kind": "model",
+      "license": "MIT",
+      "private": false,
+      "redistribution_allowed": false,
+      "revision": "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837",
+      "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+      "url": "https://huggingface.co/prajjwal1/bert-tiny/resolve/6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837/vocab.txt",
+      "bytes": 231508,
+      "resolved_path": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/replay-bert-tiny/vocab.txt",
+      "separate_file_copy": true
+    }
+  ]
+}

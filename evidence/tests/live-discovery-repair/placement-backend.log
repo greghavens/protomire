@@ -1,0 +1,125 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.6.0 -- /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/f9ccb8889bfe/modelbuilder
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 95 items
+
+tests/placement/test_placement.py::test_explicit_device_contract_rejects_automatic_selection PASSED [  1%]
+tests/placement/test_placement.py::test_target_must_match_versioned_recipe_device PASSED [  2%]
+tests/placement/test_placement.py::test_cuda_requires_reviewed_profile_even_with_mocked_hardware PASSED [  3%]
+tests/placement/test_placement.py::test_mps_requires_reviewed_lock_before_runtime_probe PASSED [  4%]
+tests/placement/test_placement.py::test_mocked_mps_profile_runtime_allocation_and_resume PASSED [  5%]
+tests/placement/test_placement.py::test_mocked_mps_runtime_rejects_wrong_platform_or_build PASSED [  6%]
+tests/placement/test_placement.py::test_cpu_evaluator_environment_cannot_inherit_selected_gpu PASSED [  7%]
+tests/placement/test_placement.py::test_resource_reservations_remain_rejected PASSED [  8%]
+tests/placement/test_placement.py::test_cpu_plain_python_admission_does_not_add_torch_dependency PASSED [  9%]
+tests/placement/test_placement.py::test_profile_hash_still_matches_frozen_cpu_and_mac_profiles PASSED [ 10%]
+tests/placement/test_placement.py::test_probe_timeout_is_unavailable_without_fallback PASSED [ 11%]
+tests/placement/test_placement.py::test_real_cpu_probe_forward_backward_in_configured_interpreter PASSED [ 12%]
+tests/placement/test_placement.py::test_real_device_aware_training_cpu_checkpoint_eval_and_cancel PASSED [ 13%]
+tests/placement/test_placement.py::test_real_unavailable_mps_is_not_silently_cpu PASSED [ 14%]
+tests/placement/test_placement.py::test_accelerator_component_checkpoint_cannot_inherit_cpu_resume_claims PASSED [ 15%]
+tests/placement/test_placement.py::test_mocked_mps_component_context_and_checkpoint_resume_gate[claimed0-False] PASSED [ 16%]
+tests/placement/test_placement.py::test_mocked_mps_component_context_and_checkpoint_resume_gate[claimed1-True] PASSED [ 17%]
+tests/placement/test_placement.py::test_selected_python_cut_never_allocates_for_unselected_builtin_train PASSED [ 18%]
+tests/placement/test_placement.py::test_mocked_mps_probe_does_not_claim_observed_component_execution PASSED [ 20%]
+tests/placement/test_placement.py::test_mocked_accelerator_exact_resume_is_rejected_before_component_call PASSED [ 21%]
+tests/placement/test_placement.py::test_shared_static_and_conditional_invocation_preserves_placement_and_bound_inputs[False] PASSED [ 22%]
+tests/placement/test_placement.py::test_shared_static_and_conditional_invocation_preserves_placement_and_bound_inputs[True] PASSED [ 23%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-last-False-None] PASSED [ 24%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-last-False-cpu] PASSED [ 25%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-last-False-mps] PASSED [ 26%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-last-False-cuda:2] PASSED [ 27%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-last-True-None] PASSED [ 28%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-last-True-cpu] PASSED [ 29%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-last-True-mps] PASSED [ 30%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-last-True-cuda:2] PASSED [ 31%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-best-False-None] PASSED [ 32%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-best-False-cpu] PASSED [ 33%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-best-False-mps] PASSED [ 34%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-best-False-cuda:2] PASSED [ 35%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-best-True-None] PASSED [ 36%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-best-True-cpu] PASSED [ 37%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-best-True-mps] PASSED [ 38%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[False-best-True-cuda:2] PASSED [ 40%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-last-False-None] PASSED [ 41%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-last-False-cpu] PASSED [ 42%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-last-False-mps] PASSED [ 43%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-last-False-cuda:2] PASSED [ 44%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-last-True-None] PASSED [ 45%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-last-True-cpu] PASSED [ 46%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-last-True-mps] PASSED [ 47%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-last-True-cuda:2] PASSED [ 48%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-best-False-None] PASSED [ 49%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-best-False-cpu] PASSED [ 50%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-best-False-mps] PASSED [ 51%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-best-False-cuda:2] PASSED [ 52%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-best-True-None] PASSED [ 53%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-best-True-cpu] PASSED [ 54%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-best-True-mps] PASSED [ 55%]
+tests/placement/test_checkpoint_capabilities.py::test_checkpoint_read_reports_effective_modes_without_rewriting_manifest[True-best-True-cuda:2] PASSED [ 56%]
+tests/placement/test_checkpoint_capabilities.py::test_effective_capabilities_do_not_invent_warm_start[modes0-mps] PASSED [ 57%]
+tests/placement/test_checkpoint_capabilities.py::test_effective_capabilities_do_not_invent_warm_start[modes0-cuda:0] PASSED [ 58%]
+tests/placement/test_checkpoint_capabilities.py::test_effective_capabilities_do_not_invent_warm_start[modes1-mps] PASSED [ 60%]
+tests/placement/test_checkpoint_capabilities.py::test_effective_capabilities_do_not_invent_warm_start[modes1-cuda:0] PASSED [ 61%]
+tests/placement/test_checkpoint_capabilities.py::test_effective_capabilities_do_not_invent_warm_start[modes2-mps] PASSED [ 62%]
+tests/placement/test_checkpoint_capabilities.py::test_effective_capabilities_do_not_invent_warm_start[modes2-cuda:0] PASSED [ 63%]
+tests/placement/test_checkpoint_capabilities.py::test_inconsistent_saved_placement_cannot_advertise_cpu_exact_resume[placement] PASSED [ 64%]
+tests/placement/test_checkpoint_capabilities.py::test_inconsistent_saved_placement_cannot_advertise_cpu_exact_resume[target] PASSED [ 65%]
+tests/placement/test_checkpoint_capabilities.py::test_inconsistent_saved_placement_cannot_advertise_cpu_exact_resume[invalid_device] PASSED [ 66%]
+tests/placement/test_checkpoint_capabilities.py::test_inconsistent_saved_placement_cannot_advertise_cpu_exact_resume[invalid_placement] PASSED [ 67%]
+tests/placement/test_checkpoint_capabilities.py::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[False-None] PASSED [ 68%]
+tests/placement/test_checkpoint_capabilities.py::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[False-cpu] PASSED [ 69%]
+tests/placement/test_checkpoint_capabilities.py::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[False-mps] PASSED [ 70%]
+tests/placement/test_checkpoint_capabilities.py::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[False-cuda:1] PASSED [ 71%]
+tests/placement/test_checkpoint_capabilities.py::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[True-None] PASSED [ 72%]
+tests/placement/test_checkpoint_capabilities.py::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[True-cpu] PASSED [ 73%]
+tests/placement/test_checkpoint_capabilities.py::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[True-mps] PASSED [ 74%]
+tests/placement/test_checkpoint_capabilities.py::test_failed_run_reconciliation_cannot_restore_accelerator_exact_claim[True-cuda:1] PASSED [ 75%]
+tests/placement/test_checkpoint_capabilities.py::test_loop_scope_suppresses_exact_resume_without_rewriting_checkpoint_modes PASSED [ 76%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_requires_matching_reviewed_profile_and_preserves_warm_start PASSED [ 77%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[platform-win32] PASSED [ 78%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[machine-arm64] PASSED [ 80%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[python-3.12.13] PASSED [ 81%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[torch-2.9.0+cpu] PASSED [ 82%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[torch-2.9.1+cu128] PASSED [ 83%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[cuda_build-12.6] PASSED [ 84%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[hip_build-6.4] PASSED [ 85%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[available-False] PASSED [ 86%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[cuda_visible_devices-1] PASSED [ 87%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[cuda_visible_devices-True] PASSED [ 88%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_wrong_runtime_or_invisible_ordinal[cuda_visible_devices-1001] PASSED [ 89%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_rejects_other_architecture_lock PASSED [ 90%]
+tests/placement/test_cuda_execution.py::test_cuda_visibility_is_preserved_without_reindexing_and_evaluator_is_cpu_only PASSED [ 91%]
+tests/placement/test_cuda_execution.py::test_mocked_cuda_target_discovery_uses_only_runtime_visible_ordinals_without_allocation PASSED [ 92%]
+tests/placement/test_cuda_execution.py::test_mocked_wrong_cuda_runtime_never_creates_available_targets[change0] PASSED [ 93%]
+tests/placement/test_cuda_execution.py::test_mocked_wrong_cuda_runtime_never_creates_available_targets[change1] PASSED [ 94%]
+tests/placement/test_cuda_execution.py::test_mocked_wrong_cuda_runtime_never_creates_available_targets[change2] PASSED [ 95%]
+tests/placement/test_cuda_execution.py::test_cuda_profiles_are_reviewed_immutable_discoverable_and_changed_bytes_are_hidden PASSED [ 96%]
+tests/placement/test_cuda_execution.py::test_cuda_lock_metadata_check_fails_on_cpu_environment PASSED [ 97%]
+tests/placement/test_cuda_execution.py::test_real_unavailable_cuda_does_not_fall_back_to_cpu PASSED [ 98%]
+tests/placement/test_cuda_execution.py::test_real_cuda_training_checkpoint_evaluation_warm_start_and_cancel SKIPPED [100%]
+
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+tests/placement/test_placement.py::test_mocked_mps_component_context_and_checkpoint_resume_gate[claimed0-False]
+tests/placement/test_placement.py::test_mocked_mps_component_context_and_checkpoint_resume_gate[claimed0-False]
+tests/placement/test_placement.py::test_mocked_mps_component_context_and_checkpoint_resume_gate[claimed0-False]
+tests/placement/test_placement.py::test_mocked_mps_component_context_and_checkpoint_resume_gate[claimed0-False]
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:2356: PydanticDeprecatedSince211: The `__get_pydantic_core_schema__` method of the `BaseModel` class is deprecated. If you are calling `super().__get_pydantic_core_schema__` when overriding the method on a Pydantic model, consider using `handler(source)` instead. However, note that overriding this method on models can lead to unexpected side effects. Deprecated in Pydantic V2.11 to be removed in V3.0.
+    schema = annotation_get_schema(source, get_inner_schema)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/live-discovery-repair/placement-backend.xml -
+================== 94 passed, 1 skipped, 6 warnings in 6.42s ===================

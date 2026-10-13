@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "kind": "backend",
+  "prefix": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend",
+  "module_locations": {
+    "modelbuilder.dataset_streaming": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/dataset_streaming.py",
+    "modelbuilder.parquet_stream": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/parquet_stream.py",
+    "modelbuilder.iterations": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/iterations.py",
+    "modelbuilder.backend.native_invocations": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/backend/native_invocations.py",
+    "modelbuilder.backend.dependency_files": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/backend/dependency_files.py",
+    "modelbuilder.backend.components.transformers_loader": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/backend/components/transformers_loader.py",
+    "modelbuilder.backend.components.transformers_training": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/backend/components/transformers_training.py",
+    "modelbuilder.backend.components.transformers_inference": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/backend/components/transformers_inference.py",
+    "modelbuilder.remote.modal_runtime": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/remote/modal_runtime.py",
+    "modelbuilder.remote.modal_provider": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/remote/modal_provider.py",
+    "modelbuilder.remote.modal_build_inputs": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/remote/modal_build_inputs.py",
+    "modelbuilder.backend.worker": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/backend/worker.py",
+    "modelbuilder.backend.conditional_worker": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/backend/conditional_worker.py",
+    "modelbuilder.backend.sdk": "/workspace/scratch/f9ccb8889bfe/modelbuilder/.runtime/portable-runtime-d51a90d/origin-backend/lib/python3.12/site-packages/modelbuilder/backend/sdk.py"
+  },
+  "catalog": [
+    "modelbuilder.examples",
+    "modelbuilder.local.generate",
+    "modelbuilder.local.judge",
+    "modelbuilder.local.prepare-dataset",
+    "modelbuilder.transformers.evaluate",
+    "modelbuilder.transformers.export",
+    "modelbuilder.transformers.generate",
+    "modelbuilder.transformers.judge",
+    "modelbuilder.transformers.prepare-dataset",
+    "modelbuilder.transformers.train"
+  ],
+  "trainer_overlay_version": "1.11.0"
+}

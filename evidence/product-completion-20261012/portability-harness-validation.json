@@ -1,0 +1,142 @@
+{
+  "status": "PASS",
+  "scope": "Harness correction validation; fresh portability test execution and read-only native-evidence verification, no native replay rerun",
+  "temporary_evidence_directory": "/tmp/portability-harness-validation-1fh3lacc",
+  "checks": [
+    {
+      "case": "missing",
+      "status": "PASS",
+      "verifier_returncode": 1
+    },
+    {
+      "case": "malformed",
+      "status": "PASS",
+      "verifier_returncode": 1
+    },
+    {
+      "case": "empty",
+      "status": "PASS",
+      "verifier_returncode": 1
+    },
+    {
+      "case": "failing",
+      "status": "PASS",
+      "verifier_returncode": 1
+    },
+    {
+      "case": "errored",
+      "status": "PASS",
+      "verifier_returncode": 1
+    },
+    {
+      "case": "skipped",
+      "status": "PASS",
+      "verifier_returncode": 1
+    },
+    {
+      "case": "inconsistent_test_count",
+      "status": "PASS",
+      "verifier_returncode": 1
+    },
+    {
+      "case": "hidden_failure",
+      "status": "PASS",
+      "verifier_returncode": 1
+    },
+    {
+      "case": "dynamic_count",
+      "status": "PASS",
+      "verifier_returncode": 0
+    },
+    {
+      "case": "multiple_suites",
+      "status": "PASS",
+      "verifier_returncode": 0
+    },
+    {
+      "case": "original_real_junit",
+      "status": "PASS",
+      "parsed_tests": 182,
+      "sha256": "5cac463007ecb6da9ab14dbcbcfc16815e5662b65ac7d9262f407b97e64811fd"
+    },
+    {
+      "case": "existing_work_guard",
+      "status": "PASS",
+      "returncode": 2
+    },
+    {
+      "case": "existing_evidence_guard",
+      "status": "PASS",
+      "returncode": 2
+    },
+    {
+      "case": "fresh_actual_full_suite",
+      "status": "PASS",
+      "counts": {
+        "tests": 182,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 182,
+        "junit": "final-portability.xml",
+        "junit_sha256": "1fe01badd68f57e043a4952fe201dedee5ebc0d1f700813ccc7be68771f6840d",
+        "execution_receipt": "portability-test-run.json",
+        "command": [
+          "/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv/bin/python",
+          "-m",
+          "pytest",
+          "tests/portability",
+          "-q",
+          "-o",
+          "addopts=",
+          "--junitxml=/tmp/portability-harness-validation-1fh3lacc/fresh-evidence/final-portability.xml"
+        ],
+        "started_at": "2026-10-13T00:39:42.628662+00:00",
+        "finished_at": "2026-10-13T00:39:46.635379+00:00",
+        "selection": "Full tests/portability directory; no -k/-m selection and empty addopts. JUnit does not report deselections."
+      }
+    },
+    {
+      "case": "failed_returncode",
+      "status": "PASS"
+    },
+    {
+      "case": "wrong_xml_hash",
+      "status": "PASS"
+    },
+    {
+      "case": "wrong_selection",
+      "status": "PASS"
+    },
+    {
+      "case": "full_verifier_with_actual_replay_and_fresh_suite",
+      "status": "PASS",
+      "native_workloads_rerun": false
+    },
+    {
+      "case": "verifier_output_overwrite_guard",
+      "status": "PASS"
+    },
+    {
+      "case": "all_original_json_xml_log_receipts_unchanged",
+      "status": "PASS",
+      "verified_files": 71
+    },
+    {
+      "case": "inconsistent_root_aggregate",
+      "status": "PASS",
+      "verifier_returncode": 1
+    }
+  ],
+  "changed_harness_files": [
+    "replay-exact-runtime.sh",
+    "verify-final-replay.py"
+  ],
+  "preserved_original_receipts": 71,
+  "fresh_test_artifacts": "evidence/product-completion-20261012/portability-harness-validation",
+  "changed_files_sha256": {
+    "evidence/product-completion-20261012/portability/verify-final-replay.py": "91135951d2165fb1b5be611b585baaf2f08a1dc8435bf3ff1cd6a069dfe94f2a",
+    "evidence/product-completion-20261012/portability/replay-exact-runtime.sh": "00273811d5374846ccc67c4eaeed74e48bf2088502839e1c38e7e848f6886630",
+    "docs/PORTABILITY.md": "2279708db3af74a9092a33e65438230adff6a0a22805957c5ddd5a4e5ab84ede"
+  }
+}

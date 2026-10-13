@@ -1,0 +1,739 @@
+{
+  "status": "PROPOSED_FOR_REVIEW_NOT_STAGED_OR_PUBLISHED",
+  "reviewed_at_utc": "2026-10-13T00:52:06Z",
+  "scope": "Compact evidence selection and corrected reproduction harness for current documentation, including exact-byte preserved terminal local aggregate results. Original measured receipts remain unchanged. This manifest is an inventory and audit, not a new execution or full-product completion claim.",
+  "runtime_commit": "d51a90d93df4a150c088c2d9800c340168b911b4",
+  "shipping_manifest_commit": "bdafebeb736a3839294755c2f2ba223a42cdd5b4",
+  "checkout_head_at_review": "4154a2fdd6e5fed67f840ba6c9316cf06ccb3e46",
+  "proposal": {
+    "files": 70,
+    "bytes": 1843774,
+    "groups": {
+      "current-component-preflight": {
+        "files": 3,
+        "bytes": 111007
+      },
+      "current-native-iterations": {
+        "files": 3,
+        "bytes": 22565
+      },
+      "current-portability": {
+        "files": 27,
+        "bytes": 922751
+      },
+      "final-local-aggregate": {
+        "files": 9,
+        "bytes": 609256
+      },
+      "historical-portability-summary-only": {
+        "files": 3,
+        "bytes": 18864
+      },
+      "live-discovery-repair": {
+        "files": 17,
+        "bytes": 92898
+      },
+      "portability-harness-validation": {
+        "files": 4,
+        "bytes": 32263
+      },
+      "retained-failed-aggregate-attempt": {
+        "files": 4,
+        "bytes": 34170
+      }
+    },
+    "manifest_itself": "evidence/product-completion-20261012/acceptance-evidence-manifest.json",
+    "manifest_not_included_in_file_count_or_hashes": true
+  },
+  "selection_rationale": [
+    "Retain every current PORTABILITY.md evidence link plus the four adjacent raw origin/replay JSON receipts required to independently inspect source, package, store, output-hash and recipe-identity comparisons. These four text JSON files contribute most of the size; no model data or native stores are included.",
+    "Retain the exact combined-d51a90d JSON/XML/log and component-preflight runner/XML/log referenced by CURRENT_VERIFICATION.md and ACCEPTANCE_MATRIX.md.",
+    "Retain the small focused live-discovery repair receipts, traces and original failure. Retain the saved failed aggregate runner, lifecycle XML/log and canceled integration log; do not relabel failure, cancellation or not-started groups as passed.",
+    "Retain three explicitly historical portability summaries only so the historical documentation links remain navigable. Their old source pins are not current acceptance, and their adjacent local-only payloads are intentionally omitted.",
+    "Retain the corrected two-file reproduction harness, its validation report, and exact-byte copies of the fresh 182-case JUnit/log/execution receipt. Validation reran pytest and reverified existing native replay artifacts without rerunning the native workloads.",
+    "Retain eight exact-byte terminal aggregate snapshots and one scope/exit-provenance summary under final-local-ci. These replace mutable source paths as publication targets; retain the final 467,573-byte aggregate stdout log because the requested terminal evidence includes light/frontend stages."
+  ],
+  "verified_from_existing_records": {
+    "portability": {
+      "comparison_checks_per_fixture": 35,
+      "custom_output_files": 8,
+      "pretrained_output_files": 12,
+      "run_receipts": 4,
+      "run_receipt_statuses": "PASS / succeeded",
+      "tests_passed": 182,
+      "tests_failed": 0,
+      "tests_skipped": 0,
+      "xml": "evidence/product-completion-20261012/portability/final-portability.xml"
+    },
+    "native_iterations": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 339.737,
+      "native_jobs": 14,
+      "all_workers_reaped_and_process_groups_terminated": true,
+      "negative_case_worker_exit_codes_are_preserved": true
+    },
+    "component_preflight": {
+      "passed": 373,
+      "failed": 0,
+      "skipped": 2,
+      "runner_exit_code": 0,
+      "cleanup_complete": true,
+      "skips": [
+        "test_required_accelerator_trainer_hardware",
+        "test_real_cuda_training_checkpoint_evaluation_warm_start_and_cancel"
+      ]
+    },
+    "live_discovery_repair": {
+      "original_reproduction_failures": 1,
+      "repaired_live_cpu_cases_passed": 3,
+      "service_checks_passed": 86,
+      "backend_checks_passed": 94,
+      "backend_checks_skipped": 1,
+      "counts_overlap_other_reports_and_are_not_summed": true
+    },
+    "saved_failed_aggregate_attempt": {
+      "runner_status": "group_failed",
+      "exit_code": 1,
+      "cpu_lifecycle_passed": 23,
+      "cpu_lifecycle_failed": 1,
+      "integration_status": "canceled",
+      "cpu_components_status": "not_started",
+      "cleanup_complete": true
+    },
+    "read_only_source_recheck": {
+      "both_shipping_manifests_pin_runtime_commit": true,
+      "files_per_shipping_manifest": 106,
+      "shipping_file_hash_mismatches": 0,
+      "native_iteration_recorded_source_hash_mismatches": 0
+    },
+    "full_current_aggregate": {
+      "status": "PASS_WITH_DECLARED_SKIPS_AND_DESELECTIONS",
+      "summary": "evidence/product-completion-20261012/final-local-ci/summary.json",
+      "aggregate_exit": {
+        "code": 0,
+        "source": "Parent-observed terminal result for exec session 72185; supplied in the authorized evidence-preservation task. The stdout log itself does not encode the shell exit code."
+      },
+      "light_regression": {
+        "passed": 1952,
+        "skipped": 136,
+        "deselected": 63,
+        "source": "full-local-ci-final.log"
+      },
+      "frontend": {
+        "tests": 349,
+        "passed": 349,
+        "source": "full-local-ci-final.log"
+      },
+      "native_groups": [
+        {
+          "name": "cpu-lifecycle",
+          "passed": 24,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "deselected": 0,
+          "seconds": 1219.551
+        },
+        {
+          "name": "integration",
+          "passed": 50,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "deselected": 43,
+          "seconds": 1484.268
+        },
+        {
+          "name": "cpu-components",
+          "passed": 373,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 2,
+          "deselected": 0,
+          "seconds": 338.981
+        }
+      ],
+      "native_runner": {
+        "status": "completed",
+        "exit_code": 0,
+        "elapsed_seconds": 1561.526,
+        "cleanup": {
+          "complete": true,
+          "signaled_processes": 0
+        },
+        "report": "native-runner.json"
+      },
+      "all_eight_snapshot_hashes_and_source_bytes_match": true,
+      "categories_and_prior_focused_selections_are_not_summed_as_unique_coverage": true,
+      "full_product_and_shipping_mlx_still_incomplete": true,
+      "hosted_ci_ran": false
+    },
+    "portability_harness_validation": {
+      "report": "evidence/product-completion-20261012/portability-harness-validation.json",
+      "reported_checks": 21,
+      "reported_checks_all_passed": true,
+      "fresh_pytest_counts": {
+        "tests": 182,
+        "passed": 182,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "junit_sha256": "1fe01badd68f57e043a4952fe201dedee5ebc0d1f700813ccc7be68771f6840d"
+      },
+      "fresh_xml": "evidence/product-completion-20261012/portability-harness-validation/final-portability.xml",
+      "execution_receipt": "evidence/product-completion-20261012/portability-harness-validation/portability-test-run.json",
+      "log": "evidence/product-completion-20261012/portability-harness-validation/final-portability.log",
+      "native_workloads_rerun": false,
+      "original_receipts_unchanged_reported_by_validation": 71,
+      "original_selected_non_harness_files_independently_rechecked_unchanged": 55,
+      "execution_receipt_independently_validated_at_original_location": true,
+      "published_copy_bytes_equal_originals": true,
+      "full_aggregate_not_assessed": true
+    }
+  },
+  "credential_and_path_review": {
+    "reviewed_files": 70,
+    "methods": [
+      "Scanned every selected UTF-8 file for known API/token prefixes, private key headers, credential-bearing URLs, Authorization headers, and secret assignments.",
+      "Inspected nonempty sensitive JSON key candidates, literal token/username/email/query fields, Unix home paths and Windows user-path test fixtures.",
+      "Parsed selected JSON/XML and checked actual credentials/path candidates against the corresponding repository test fixtures."
+    ],
+    "actual_credential_values_found": 0,
+    "raw_credential_pattern_matches": 6,
+    "credential_pattern_match_classification": "All six are explicit rejection-test fixture strings in final-local-ci/full-local-ci-final.log: five user:secret/user:pass/user:password URLs and one api_key=secret query. Additional token=secret/hidden/x strings also appear only in unsafe-URL rejection test names. They are synthetic inputs, not live account credentials.",
+    "synthetic_match_log_lines": [
+      39,
+      59,
+      728,
+      1473,
+      2141,
+      1474
+    ],
+    "fixture_source_examples": [
+      "tests/assistant_setup/test_setup.py:162-163,225-226",
+      "tests/mcp/test_adapter.py:21-22",
+      "tests/security/test_recipe_import.py:81,99"
+    ],
+    "sensitive_key_candidate_classification": "All 34 nonempty credential-like JSON fields are credential_env names equal to MODELBUILDER_WANDB_API_KEY, not credential values. Reproduction shell code only unsets API-key variables.",
+    "actual_personal_host_paths_found": 0,
+    "home_directory_pattern_matches": [
+      "/home/agent/.cache/pip",
+      "/home/alice/checkpoint.pt"
+    ],
+    "home_path_classification": "/home/agent/.cache/pip is a generic executor-account pip-cache warning. /home/alice/checkpoint.pt and the Windows C:\\Users\\alice\\checkpoint.pt string are explicit path-rejection fixtures from tests/security/test_recipe_import.py:81, not observed user files.",
+    "retained_absolute_paths": "Sandbox provenance under /workspace/scratch, /workspace/shared and /tmp; system runtime locations under /opt/codex and /usr; generic executor cache path and synthetic rejection-test paths as classified above. JUnit hostnames and native runtime/process identities remain measurement provenance.",
+    "limit": "Pattern scanning and manual candidate review reduce exposure risk but are not a proof of absence of every possible secret. Original evidence and exact-byte snapshots were not redacted or altered."
+  },
+  "reproduction_caveats": [
+    {
+      "file": "evidence/product-completion-20261012/portability/replay-exact-runtime.sh",
+      "finding": "The corrected script now runs the complete portability suite, captures exit status/argv/timestamps/XML hash, validates actual JUnit outcomes, and requires fresh absolute work/evidence directories. It still does not regenerate the separately captured original final-offline-installation.json inventory. Fresh synchronization/install/check logs and distribution inventories in origin/replay receipts support reruns.",
+      "structured_inventory_limitation_recorded_at": "evidence/product-completion-20261012/portability/verify-final-replay.py:148,153"
+    },
+    {
+      "file": "evidence/product-completion-20261012/portability-harness-validation.json",
+      "finding": "Harness validation executed a fresh complete portability suite and read-only verification against the existing native replay artifacts. The corrected full native replay workflow was not rerun end-to-end; neither new native replay acceptance nor complete aggregate acceptance is claimed."
+    },
+    {
+      "files": [
+        "evidence/product-completion-20261012/portability-harness-validation/final-portability.xml",
+        "evidence/product-completion-20261012/portability-harness-validation/final-portability.log",
+        "evidence/product-completion-20261012/portability-harness-validation/portability-test-run.json"
+      ],
+      "finding": "These are byte-for-byte publication copies. The execution receipt preserves its actual /tmp output path and exact command. Its XML hash matches the retained XML. validated_test_evidence was checked successfully at the original run directory; direct validation at the copied directory would correctly reject the changed command/output path. Do not rewrite the receipt to invent a different execution location."
+    },
+    {
+      "file": "evidence/product-completion-20261012/component-preflight/runner.json",
+      "finding": "The focused runner receipt reports group, exit and cleanup, but does not embed the exact test argv or source hash snapshot. Its counts are independently present in results.xml. Do not promote this receipt to full aggregate or hardware acceptance."
+    },
+    {
+      "files": [
+        "evidence/portability/current-runtime/summary.json",
+        "evidence/portability/final-runtime/summary.json",
+        "evidence/product-completion-20261012/portability/historical-49c0f34/summary.json"
+      ],
+      "finding": "Historical summaries retain original source pins, local script/work paths and references to omitted adjacent historical payloads. They are historical index material only, not standalone reproducible current evidence."
+    },
+    {
+      "file": "evidence/product-completion-20261012/failed-native-discovery/native-runner.json",
+      "finding": "Its absolute log/XML paths identify original evidence/tests output locations, which later reruns may overwrite. For this saved failed attempt, use the adjacent selected failed-native-discovery/cpu-lifecycle.xml, cpu-lifecycle.log and integration.log. No completed integration XML is supplied for the canceled group."
+    },
+    {
+      "files": [
+        "evidence/product-completion-20261012/final-local-ci/native-runner.json",
+        "evidence/product-completion-20261012/final-local-ci/full-local-ci-final.log"
+      ],
+      "finding": "The preserved runner retains original absolute evidence/tests paths; use adjacent saved XML/logs for this terminal run. Overall process exit 0 is explicitly attributed to the parent-observed exec session 72185 terminal result, while native-runner exit 0 and group outcomes are independently recorded in JSON. Full-product, integrated MLX, native GUI and accelerator gates remain separate."
+    }
+  ],
+  "documentation_reference_audit": {
+    "reviewed_documents": [
+      {
+        "path": "docs/PORTABILITY.md",
+        "sha256": "2279708db3af74a9092a33e65438230adff6a0a22805957c5ddd5a4e5ab84ede"
+      },
+      {
+        "path": "docs/CURRENT_VERIFICATION.md",
+        "sha256": "8a6ed7516d35c3ad4e175e8c10c3062663cd075b7714cd0a4e7006dc9aec678b"
+      },
+      {
+        "path": "docs/ACCEPTANCE_MATRIX.md",
+        "sha256": "c309fed6573940e5a2cb5e7d23e5e9e7a63a1fb1a928bb326d179ff9831dabda"
+      }
+    ],
+    "scope": "Local Markdown destinations and inline-code evidence references; code-block reproduction output paths were excluded from link checking. Referenced globs were resolved against tracked files.",
+    "current_evidence_links_covered_by_selection": true,
+    "remaining_local_only_or_missing_references": [
+      {
+        "doc": "docs/ACCEPTANCE_MATRIX.md",
+        "kind": "inline-code",
+        "target": "evidence/gui/current-build/",
+        "path": "evidence/gui/current-build/",
+        "exists": true,
+        "tracked": false,
+        "selected": false
+      }
+    ],
+    "remaining_reference_context": "The sole remaining reference is the explicitly historical evidence/gui/current-build/ directory in ACCEPTANCE_MATRIX.md. It exists locally but has no tracked files and is intentionally outside this evidence selection. It will remain unavailable from a fresh Git checkout unless separately published.",
+    "historical_glob_references": "evidence/portability/*comparison.json and evidence/backend/current-domain-native.* have existing tracked matches and are not dangling.",
+    "final_aggregate_documentation": "CURRENT_VERIFICATION.md and ACCEPTANCE_MATRIX.md now link the selected stable final-local-ci/summary.json. Their hashes were captured after the acceptance-doc worker confirmed edits were settled."
+  },
+  "excluded": [
+    "Other historical/interrupted full-local-ci*.log files and mutable duplicate source evidence/tests outputs are not proposed for publication. The explicitly requested terminal aggregate log and native receipts are included as verified final-local-ci snapshots.",
+    "Model weights, checkpoints, datasets, wheel/archive binaries, artifacts, SQLite databases, native application/metadata/artifact stores, extracted sources, dependency caches and installed environments.",
+    "combined-d51a90d-work and other raw native work directories. Their compact termination receipts remain in combined-d51a90d.json.",
+    "Large historical raw aggregate logs and unit-review.xml; historical GUI build/artifacts and historical portability payloads other than the three selected summaries.",
+    "Older packaging/all-portability/offline-dependency-installation reports in the final portability directory; the explicitly final reports are selected instead."
+  ],
+  "files": [
+    {
+      "path": "evidence/portability/current-runtime/summary.json",
+      "group": "historical-portability-summary-only",
+      "bytes": 8892,
+      "sha256": "5cf692de523145452c08ac14d90a741e548df0389701160db85788a9b8d8b5c5"
+    },
+    {
+      "path": "evidence/portability/final-runtime/summary.json",
+      "group": "historical-portability-summary-only",
+      "bytes": 8780,
+      "sha256": "89f5e7ac383556370b4afc26b55cebbecc33a5d1581af597372486e216dff474"
+    },
+    {
+      "path": "evidence/product-completion-20261012/component-preflight/results.log",
+      "group": "current-component-preflight",
+      "bytes": 50986,
+      "sha256": "0b7187af21985218c40089c5cfa74ad1af3622d14f859d4da8630ebf2524c097"
+    },
+    {
+      "path": "evidence/product-completion-20261012/component-preflight/results.xml",
+      "group": "current-component-preflight",
+      "bytes": 59376,
+      "sha256": "462c7d8a4e855327ac3fc84c5374e0c2f06c7d0f7b48b818e6e26f4a99c17c3e"
+    },
+    {
+      "path": "evidence/product-completion-20261012/component-preflight/runner.json",
+      "group": "current-component-preflight",
+      "bytes": 645,
+      "sha256": "da0b55042b5e5391325017a39417d867dee891b6986af9c67a539ada0037271b"
+    },
+    {
+      "path": "evidence/product-completion-20261012/failed-native-discovery/cpu-lifecycle.log",
+      "group": "retained-failed-aggregate-attempt",
+      "bytes": 13837,
+      "sha256": "8afffa0b69f18bf83afa3bccc317b79f22a277268694f926b3a0075c22c53d0f"
+    },
+    {
+      "path": "evidence/product-completion-20261012/failed-native-discovery/cpu-lifecycle.xml",
+      "group": "retained-failed-aggregate-attempt",
+      "bytes": 13309,
+      "sha256": "5b32bf9f7003d326cd4b7788b474cae40fc461bda16646b2ab982c8a8b356dae"
+    },
+    {
+      "path": "evidence/product-completion-20261012/failed-native-discovery/integration.log",
+      "group": "retained-failed-aggregate-attempt",
+      "bytes": 5815,
+      "sha256": "10b0fb857317a84d60e754104aee3e5407b209f0cd07cfe1d8fdf281ecb2764f"
+    },
+    {
+      "path": "evidence/product-completion-20261012/failed-native-discovery/native-runner.json",
+      "group": "retained-failed-aggregate-attempt",
+      "bytes": 1209,
+      "sha256": "56a8e45b510a99a9e3be6f78d665ff0706bd31d64af485038dc0b7349c9032f9"
+    },
+    {
+      "path": "evidence/product-completion-20261012/final-local-ci/cpu-components.log",
+      "group": "final-local-aggregate",
+      "bytes": 50944,
+      "sha256": "7eb9c89f4dec8a9cdfdda182e1f90f43f14413fd7a000d33df30ee361c94af65"
+    },
+    {
+      "path": "evidence/product-completion-20261012/final-local-ci/cpu-components.xml",
+      "group": "final-local-aggregate",
+      "bytes": 59376,
+      "sha256": "335fa24cdb41201fb7ed707d8b64d70912b31f8f91bfcb76543e85baf1a37cc4"
+    },
+    {
+      "path": "evidence/product-completion-20261012/final-local-ci/cpu-lifecycle.log",
+      "group": "final-local-aggregate",
+      "bytes": 4258,
+      "sha256": "1678594a53fa6826d31874660a023dba1f541109fccd916cee452c0ae14a4aef"
+    },
+    {
+      "path": "evidence/product-completion-20261012/final-local-ci/cpu-lifecycle.xml",
+      "group": "final-local-aggregate",
+      "bytes": 3698,
+      "sha256": "d76196a3e63b1ab1d81bbf8cd90f882c909a692b56e0ee04f50d081e53fb855e"
+    },
+    {
+      "path": "evidence/product-completion-20261012/final-local-ci/full-local-ci-final.log",
+      "group": "final-local-aggregate",
+      "bytes": 467573,
+      "sha256": "c6fc0bf1f19b30e09d8b6e04b0414091670892f19ae8a5bd52508bd272e5d6e7"
+    },
+    {
+      "path": "evidence/product-completion-20261012/final-local-ci/integration.log",
+      "group": "final-local-aggregate",
+      "bytes": 7848,
+      "sha256": "f35e610ea5fa54c1c67eb6389946e6ef12e1219dcb8f8395c6b938792480958a"
+    },
+    {
+      "path": "evidence/product-completion-20261012/final-local-ci/integration.xml",
+      "group": "final-local-aggregate",
+      "bytes": 8118,
+      "sha256": "b626a47965e1d5e17b6ebddade5c8b724d889b5f17eb3945cf2eee2e5b4de7af"
+    },
+    {
+      "path": "evidence/product-completion-20261012/final-local-ci/native-runner.json",
+      "group": "final-local-aggregate",
+      "bytes": 1311,
+      "sha256": "c4728be5b13ff770ea1b9d2b4ee9b89ebb70463c83aea2efd1e8d54fb41945ca"
+    },
+    {
+      "path": "evidence/product-completion-20261012/final-local-ci/summary.json",
+      "group": "final-local-aggregate",
+      "bytes": 6130,
+      "sha256": "ba87eca5069e42e211e661ebfbcf7b3b3116b7e4e134c12876058a9cbb4e77d0"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability-harness-validation.json",
+      "group": "portability-harness-validation",
+      "bytes": 3926,
+      "sha256": "20336897c7842bc17a4884433bbfc1aa56dec505f47dbffb6aeaa463b7fb0bd2"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability-harness-validation/final-portability.log",
+      "group": "portability-harness-validation",
+      "bytes": 366,
+      "sha256": "3c255a287b67678fb21376301df8a9f408ff8fc86f95933d7ca998408bcccdf7"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability-harness-validation/final-portability.xml",
+      "group": "portability-harness-validation",
+      "bytes": 27400,
+      "sha256": "1fe01badd68f57e043a4952fe201dedee5ebc0d1f700813ccc7be68771f6840d"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability-harness-validation/portability-test-run.json",
+      "group": "portability-harness-validation",
+      "bytes": 571,
+      "sha256": "9211c025b04bffd17102285fde1f1696c0d1ad87aaa1511f682c5b6d7e4976ba"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/all-runs-termination.json",
+      "group": "current-portability",
+      "bytes": 5491,
+      "sha256": "3c4d80e25b1c24235f82272d42085f70055c20592c0c675bcf540d1ce8d6e8b6"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/custom-comparison.json",
+      "group": "current-portability",
+      "bytes": 2055,
+      "sha256": "0a5593f5e45321e89fd4b2a703bc31d99b7d03479c83b4ed9818cd567476404a"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/custom-export.json",
+      "group": "current-portability",
+      "bytes": 374,
+      "sha256": "fa3362a2f57653ea83df37c037829783ab117edc94cb0eeb429454f64e960314"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/custom-origin.json",
+      "group": "current-portability",
+      "bytes": 185419,
+      "sha256": "48f8982c36e072b05393d6ac254a13143e6a7867dc6e37734873ed99e61f2787"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/custom-replay.json",
+      "group": "current-portability",
+      "bytes": 185419,
+      "sha256": "4c7d3eb2c84ec79a802f99cc6cb8765c6a16b7bede90fd61cda6f0f738c3e9a5"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/final-offline-installation.json",
+      "group": "current-portability",
+      "bytes": 14000,
+      "sha256": "3e3f164eb7c4b527464d6841723dbba5a0e63e4f4f1b92cc78c8cb37f9112c6c"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/final-portability.log",
+      "group": "current-portability",
+      "bytes": 400,
+      "sha256": "91c17e0c1d46b22aa2aef5b4e3c239f0ca66a2e3dbd9eebd54ede54216ab3665"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/final-portability.xml",
+      "group": "current-portability",
+      "bytes": 27400,
+      "sha256": "5cac463007ecb6da9ab14dbcbcfc16815e5662b65ac7d9262f407b97e64811fd"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/frozen-source-after.json",
+      "group": "current-portability",
+      "bytes": 1389,
+      "sha256": "0a52cfceeb671fdfff5cda2f66e49d6f30bb97d191d55ffbfa1a0252cfe721c6"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/frozen-source-before.json",
+      "group": "current-portability",
+      "bytes": 565,
+      "sha256": "d8b94adaf087fa67b52938f252a40ed0e77fcdf0e364566faf44849c99e6f724"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/historical-49c0f34/summary.json",
+      "group": "historical-portability-summary-only",
+      "bytes": 1192,
+      "sha256": "95f2b857b155763046336c0b9782cc3bac184b9782b2c35fcaae0497190d8159"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/origin-backend-imports.json",
+      "group": "current-portability",
+      "bytes": 3578,
+      "sha256": "456cbb7f45293b7377a88e89397954985c0d76835f7f6d5f1e913f5ce0efad72"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/origin-backend-wheel.json",
+      "group": "current-portability",
+      "bytes": 366,
+      "sha256": "e3817743b210973422dcfc965f763fb4125b54e6fbada8dafee46f4a6b927d55"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/origin-service-imports.json",
+      "group": "current-portability",
+      "bytes": 4097,
+      "sha256": "14f24a6051f64a2e6d72c9a2b9ce0fbfe668c8277d9f251598286e3fe88d4602"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/origin-service-wheel.json",
+      "group": "current-portability",
+      "bytes": 358,
+      "sha256": "d4ec27de4cadee18d2a41b6a8d79eccdbda84367a3b63e67fad68c5b5cf12351"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/pretrained-comparison.json",
+      "group": "current-portability",
+      "bytes": 2055,
+      "sha256": "96991068916aad6d6866c3976cda69fee74dd0d04e1e233c48808edf2a2d74e1"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/pretrained-export.json",
+      "group": "current-portability",
+      "bytes": 374,
+      "sha256": "adbc75448df34d95a0179bbcfc725f784f36728bbeb5b0aa8ce19c7813b90f50"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/pretrained-origin.json",
+      "group": "current-portability",
+      "bytes": 227185,
+      "sha256": "319b4296aca35a98ae2112ccefdd6e8f4d49b8a411025e025d98bd2ceeb2e635"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/pretrained-replay.json",
+      "group": "current-portability",
+      "bytes": 225759,
+      "sha256": "0b9b8b2733f7e738c9ca85fc7819ee7c77b8b24b92c790f5fa5b118b5d20a94c"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/pretrained-resource-resolution.json",
+      "group": "current-portability",
+      "bytes": 4028,
+      "sha256": "da7f03d020cf0fdcc68207f98a046942c0739de1ab90500f2afca5eb6a3b5134"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/probe-installed-wheel.py",
+      "group": "current-portability",
+      "bytes": 3227,
+      "sha256": "1145c01c641ff1f08f4974001d6d31c327f30e3d999641c52789a40d37ec3505"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/replay-backend-imports.json",
+      "group": "current-portability",
+      "bytes": 3578,
+      "sha256": "ba8e3adac6bf92af4c121d655ee662186dd698c6fb3afa7888780bd69e9299d1"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/replay-backend-wheel.json",
+      "group": "current-portability",
+      "bytes": 366,
+      "sha256": "0ffc9cac548d20f13c4db8aca3a74cb80e59f3f66b6480d2700c96609bbde7c4"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/replay-exact-runtime.sh",
+      "group": "current-portability",
+      "bytes": 7729,
+      "sha256": "00273811d5374846ccc67c4eaeed74e48bf2088502839e1c38e7e848f6886630"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/replay-service-imports.json",
+      "group": "current-portability",
+      "bytes": 4097,
+      "sha256": "1a2a338e4205095c471f6f726cd03db1656ca037def14cc2251cc97de1337d06"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/replay-service-wheel.json",
+      "group": "current-portability",
+      "bytes": 358,
+      "sha256": "027f360cd398f81263dd2c8ee1f50f9f7159fb138620f4ad4ad8df20d45764c7"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/summary.json",
+      "group": "current-portability",
+      "bytes": 1908,
+      "sha256": "590692a22dcb7d9fde57586add0b7a061f00ce2a5f9dd1ecbb02a9084ff3cd1c"
+    },
+    {
+      "path": "evidence/product-completion-20261012/portability/verify-final-replay.py",
+      "group": "current-portability",
+      "bytes": 11176,
+      "sha256": "91135951d2165fb1b5be611b585baaf2f08a1dc8435bf3ff1cd6a069dfe94f2a"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/all-cases.log",
+      "group": "live-discovery-repair",
+      "bytes": 1871,
+      "sha256": "b0075a9b978700feb0ec5dd4e9f126f034353c8c24e44dde22d89f96b9e4a7c2"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/all-cases.xml",
+      "group": "live-discovery-repair",
+      "bytes": 774,
+      "sha256": "15bef12d8fc1247f352e911083f675a29e248fea4c8c44f997bda9dd7167c356"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/cause-chain.log",
+      "group": "live-discovery-repair",
+      "bytes": 4001,
+      "sha256": "828a21a1e243597dc92adbe1666cf7ac9af354bbee22febbb1c14c59e0909ed5"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/cause-probe.log",
+      "group": "live-discovery-repair",
+      "bytes": 2838,
+      "sha256": "4e169065163ed2f1e206687895e122d04ed14d3b40eb0376e08829b0744f881e"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/original-repro.log",
+      "group": "live-discovery-repair",
+      "bytes": 11308,
+      "sha256": "947a2360ab2b9597338e709b6953c050dd9d22fca496b7ca45a4aa984595f2f6"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/original-repro.xml",
+      "group": "live-discovery-repair",
+      "bytes": 9994,
+      "sha256": "2958b074bcade0892e947259dedf4e1ea1c92c8a316af62dc526e47c234890eb"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/placement-backend.log",
+      "group": "live-discovery-repair",
+      "bytes": 15426,
+      "sha256": "bedb58a05f0b936263eb6c21d6a7d46851782864277426c8d27f5018d0893d04"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/placement-backend.xml",
+      "group": "live-discovery-repair",
+      "bytes": 15923,
+      "sha256": "b012739c297099f1af1741383d575d8b3a88adaa824e9168d2183f8f0b59489e"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/placement-fixed.log",
+      "group": "live-discovery-repair",
+      "bytes": 1569,
+      "sha256": "9d2c9890e5fc62ed1e50e740f51a6500bcdc93e79a85e0c0b9bf88c5a1e8b605"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/placement-fixed.xml",
+      "group": "live-discovery-repair",
+      "bytes": 413,
+      "sha256": "cab01591f2d3ec60bc87ac1dea3c240b61b0b93cd552c0356d272b402f0bfd97"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/placement-service.log",
+      "group": "live-discovery-repair",
+      "bytes": 12087,
+      "sha256": "38859de899e68f04430f63e9334270f90d8d3087dfac7ebdf208f52385b44471"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/placement-service.xml",
+      "group": "live-discovery-repair",
+      "bytes": 13289,
+      "sha256": "12e10be0abffff5abb1df59544bfa7b62467e0b92928d2d8b05151ce7b033176"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/responsiveness-none.json",
+      "group": "live-discovery-repair",
+      "bytes": 195,
+      "sha256": "711ae665500e3d9b3b6a4087de752bfd6cfcc92c04cfdb371e6d097fc4f380ff"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/responsiveness-parquet.json",
+      "group": "live-discovery-repair",
+      "bytes": 198,
+      "sha256": "f62469b6567ad9e901fbcfd4d6d74ee70f654898f2db8f3d56e065766d831016"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/responsiveness-placement.json",
+      "group": "live-discovery-repair",
+      "bytes": 200,
+      "sha256": "c0facba4a51015187d3c30ed7fbfc1505f53b3f8b37d80ac3b856605ae1e37f8"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/ruff.log",
+      "group": "live-discovery-repair",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "evidence/tests/live-discovery-repair/summary.json",
+      "group": "live-discovery-repair",
+      "bytes": 2793,
+      "sha256": "f6b0e714849ab9799597905044ff33c5228214fc1fe7160b9b2ce22bb7e9fb28"
+    },
+    {
+      "path": "evidence/tests/native-iterations/combined-d51a90d.json",
+      "group": "current-native-iterations",
+      "bytes": 18168,
+      "sha256": "36d39e516faa1312643fd22af1c54bc99425700cd3639e02961b509ab3d33bc9"
+    },
+    {
+      "path": "evidence/tests/native-iterations/combined-d51a90d.log",
+      "group": "current-native-iterations",
+      "bytes": 2282,
+      "sha256": "7f7a2e16a1de8e13a701a7815dbf32643a52bba2d3e2dd4895ef89a224fceb14"
+    },
+    {
+      "path": "evidence/tests/native-iterations/combined-d51a90d.xml",
+      "group": "current-native-iterations",
+      "bytes": 2115,
+      "sha256": "2e98783e2c1845f5c547f0ae8971e67f8ae17d7654c3dbedf7aaac143a5cf821"
+    }
+  ],
+  "resolved_reproduction_issues": {
+    "count_derivation": "verify-final-replay.py now validates JUnit outcome counts, testcase records and optional root aggregates. Its summary uses validated_test_evidence instead of hard-coded historical counts.",
+    "execution_provenance": "The actual successful exit status, full-directory command with empty addopts, required Parquet environment, fresh-report assertion and JUnit SHA256 are checked before summary output.",
+    "overwrite_protection": "The shell rejects existing work/evidence locations; the verifier writes summary/source/termination receipts exclusively and rejects existing outputs.",
+    "validation": "The retained report has passing malformed/missing/empty/failure/error/skip/count/hash/selection/overwrite adversarial checks and a fresh actual 182-pass suite. Original 182-pass XML remains separately preserved.",
+    "deselection_limit": "JUnit does not encode deselections; the corrected summary records the actual complete-directory test command rather than inventing a count."
+  }
+}

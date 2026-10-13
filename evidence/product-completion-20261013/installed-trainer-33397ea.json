@@ -1,0 +1,40 @@
+{
+  "excluded": [
+    "Streaming exact-state continuation",
+    "Partial-epoch continuation",
+    "GPU or cross-platform acceptance",
+    "External pretrained model rights",
+    "Broader model-quality acceptance"
+  ],
+  "generic_hook_status_preserved": "REPORTED_UNVERIFIED",
+  "method": "Independent read-only stdlib receipt/checkpoint inspection and lightweight content hashing; no Torch import, workloads, installs or changes",
+  "receipt_hashes": {
+    "evidence/receipt-sha256.json": "151cdaf959f373a212c8fad237566a3e1721f5ba1ab420eddb8e86beaa7f31bc",
+    "evidence/summary.json": "a70ec62cfb8b3230c0742f67accc620473e161193e334a25cf5c8d7e2b0a5975",
+    "origin-driver/result.json": "54f8362a97982169b4c4eecc369bd2823086cfb3a50bb94083b74a6adfd51ad9",
+    "origin-driver/scientific-receipt.json": "04423860a5edf1a8de9628fd081255bb14f9877d6e36deca60ad5e6b7f40e12e",
+    "replay-driver/result.json": "4692db6870f680aecb399001d4658d7d1a516742daca9d07888e8c197ef3db9e",
+    "replay-driver/scientific-receipt.json": "5a1d4d20d72b26a7ae7b1b31290292c343532a23cf5c5be7cc2aeffb3077a076"
+  },
+  "scope": "Authored static five-node same-host Linux CPU float32 eager Trainer v2 at runtime 33397ea30361b9c51dfb6bde219fd5f58c59dc10",
+  "status": "SCOPED_PASS",
+  "verified": [
+    "Both roles have byte-identical uninterrupted/resumed model, optimizer, scheduler and RNG files; all 25 tensors differ from initialization.",
+    "Four complete epoch orders, eight-step horizon, scientific held-out history and immutable two-epoch parent history agree; final native Trainer cursor is epoch 4, step 8.",
+    "Actual observed Trainer entries are one each and optimizer counts are 8/4/4 for uninterrupted/parent/resumed in each role.",
+    "Each role rejects partial native Trainer state, changed epoch contract and missing optimizer before Trainer or optimizer entry, publishing no checkpoint.",
+    "Exact-state labels and parent/current subjects match; original learning rate .005 is retained despite edited current recipe .009.",
+    "Held-out rows 4/5, selected-checkpoint evaluation/export and exported weights agree; fresh-process export parity has zero difference on the single authored input.",
+    "Each role has three genuine public synthetic rights reviews; their policy IDs are distinct across roles.",
+    "Parent requests and checkpoint files are unchanged, and all deliberately replaced negative-case archives are restored.",
+    "Service/backend identities use the supplied independent installed interpreter/module prefixes.",
+    "All 14 owned jobs, including 12 Trainer jobs, are terminal, reaped, supervisor-finished and process-group termination confirmed.",
+    "All 126 sealed receipt entries match; all 64,574 installed pre/post entries, 163 runtime sources, imported source trees, 148 checkout bytecode entries and copied test tools match.",
+    "Original strict custom comparison remains FAIL solely at output_hashes_equal: seven original outputs match and three manifests differ only within /rights; structural audit passes."
+  ],
+  "review_sha256": "adc5bc42f465a927ccbf55992d2f164415541507ff8f46dbe691fb1707a11f52",
+  "recorded_at": "2026-10-13T23:28:34.424515+00:00",
+  "actual_harness_exit": 0,
+  "checkout_commit": "f797612036499dfcfbd905d9846089ee2ecb3cb3",
+  "production_runtime_unchanged": true
+}

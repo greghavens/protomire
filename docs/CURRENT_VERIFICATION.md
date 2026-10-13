@@ -14,7 +14,8 @@ separates scoped passes from incomplete acceptance.
   native worker/supervisor/process-group cleanup. All 117 sealed receipts verified.
   Strict comparison stays **FAIL, 34/35**: three original manifests differ only
   under `/rights`. The structural audit passes without rewriting provenance.
-  Installed Trainer and streaming workloads have **not** passed this acceptance.
+  Installed Trainer has now separately passed the workload-specific review below;
+  installed streaming acceptance remains pending.
 - Separate native groups: integration 65 passed; lifecycle 30 passed with one
   public pretrained rights-admission refusal; concurrency 18 passed (4 deselected).
   Components first completed with 649 passes, 11 skips and one fixture failure.
@@ -32,6 +33,25 @@ separates scoped passes from incomplete acceptance.
   fixture passed separately. Native GUI acceptance remains blocked on unlock.
   Signing, clean-machine installation and other platform/integration gates remain.
 
+## Installed Trainer acceptance, 2026-10-13 23:28 UTC
+
+The real standalone driver passed under **both fresh installed roles** on the
+same Linux CPU host. [Independent scientific receipt](../evidence/product-completion-20261013/installed-trainer-33397ea.json)
+records native model/optimizer/scheduler/RNG equality between uninterrupted and
+resumed training, four-epoch history and eight-step horizon, genuine optimization,
+immutable parent contract, selected-checkpoint evaluation/export, and all six
+unsafe-checkpoint rejections before optimizer entry. All 14 owned jobs terminated
+with worker/supervisor/process-group cleanup confirmed. All 126 sealed receipts
+and 64,574 installed pre/post entries verified; runtime and imported source did
+not change. Actual harness exit was 0.
+
+This is scoped acceptance of the static five-node CPU float32 eager Trainer v2
+workflow. It does not establish streaming or partial-epoch continuation, GPU,
+cross-platform or general model-quality acceptance. The generic hook's
+`REPORTED_UNVERIFIED` label is preserved; this separate scientific review supplies
+the scoped acceptance. The custom replay's strict rights-manifest comparison
+remains its original **FAIL**, not rewritten to produce equality.
+
 ## Shared-service Trainer continuation, 2026-10-13
 
 The strengthened real service test passed on Linux (**232.20 seconds**) and Mac
@@ -45,7 +65,7 @@ teardown. See [the scoped receipt](../evidence/product-completion-20261013/train
 
 This proves the tested static five-node CPU/eager DAG, not arbitrary DAGs,
 iteration state, streaming training or other accelerator continuation. The runtime
-remains `33397ea` with 163 pinned files. Full native and installed Trainer/streaming replay gates remain open. The Mac
+remains `33397ea` with 163 pinned files. Full native aggregate and installed streaming replay gates remain open. The Mac
 execution connection recovered and the v19 unsigned app was built. The latest
 GUI preflight found the screen locked and launched no IDE window.
 

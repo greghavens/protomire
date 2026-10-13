@@ -139,6 +139,11 @@ def dispatch(inputs: dict, spec: dict):
         from ..scientific_gate_artifacts import native_context
         types = {port['name']: port['type'] for port in spec['component_node']['inputs'] if port['name'] in inputs}
         spec = {**spec, 'rule_context': native_context(spec, tuple(sorted(types)), types)}
+    is_epoch_trainer = (spec['component_node'].get('component', {}).get('id') == 'modelbuilder.transformers.train'
+                        and spec['component_node'].get('component', {}).get('version') == '2')
+    if is_epoch_trainer and not in_child():
+        from ..epoch_context import capture
+        spec = {**spec, 'epoch_native': capture(spec)}
     if enabled(spec):
         context(spec)
         from ..native_cache import record_outputs
@@ -202,6 +207,12 @@ def dispatch(inputs: dict, spec: dict):
                    "dependencies": spec.get("dependency_paths", {}),
                    "cancel_file": str(Path(spec["job_dir"]) / "cancel.json"),
                    "resume": None, "resume_mode": None}
+    if is_epoch_trainer:
+        from ..epoch_context import verify
+        run_context['epoch_native'] = verify(spec, spec.get('epoch_native'))
+        run_context['epoch_dispatch'] = {key: deepcopy(spec[key]) for key in ('project_id','recipe_digest','node_id','invocation','job_dir')}
+        from ..rule_methods import load_methods
+        run_context['epoch_methods'] = load_methods(parameters['policy'], spec)
     if component["role"] == "derivation":
         run_context["derivation"] = spec["derivation_context"]
         run_context["derivation_implementation"] = {"component_digest": identity(component), "implementation_ref": node["implementation_ref"]}

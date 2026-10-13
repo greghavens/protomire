@@ -269,7 +269,7 @@ def test_registered_data_native_zenml_train_evaluate_export(local, streaming, li
         edges.append({"source_node": "evaluation_data", "source_port": "data", "target_node": "train", "target_port": "validation"})
     parameter_sets = [local["parameters"], {"batch_size": 2, "metrics": ["accuracy", "cross_entropy"]},
                       {"parity_texts": ["sun sky"], "atol": 1e-7, "verification_timeout_seconds": 60}]
-    for name, entry, parameters in zip(["train", "evaluate", "export"], adapters.catalog_entries(), parameter_sets):
+    for name, entry, parameters in zip(["train", "evaluate", "export"], local.get("catalog_entries", adapters.catalog_entries()), parameter_sets):
         component = {key: entry[key] for key in ("id", "version", "protocol", "role", "description", "parameter_schema", "capabilities")}
         node = {"id": name, "kind": "component.run", "component": component, "inputs": entry["inputs"], "outputs": entry["outputs"],
             "parameters": parameters, "timeout": 120, "retry": {"max_attempts": 1},
@@ -280,13 +280,15 @@ def test_registered_data_native_zenml_train_evaluate_export(local, streaming, li
     recipe = {"recipe_id": "native-trainer", "revision": 1, "source": local["context"]["source"], "nodes": nodes,
               "edges": edges, "external_dependencies": dependencies,
               "evaluation": {"live": {"enabled": live, "max_concurrency": 1, "timeout_seconds": 60}}}
+    if local.get("execution"):
+        recipe["execution"] = local["execution"]
     from tests.components.rights_test_support import authorize_test_recipe
     from tests.integration.native_fixture_support import synthetic_review
     source_review = synthetic_review(recipe, pid, local["source"])
     policies = {review["policy_id"]: review for review in (source_review, local["policy"])}
     authorization = authorize_test_recipe(local["tmp"], recipe, policies, project_id=pid)
     job = local["tmp"] / "job"
-    write_json(job / "request.json", {**authorization, "recipe": recipe, "project_id": pid, "operation_id": "native-trainer", "run_name": "native-trainer",
+    write_json(job / "request.json", {**local.get("request_extensions", {}), **authorization, "recipe": recipe, "project_id": pid, "operation_id": "native-trainer", "run_name": "native-trainer",
         "source_root": str(local["source"]), "trusted_code_roots": [str(local["source"])], "dependency_paths": dependency_paths, "dataset_source_guards": guards})
     env = {**os.environ, "ZENML_CONFIG_PATH": str(local["tmp"] / "zenml"), "ZENML_LOCAL_STORES_PATH": str(local["tmp"] / "stores"),
            "ZENML_ANALYTICS_OPT_IN": "false", "ZENML_LOGGING_VERBOSITY": "ERROR", "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "OMP_NUM_THREADS": "1"}

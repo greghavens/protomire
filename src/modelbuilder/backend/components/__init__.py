@@ -95,6 +95,8 @@ def component_catalog(recipe: dict | None = None) -> list[dict]:
                 "capabilities": {"resume_modes": ["exact_state", "warm_start"], "export_formats": ["pytorch"], "frameworks": ["pytorch", "transformers"]}}]
     catalog.extend(catalog_entries())
     catalog.extend(trainer_catalog_entries())
+    from .transformers_epochs import catalog_entries as epoch_catalog_entries
+    catalog.extend(epoch_catalog_entries())
     catalog.extend(inference_catalog_entries())
     catalog.extend(mlx_catalog_entries())
     from .moonshiner import catalog_entries as moonshiner_catalog_entries

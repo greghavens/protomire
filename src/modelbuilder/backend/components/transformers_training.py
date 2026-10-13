@@ -443,7 +443,7 @@ def train(*, inputs, parameters, context):
 
 def _checkpoint_descriptor(path):
     descriptor = read_checkpoint(path)
-    if descriptor.get("framework", {}).get("adapter") != "modelbuilder.transformers.train/v1":
+    if descriptor.get("framework", {}).get("adapter") not in {"modelbuilder.transformers.train/v1", "modelbuilder.transformers.train/v2"}:
         raise ValueError("Checkpoint was not produced by the selected Transformers adapter")
     required = {"config.json", "model.safetensors", "tokenizer.json", "adapter.json"}
     if not required.issubset({asset["path"] for asset in descriptor["assets"]}):

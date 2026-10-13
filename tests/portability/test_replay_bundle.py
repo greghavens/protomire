@@ -487,7 +487,7 @@ for name in ('modelbuilder.dataset', 'modelbuilder.models', 'modelbuilder.source
              'modelbuilder.execution', 'modelbuilder.conditions', 'modelbuilder.iterations',
              'modelbuilder.backend.native_invocations', 'modelbuilder.backend.native_inputs',
              'modelbuilder.backend.components.transformers_loader',
-             'modelbuilder.backend.components.transformers_training',
+             'modelbuilder.backend.components.transformers_training', 'modelbuilder.backend.components.transformers_epochs', 'modelbuilder.backend.components.transformers_epoch_policy', 'modelbuilder.backend.epoch_context',
              'modelbuilder.backend.components.transformers_inference',
              'modelbuilder.backend.components.mlx', 'modelbuilder.backend.components.mlx_bridge',
              'modelbuilder.parquet_reader',

@@ -24,7 +24,12 @@ cancellation signal while retaining decoder limits, containment and owned-child
 cleanup. User-selected proportional/equal allocation and explicit representation
 constraints reuse the same deterministic quota planner as eager preparation.
 
-The combined standard local aggregate is running. Fresh full native queue,
+The combined standard local aggregate exited **1**: **2,936 passed, 1 failed,
+199 skipped and 106 deselected**. The failure is the streaming memory check: its
+child reported 235 MB high-water RSS under the aggregate versus approximately
+38 MB in isolated execution. Diagnosis is in progress; the 192 MiB limit has not
+been relaxed and later script stages did not run. A complete rerun is required.
+Fresh full native queue,
 installed-wheel replay and rebuilt application acceptance remain pending. This
 feature does not establish streaming Trainer exact-state continuation.
 

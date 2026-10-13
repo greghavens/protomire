@@ -16,6 +16,10 @@
     "evidence/rules-20261013/streaming-corrected/tests.xml": {
       "bytes": 47927,
       "sha256": "48b653ae32f3aa719f17b6edd97fa7b568c7a4c65bda7534107abc52d8c8139a"
+    },
+    "evidence/rules-20261013/streaming-final/standard-aggregate.xml": {
+      "bytes": 1981753,
+      "sha256": "c72973227f6a686e2421703b44b09a2dc58a8652cc717ec15e0a06567d87e335"
     }
   },
   "independent_probes": [
@@ -71,7 +75,7 @@
     "No full product completion."
   ],
   "pending": [
-    "Complete standard aggregate on combined runtime is running.",
+    "Complete standard aggregate failed one streaming memory test; diagnosis and a full rerun are required.",
     "Fresh complete native queue and installed-wheel replay remain pending.",
     "The service Trainer resume test passed on Linux but its negative-case and cleanup evidence is being strengthened before final acceptance.",
     "Updated application packaging and native GUI acceptance remain pending."
@@ -80,5 +84,15 @@
   "runtime_source_commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
   "runtime_source_files": 163,
   "skips": "Six native Windows cases, one Mac-only negative containment case, one module missing ZenML in the service interpreter. No skip counted as acceptance.",
+  "standard_aggregate": {
+    "exit_code": 1,
+    "failed_test": "tests/datasets/test_streaming_sampling.py::test_above_eager_limits_sampling_has_bounded_resident_memory",
+    "failure": "Child getrusage peak RSS234999808 exceeded192MiB; isolated actual fixture measured~38MB. Cause under investigation; limit not waived.",
+    "later_stages": "Not reached",
+    "python_deselected": 106,
+    "python_failed": 1,
+    "python_passed": 2936,
+    "python_skipped": 199
+  },
   "status": "SCOPED_ACCEPTANCE_PASSED_FULL_NATIVE_PENDING"
 }

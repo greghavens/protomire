@@ -134,31 +134,63 @@ def test_queue_deadline_outside_revised_bound_refuses_before_containment(tmp_pat
         runner.run_groups([], tmp_path, tmp_path / "report.json", timeout=timeout)
 
 
-@pytest.mark.parametrize("timeout", [None, 1, 2700])
-def test_queue_default_and_exact_deadline_boundaries_are_recorded(tmp_path, monkeypatch, timeout):
-    # Empty selections exercise budget validation/reporting without launching jobs.
+@pytest.fixture
+def empty_budget_runner(monkeypatch):
+    # Budget-only checks run in pytest, which can already own unrelated children.
+    # Real containment is exercised separately in a dedicated runner subprocess.
     monkeypatch.setattr(runner, "_subreaper", lambda: None)
+    cleanups = []
+    def cleanup(processes):
+        assert processes == []
+        cleanups.append(processes)
+        return {"complete": True, "signaled_processes": 0}
+    monkeypatch.setattr(runner, "_cleanup", cleanup)
+    return cleanups
+
+
+@pytest.mark.parametrize("timeout", [None, 1, 2700])
+def test_queue_default_and_exact_deadline_boundaries_are_recorded(tmp_path, empty_budget_runner, timeout):
+    # Empty selections exercise budget validation/reporting without launching jobs.
     options = {} if timeout is None else {"timeout": timeout}
     report = tmp_path / "report.json"
     assert runner.run_groups([], tmp_path, report, **options) == 0
     receipt = json.loads(report.read_text())
     assert receipt["deadline_seconds"] == (2700 if timeout is None else timeout)
     assert receipt["concurrency"] == 2 and receipt["cleanup"]["complete"]
+    assert empty_budget_runner == [[]]
 
 
 @pytest.mark.parametrize("arguments,expected,code", [
     ([], 2700, 0), (["--timeout-seconds", "1"], 1, 0),
     (["--timeout-seconds", "2700"], 2700, 0), (["--timeout-seconds", "2701"], None, 1),
 ])
-def test_cli_default_and_explicit_deadline_obey_revised_bound(tmp_path, monkeypatch, arguments, expected, code):
+def test_cli_default_and_explicit_deadline_obey_revised_bound(
+        tmp_path, monkeypatch, empty_budget_runner, arguments, expected, code):
     monkeypatch.setattr(runner, "build_groups", lambda *_args: [])
-    monkeypatch.setattr(runner, "_subreaper", lambda: None)
     assert runner.main(["--root", str(tmp_path), *arguments]) == code
     receipt = json.loads((tmp_path / "evidence/tests/native-runner.json").read_text())
+    assert empty_budget_runner == ([] if code else [[]])
     if code:
         assert receipt["status"] == "setup_failed" and receipt["error"] == "ValueError"
     else:
         assert receipt["deadline_seconds"] == expected and receipt["cleanup"]["complete"]
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux native runner resource-tracker isolation")
+@pytest.mark.parametrize("entrypoint", ["function", "cli"])
+def test_budget_only_checks_preserve_pytest_resource_tracker(
+        tmp_path, monkeypatch, empty_budget_runner, entrypoint):
+    from multiprocessing import resource_tracker
+    resource_tracker.ensure_running()
+    original_pid = resource_tracker._resource_tracker._pid
+    if entrypoint == "function":
+        assert runner.run_groups([], tmp_path, tmp_path / "report.json") == 0
+    else:
+        monkeypatch.setattr(runner, "build_groups", lambda *_args: [])
+        assert runner.main(["--root", str(tmp_path)]) == 0
+    resource_tracker.ensure_running()
+    assert resource_tracker._resource_tracker._pid == original_pid
+    assert empty_budget_runner == [[]]
 
 
 def test_new_native_features_are_selected_and_backend_cannot_import_service_transports():

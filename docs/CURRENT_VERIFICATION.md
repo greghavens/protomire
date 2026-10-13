@@ -14,7 +14,11 @@ exited **0** with npm offline: **2,864 Python passed, 198 skipped, 104 deselecte
 **18 offline Hub SDK** and **582 frontend tests**, plus all service/workspace/
 source-pin/history loopback HTTP stages. Optional interpreter/platform skips are
 not acceptance evidence; the separate native Trainer suite supplies the scoped
-CPU/eager evidence.
+CPU/eager evidence. All **57 added skips** are new Trainer tests requiring Torch;
+each passed in that separate backend run. A test-only resource-tracker warning
+was traced to budget tests invoking real descendant cleanup inside pytest. Their
+empty-process cleanup is now isolated, with **66 ordered regression tests passed**
+and resource-tracker warnings treated as errors. Production cleanup is unchanged.
 
 This includes real dropout-sensitive uninterrupted/resumed comparisons of model,
 optimizer, scheduler, RNG and row order, with the original full scheduler horizon.

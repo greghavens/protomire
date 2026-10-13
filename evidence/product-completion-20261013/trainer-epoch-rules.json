@@ -69,8 +69,15 @@
     "offline_hub_passed": 18,
     "python_deselected": 104,
     "python_passed": 2864,
-    "python_skipped": 198
+    "python_skipped": 198,
+    "skip_audit": "All 57 additional skips are new Trainer tests requiring Torch in the service interpreter; all 57 passed in the separate backend suite. No prior passing case became skipped. Three additional native Trainer deselections also passed there."
   },
   "status": "SCOPED_ACCEPTANCE_PASSED_FULL_NATIVE_PENDING",
-  "supported_scope": "Single-process CPU float32 eager Trainer v2 with completed-epoch exact-state continuation; original scheduler horizon and actual model/optimizer/scheduler/RNG/row-order comparisons. Versioned custom and combined policies use the shared deterministic Method registry."
+  "supported_scope": "Single-process CPU float32 eager Trainer v2 with completed-epoch exact-state continuation; original scheduler horizon and actual model/optimizer/scheduler/RNG/row-order comparisons. Versioned custom and combined policies use the shared deterministic Method registry.",
+  "test_isolation_correction": {
+    "junit_sha256": "9d6839204a8cba3f7a35b0fcb9eefff1f0facd19aaa5c04898d8a6e9d31ddc63",
+    "ordered_regression_passed": 66,
+    "resource_tracker_warnings": "treated as errors; none occurred",
+    "scope": "Budget-only runner unit tests used real cleanup inside pytest and could kill its unrelated resource tracker. Only these tests now use verified inert empty-process cleanup; production cleanup unchanged."
+  }
 }

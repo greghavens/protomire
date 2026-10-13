@@ -44,8 +44,12 @@ constraints reuse the same deterministic quota planner as eager preparation.
 The combined standard local aggregate exited **1**: **2,936 passed, 1 failed,
 199 skipped and 106 deselected**. The failure is the streaming memory check: its
 child reported 235 MB high-water RSS under the aggregate versus approximately
-38 MB in isolated execution. Diagnosis is in progress; the 192 MiB limit has not
-been relaxed and later script stages did not run. A complete rerun is required.
+38 MB in isolated execution. A controlled probe reproduced inherited Linux
+parent high-water RSS across exec. A test-only clean intermediary now excludes
+that inherited peak while retaining real child allocation peaks. Under a 280 MB
+parent, both real fixtures remained near 38 MB; all **3 measurement regressions
+passed**. The 192 MiB absolute and 16 MiB growth limits are unchanged. Later
+script stages did not run in the failed attempt; a complete rerun is required.
 Fresh full native queue,
 installed-wheel replay and rebuilt application acceptance remain pending. This
 feature does not establish streaming Trainer exact-state continuation.

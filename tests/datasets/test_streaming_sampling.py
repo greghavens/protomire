@@ -19,6 +19,7 @@ from modelbuilder.service import OperationService
 from modelbuilder.store import SQLiteStore
 from test_streaming import OWNER, write_manifest, rows, register
 import test_streaming as streaming_fixtures
+from streaming_memory_probe import run_with_clean_parent
 
 setup = streaming_fixtures.setup
 
@@ -534,15 +535,16 @@ def test_mac_parquet_sampling_fails_at_verified_containment_boundary(setup):
 
 @pytest.mark.skipif(os.name == 'nt', reason='Fresh-process RSS evidence uses POSIX getrusage')
 def test_above_eager_limits_sampling_has_bounded_resident_memory(tmp_path):
-    # Fresh interpreter RSS measures actual resident native + Python memory;
+    # A clean intermediary excludes inherited pytest high-water RSS while the
+    # measured child's kernel peak retains actual native + Python allocations;
     # the child generates rows directly on disk and never materializes IDs.
     script = Path(__file__).with_name('streaming_sampling_large.py')
     reports = []
     for count in (120_001, 240_001):
         root = tmp_path / str(count)
         root.mkdir()
-        result = subprocess.run([sys.executable, str(script), str(root), str(count)], capture_output=True, text=True,
-                                env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}, timeout=120)
+        result = run_with_clean_parent([sys.executable, str(script), str(root), str(count)],
+                                       env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}, timeout=120)
         assert result.returncode == 0, result.stderr
         report = json.loads(result.stdout)
         assert report['source_rows'] == count and report['selected_rows'] == count // 10
@@ -550,3 +552,65 @@ def test_above_eager_limits_sampling_has_bounded_resident_memory(tmp_path):
         assert report['peak_rss_bytes'] < 192 * 1024**2, report
         reports.append(report)
     assert reports[1]['peak_rss_bytes'] - reports[0]['peak_rss_bytes'] < 16 * 1024**2, reports
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='RSS evidence uses POSIX getrusage')
+def test_rss_probe_excludes_parent_heap_but_keeps_released_child_peak():
+    # All pressure is confined to a short-lived parent, not the pytest process.
+    # The measured allocation is released before reporting, so current-RSS
+    # polling or subtraction of the ancestor's larger peak cannot pass.
+    worker = """import json,mmap,resource,sys
+size=int(sys.argv[1])
+if size:
+    memory=mmap.mmap(-1,size)
+    for offset in range(0,size,4096): memory[offset]=1
+    memory.close()
+peak=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+print(json.dumps({'peak':peak if sys.platform=='darwin' else peak*1024}))
+"""
+    parent = """import json,resource,subprocess,sys
+sys.path.insert(0,sys.argv[1])
+from streaming_memory_probe import run_with_clean_parent
+pressure=bytearray(96*1024**2)
+for offset in range(0,len(pressure),4096): pressure[offset]=1
+worker=sys.argv[2]
+direct=subprocess.run([sys.executable,'-c',worker,'0'],capture_output=True,text=True,check=True)
+values=[]
+for size in (0,48*1024**2):
+    result=run_with_clean_parent([sys.executable,'-c',worker,str(size)],timeout=10)
+    assert result.returncode==0,result.stderr
+    values.append(json.loads(result.stdout)['peak'])
+print(json.dumps({'direct':json.loads(direct.stdout)['peak'],'clean':values[0],'released_peak':values[1]}))
+"""
+    result = subprocess.run([sys.executable, '-c', parent, str(Path(__file__).parent), worker],
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    if sys.platform == 'linux':
+        assert report['direct'] >= 96 * 1024**2, report  # Reproduce exec contamination.
+    assert report['clean'] < 64 * 1024**2, report
+    assert report['released_peak'] >= 48 * 1024**2, report
+    assert report['released_peak'] - report['clean'] >= 32 * 1024**2, report
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='RSS fixture containment requires POSIX process groups')
+def test_rss_probe_timeout_terminates_measured_worker(tmp_path):
+    import time
+    import psutil
+
+    pid_file = tmp_path / 'worker.pid'
+    worker = "import os,sys,time; from pathlib import Path; Path(sys.argv[1]).write_text(str(os.getpid())); time.sleep(30)"
+    with pytest.raises(subprocess.TimeoutExpired):
+        run_with_clean_parent([sys.executable, '-c', worker, str(pid_file)], timeout=1)
+    assert pid_file.is_file()
+    pid = int(pid_file.read_text())
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        try:
+            if psutil.Process(pid).status() in {psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD}:
+                break
+        except psutil.NoSuchProcess:
+            break
+        time.sleep(0.01)
+    else:
+        pytest.fail('Timed-out RSS measurement left its worker running')

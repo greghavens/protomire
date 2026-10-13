@@ -81,6 +81,47 @@
     "Updated application packaging and native GUI acceptance remain pending."
   ],
   "recorded_at": "2026-10-13T19:50:48.194690+00:00",
+  "rss_measurement_correction": {
+    "cause": "Controlled Linux probe reproduced parent high-water RSS inherited across exec, despite low current child memory.",
+    "change": "Test-only stdlib intermediary launches the measured process from a clean address space; kernel peak measurement is retained.",
+    "focused_regressions_passed": 3,
+    "full_aggregate_rerun": "pending",
+    "limits_unchanged": true,
+    "pressured_parent_evidence": {
+      "parent_peak_rss_bytes": 280498176,
+      "parent_touched_bytes": 234881024,
+      "platform": "linux",
+      "pytest_exit_code": 0,
+      "reports": [
+        {
+          "eager_file_limit": 16777216,
+          "eager_row_limit": 100000,
+          "index_bytes": 90480640,
+          "peak_index_bytes": 90480640,
+          "peak_rss_bytes": 38068224,
+          "sampling_strata": 3,
+          "selected_rows": 12000,
+          "selection_digest": "4ffed8ef86e7886cd9fd659ff6e0e8481b7d34d8dd3302386571004c16a31d7a",
+          "source_bytes": 42018132,
+          "source_rows": 120001
+        },
+        {
+          "eager_file_limit": 16777216,
+          "eager_row_limit": 100000,
+          "index_bytes": 181088256,
+          "peak_index_bytes": 181088256,
+          "peak_rss_bytes": 38158336,
+          "sampling_strata": 3,
+          "selected_rows": 24000,
+          "selection_digest": "e2a3c012ed6a378d98c22758f8d9e82fd1bbd2c58da01ba63d22126b56b355e8",
+          "source_bytes": 84258132,
+          "source_rows": 240001
+        }
+      ],
+      "unchanged_absolute_limit_bytes": 201326592,
+      "unchanged_growth_limit_bytes": 16777216
+    }
+  },
   "runtime_source_commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
   "runtime_source_files": 163,
   "skips": "Six native Windows cases, one Mac-only negative containment case, one module missing ZenML in the service interpreter. No skip counted as acceptance.",

@@ -1,0 +1,15 @@
+{
+  "recorded_at": "2026-10-13T22:34:51.439708+00:00",
+  "status": "TOOLING_CONTRACTS_PASSED_NATIVE_EXECUTION_NOT_RUN",
+  "passed": 40,
+  "seconds": 1.16,
+  "ruff": "passed",
+  "independent_source_review": "cleared",
+  "runtime_changes": false,
+  "runtime_commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
+  "execution_blocker": "Insufficient safe disk/RAM headroom; archived temporary-copy cleanup awaits owner permission.",
+  "sha256": {
+    "tests.log": "b6433a7df5b77a3203f239d247ca49a40e5947c1b15f25d463e0d6cb396b8269",
+    "tests.xml": "4dc104dd9ba7dbeb1e6ecddc388edf21409676f91e0137d621926f377f99f05c"
+  }
+}

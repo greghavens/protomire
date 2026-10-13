@@ -1,5 +1,7 @@
 # Current verification and remaining gates
 
+Current shipping recipes pin runtime `6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92` with the same complete **154-file** source/lock closure. The corrected Moonshiner public-workflow tests below cover this adapter source; full aggregate and current Mac packaging are being rerun. Prior frozen evidence is not relabeled as current acceptance.
+
 ## Integrated Moonshiner public-workflow correction
 
 The adapter now uses the existing dictionary dataset port and validates the

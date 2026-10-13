@@ -437,7 +437,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "edca4154021e7b1fc68b3503803dac67e0ba1ae6",
+    "commit": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92",
     "files": [
       {
         "path": "pyproject.toml",
@@ -665,7 +665,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/moonshiner.py",
-        "sha256": "e69d037939a3c0823ac99580d51cf65d405424daa4d659763a060eb423577f9d"
+        "sha256": "56e7b2aa97e138fd48b17c2d5e0f2fafb480857da1420588a7f6b62056ae0c8f"
       },
       {
         "path": "src/modelbuilder/backend/components/moonshiner_process.py",

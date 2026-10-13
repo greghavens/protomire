@@ -1,0 +1,29 @@
+{
+  "installation": {
+    "version": "0.8.23",
+    "reviewed_upstream_commit": "7abb66ac5328db6a5d5f3990cf85ddc40310f0b8",
+    "source_sha256": "a3d5c3159459a137020ad89751c70707ced14b6fbedf3a5dc6702551de3589c5",
+    "environment_sha256": "ac8a9f2f02c69de396c5a02789d5db162ebc7ef4fdc978f32c294bfeb0520869"
+  },
+  "provider_calls_requested": false,
+  "tokenizer_requested": false,
+  "runs": [
+    {
+      "seconds": 6.984,
+      "manifest_sha256": "37c16596577e2b615f3b444127c077e7c5b53f1ac40099df4891a685fcf3cb7c",
+      "data_sha256": "0b3f2b060a2c47a3f038da338fc2825ee530c2620fefe40badf7bcfcd1ed7cdc",
+      "row_count": 3,
+      "final_target_preserved": true,
+      "inherited_rights_preserved": true
+    },
+    {
+      "seconds": 7.255,
+      "manifest_sha256": "37c16596577e2b615f3b444127c077e7c5b53f1ac40099df4891a685fcf3cb7c",
+      "data_sha256": "0b3f2b060a2c47a3f038da338fc2825ee530c2620fefe40badf7bcfcd1ed7cdc",
+      "row_count": 3,
+      "final_target_preserved": true,
+      "inherited_rights_preserved": true
+    }
+  ],
+  "deterministic_across_private_directories": true
+}

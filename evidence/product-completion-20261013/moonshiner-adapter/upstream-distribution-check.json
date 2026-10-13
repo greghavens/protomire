@@ -1,0 +1,47 @@
+{
+  "checked_at": "2026-10-13T07:26:45Z",
+  "installed_cli_on_PATH": false,
+  "local_matching_distributions": [],
+  "inspected_modelbuilder_environments": [
+    ".venv",
+    ".venv-backend",
+    ".venv-backend-cuda",
+    ".venv-hub-test",
+    ".venv-remote-modal",
+    ".venv-tracking"
+  ],
+  "reviewed_upstream": {
+    "repository": "https://github.com/greghavens/moonshiner",
+    "commit": "fb4d4ed13a206b0676f6c41881ad3831a51326c5",
+    "source_version": "0.8.24"
+  },
+  "exact_distribution_checks": [
+    {
+      "url": "https://pypi.org/pypi/moonshiner/0.8.24/json",
+      "status": 404
+    },
+    {
+      "url": "https://api.github.com/repos/greghavens/moonshiner/releases/tags/v0.8.24",
+      "status": 404
+    }
+  ],
+  "current_official_distribution": {
+    "metadata_url": "https://pypi.org/pypi/moonshiner/json",
+    "version": "0.8.23",
+    "project_repository": "https://github.com/greghavens/moonshiner",
+    "wheel": "moonshiner-0.8.23-py3-none-any.whl",
+    "sha256": "ac1f2708e90e71addeb3e27cf17117c55efb8515f3d49c2edb13e373c88bb5c6",
+    "url": "https://files.pythonhosted.org/packages/0a/64/528895af092fff92a064009789e85c7d5e51f5033098bd24e4f9b3e08478/moonshiner-0.8.23-py3-none-any.whl",
+    "github_release_url": "https://github.com/greghavens/moonshiner/releases/tag/v0.8.23",
+    "github_release_asset_sha256_matches": true
+  },
+  "installed_or_executed_upstream": true,
+  "downloads_performed": true,
+  "next_gate": "Provider generation remains unsupported pending enforceable whole-run spend/call limits, explicit approvals and separate real-provider acceptance. Full service-to-ZenML/GUI and non-Linux platform acceptance remain open.",
+  "selected_release": {
+    "version": "0.8.23",
+    "commit": "7abb66ac5328db6a5d5f3990cf85ddc40310f0b8",
+    "reason": "Separately reviewed official released artifact; local compose/row contracts match audited HEAD"
+  },
+  "actual_execution_status": "Succeeded: two deterministic real offline CLI runs, one real existing native process ABI run, and real foreground timeout/startup-cancellation checks; no provider workflow or tokenizer invocation"
+}

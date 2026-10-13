@@ -92,6 +92,8 @@ def component_catalog(recipe: dict | None = None) -> list[dict]:
     catalog.extend(trainer_catalog_entries())
     catalog.extend(inference_catalog_entries())
     catalog.extend(mlx_catalog_entries())
+    from .moonshiner import catalog_entries as moonshiner_catalog_entries
+    catalog.extend(moonshiner_catalog_entries())
     from .weight_blend import catalog_entries as blend_catalog_entries
     catalog.extend(blend_catalog_entries())
     from .scientific_gate import catalog_entries as gate_catalog_entries

@@ -1,0 +1,31 @@
+{
+  "scope": "Linux local offline composition and native process ABI only; no provider generation or full service-to-ZenML acceptance",
+  "stage_tests": {
+    "passed": 112,
+    "skipped": 1
+  },
+  "root_tests": {
+    "focused_passed": 97,
+    "installed_official_native_passed": 1,
+    "opt_in_skipped_in_default_run": 1,
+    "source_pin_tests_deselected_pending_repin": 2
+  },
+  "replay_bytecode_regression": {
+    "passed": 49,
+    "source_pin_tests_deselected_pending_repin": 2,
+    "fix": "Explicit -B preserves -I isolation while preventing final identity probe bytecode writes"
+  },
+  "root_logs": {
+    "moonshiner-installed-integrated.log": "a59fc716e636b66b303d8c8a4e26d73d5d051da7683acc88c600d5b0e25bc017",
+    "moonshiner-integrated.log": "9e7e2c6522eed99022b0cfd2dac227a90af6b10590a516f3e527137f29451abd"
+  },
+  "lint": "PASS",
+  "generated_contracts": "MATCH",
+  "remaining": [
+    "provider generation",
+    "full service-to-ZenML integration",
+    "macOS/Windows Moonshiner process support",
+    "native GUI",
+    "rebuild and repin"
+  ]
+}

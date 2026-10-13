@@ -102,3 +102,12 @@ The catalog also ships `modelbuilder.local.generate`, `modelbuilder.local.judge`
 ## Independent framework environments
 
 Source-bound components can optionally select an operator-registered pinned interpreter through `modelbuilder.runner/v1`. The existing native ZenML attempt process handles execution and cleanup; the default platform environment does not need to absorb every training library. See [training runners and compatibility evidence](TRAINING_RUNNERS.md) for the environment receipt, extensible stack categories, artifact contracts, actual CPU tests, and explicitly unsupported distributed/accelerator/exact-resume combinations.
+
+## Moonshiner local dataset composition
+
+`modelbuilder.moonshiner.prepare-dataset` wraps reviewed installed Moonshiner
+0.8.23 local composition, with finite process/record bounds, train-only source
+review, explicit final-assistant target metadata and inherited teacher/data
+rights. Provider tracing is unavailable pending its network/spend acceptance
+gate. See [Moonshiner datasets](MOONSHINER_DATASETS.md) for exact contracts,
+registration, compatible-consumer requirements and offline-only test scope.

@@ -1,0 +1,97 @@
+{
+  "base_commit": "f99c5d5024090a20c30ba9077b9614ac2ea86475",
+  "patch_sha256": "8b79ef7f3c6472ff5b7a68be9fd681c0197d2972845ac2817e3b5c954596623a",
+  "files": [
+    {
+      "path": "src/modelbuilder/backend/components/moonshiner.py",
+      "status": "added",
+      "before_sha256": null,
+      "sha256": "e69d037939a3c0823ac99580d51cf65d405424daa4d659763a060eb423577f9d",
+      "bytes": 13181
+    },
+    {
+      "path": "src/modelbuilder/backend/components/moonshiner_process.py",
+      "status": "added",
+      "before_sha256": null,
+      "sha256": "3a72e6209942aa7b97bf0cdfa42e26e21671f322d8c50cb14611feeeb4bc8c26",
+      "bytes": 9784
+    },
+    {
+      "path": "src/modelbuilder/backend/components/moonshiner_worker.py",
+      "status": "added",
+      "before_sha256": null,
+      "sha256": "bcdf1392be6548332242cb092419a8ed8e88a8e87ad587fb612ee704c9ca80ab",
+      "bytes": 1556
+    },
+    {
+      "path": "src/modelbuilder/backend/components/__init__.py",
+      "status": "modified",
+      "before_sha256": "294e108dc18ed477d8cf10c84429277de8a65d90ff61deeae7efe144cb1731de",
+      "sha256": "2f014a1180ddeff2bc1c5118687f7584da52f471d7d83b5c19a33ad1d67ab79c",
+      "bytes": 16709
+    },
+    {
+      "path": "src/modelbuilder/backend/components/transformers_training.py",
+      "status": "modified",
+      "before_sha256": "224aed3c170c551937739e624fe872338a833a9d7a8cecd01f9306a06ea9f908",
+      "sha256": "68159d5725009043fc0fc34df68ebb24a9ace84e062f81d2f8d9f1a4f14af37d",
+      "bytes": 32455
+    },
+    {
+      "path": "src/modelbuilder/generated_artifacts.py",
+      "status": "modified",
+      "before_sha256": "8ef70661b4d4c5d33d17115073314caaf8d016a0a01fdbbfb75e633b4861da07",
+      "sha256": "c1f9a8da775aaeb1025a3a95ad1cb66fbd024ea42398ec7cd92176a9a407f3f6",
+      "bytes": 5781
+    },
+    {
+      "path": "examples/moonshiner/adapter.py",
+      "status": "added",
+      "before_sha256": null,
+      "sha256": "b44c1d6ecfa3bf8105d2745fe28d66d9dfc30e7d9e235526f73d9e3cc70537dd",
+      "bytes": 270
+    },
+    {
+      "path": "docs/MOONSHINER_DATASETS.md",
+      "status": "added",
+      "before_sha256": null,
+      "sha256": "5ddef71308d1371b1c2ffb24ebd22daba07d4192d2d8a1b3d4d6ccdcfbec269e",
+      "bytes": 10858
+    },
+    {
+      "path": "docs/source-bound-components.md",
+      "status": "modified",
+      "before_sha256": "eaff0d2be748876d65925c6b30f33c3ceed02ce3807a683db7789b5d175c716e",
+      "sha256": "2abe827c9299e5e68d08d7e93062448a80b0316720a686c9712a29ec5e054f5d",
+      "bytes": 12673
+    },
+    {
+      "path": "tests/components/moonshiner_fixture_cli.py",
+      "status": "added",
+      "before_sha256": null,
+      "sha256": "b94619304284ce193f40642d976628920067adee3328240ffe90f5747228e2d4",
+      "bytes": 2484
+    },
+    {
+      "path": "tests/components/test_moonshiner.py",
+      "status": "added",
+      "before_sha256": null,
+      "sha256": "8731c5982a3632936c7f6b87a42a71f4f008f2ef6283574e4473a43c05471d38",
+      "bytes": 22306
+    },
+    {
+      "path": "tests/service/test_moonshiner_catalog.py",
+      "status": "added",
+      "before_sha256": null,
+      "sha256": "679ddb0f83aec5b13d668471a843b66df0a4ca21563b63263ed7525b461fc660",
+      "bytes": 1854
+    },
+    {
+      "path": "tests/portability/test_replay_bundle.py",
+      "status": "modified",
+      "before_sha256": "f9c47c7c56029003e566d1703a715cadaa133eb5d6477f2b8783d0b5e207418b",
+      "sha256": "83c4d26054e595d24b346fadbcd2f26e2d7700e1648117f356e8d3b28eb3b17d",
+      "bytes": 29504
+    }
+  ]
+}

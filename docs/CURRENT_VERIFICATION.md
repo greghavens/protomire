@@ -1,5 +1,31 @@
 # Current verification and remaining gates
 
+## Later source changes: Moonshiner composition and replay probe
+
+The source now includes a Linux-only, reviewed Moonshiner 0.8.23 dataset
+composition component. It uses the existing source-bound native process ABI,
+preserves final-target metadata and inherited teacher/data rights, and returns a
+prepared dataset for ordinary explicit registration. It does not generate new
+provider traces, tokenize labels, register data or start training automatically.
+
+The official wheel was hash-verified against its published owner release.
+Two actual local compositions matched dataset and sealed-manifest hashes; actual
+native-process handoff passed, and deadline/cancellation left no child or
+prepared artifact. Root integration passed **97 focused tests**, followed by
+**one genuine installed-release native-process test**. The default selection
+skipped that opt-in test and deselected two shipping source-pin tests pending
+repinning. Full service-to-ZenML, provider, Mac/Windows and GUI acceptance remain
+open. [Contract and reproduction](MOONSHINER_DATASETS.md) and
+[compact evidence](../evidence/product-completion-20261013/moonshiner-adapter/verification.json)
+record the exact scope.
+
+The final replay backend identity probe now explicitly uses `-I -B`. Its new
+regression reproduced a bytecode write with the old command despite the
+PYTHONDONTWRITEBYTECODE environment setting; the fix prevents that write without
+changing isolation, interpreter, arguments, environment or timeout. Root replay
+checks passed **49 tests**, with the same two source-pin tests deselected pending
+repin. This correction does not retroactively change the frozen replay result.
+
 ## Later source changes: Triggerfish compatibility adapter
 
 The ModelBuilder-side Triggerfish flat MCP transport and reviewed inactive

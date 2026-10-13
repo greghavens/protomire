@@ -260,6 +260,8 @@ def _split(data, roles, settings):
 
 
 def _features(rows, tokenizer, settings):
+    if any(row.get("label_policy") == "final-assistant-content-only" for row in rows):
+        raise ValueError("Final-assistant target metadata requires a compatible conversation formatter and token-mask validation; the plain-text Trainer cannot consume it")
     features = loader.encode([row.get(settings["text_field"]) for row in rows], tokenizer, settings)
     for feature, row in zip(features, rows):
         if settings["task"] == "causal-lm":

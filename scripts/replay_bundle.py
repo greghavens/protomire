@@ -531,8 +531,8 @@ def _execute_session(session, output, timeout):
                        "execution_revision": execution_recipe["revision"], "execution_digest": execution_recipe["digest"]}
     if not valid_recipe_identity(recipe_identity):
         raise AssertionError("Run provenance does not identify the single owned recipe and its exact imported revision")
-    # Probe the same interpreter/environment used by SDK and native workers.
-    completed = subprocess.run([str(backend_python.absolute()), "-I", str(source_root / "scripts/replay_bundle.py"),
+    # Keep the probe read-only: -I ignores PYTHONDONTWRITEBYTECODE from _env().
+    completed = subprocess.run([str(backend_python.absolute()), "-I", "-B", str(source_root / "scripts/replay_bundle.py"),
                                 "identity", "--backend"], cwd=source_root, env=backend._env(),
                                text=True, capture_output=True, check=True, timeout=90)
     backend_identity = json.loads(completed.stdout)

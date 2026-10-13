@@ -1,0 +1,28 @@
+{
+  "installation": {
+    "version": "0.8.23",
+    "reviewed_upstream_commit": "7abb66ac5328db6a5d5f3990cf85ddc40310f0b8",
+    "source_sha256": "a3d5c3159459a137020ad89751c70707ced14b6fbedf3a5dc6702551de3589c5",
+    "environment_sha256": "ac8a9f2f02c69de396c5a02789d5db162ebc7ef4fdc978f32c294bfeb0520869"
+  },
+  "cases": [
+    {
+      "case": "timeout",
+      "error": "Moonshiner composition deadline exceeded",
+      "prepared_published": false,
+      "remaining_child_pids": [],
+      "observed_upstream_pids": [],
+      "cancelled_during_bundled_corpus_copy": null
+    },
+    {
+      "case": "cancel",
+      "error": "Moonshiner composition cancelled",
+      "prepared_published": false,
+      "remaining_child_pids": [],
+      "observed_upstream_pids": [
+        9
+      ],
+      "cancelled_during_bundled_corpus_copy": true
+    }
+  ]
+}

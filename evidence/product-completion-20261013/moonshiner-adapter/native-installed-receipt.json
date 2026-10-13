@@ -1,0 +1,24 @@
+{
+  "installation": {
+    "version": "0.8.23",
+    "reviewed_upstream_commit": "7abb66ac5328db6a5d5f3990cf85ddc40310f0b8",
+    "source_sha256": "a3d5c3159459a137020ad89751c70707ced14b6fbedf3a5dc6702551de3589c5",
+    "environment_sha256": "ac8a9f2f02c69de396c5a02789d5db162ebc7ef4fdc978f32c294bfeb0520869"
+  },
+  "rows": 2,
+  "provider_execution": false,
+  "manifest_sha256": "fbd021d18bf1bdc675b2578b033f705207d3de81592eb4b20921ac0e86d15555",
+  "data_sha256": "44745e1e4d836d1f0fc05dbeb1b6b8aaf3193ca8f5da9b5280861b3ae57fdad3",
+  "termination": {
+    "reaped": true,
+    "direct_child_reaped": true,
+    "exit_code": 0,
+    "remaining_observed_descendants": []
+  },
+  "descendant_cleanup": {
+    "observed_pids": [],
+    "remaining_pids": [],
+    "subreaper": true
+  },
+  "receipt_scope": "Existing native process ABI; test-owned local rows only"
+}

@@ -86,6 +86,7 @@ installation experience.
 - [Exact local asset and source rights review](docs/LOCAL_RIGHTS_REVIEW.md)
 - [Reproducible scientific operations](docs/SCIENTIFIC_WORKFLOWS.md)
 - [Training runner compatibility](docs/TRAINING_RUNNERS.md)
+- [Moonshiner local composition and provider-generation gates](docs/MOONSHINER_DATASETS.md)
 - [Research retrieval and harness context](docs/RESEARCH_CONTEXT.md)
 - [Triggerfish adapter, inactive setup and remaining gates](distribution/TRIGGERFISH_COMPATIBILITY.md)
 

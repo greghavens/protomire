@@ -11,6 +11,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+from types import SimpleNamespace
 import zipfile
 
 import pytest
@@ -160,6 +161,74 @@ def test_timeout_uses_valid_cancel_contract_and_always_records_evidence(snapshot
         assert evidence["termination_confirmed"] is False and evidence["cancellation_error"]
     else:
         assert evidence["cancellation"]["status"] == "cancel_requested"
+
+
+def test_final_backend_identity_probe_preserves_isolation_without_writing_bytecode(tmp_path, monkeypatch):
+    """Exercise the real probe subprocess after a synthetic completed run."""
+    source = tmp_path / "source"
+    script = source / "scripts/replay_bundle.py"
+    script.parent.mkdir(parents=True)
+    installed = tmp_path / "installed"
+    installed.mkdir()
+    module = installed / "identity_fixture.py"
+    module.write_text("VALUE = 'installed fixture'\n")
+    sources = {"src/modelbuilder/__init__.py": replay.sha256(module.read_bytes())}
+    identity = {"installed_source_sha256": sources}
+    script.write_text(f"""
+import json, os, pathlib, sys
+sys.path.insert(0, {str(installed)!r})
+import identity_fixture
+identity = {identity!r}
+identity.update(value=identity_fixture.VALUE, isolated=sys.flags.isolated,
+                dont_write_bytecode=sys.dont_write_bytecode, argv=sys.argv[1:],
+                cwd=str(pathlib.Path.cwd()), sentinel=os.environ['PROBE_SENTINEL'],
+                sys_path=sys.path)
+print(json.dumps(identity))
+""")
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": str(tmp_path / "ignored"),
+           "PROBE_SENTINEL": "backend environment"}
+    backend = SimpleNamespace(root=tmp_path / "data/backend", _env=lambda: env)
+    connection = SimpleNamespace(execute=lambda *args: SimpleNamespace(fetchone=lambda: None))
+    service = SimpleNamespace(store=SimpleNamespace(connection=connection))
+    current = {"recipe_id": "recipe", "revision": 1, "digest": "initial"}
+    imported = {"recipe_id": "recipe", "revision": 2, "digest": "imported"}
+    status = {"operation_id": "operation", "status": "succeeded", "worker_alive": False,
+              "recipe_id": "recipe", "recipe_revision": 2, "recipe_digest": "imported",
+              "executed_recipe_digest": "imported"}
+
+    def call(operation, payload):
+        assert operation in {"run.submit", "run.status"}
+        return {"operation_id": "operation"} if operation == "run.submit" else status
+
+    session = {"source_root": source, "data_dir": tmp_path / "data", "backend_python": Path(sys.executable),
+               "pretrained_path": None, "report": {"recipe": {"source": {"commit": "a" * 40,
+                   "files": [{"path": name, "sha256": digest} for name, digest in sources.items()]}},
+                   "digest": "transport", "unresolved_dependencies": []},
+               "project": {"recipe_id": "recipe"}, "pid": "project", "current": current,
+               "imported": imported, "original_revision": current, "recipes": {"recipes": [imported]},
+               "execution_recipe": imported, "call": call, "backend": backend, "transcript": [],
+               "state": {}, "preparation": {"preparation_id": "preparation"}, "service": service}
+    monkeypatch.setattr(replay, "runtime_identity", lambda: identity)
+    run = subprocess.run
+    calls = []
+
+    def probe(command, **kwargs):
+        calls.append((command, kwargs))
+        return run(command, **kwargs)
+
+    monkeypatch.setattr(replay.subprocess, "run", probe)
+    result = replay._execute_session(session, tmp_path / "result.json", 10)
+    actual = result["backend_identity"]
+    assert result["status"] == "PASS" and actual["value"] == "installed fixture"
+    assert not list(installed.rglob("*.pyc"))
+    assert not list(installed.rglob("__pycache__"))
+    assert actual["dont_write_bytecode"] is True and actual["isolated"] == 1
+    assert actual["argv"] == ["identity", "--backend"]
+    assert actual["cwd"] == str(source) and actual["sentinel"] == env["PROBE_SENTINEL"]
+    assert env["PYTHONPATH"] not in actual["sys_path"]
+    assert calls == [([str(Path(sys.executable).absolute()), "-I", "-B", str(script), "identity", "--backend"],
+                      {"cwd": source, "env": env, "text": True, "capture_output": True,
+                       "check": True, "timeout": 90})]
 
 
 def result(root):
@@ -387,6 +456,8 @@ def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_so
                      "parquet_stream.py", "parquet_stream_decode.py",
                      "backend/components/transformers_loader.py", "backend/components/transformers_training.py",
                      "backend/components/transformers_inference.py",
+                     "backend/components/moonshiner.py", "backend/components/moonshiner_process.py",
+                     "backend/components/moonshiner_worker.py",
                      "backend/components/mlx.py", "backend/components/mlx_bridge.py",
                      "backend/components/mlx_worker.py", "backend/components/mlx_probe.py",
                      "backend/components/mlx_components.py", "backend/components/mlx-darwin-arm64.lock",
@@ -455,7 +526,16 @@ from modelbuilder.backend.components import component_catalog
 ids = {entry['id'] for entry in component_catalog()}
 assert {'modelbuilder.transformers.train', 'modelbuilder.transformers.evaluate',
         'modelbuilder.transformers.export', 'modelbuilder.mlx.train', 'modelbuilder.mlx.evaluate',
-        'modelbuilder.mlx.generate', 'modelbuilder.mlx.export'} <= ids
+        'modelbuilder.mlx.generate', 'modelbuilder.mlx.export',
+        'modelbuilder.moonshiner.prepare-dataset'} <= ids
+from modelbuilder.backend.components import moonshiner
+assert moonshiner.UPSTREAM_VERSION == '0.8.23'
+worker = root / 'modelbuilder/backend/components/moonshiner_worker.py'
+import subprocess
+child = subprocess.run([sys.executable, '-I', str(worker), 'run', '--limit', '1'],
+                       text=True, capture_output=True, timeout=5)
+assert child.returncode != 0 and 'Only the fixed Moonshiner local compose' in child.stderr
+assert not any(name == 'moonshiner_app' or name.startswith('moonshiner_app.') for name in sys.modules)
 from modelbuilder.backend.components import mlx
 import hashlib, json, subprocess
 lock = root / 'modelbuilder/backend/components/mlx-darwin-arm64.lock'

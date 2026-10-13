@@ -17,7 +17,8 @@ from .evaluation import digest
 
 GENERATED_SCHEMAS = frozenset({"modelbuilder.generated-candidates/v1", "modelbuilder.generated-candidates/v2",
                                "modelbuilder.model-judgments/v1", "modelbuilder.model-judgments/v2"})
-PREPARED_SOURCES = frozenset({"modelbuilder.local.prepare-dataset/v1", "modelbuilder.transformers.prepare-dataset/v1"})
+PREPARED_SOURCES = frozenset({"modelbuilder.local.prepare-dataset/v1", "modelbuilder.transformers.prepare-dataset/v1",
+                              "modelbuilder.moonshiner.prepare-dataset/v1"})
 SHA = {"type": "string", "pattern": "^[0-9a-f]{64}$"}
 LINEAGE_SCHEMA = {"type": "object", "additionalProperties": False,
     "required": ["schema_version", "content_digest", "parents"], "properties": {

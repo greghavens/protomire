@@ -407,7 +407,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "9ade0e893a4ffaa3ba81c78d463fd7dbc70735ec",
+    "commit": "2e609759ab5e86912f43a9a979e446030927c9a8",
     "files": [
       {
         "path": "pyproject.toml",
@@ -559,7 +559,7 @@
       },
       {
         "path": "scripts/replay_bundle.py",
-        "sha256": "53fc901920499f52efcfc337848d12d2b09151e553f666e4a1cb91119b0b5070"
+        "sha256": "4aa61a8c1f3d96c8f729e2335fabe4b7cf14fa7dc57ad2ad1fb7c6ea10dd72b9"
       },
       {
         "path": "src/modelbuilder/__init__.py",
@@ -583,11 +583,11 @@
       },
       {
         "path": "src/modelbuilder/backend/adapter.py",
-        "sha256": "c7654471049695876183e9a2396f5b81a18d40ff167afd14020fd1e04e3ebe55"
+        "sha256": "d08de8225d47a7cf5bac9cf7b7a6f45725f85803c27c3fd1df6b3eaf0806ab32"
       },
       {
         "path": "src/modelbuilder/backend/admission.py",
-        "sha256": "6a77bdee8c3304516f696e5acc89c6728fec876cc00ef31ba0abdb5d02c7408c"
+        "sha256": "36998de9256a2d23505eac4d3db1045447e190b084d0d0829ffe063e4b9128cc"
       },
       {
         "path": "src/modelbuilder/backend/calibration.py",
@@ -619,11 +619,11 @@
       },
       {
         "path": "src/modelbuilder/backend/components/mlx_bridge.py",
-        "sha256": "ee064cd2d70355517d7a746a993df0f0c6c7c983bb05d4e239135d0af5854a59"
+        "sha256": "41ee7d040d241de3f736d93bc1ddea8e1a04eba781d804face9accb6f429f07b"
       },
       {
         "path": "src/modelbuilder/backend/components/mlx_components.py",
-        "sha256": "66190edc614a3725540c234e373432e393ef08f2648850642c60a69a800ed33c"
+        "sha256": "cb68ea8a1e6dcb8452a413f42608513fc620b5c91d18d0eb291a347e6e7322b5"
       },
       {
         "path": "src/modelbuilder/backend/components/mlx_probe.py",
@@ -651,7 +651,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/transformers_training.py",
-        "sha256": "b1d61e46dda91d4a47820508f793f9ecc43380a40da6bc9b8140af7dd4615708"
+        "sha256": "224aed3c170c551937739e624fe872338a833a9d7a8cecd01f9306a06ea9f908"
       },
       {
         "path": "src/modelbuilder/backend/components/weight_blend.py",
@@ -675,7 +675,7 @@
       },
       {
         "path": "src/modelbuilder/backend/execution_rights.py",
-        "sha256": "f41709117e76eee8096b55a1563a0c7faccbf7b7f8dfa8d5016e3566048c9e77"
+        "sha256": "8012303961a5abaa148b82b25892ec8d03d4392fac4506a444cb11ceaa3993f9"
       },
       {
         "path": "src/modelbuilder/backend/fixture_artifacts.py",
@@ -687,11 +687,11 @@
       },
       {
         "path": "src/modelbuilder/backend/live_evaluation.py",
-        "sha256": "7056f4a36125b972b0c9eb5705636a441ea69df7220c0053d0b5a25602f1f7eb"
+        "sha256": "2af97f5c8ffa42f4389d0ab1e64dd9ed8e7a24bd71b9f422f3244d2b61563efb"
       },
       {
         "path": "src/modelbuilder/backend/native_cache.py",
-        "sha256": "e6cdac9034f1bad62b2fa0afff187ce499f4d52aba691da591a29305fd9bff46"
+        "sha256": "8634824ff0c6ae61b15427d32aa73cfd33d2c410d4ba6b79d5ff69549e1b3ffc"
       },
       {
         "path": "src/modelbuilder/backend/native_exports.py",
@@ -715,7 +715,7 @@
       },
       {
         "path": "src/modelbuilder/backend/process_execution.py",
-        "sha256": "ca3784b0b0db3fb41a60b14d7d4a7497ba38f66b70a35a42a3d1ad30bd602a62"
+        "sha256": "5a6ffe6bfb8825e17a085dc8014abd283e872afca9d41c63cd0b5f34ce9417ea"
       },
       {
         "path": "src/modelbuilder/backend/promotion.py",
@@ -743,7 +743,7 @@
       },
       {
         "path": "src/modelbuilder/backend/supervisor.py",
-        "sha256": "ca70940c19477a16edd2bfdef5ea7f9925a6f2525e882cd74b38cc6806ea57c7"
+        "sha256": "2b0ac6fe5eb5e8653da7512b863a7efcd6c0a110cab4cfe587b1ebaf4837d899"
       },
       {
         "path": "src/modelbuilder/backend/tracking_bridge.py",
@@ -752,6 +752,10 @@
       {
         "path": "src/modelbuilder/backend/tracking_worker.py",
         "sha256": "0e66b66e63bee4552b4ef1be02cc7d71c79ccd557ec35f3911c76e9ea9a724dd"
+      },
+      {
+        "path": "src/modelbuilder/backend/trainer_profile.py",
+        "sha256": "52b8c4bbdbb9e63f515f7f6f995232d8c7233da41fbeed99f02c5d2268a36a75"
       },
       {
         "path": "src/modelbuilder/backend/worker.py",
@@ -807,7 +811,7 @@
       },
       {
         "path": "src/modelbuilder/hub_provider.py",
-        "sha256": "459f8fe3b6c45d86a80ee2ef53788b1e5bfde62e9f28bb5a8fb4fe03cbc31f0e"
+        "sha256": "77fe1f46e4c92fa6338a6d197ca1721d21481df940ffc58aa8374372543b3c43"
       },
       {
         "path": "src/modelbuilder/hub_rights.py",
@@ -815,7 +819,7 @@
       },
       {
         "path": "src/modelbuilder/hub_sdk_worker.py",
-        "sha256": "38cef1c26c25a258b32d1cb9cb191ea1cc094a7236a52e6d1df3c90c8d912c35"
+        "sha256": "5c8cc0e28bbad722a020e8444f14c607363e227b2e3cb894848c40d6516b2298"
       },
       {
         "path": "src/modelbuilder/hub_source.py",
@@ -867,7 +871,7 @@
       },
       {
         "path": "src/modelbuilder/recipe.py",
-        "sha256": "8860cc473cf825d7d1ab6f28ef4fb926beae87b2e75e57bfaaf19d841a9f0bf4"
+        "sha256": "02b60caf6dd923e2b16e23bf9a01ebde1ebe0592b7be8d3e328e9569e423b31b"
       },
       {
         "path": "src/modelbuilder/recipe_registry.py",
@@ -983,7 +987,7 @@
       },
       {
         "path": "src/modelbuilder/source_pinning.py",
-        "sha256": "f6ef2f4722f5486bbb8cc9867b3f6d19d422b1738f804e81212b2d4b44404948"
+        "sha256": "8b559aceea9cc342a075f58c7cfb8b3f690acbfdcf138e1919510d93241c52e2"
       },
       {
         "path": "src/modelbuilder/source_pinning_contract.py",

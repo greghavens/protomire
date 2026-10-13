@@ -92,7 +92,10 @@ recipe node. Normal non-iterative step names remain unchanged.
 StepRun status is authoritative. Recorded branch skips create no fabricated
 native step. Canonical `node_statuses` shows the latest started body iteration,
 so a previous successful call cannot impersonate a pending or skipped call in a
-later iteration. `executed_node_ids` can include a node whose final invocation
+later iteration. An iteration is completed only after its mandatory early-exit
+decision and, when continuing, all next-state artifacts have been validated.
+A skipped required control producer fails the run and leaves that iteration
+incomplete, even when every body node has completed or been legitimately skipped. `executed_node_ids` can include a node whose final invocation
 was skipped because an earlier invocation really executed.
 
 Artifacts and evaluations expose both canonical node ID and actual invocation
@@ -123,3 +126,24 @@ existing recipe/condition/deadline/lifecycle regressions. Actual native evidence
 is in `evidence/tests/native-iterations/`. Focused results do not establish a
 clean stable-union aggregate, installed-wheel replay, native GUI, other OS/GPU,
 remote/provider or hostile-code acceptance. Those require their separate gates.
+
+### Focused verification (2026-10-12)
+
+Twelve distinct native acceptance cases passed in focused runs: hard bound,
+boolean early exit, failed invocation, timeout, train/evaluate warm-start
+feedback plus exact checkpoint selection and continuation, second-iteration
+cancellation/recovery, final-iteration skip propagation, an earlier-iteration
+selected input cut, official MCP/HTTP/schema parity, repeated export
+list/inspect/package, absent mandatory until output, and absent required next
+state. They inspect actual native StepRun/ArtifactVersion IDs, not synthetic
+results. Existing non-iterative native warm-start/exact-state regression also
+passed. Individual reports and limitations are recorded in
+`evidence/tests/native-iterations/verification-summary.json`.
+
+An earlier combined run had a test-fixture timing failure: cancellation arrived
+after a second legitimate optimizer step, while the assertion expected step one.
+The cancellation fixture now pauses deterministically after the first ready
+checkpoint of iteration two; that focused case passed without weakening the
+checkpoint-step assertion. The final complete native queue remains a separate
+acceptance gate. Neither focused passes nor this document claim full-product
+acceptance, native GUI acceptance, or stable-union cache acceptance.

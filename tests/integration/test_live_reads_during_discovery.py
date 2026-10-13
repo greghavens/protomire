@@ -73,7 +73,7 @@ def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
                                      "source_identifier": "PMC123", "idempotency_key": "evidence"})
     compute_entered, content_entered, release = threading.Event(), threading.Event(), threading.Event()
     parquet_entered, placement_entered = threading.Event(), threading.Event()
-    placement_calls = []
+    discovery_calls, placement_calls = [], []
     expected_revision = 1
     if hold_placement:
         # The actual CPU harness remains tied to its original revision. A second
@@ -89,10 +89,14 @@ def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
              "changes": {"allowed_targets": ["local-cpu", "local-mps"]}, "idempotency_key": "mps-policy"})
         def held_probe(_backend, device, *, allocate=False):
             assert not service.store._lock._is_owned()
-            assert device == "mps" and allocate is False
+            assert allocate is False
             if placement._PREPARED_PROBES.get() is None:
-                # Discovery has its own held fixture below, separate from the plan.
+                # Discovery inspects both accelerator runtimes before reaching
+                # its own held hardware fixture, separate from the MPS plan.
+                assert device in {"mps", "cuda:0"}
+                discovery_calls.append((device, allocate))
                 return {"device": device, "available": False, "reason": "Controlled discovery fixture"}
+            assert device == "mps"
             placement_calls.append((device, allocate))
             placement_entered.set()
             assert release.wait(25), "Held placement fixture was not released"
@@ -174,6 +178,7 @@ def test_live_evaluation_reads_and_writes_continue_with_compute_and_content_held
                 result = planned.result(timeout=5)
                 assert result["executable"] is False
                 assert any("Controlled unavailable MPS fixture" in row["message"] for row in result["blocked_reasons"])
+                assert discovery_calls == [("mps", False), ("cuda:0", False)]
                 assert placement_calls == [("mps", False)]  # No allocation or commit-time retry.
             if dataset is not None:
                 assert dataset.result(timeout=5)["row_count"] == 1

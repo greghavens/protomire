@@ -8,9 +8,10 @@ execution, bounded native iteration, PDF/OCR research ingestion, a locked CUDA
 profile and an offline-tested native Modal bridge. These are implementation and
 focused-test results, not a replacement for final combined acceptance.
 
-- The first combined light regression has **1,916 passed, 137 skipped and 59
-  deselected**; two shipping source-closure tests fail because the new source
-  modules are not yet repinned to a committed runtime. They remain required.
+- The current combined light regression has **1,952 passed, 136 skipped and 63
+  deselected**, including the repinned shipping source closures. The preceding
+  1,916-pass attempt had two stale-pin failures; those were corrected by
+  committing the runtime and regenerating both manifests, not weakening tests.
 - Focused real CPU Trainer/native pipelines, streaming JSONL/Parquet consumption,
   general local inference and research HTTP/MCP extraction tests pass. Reports
   remain separately recorded; overlapping counts are not summed.
@@ -32,9 +33,32 @@ focused-test results, not a replacement for final combined acceptance.
   assistant calls and online tracking remain separate unverified gates.
 - Hosted CI remains disabled by user instruction. All checks here run locally.
 
-Source freeze, current installed-wheel replay, refreshed shipping pins, final
-combined tests and publication verification are still pending. The preceding
-report below is preserved as historical evidence, not applied to this source.
+Runtime source is now frozen at `d51a90d93df4a150c088c2d9800c340168b911b4`;
+shipping manifests are committed at `bdafebeb736a3839294755c2f2ba223a42cdd5b4`.
+Both manifests pin the complete **106-file** runtime/lock closure.
+
+Independent installed-wheel replay passed for both fixtures: **35/35 checks
+each**, exact hashes for eight custom and twelve pretrained output files, four
+fresh environments and native stores, before/after source and installed-byte
+verification, and verified worker termination. **182 portability tests** passed.
+The aggregate frontend has **349 passing tests**. Final combined native tests
+and publication verification remain pending. An npm registry policy denial
+interrupted the first aggregate before native tests; an explicit offline-only
+retry passed that stage. Its native queue then failed an existing held-discovery
+fixture after 23 lifecycle passes: the test asserted that every accelerator
+probe was MPS, although discovery now also checks CUDA. Exact tracing reproduced
+the stale assertion. The test-only fix retains lock, no-allocation, latency and
+live-read/write assertions; all three real CPU cases and 180 related checks pass,
+with one actual-CUDA hardware skip. Runtime bytes and shipping pins are unchanged.
+The complete native queue must rerun; its canceled and not-started groups are
+not passes. No hosted CI ran.
+
+A separate authorized Mac task is building and testing this exact candidate.
+MLX is newly requested and is not supplied by the existing PyTorch/MPS support;
+a distinct, verified integration is in progress. No MLX pass is claimed here.
+
+The preceding report below is preserved as historical evidence, not applied
+to this source.
 
 ---
 

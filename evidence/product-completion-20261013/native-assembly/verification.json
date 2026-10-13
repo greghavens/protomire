@@ -1,0 +1,73 @@
+{
+  "base_commit": "c3205be7de453f24f8d2e908ed19dc0742ed9d77",
+  "patch_sha256": "4cc66c599af663d2cbb6f6795563711fdc42256e3afbeb19fa892052f3f6a9c8",
+  "files": {
+    "distribution/INSTALLATION.md": "b33e6502b09f71469e8b9ede2e60bf8747a7054fccd386ba38fc8b319d2157e7",
+    "distribution/build_runtime.py": "713394d6ef2417458eb3f5398dc2d9898a1d6f697b38205343dee878fc129afc",
+    "distribution/managed_core.py": "9177cfe13d60e1cb90f80ae80f0509d3317ec9ef4ecb0c2062c9600748706095",
+    "distribution/single_app.py": "1386d17082d19300656e2f044024c5b6fb10cec32a35f9d896123e2ca8b2fff2",
+    "docs/PORTABILITY.md": "52e3a301dae7233030a4206cc26bcb7aeb3799ffe03c128838051e438aa7d88d",
+    "scripts/replay_bundle.py": "73a2cc5ce8691ebf9a04dc175c795b58679188f26aa694820d50945667108f09",
+    "tests/distribution/test_single_app.py": "a3de564c15f03f3eb9df126e40b55446cfbbbee2cdf3f13f9a87d1f5dfa38781",
+    "tests/distribution/test_source_restore.py": "44927c27dac1b72cbd332e88ad61920a61d62c75ffbecfa1fe6741deb246c0c7",
+    "tests/portability/test_wheel_profiles.py": "7b9424cde78f60ec484b6911f3ba850c48ff20427170c69517ef3c4e672b62d4"
+  },
+  "tests": {
+    "focused": "53 passed",
+    "distribution": "46 passed",
+    "portability": "240 passed, 2 deselected",
+    "deselected": "Shipping recipe pin equality awaits committing/repinning the final integrated source; no repository commits were created.",
+    "ruff": "All checks passed",
+    "git_diff_check": "passed"
+  },
+  "checkpoint_restore": {
+    "source_commit": "0e746a067a0a22478f371a2e888c35b776763e43",
+    "refs": {
+      "refs/checkpoints/source-current": "76c0c288b0b5ae9f5273c61244d2c59df7e1f967",
+      "refs/checkpoints/source-original": "086908e3eb20ff025bbd50108e6b6563855b7512",
+      "refs/heads/main": "0e746a067a0a22478f371a2e888c35b776763e43",
+      "refs/remotes/origin/main": "0e746a067a0a22478f371a2e888c35b776763e43"
+    },
+    "shallow_boundaries": [
+      "a3ae2dafe292009eade6cefc0db2a438ccd92d03",
+      "086908e3eb20ff025bbd50108e6b6563855b7512"
+    ],
+    "fsck": "passed",
+    "bundle_sha256": "950c2006a88bffc2060739115f4f364d2a6d8b6bfb24c545d4b091d0bd8eda87",
+    "shallow_sha256": "c4ee8b71d3191937762e4b1dff9b95bd4d89595d3853ecc13f823aef8017e3a0",
+    "all_refs_match": true,
+    "locally_available_commits_match": true,
+    "restored_commit_count": 36,
+    "checkpoint_inputs_unchanged": true,
+    "working_tree_clean": true,
+    "native_platform": "linux-x64",
+    "limitations": [
+      "macOS pip check, native app, GUI, DMG and clean-machine acceptance were not run"
+    ]
+  },
+  "legacy_wheel_equivalence": {
+    "service": {
+      "baseline_sha256": "d847058ec53ac3e0986f9ed88415d4829f610f2d8a4f8ece23dfa150efe1ea7a",
+      "patched_sha256": "d847058ec53ac3e0986f9ed88415d4829f610f2d8a4f8ece23dfa150efe1ea7a",
+      "byte_identical": true
+    },
+    "backend": {
+      "baseline_sha256": "371c2ea536f2ecc91346e8a86918bc67d68261dca546dbf6b3402eb5b5c53647",
+      "patched_sha256": "371c2ea536f2ecc91346e8a86918bc67d68261dca546dbf6b3402eb5b5c53647",
+      "byte_identical": true
+    }
+  },
+  "parent_recheck": {
+    "tests_passed": 64,
+    "seconds": 48.64,
+    "junit": "parent-tests.xml",
+    "scope": "Distribution and native-profile wheel contracts; not full current runtime acceptance"
+  },
+  "remaining_gates": [
+    "Actual Mac pip check after reconnect",
+    "Native app relocation and launch lifecycle",
+    "DMG install",
+    "Signing and notarization",
+    "Other native platforms and clean-machine acceptance"
+  ]
+}

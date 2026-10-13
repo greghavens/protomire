@@ -14,8 +14,10 @@ import hashlib
 import json
 import os
 import platform
+import re
 from pathlib import Path
 import secrets
+import shutil
 import socket
 import stat
 import subprocess
@@ -116,6 +118,70 @@ def service_environment() -> dict[str, str]:
     return {key: value for key, value in os.environ.items() if key in allowed}
 
 
+def restore_source(git: Path, archive: Path, destination: Path, commit: str,
+                   shallow: Path | None = None) -> dict:
+    """Restore a complete or shallow bundle only into a new disposable checkout.
+
+    Bundles do not carry .git/shallow. Install its reviewed sidecar before
+    unbundling, then restore every real ref and verify connectivity and identity.
+    This path never fetches, runs checkout hooks, or touches an existing tree.
+    """
+    if destination.exists() or destination.is_symlink():
+        raise CoreError("Source restore requires a new destination")
+    if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise CoreError("Source restore requires a full source commit")
+    boundaries = shallow.read_text().splitlines() if shallow else []
+    if shallow and (not boundaries or len(set(boundaries)) != len(boundaries)
+                    or any(not re.fullmatch(r"[0-9a-f]{40}", line) for line in boundaries)):
+        raise CoreError("Source shallow sidecar contains invalid boundaries")
+    env = {**service_environment(), "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+           "GIT_TERMINAL_PROMPT": "0", "GIT_NO_LAZY_FETCH": "1", "GIT_NO_REPLACE_OBJECTS": "1",
+           "GIT_ALLOW_PROTOCOL": "file"}
+
+    def run(*arguments, **options):
+        return subprocess.run([str(git), "-c", "core.hooksPath=" + os.devnull, *arguments],
+                              env=env, check=True, capture_output=True, text=True, timeout=60, **options).stdout
+
+    heads = run("bundle", "list-heads", str(archive)).splitlines()
+    refs = {}
+    for line in heads:
+        sha, name = line.split(" ", 1)
+        if not re.fullmatch(r"[0-9a-f]{40}", sha):
+            raise CoreError("Source bundle contains an invalid ref identity")
+        # HEAD and linked-worktree HEAD entries are not real refs to recreate.
+        if name.startswith("refs/"):
+            run("check-ref-format", name)
+            if name in refs:
+                raise CoreError("Source bundle contains duplicate refs")
+            refs[name] = sha
+    if commit not in refs.values():
+        raise CoreError("Source bundle does not expose the selected source commit")
+    try:
+        run("init", "--template=", str(destination))
+        if shallow:
+            shutil.copyfile(shallow, destination / ".git/shallow")
+        run("-C", str(destination), "bundle", "unbundle", str(archive))
+        run("-C", str(destination), "update-ref", "--stdin",
+            input="start\n" + "".join(f"create {name} {sha}\n" for name, sha in sorted(refs.items()))
+            + "prepare\ncommit\n")
+        actual = run("-C", str(destination), "for-each-ref", "--format=%(objectname) %(refname)").splitlines()
+        if actual != [f"{sha} {name}" for name, sha in sorted(refs.items())]:
+            raise CoreError("Restored source refs do not match the bundle")
+        if run("-C", str(destination), "cat-file", "-t", commit).strip() != "commit":
+            raise CoreError("Selected source identity is not a commit")
+        for boundary in boundaries:
+            if run("-C", str(destination), "cat-file", "-t", boundary).strip() != "commit":
+                raise CoreError("Source shallow boundary is not a bundled commit")
+        run("-C", str(destination), "fsck", "--full")
+        run("-C", str(destination), "checkout", "--detach", commit)
+        if run("-C", str(destination), "rev-parse", "HEAD").strip() != commit:
+            raise CoreError("Restored source commit does not match")
+        return {"source_commit": commit, "refs": refs, "shallow_boundaries": boundaries, "fsck": "passed"}
+    except (subprocess.SubprocessError, OSError, CoreError):
+        shutil.rmtree(destination, ignore_errors=True)
+        raise
+
+
 def provision_source(root: Path, state: Path, manifest: dict) -> Path | None:
     bundle = manifest.get("source_bundle")
     if not bundle:
@@ -123,21 +189,16 @@ def provision_source(root: Path, state: Path, manifest: dict) -> Path | None:
     git = relative_file(root, manifest["git_executable"])
     archive = relative_file(root, bundle)
     workspace = state / "source"
-    env = {**service_environment(), "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
-           "GIT_TERMINAL_PROMPT": "0", "GIT_NO_LAZY_FETCH": "1", "GIT_NO_REPLACE_OBJECTS": "1"}
+    shallow = relative_file(root, manifest["source_bundle_shallow"]) if manifest.get("source_bundle_shallow") else None
     # Backend and SourceWorkspaces use git by name. Only this child process PATH
     # changes; no profile, machine environment, or user Git configuration changes.
     os.environ["PATH"] = str(git.parent) + os.pathsep + os.environ.get("PATH", "")
     if not workspace.exists():
         pending = state / (".source-" + secrets.token_hex(8))
         try:
-            subprocess.run([str(git), "-c", "core.hooksPath=" + os.devnull, "clone", "--no-hardlinks", "--no-checkout",
-                            str(archive), str(pending)], env=env, check=True, capture_output=True, timeout=60)
-            subprocess.run([str(git), "-c", "core.hooksPath=" + os.devnull, "-C", str(pending), "checkout", "--detach",
-                            manifest["source_commit"]], env=env, check=True, capture_output=True, timeout=60)
+            restore_source(git, archive, pending, manifest["source_commit"], shallow)
             pending.rename(workspace)
-        except (subprocess.SubprocessError, OSError):
-            import shutil
+        except (subprocess.SubprocessError, OSError, CoreError):
             shutil.rmtree(pending, ignore_errors=True)
             raise CoreError("Could not initialize the bundled model source workspace") from None
     if workspace.is_symlink() or not workspace.is_dir():

@@ -144,6 +144,15 @@ source verification and worker-termination proofs. [Original receipt hashes](../
 identify the locally retained raw evidence without exposing personal paths or
 model weights.
 
+For native application assembly, `wheel --target <native-target>` explicitly
+resolves direct dependency metadata from the corresponding inventoried target
+lock. `--backend-variant cuda-cu128` selects a reviewed backend variant when
+needed. The target, lock SHA256 and resulting pins are recorded in the wheel and
+build receipt. Default wheel construction without `--target` retains the exact
+recipe requirements and the existing replay behavior. These target-specific
+metadata checks do not extend the measured same-host replay or native acceptance
+claims. See [native wheel inputs](../distribution/INSTALLATION.md).
+
 The replay scope is independent Python environments and metadata/artifact stores on the same Linux x64 CPU host. It does not verify macOS, MLX, another operating system or machine, GPUs, remote execution, per-stage container isolation, or untrusted recipe execution. The native replay workloads are the custom-PyTorch and pretrained-small fixtures; installing the Trainer overlay and importing its adapters does not establish general Trainer training acceptance. Optional PyArrow was absent from the fresh offline replay environments; eager and streaming Parquet helper subprocess tests ran separately in the existing pinned PyArrow environment. PDF tool versions are recorded by the installed-wheel probes, but Poppler is a local system prerequisite rather than a Python wheel dependency.
 
 Source license `NOASSERTION` remains a visible unresolved redistribution issue; local operator trust does not confer redistribution rights. External pretrained resources must remain immutable references and be separately resolved and SHA256-verified rather than embedded in the recipe archive. The transport digest remains separate from each project's owned recipe identity and exact imported revision.

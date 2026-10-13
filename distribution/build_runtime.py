@@ -65,6 +65,8 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
             verified_input(base, inputs[component]["wheel"])
     verified_input(base, inputs["git"])
     verified_input(base, inputs["source_bundle"])
+    if inputs.get("source_bundle_shallow"):
+        verified_input(base, inputs["source_bundle_shallow"])
     wheelhouse = Path(inputs["wheelhouse"])
     if not wheelhouse.is_absolute():
         wheelhouse = base / wheelhouse
@@ -119,6 +121,9 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
     manifest["git_executable"] = git.relative_to(output).as_posix()
     manifest["git_provenance"] = {"source_url": inputs["git"]["source_url"], "archive_sha256": inputs["git"]["sha256"], "notice": inputs["git"]["notice"]}
     shutil.copyfile(verified_input(base, inputs["source_bundle"]), output / "source.bundle")
+    if inputs.get("source_bundle_shallow"):
+        shutil.copyfile(verified_input(base, inputs["source_bundle_shallow"]), output / "source.bundle.shallow")
+        manifest["source_bundle_shallow"] = "source.bundle.shallow"
     if target.startswith("darwin-"):
         floors = {component: macos_floor(output / (component + "-python"), inputs[component]["python"].get("minimum_os")) for component in components}
         manifest["minimum_os"] = max((floor for component, floor in floors.items() if component != "mlx"), key=lambda value: tuple(map(int, value.split("."))))

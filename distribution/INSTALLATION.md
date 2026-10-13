@@ -89,6 +89,14 @@ Builder input JSON uses these fields (paths are relative to the JSON file):
 
 - `target`, `source_commit`, `wheelhouse`, `notices`
 - `source_bundle`: `{ "path": "source.bundle", "sha256": "..." }`
+- For a shallow source repository, `source_bundle_shallow`:
+  `{ "path": "source.bundle.shallow", "sha256": "..." }`. Copy the source
+  repository's `git rev-parse --git-path shallow` file alongside the bundle;
+  do not drop shallow boundaries or fetch/repair history during assembly.
+  The sidecar is hash-checked and included in the sealed inventory. The moved
+  payload probe actually restores the bundle, checks every real ref and the
+  selected commit, and runs `git fsck --full`. First launch uses the same restore
+  path; later launches never reset an existing user's checkout.
 - `service`: `python` archive description and application `wheel` description
 - `backend`: the same pair for targets with a pinned local backend profile
 - Optional `mlx` on Apple Silicon: a separate Python archive, installed from the
@@ -103,6 +111,29 @@ Builder input JSON uses these fields (paths are relative to the JSON file):
   not configured or imported on older hosts. The reviewed MLX metal profile
   needs macOS 26; that does not raise the base app minimum to macOS 26.
 - Each wheel description includes `path` and `sha256`
+
+Build native application wheels with the existing inert replay builder's explicit
+`--target`, using an exported/imported verified source snapshot, for example:
+
+```sh
+python scripts/replay_bundle.py wheel /build/verified-source --kind backend \
+  --target darwin-arm64 --destination /build/wheels/darwin-arm64
+python scripts/replay_bundle.py wheel /build/verified-source --kind service \
+  --target darwin-arm64 --destination /build/wheels/darwin-arm64
+```
+
+The selected `requirements/profiles/<component>-<target>.lock` must be part of
+that snapshot's SHA256 inventory. Metadata keeps the declared direct dependency
+names and extras while taking exact versions from that native lock: Apple
+Silicon's torch is `2.9.0`; the Linux CPU profile uses `2.9.0+cpu`. The wheel
+contains a `modelbuilder-profile.json` receipt with target, variant, lock path,
+lock hash and resolved requirements. Keep different targets in separate output
+directories. `--backend-variant cuda-cu128` selects an existing reviewed CUDA
+profile for standalone backend wheels; the bundled runtime builder still uses
+its existing default target locks. Omitting `--target` deliberately preserves
+the recipe's exact replay environment and is not native dependency selection.
+This inert metadata operation does not establish Mac native acceptance; assembly
+still runs the target lock install, `pip check`, and moved-payload probes on Mac.
 
 Only reviewed official artifact sources belong in those provenance fields.
 Git is not redistributed under the product's own license: preserve its notices

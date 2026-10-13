@@ -64,12 +64,68 @@ def verify_source(root: Path) -> dict:
     return import_bundle(export_bundle(recipe, source_root=root))
 
 
-def build_wheel(root: Path, destination: Path, kind: str) -> dict:
+def profile_requirements(root: Path, recipe: dict, requirements: list[str], kind: str,
+                         target: str | None, backend_variant: str) -> tuple[list[str], dict | None]:
+    """Resolve direct dependency versions from an explicitly selected source lock.
+
+    Legacy recipe replay keeps the recipe's exact environment. Native packaging
+    selects a target explicitly; neither the host nor a Linux recipe silently
+    chooses wheel metadata. Profile files remain inside the verified inventory.
+    """
+    from modelbuilder.recipe import validate_pinned_requirements
+    requirements = validate_pinned_requirements(requirements)
+    if target is None:
+        if backend_variant != "default":
+            raise ValueError("A backend variant requires an explicit target")
+        return requirements, None
+    if not re.fullmatch(r"[a-z0-9]+-[a-z0-9]+", target):
+        raise ValueError("Invalid wheel dependency target")
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", backend_variant):
+        raise ValueError("Invalid backend dependency variant")
+    if kind != "backend" and backend_variant != "default":
+        raise ValueError("Backend variants apply only to backend wheels")
+    component = kind + ("-" + backend_variant if backend_variant != "default" else "")
+    profile = f"requirements/profiles/{component}-{target}.lock"
+    entries = {item["path"]: item["sha256"] for item in recipe["source"]["files"]}
+    if profile not in entries:
+        raise ValueError("Selected target dependency profile is not in the verified source inventory")
+    data = (root / profile).read_bytes()
+    if sha256(data) != entries[profile]:
+        raise ValueError("Selected dependency profile changed after source verification")
+    pins = []
+    for line in data.decode().splitlines():
+        line = line.strip().removesuffix("\\").strip()
+        if not line or line.startswith("#") or re.fullmatch(r"--hash=sha256:[0-9a-f]{64}", line):
+            continue
+        pins.append(line)
+    pins = validate_pinned_requirements(pins)
+
+    def key(name):
+        return re.sub(r"[-_.]+", "-", name.split("[", 1)[0]).lower()
+
+    versions = {key(pin.split("==", 1)[0]): pin.split("==", 1)[1] for pin in pins}
+    resolved = []
+    for requirement in requirements:
+        name, _ = requirement.split("==", 1)
+        if key(name) not in versions:
+            raise ValueError(f"Selected dependency profile does not pin {name}")
+        # Keep declared extras and direct dependency names; use the reviewed
+        # target's exact version, including CPU/CUDA/local-version suffixes.
+        resolved.append(name + "==" + versions[key(name)])
+    return resolved, {"target": target, "backend_variant": backend_variant,
+                      "lock_file": {"path": profile, "sha256": entries[profile]},
+                      "requirements": resolved}
+
+
+def build_wheel(root: Path, destination: Path, kind: str, *, target: str | None = None,
+                backend_variant: str = "default") -> dict:
     """Build a conventional wheel from verified text, without running build hooks.
 
     Backend and service versions conflict upstream, so separate distributions go
     into separate environments. Both use exactly the same pinned source bytes.
     """
+    if kind not in {"service", "backend"}:
+        raise ValueError("Unknown wheel component")
     report = verify_source(root)
     recipe = report["recipe"]
     project = tomllib.loads((root / "pyproject.toml").read_text())["project"]
@@ -105,8 +161,9 @@ def build_wheel(root: Path, destination: Path, kind: str) -> dict:
     if not files or "modelbuilder/backend/adapter.py" not in files:
         raise ValueError("Bundle lacks application source needed by replay")
     requirements = project["dependencies"] if kind == "service" else recipe["environment"]["requirements"]
-    from modelbuilder.recipe import validate_pinned_requirements
-    requirements = validate_pinned_requirements(requirements)
+    requirements, profile = profile_requirements(root, recipe, requirements, kind, target, backend_variant)
+    if profile:
+        files[f"{dist_info}/modelbuilder-profile.json"] = (json.dumps(profile, indent=2, sort_keys=True) + "\n").encode()
     metadata = ["Metadata-Version: 2.1", f"Name: {name.replace('_', '-')}", f"Version: {version}",
                 "Summary: ModelBuilder verified portable source snapshot", "Requires-Python: >=3.12,<3.13"]
     metadata += ["Requires-Dist: " + requirement for requirement in requirements]
@@ -133,7 +190,8 @@ def build_wheel(root: Path, destination: Path, kind: str) -> dict:
             member.external_attr = 0o644 << 16
             wheel.writestr(member, data)
     return {"wheel": str(output.resolve()), "sha256": sha256(output.read_bytes()), "kind": kind,
-            "source_commit": recipe["source"]["commit"], "build_hooks_executed": False, "files": len(files)}
+            "source_commit": recipe["source"]["commit"], "build_hooks_executed": False, "files": len(files),
+            **({"dependency_profile": profile} if profile else {})}
 
 
 def runtime_identity(backend: bool = False) -> dict:
@@ -429,6 +487,8 @@ def main() -> None:
     wheel.add_argument("source_root", type=Path)
     wheel.add_argument("--kind", choices=["service", "backend"], required=True)
     wheel.add_argument("--destination", type=Path, required=True)
+    wheel.add_argument("--target", help="Explicit native target; resolve metadata from its inventoried hash-lock")
+    wheel.add_argument("--backend-variant", default="default", help="Reviewed backend profile variant, e.g. cuda-cu128")
     run = commands.add_parser("run")
     run.add_argument("source_root", type=Path)
     run.add_argument("--data-dir", type=Path, required=True)
@@ -449,7 +509,8 @@ def main() -> None:
         from modelbuilder.recipe import import_bundle
         result = import_bundle(args.bundle, args.destination)
     elif args.command == "wheel":
-        result = build_wheel(args.source_root.resolve(), args.destination, args.kind)
+        result = build_wheel(args.source_root.resolve(), args.destination, args.kind,
+                             target=args.target, backend_variant=args.backend_variant)
     elif args.command == "run":
         result = run_recipe(args.source_root.resolve(), args.data_dir.resolve(), args.backend_python,
                             args.output, trusted=args.trust_repository_source, pretrained_path=args.pretrained_path)

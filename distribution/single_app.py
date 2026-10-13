@@ -23,7 +23,7 @@ import tempfile
 
 from build_ide import build, build_plan
 from platform_config import detect_target, validate_target
-from managed_core import CoreError, relative_file, runtime_manifest, verify_runtime
+from managed_core import CoreError, relative_file, restore_source, runtime_manifest, verify_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -163,11 +163,13 @@ def seal_runtime(root: Path, target: str) -> dict:
         git_exec = Path(subprocess.check_output([str(git), "--exec-path"], env=git_env, text=True, timeout=30).strip())
         if not git_exec.is_dir() or not git_exec.resolve().is_relative_to(moved.resolve()):
             raise ValueError("Bundled Git helpers still depend on an external installation after relocation")
-        result = subprocess.run([str(git), "bundle", "list-heads", str(relative_file(moved, manifest["source_bundle"]))], env=git_env,
-                                capture_output=True, text=True, check=True, timeout=30)
-        if not any(line.split()[0] == manifest["source_commit"] for line in result.stdout.splitlines()):
-            raise ValueError("Source bundle does not expose the selected source commit")
-        probes["git"] = {"exec_path": git_exec.relative_to(moved).as_posix(), "source_commit_present": True}
+        shallow = relative_file(moved, manifest["source_bundle_shallow"]) if manifest.get("source_bundle_shallow") else None
+        with tempfile.TemporaryDirectory(prefix="modelbuilder-source-probe-") as temporary:
+            source_probe = restore_source(git, relative_file(moved, manifest["source_bundle"]),
+                                          Path(temporary) / "source", manifest["source_commit"], shallow)
+        probes["git"] = {"exec_path": git_exec.relative_to(moved).as_posix(),
+                         "source_commit_present": True, "source_restore": source_probe}
+
     finally:
         moved.rename(root)
     shutil.copyfile(ROOT / "distribution/managed_core.py", root / "managed_core.py")

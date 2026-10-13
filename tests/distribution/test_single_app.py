@@ -216,9 +216,11 @@ def test_seal_probes_only_after_original_location_disappears_and_restores(payloa
         return {"version": [3, 12, 14], "modules": {}}
     monkeypatch.setattr(packaging, "probe_python", fake_probe)
     monkeypatch.setattr(packaging.subprocess, "check_output", lambda command, **kwargs: str(Path(command[0]).parent / "git-helpers") + "\n")
-    class Result:
-        stdout = "a" * 40 + " refs/heads/shipping\n"
-    monkeypatch.setattr(packaging.subprocess, "run", lambda *args, **kwargs: Result())
+    def fake_restore(git, archive, destination, commit, shallow):
+        assert not payload.exists() and " relocated " in str(archive)
+        assert not destination.exists() and shallow is None
+        return {"source_commit": commit, "fsck": "passed", "refs": {"refs/heads/shipping": commit}}
+    monkeypatch.setattr(packaging, "restore_source", fake_restore)
     result = packaging.seal_runtime(payload, "linux-x64")
     assert payload.exists() and probes == ["python", "backend"] and result["sealed"]
     manifest = json.loads((payload / "runtime.json").read_text())

@@ -1,0 +1,198 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "fc084c61-cb3a-418f-87a9-7bf837e46457",
+      "backend_run_id": "ea5ec0e1-a31b-4211-a0b0-d9d4db8ed3a4",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "ea5ec0e1-a31b-4211-a0b0-d9d4db8ed3a4",
+        "producer_step_run_id": "6e77376e-8d95-4af6-b201-4ac6aae5a238",
+        "reused": false
+      },
+      "canonical_node_id": "join",
+      "invocation_id": "join",
+      "name": "summary",
+      "node_id": "join",
+      "port": "summary",
+      "step_id": "6e77376e-8d95-4af6-b201-4ac6aae5a238",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_retry_iso0/state/backend/zenml-stores/84399aa2-5e54-48cd-8bf3-530bf3ff433d/join/summary/6e77376e-8d95-4af6-b201-4ac6aae5a238/c2518158"
+    }
+  ],
+  "backend": "zenml",
+  "backend_run_id": "ea5ec0e1-a31b-4211-a0b0-d9d4db8ed3a4",
+  "backend_snapshot_id": "627b0e42-1c71-4a7d-b004-05d54532f3e3",
+  "backend_status": "completed",
+  "backend_version": "0.97.0",
+  "bounded_iterations": {},
+  "cached_node_ids": [],
+  "conditional_execution": {},
+  "conditional_inputs": {},
+  "error": null,
+  "evaluations": [],
+  "executed_node_ids": [
+    "join"
+  ],
+  "executed_recipe_digest": "dec456e8742ba35f3438a999eed821592ee8abc8e58626182698caf1efbbd389",
+  "execution": {
+    "input_bindings": [
+      {
+        "artifact_id": "70cf451d-7610-4ef8-bad2-2677cad05e4c",
+        "backend_run_id": "45e47bc5-eaa6-4eed-bb5f-59056ab8d328",
+        "cache": {
+          "original_step_run_id": "b92a9d74-10cd-451a-8030-3344953ed1ce",
+          "producer_backend_run_id": "86e25c69-5427-4858-afd5-a2833fff0bea",
+          "producer_step_run_id": "b92a9d74-10cd-451a-8030-3344953ed1ce",
+          "reused": true
+        },
+        "canonical_node_id": "fourth",
+        "content_sha256": "32d40f94fefba7787fbca887207d30ab6b59ab4e2b08b4acd1683b43eede389a",
+        "declared_type": "dict",
+        "input_port": "fourth",
+        "invocation_id": "fourth",
+        "node_id": "join",
+        "producer_model_version_ref": "d4c03475-bea8-4aeb-babd-19a954eca0f5",
+        "producer_recipe_digest": "dec456e8742ba35f3438a999eed821592ee8abc8e58626182698caf1efbbd389",
+        "producer_recipe_id": "5edb1da2-e060-4d7d-ab97-88ee2895be2f",
+        "producer_recipe_revision": 1,
+        "producer_role": "code.python",
+        "source_node_id": "fourth",
+        "source_port": "data"
+      },
+      {
+        "artifact_id": "611ba504-904e-4759-9cee-572428e218eb",
+        "backend_run_id": "45e47bc5-eaa6-4eed-bb5f-59056ab8d328",
+        "cache": {
+          "original_step_run_id": "a4d2f95b-05d2-4472-8ea7-da79b1674a33",
+          "producer_backend_run_id": "86e25c69-5427-4858-afd5-a2833fff0bea",
+          "producer_step_run_id": "a4d2f95b-05d2-4472-8ea7-da79b1674a33",
+          "reused": true
+        },
+        "canonical_node_id": "left",
+        "content_sha256": "bc23bd22ff01c085bcea166c8c352403e335933efdbe894e51a08d72ac7e2f86",
+        "declared_type": "dict",
+        "input_port": "left",
+        "invocation_id": "left",
+        "node_id": "join",
+        "producer_model_version_ref": "d4c03475-bea8-4aeb-babd-19a954eca0f5",
+        "producer_recipe_digest": "dec456e8742ba35f3438a999eed821592ee8abc8e58626182698caf1efbbd389",
+        "producer_recipe_id": "5edb1da2-e060-4d7d-ab97-88ee2895be2f",
+        "producer_recipe_revision": 1,
+        "producer_role": "code.python",
+        "source_node_id": "left",
+        "source_port": "data"
+      },
+      {
+        "artifact_id": "9427c41e-11ba-43bc-8db6-8d2e5597bba5",
+        "backend_run_id": "45e47bc5-eaa6-4eed-bb5f-59056ab8d328",
+        "cache": {
+          "original_step_run_id": "45489f94-acb0-4315-8cb2-cb0dab0f4f48",
+          "producer_backend_run_id": "86e25c69-5427-4858-afd5-a2833fff0bea",
+          "producer_step_run_id": "45489f94-acb0-4315-8cb2-cb0dab0f4f48",
+          "reused": true
+        },
+        "canonical_node_id": "right",
+        "content_sha256": "e1750d153e22d869b062a5ab8860d401ed31e4af145bf0ab13216e33fa6fdf02",
+        "declared_type": "dict",
+        "input_port": "right",
+        "invocation_id": "right",
+        "node_id": "join",
+        "producer_model_version_ref": "d4c03475-bea8-4aeb-babd-19a954eca0f5",
+        "producer_recipe_digest": "dec456e8742ba35f3438a999eed821592ee8abc8e58626182698caf1efbbd389",
+        "producer_recipe_id": "5edb1da2-e060-4d7d-ab97-88ee2895be2f",
+        "producer_recipe_revision": 1,
+        "producer_role": "code.python",
+        "source_node_id": "right",
+        "source_port": "data"
+      },
+      {
+        "artifact_id": "c4db96ea-b844-4e6e-9cda-54b30c8a6439",
+        "backend_run_id": "45e47bc5-eaa6-4eed-bb5f-59056ab8d328",
+        "cache": {
+          "original_step_run_id": "f32a57b5-8055-438b-9721-d80fc8d72f04",
+          "producer_backend_run_id": "86e25c69-5427-4858-afd5-a2833fff0bea",
+          "producer_step_run_id": "f32a57b5-8055-438b-9721-d80fc8d72f04",
+          "reused": true
+        },
+        "canonical_node_id": "third",
+        "content_sha256": "97669372fa782f0d0a5374ad83a3677c8129f6b5ea6fa8b3dbe7170f5ba23ace",
+        "declared_type": "dict",
+        "input_port": "third",
+        "invocation_id": "third",
+        "node_id": "join",
+        "producer_model_version_ref": "d4c03475-bea8-4aeb-babd-19a954eca0f5",
+        "producer_recipe_digest": "dec456e8742ba35f3438a999eed821592ee8abc8e58626182698caf1efbbd389",
+        "producer_recipe_id": "5edb1da2-e060-4d7d-ab97-88ee2895be2f",
+        "producer_recipe_revision": 1,
+        "producer_role": "code.python",
+        "source_node_id": "third",
+        "source_port": "data"
+      }
+    ],
+    "node_ids": [
+      "join"
+    ]
+  },
+  "invocation_statuses": {
+    "join": {
+      "canonical_node_id": "join",
+      "input_artifact_ids": {
+        "fourth": [
+          "70cf451d-7610-4ef8-bad2-2677cad05e4c"
+        ],
+        "left": [
+          "611ba504-904e-4759-9cee-572428e218eb"
+        ],
+        "right": [
+          "9427c41e-11ba-43bc-8db6-8d2e5597bba5"
+        ],
+        "third": [
+          "c4db96ea-b844-4e6e-9cda-54b30c8a6439"
+        ]
+      },
+      "invocation_id": "join",
+      "status": "completed",
+      "step_id": "6e77376e-8d95-4af6-b201-4ac6aae5a238"
+    }
+  },
+  "last_reconciled_at": "2026-10-13T01:24:42.175594+00:00",
+  "log_available": true,
+  "metrics": {
+    "evaluation_catalog": [],
+    "evaluation_conflicts": {},
+    "evaluation_records": {}
+  },
+  "model_version_ref": "1d81b5a9-1089-426c-a26d-40f3c7bfb589",
+  "node_statuses": {
+    "join": "completed"
+  },
+  "operation_id": "4d8696ac-de85-4e26-ad8a-80734e8e837d",
+  "parent_checkpoint_ref": null,
+  "parent_invocation": null,
+  "parent_recipe_digest": null,
+  "parent_recipe_id": null,
+  "parent_recipe_revision": null,
+  "parent_run_id": null,
+  "process_group_alive": false,
+  "project_id": "87a948ec-dc65-40e8-9803-ed5c3ea4c761",
+  "recipe_digest": "dec456e8742ba35f3438a999eed821592ee8abc8e58626182698caf1efbbd389",
+  "recipe_id": "5edb1da2-e060-4d7d-ab97-88ee2895be2f",
+  "recipe_revision": 1,
+  "resume_mode": null,
+  "runtime_status_source": "verified_local_supervisor",
+  "skipped_node_ids": [],
+  "status": "succeeded",
+  "submitted_at": "2026-10-13T01:24:33.019718+00:00",
+  "supervisor_alive": true,
+  "termination": {},
+  "termination_record_source": null,
+  "tracking": {
+    "mode": "disabled",
+    "provider": "wandb",
+    "run_id": null,
+    "status": "disabled",
+    "url": null
+  },
+  "worker_alive": false,
+  "worker_exit_code": 0,
+  "worker_pid": 344
+}

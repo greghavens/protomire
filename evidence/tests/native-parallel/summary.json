@@ -1,0 +1,26 @@
+{
+  "result": "passed",
+  "tests": 22,
+  "duration_seconds": 385.49,
+  "junit": "frozen-final.xml",
+  "log": "frozen-final.log",
+  "source_files_checked": 88,
+  "source_changes_during_frozen_run": [],
+  "native_jobs_with_confirmed_termination": 16,
+  "process_attempts_with_direct_reaping_proof": 59,
+  "failure_live_regressions": {
+    "passed": 127,
+    "skipped": 1,
+    "deselected": 3,
+    "junit": "failure-live-regression.xml"
+  },
+  "initial_attempt": {
+    "result": "failed",
+    "passed": 17,
+    "failed": 1,
+    "cause": "Cache identity correctly invalidated by backend/adapter.py edit between original and replay; both native run cache identities exactly match reconstructed before/after runtime source hashes.",
+    "evidence": "failed-attempt-1/cache-invalidation-diagnosis.json"
+  },
+  "scope": "Linux CPU parallel execution; default sequential other-platform behavior preserved; trusted process separation, not hostile-code isolation; no provider spend",
+  "remaining": "Full aggregate and installed-wheel replay after parent integration/runtime repin; non-Linux/accelerator parallel acceptance not claimed"
+}

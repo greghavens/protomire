@@ -1,4 +1,4 @@
-"""Sequential native dynamic execution for typed branches and optional joins."""
+"""Native dynamic execution for bounded parallel stages, branches and joins."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,7 +14,7 @@ from modelbuilder.backend.native_inputs import validate_native_type
 @pipeline(name="modelbuilder_conditional_recipe", dynamic=True, enable_cache=True)
 def execute_conditional_recipe(job_directory: str):
     # The public dynamic pipeline must have an importable top-level definition.
-    # No submit/thread calls: source imports, deadlines and job state are shared.
+    # Native futures use a bounded native worker pool and process-scoped bodies.
     from modelbuilder.backend.worker import prepare_run, invoke_nodes
     job = Path(job_directory)
     prepared = prepare_run(job)

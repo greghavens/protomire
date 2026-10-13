@@ -442,7 +442,8 @@ print(json.dumps(result))"""
         status = self._execution_status(job, request)
         if status["status"] in {"succeeded", "failed", "cancelled"}:
             return {**status, "cancellation_acknowledged": status["status"] == "cancelled"}
-        write_json(job / "cancel.json", {"requested_at": now()})
+        from .process_execution import publish_cancellation
+        publish_cancellation(job, {"requested_at": now()})
         state = read_json(job / "state.json")
         if (not alive(state.get("supervisor_pid"), state.get("supervisor_identity"))
                 and alive(state.get("worker_pid"), state.get("worker_identity"))):

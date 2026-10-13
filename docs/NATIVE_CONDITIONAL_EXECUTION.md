@@ -3,7 +3,9 @@
 This is a bounded adapter implementation of the original conditional-pipeline
 requirement (handoff §5.2 / evaluation G05). It uses the same recipe ID, revision,
 typed nodes, editor and HTTP/MCP operations. ZenML 0.97's public dynamic pipeline
-executes selected stages sequentially. There is no additional scheduler, run or
+executes selected stages sequentially by default. Opt-in bounded stage execution
+is described in [NATIVE_PARALLEL_EXECUTION.md](NATIVE_PARALLEL_EXECUTION.md).
+There is no additional scheduler, run or
 artifact registry, training loop, expression language or alternative workflow.
 
 ## Authoring and validation
@@ -55,7 +57,10 @@ Built-in lifecycle stages are not optional-join adapters. Parameters cannot
 shadow declared Python input ports.
 
 `loop`, `repeat` and `iterations` node settings are still rejected explicitly.
-Explicit typed bounded iteration is described in [NATIVE_BOUNDED_ITERATION.md](NATIVE_BOUNDED_ITERATION.md). Arbitrary loops and independent-stage concurrency remain unsupported; native SDK probes are not claims of their integration.
+Explicit typed bounded iteration is described in [NATIVE_BOUNDED_ITERATION.md](NATIVE_BOUNDED_ITERATION.md).
+Arbitrary loops remain unsupported. Independent-stage execution uses the
+[canonical stage bound](NATIVE_PARALLEL_STAGES.md); its native acceptance is
+separate from the original conditional-path evidence below.
 
 ## Conditional live checkpoints
 
@@ -84,9 +89,10 @@ producer run/node/port, project ownership and stored-content SHA256. These are
 revalidated through the same admission and worker binding path. False branches
 do not relax admission: all selected source and bindings must still be valid.
 
-Unconditional selections retain the existing static ZenML path. A selection
-containing a condition uses the public dynamic pipeline. It calls stages
-synchronously; no `.submit()` or parallel threads are enabled. The gate artifact
+With the omitted/default stage bound of 1, unconditional selections retain the
+existing static ZenML path. A selection containing a condition uses the public
+dynamic pipeline synchronously. The opt-in parallel path uses the same gate
+semantics and native artifacts with bounded public `.submit()` calls. The gate artifact
 is checked for same project and allowed native boolean datatype/materializer,
 then loaded and compared exactly. A false target's project module is not
 imported and the target is not invoked.
@@ -124,10 +130,12 @@ control semantics cannot silently reuse an older runtime cache.
 
 Existing native start/end hooks, supervisor deadlines, cancellation reconciliation,
 immutable recipe provenance and checkpoint binding checks are used by both
-execution paths. No resource reservation or per-stage environment/isolation is
-promised. The local ZenML runtime silently downgrades isolated dynamic steps to
+execution paths. No resource reservation, hostile-code isolation or per-stage
+environment is promised. The local ZenML runtime silently downgrades isolated dynamic steps to
 inline, established by installed-source inspection and an actual same-PID probe.
-The adapter therefore remains trusted local sequential execution.
+The default adapter path therefore remains trusted local sequential execution.
+The opt-in parallel adapter supplies its own fresh trusted process bodies beneath
+native steps; it does not treat that downgraded ZenML flag as an isolation proof.
 
 Scientific comparisons still require the existing evaluator/checkpoint/dataset
 contracts and selectors. Skipped branches provide no observation to compare.

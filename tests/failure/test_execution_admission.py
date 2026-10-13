@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from modelbuilder.backend.adapter import ZenMLBackend
@@ -162,3 +163,78 @@ def test_live_settings_are_typed_during_plan(source, settings):
     plan = backend.invoke('run.plan', payload)
     assert not plan['executable']
     assert plan['blocked_reasons'][0]['details']['field'] == 'evaluation.live'
+
+
+@pytest.mark.parametrize('settings', [None, [], {'max_parallel_stages': True}, {'max_parallel_stages': 1.0},
+    {'max_parallel_stages': 0}, {'max_parallel_stages': 9}, {'max_parallel_stages': '2'}, {'concurrency': 2}])
+def test_stage_settings_rejected_identically_before_plan_or_submit_side_effects(source, settings):
+    backend, payload = source
+    payload['recipe']['execution'] = settings
+    plan = backend.invoke('run.plan', payload)
+    assert not plan['executable']
+    with pytest.raises(BackendError) as failure:
+        backend.invoke('run.submit', payload)
+    assert plan['blocked_reasons'][0] == {'code': failure.value.code, 'message': failure.value.message, 'details': failure.value.details}
+    assert failure.value.details['field'] == 'execution.max_parallel_stages'
+    assert not (backend.root / 'jobs').exists()
+    assert not (backend.root / 'requests').exists()
+
+
+@pytest.mark.parametrize('settings', [{}, {'max_parallel_stages': 1}, {'max_parallel_stages': 2}, {'max_parallel_stages': 8}])
+def test_valid_stage_settings_are_read_only_and_follow_platform_admission(source, settings):
+    backend, payload = source
+    payload['recipe']['execution'] = settings
+    before = json.dumps(payload, sort_keys=True)
+    if settings.get('max_parallel_stages', 1) > 1 and sys.platform != 'linux':
+        with pytest.raises(BackendError) as failure:
+            validate_execution(backend, payload)
+        assert failure.value.code == 'capability_unavailable'
+    else:
+        assert validate_execution(backend, payload) == payload['recipe']
+    assert json.dumps(payload, sort_keys=True) == before
+
+
+@pytest.mark.parametrize('platform,device', [('darwin', 'cpu'), ('darwin', 'mps'), ('linux', 'cuda:0'), ('win32', 'cpu')])
+def test_unverified_parallel_platforms_and_accelerators_fail_closed_without_changing_sequential(platform, device, monkeypatch):
+    from modelbuilder.backend import admission
+    monkeypatch.setattr(admission, 'sys', SimpleNamespace(platform=platform))
+    body = {'environment': {'device': device}, 'execution': {'max_parallel_stages': 2}}
+    with pytest.raises(BackendError) as failure:
+        admission.validate_recipe_settings(body)
+    assert failure.value.code == 'capability_unavailable'
+    assert failure.value.details['field'] == 'execution.max_parallel_stages'
+    assert 'verification' in failure.value.message
+    body['execution']['max_parallel_stages'] = 1
+    assert admission.validate_recipe_settings(body) == 1
+    body.pop('execution')
+    assert admission.validate_recipe_settings(body) == 1
+
+
+@pytest.mark.parametrize('platform,supported', [('linux', True), ('darwin', False), ('win32', False)])
+def test_parallel_capability_matches_ordinary_platform_gate(platform, supported, monkeypatch):
+    from modelbuilder.backend import admission
+    monkeypatch.setattr(admission, 'sys', SimpleNamespace(platform=platform))
+    result = admission.capabilities(SimpleNamespace(trusted_code_roots=[]))
+    settings = result['recipe_settings']['execution']['max_parallel_stages']
+    assert result['control_flow']['independent_stage_concurrency'] is supported
+    assert settings['supported_maximum'] == (8 if supported else 1)
+    assert settings['default'] == 1 and settings['maximum'] == 8
+    assert settings['devices'] == ['cpu'] and settings['platforms'] == ['linux']
+    assert settings['live_evaluation'] is True and settings['iteration_live_evaluation'] is False
+    assert result['arbitrary_python']['isolation'] is False
+
+
+def test_parallel_platform_rejection_is_shared_by_ordinary_plan_and_submit(source, monkeypatch):
+    from modelbuilder.backend import admission
+    backend, payload = source
+    monkeypatch.setattr(admission, 'sys', SimpleNamespace(platform='darwin'))
+    payload['recipe']['execution'] = {'max_parallel_stages': 2}
+    plan = backend.invoke('run.plan', payload)
+    assert plan['executable'] is False
+    assert plan['capabilities']['control_flow']['independent_stage_concurrency'] is False
+    with pytest.raises(BackendError) as failure:
+        backend.invoke('run.submit', payload)
+    assert failure.value.code == 'capability_unavailable'
+    assert plan['blocked_reasons'][0] == {'code': failure.value.code, 'message': failure.value.message, 'details': failure.value.details}
+    assert not (backend.root / 'jobs').exists()
+    assert not (backend.root / 'requests').exists()

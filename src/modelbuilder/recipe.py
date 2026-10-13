@@ -31,6 +31,7 @@ from jsonschema.exceptions import SchemaError, ValidationError
 from .backend.components import COMPONENT_SCHEMA, validate_component
 from .conditions import CONDITION_SCHEMA, ConditionError, control_dependencies, validate_conditions
 from .iterations import ITERATIONS_SCHEMA, validate_iterations
+from .execution import RECIPE_EXECUTION_SCHEMA, max_parallel_stages
 
 MAX_BUNDLE_BYTES = 32 * 1024 * 1024
 MAX_FILE_BYTES = 4 * 1024 * 1024
@@ -72,6 +73,10 @@ class RecipeEdge(TypedDict):
     source_port: str
     target_node: str
     target_port: str
+
+
+class RecipeExecution(TypedDict):
+    max_parallel_stages: NotRequired[int]
 
 
 class PythonImplementation(TypedDict):
@@ -177,6 +182,7 @@ RECIPE_SCHEMA = {
                            ["repository", "commit"]),
         "nodes": {"type": "array", "items": NODE_SCHEMA, "maxItems": 4096},
         "bounded_iterations": ITERATIONS_SCHEMA,
+        "execution": RECIPE_EXECUTION_SCHEMA,
         "edges": {"type": "array", "items": _object({key: {"type": "string", "pattern": IDENTIFIER}
                   for key in ["source_node", "source_port", "target_node", "target_port"]},
                  ["source_node", "source_port", "target_node", "target_port"]), "maxItems": 16384},
@@ -379,6 +385,10 @@ def normalize_recipe(recipe: dict) -> dict:
         _fail("invalid_recipe", "Recipe does not match schema v0", errors=[
             {"path": "/" + "/".join(map(str, e.path)), "message": e.message} for e in errors[:32]
         ])
+    try:
+        max_parallel_stages(result)
+    except ValueError as error:
+        _fail("invalid_recipe", str(error), field="execution.max_parallel_stages")
     try:
         validate_conditions(result)
         validate_iterations(result)

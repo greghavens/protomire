@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="18" time="292.954" timestamp="2026-10-12T20:13:53.354985-05:00" hostname="3097764c9729"><testcase classname="tests.concurrency.test_native_crash_cleanup" name="test_hard_exit_aborts_sibling_and_supervisor_reaps_orphan" time="14.658" /><testcase classname="tests.concurrency.test_native_parallel" name="test_native_parallel_barrier_bound_typed_lineage_and_rng_isolation" time="20.909" /><testcase classname="tests.concurrency.test_native_parallel" name="test_native_serial_default_and_explicit_one_preserve_previous_execution[False]" time="17.764" /><testcase classname="tests.concurrency.test_native_parallel" name="test_native_serial_default_and_explicit_one_preserve_previous_execution[True]" time="18.054" /><testcase classname="tests.concurrency.test_native_parallel" name="test_native_parallel_retry_isolated_attempts_and_cache_lineage" time="30.348"><failure message="AssertionError: assert set() == {'fourth', 'l...ght', 'third'}&#10;  &#10;  Extra items in the right set:&#10;  'left'&#10;  'fourth'&#10;  'third'&#10;  'right'&#10;  Use -v to get more diff">tmp_path = PosixPath('/tmp/modelbuilder-native-parallel-final/test_native_parallel_retry_iso0')
+
+    def test_native_parallel_retry_isolated_attempts_and_cache_lineage(tmp_path):
+        backend, payload = setup(tmp_path, cache=True, torch=False)
+        left = payload["recipe"]["nodes"][0]
+        left["parameters"]["fail_once"] = True
+        left["retry"]["max_attempts"] = 2
+        original, first = execute(backend, payload)
+        assert original["status"] == "succeeded", original
+        starts = [row for row in events(tmp_path) if row["kind"] == "start"]
+        left_attempts = [row for row in starts if row["name"] == "left"]
+        assert [row["attempt"] for row in left_attempts] == [1, 2]
+        assert len({row["pid"] for row in left_attempts}) == 2
+        assert all(len([row for row in starts if row["name"] == name]) == 1 for name in ("right", "third", "fourth"))
+        replay, second = execute(backend, payload)
+        assert replay["status"] == "succeeded", replay
+&gt;       assert set(replay["cached_node_ids"]) == {"left", "right", "third", "fourth"}
+E       AssertionError: assert set() == {'fourth', 'l...ght', 'third'}
+E         
+E         Extra items in the right set:
+E         'left'
+E         'fourth'
+E         'third'
+E         'right'
+E         Use -v to get more diff
+
+tests/concurrency/test_native_parallel.py:318: AssertionError</failure></testcase><testcase classname="tests.concurrency.test_native_parallel" name="test_native_parallel_iterations_join_each_wave_before_feedback" time="20.347" /><testcase classname="tests.concurrency.test_native_parallel" name="test_native_parallel_conditions_optional_join_and_no_false_import[True-False]" time="20.569" /><testcase classname="tests.concurrency.test_native_parallel" name="test_native_parallel_conditions_optional_join_and_no_false_import[False-True]" time="21.061" /><testcase classname="tests.concurrency.test_native_parallel" name="test_native_parallel_deadlines_are_per_invocation_and_cancel_all_children" time="29.300" /><testcase classname="tests.concurrency.test_native_parallel" name="test_native_parallel_cancel_after_service_reopen_reaps_bodies_and_descendants" time="32.676" /><testcase classname="tests.concurrency.test_parallel_lifecycle" name="test_source_component_training_evaluation_export_and_live[False]" time="11.518" /><testcase classname="tests.concurrency.test_parallel_lifecycle" name="test_source_component_training_evaluation_export_and_live[True]" time="24.542" /><testcase classname="tests.concurrency.test_parallel_lifecycle" name="test_builtin_lifecycle_uses_process_bodies_and_native_lineage" time="28.573" /><testcase classname="tests.concurrency.test_process_execution" name="test_inert_codec_preserves_typed_outputs_and_tag_like_user_keys" time="0.000" /><testcase classname="tests.concurrency.test_process_execution" name="test_fresh_interpreter_excludes_ambient_python_paths_and_reaps" time="0.128" /><testcase classname="tests.concurrency.test_process_execution" name="test_cancel_publication_is_first_writer_wins" time="0.016" /><testcase classname="tests.concurrency.test_process_execution" name="test_successful_trusted_body_cannot_leave_spawned_children" time="0.129" /><testcase classname="tests.concurrency.test_process_execution" name="test_ownership_write_failure_still_reaps_child" time="0.002" /></testsuite></testsuites>

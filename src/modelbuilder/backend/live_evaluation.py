@@ -496,7 +496,8 @@ class LiveEvaluationCoordinator:
         log = (output / "evaluator.log").open("a")
         try:
             from .placement import placement_environment
-            child = subprocess.Popen([sys.executable, "-m", "modelbuilder.backend.live_evaluation", str(self.job), evaluation_id],
+            from .process_execution import isolated_command
+            child = subprocess.Popen(isolated_command("modelbuilder.backend.live_evaluation", self.job, evaluation_id),
                                      stdout=log, stderr=subprocess.STDOUT, start_new_session=False,
                                      env=placement_environment("cpu", os.environ))
         except Exception as error:

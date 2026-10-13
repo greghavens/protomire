@@ -1,0 +1,17 @@
+{
+  "status": "BLOCKED",
+  "attempts": [
+    {
+      "command": "npm run test:execution-browser",
+      "permission_mode": "use_default",
+      "result": "Chromium launch failed before the first test: socket() failed: Operation not permitted (1)"
+    },
+    {
+      "command": "npm run test:execution-browser",
+      "permission_mode": "require_escalated",
+      "result": "Command did not execute: bwrap: Can't mkdir parents for /root/.codex: Not a directory; failed to inspect synthetic bubblewrap mount target"
+    }
+  ],
+  "workaround_attempted": false,
+  "native_gui_acceptance": false
+}

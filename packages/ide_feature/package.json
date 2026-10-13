@@ -140,6 +140,7 @@
     "vscode:prepublish": "npm run compile",
     "test:service": "npm run compile && node test/serviceParity.cjs",
     "test:browser": "npm run compile && node test/liveDom.cjs",
+    "test:execution-browser": "npm run compile && node test/executionSettingsDom.cjs",
     "test:workspace-http": "npm run compile && node test/typedWorkspaceHttp.cjs",
     "test:workspace-browser": "npm run compile && node test/typedWorkspaceDom.cjs",
     "test:component-http": "npm run compile && node test/componentAuthoringHttp.cjs",

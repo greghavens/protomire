@@ -64,7 +64,9 @@ outside this cache capability. See [the supported contract and limitations](NATI
 [Native branches, joins and gated live evaluation](NATIVE_CONDITIONAL_EXECUTION.md) add typed boolean
 control dependencies to the same canonical recipe and editor. Selected gates
 are explicit; native metadata records skipped stages without invented outputs.
-This sequential path supports nested branches, required-input skip propagation,
+The default sequential path supports nested branches, required-input skip propagation,
 optional-input joins and live evaluator gates available before training. It does
-not implement loops, independent-stage concurrency or per-stage
-isolation/resources.
+not provide hostile-code isolation or per-stage resources/environments.
+[Explicit bounded iteration](NATIVE_BOUNDED_ITERATION.md) and
+[opt-in independent-stage execution](NATIVE_PARALLEL_EXECUTION.md) extend that
+same canonical recipe and native run, with separate verification scopes.

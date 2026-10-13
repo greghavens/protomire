@@ -1,0 +1,93 @@
+{
+  "artifacts": [],
+  "backend": "zenml",
+  "backend_run_id": "b80b197a-548d-4615-bc5b-dbdfccd6e37c",
+  "backend_snapshot_id": "e65c5a10-befa-4ae1-ab72-c9dce2653dfe",
+  "backend_status": "failed",
+  "backend_version": "0.97.0",
+  "bounded_iterations": {},
+  "cached_node_ids": [],
+  "conditional_execution": {},
+  "conditional_inputs": {},
+  "error": "traceback='  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/backend/conditional_worker.py\", line 65, in execute_conditional_recipe\\n    invoke_nodes(prepared, condition_callback=decide, skip_callback=skip, join_callback=join, iteration_callback=iteration)\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/backend/worker.py\", line 424, in invoke_nodes\\n    drain_artifacts(outputs)\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/backend/worker.py\", line 362, in drain_artifacts\\n    outputs[key] = native_artifact(value)\\n                   ^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/backend/worker.py\", line 357, in native_artifact\\n    return value.result() if isinstance(value, ArtifactFuture) else value\\n           ^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/execution/pipeline/dynamic/outputs.py\", line 451, in result\\n    step_run = self._parent._wait()\\n               ^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/execution/pipeline/dynamic/outputs.py\", line 677, in _wait\\n    return self._startup.result().result()\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/execution/pipeline/dynamic/outputs.py\", line 198, in result\\n    return self._wrapped.result()\\n           ^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py\", line 456, in result\\n    return self.__get_result()\\n           ^^^^^^^^^^^^^^^^^^^\\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py\", line 401, in __get_result\\n    raise self._exception\\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py\", line 59, in run\\n    result = self.fn(*self.args, **self.kwargs)\\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/execution/pipeline/dynamic/runner.py\", line 2385, in _launch_and_wait\\n    raise e\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/execution/pipeline/dynamic/runner.py\", line 2375, in _launch_and_wait\\n    step_run = self._run_sync_step(\\n               ^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/execution/pipeline/dynamic/runner.py\", line 1471, in _run_sync_step\\n    return launch_step(\\n           ^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/execution/step/utils.py\", line 88, in launch_step\\n    step_run = _launch_without_retry()\\n               ^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/execution/step/utils.py\", line 72, in _launch_without_retry\\n    return launcher.launch()\\n           ^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/orchestrators/step_launcher.py\", line 254, in launch\\n    if terminal_step_run := self._run_step(\\n                            ^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/orchestrators/step_launcher.py\", line 460, in _run_step\\n    terminal_step_run = self._run_step_in_current_thread(\\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/orchestrators/step_launcher.py\", line 742, in _run_step_in_current_thread\\n    return runner.run(\\n           ^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/orchestrators/step_runner.py\", line 315, in run\\n    raise step_exception\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/orchestrators/step_runner.py\", line 251, in run\\n    return_values = step_instance.call_entrypoint(\\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/zenml/steps/base_step.py\", line 757, in call_entrypoint\\n    return self.entrypoint(**validated_args)\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_deadlines0/state/backend/jobs/dc7931cd-2aab-4cb0-87bf-215d70b4ca9a/adapters/modelbuilder_python_e17a0771be7addbe290c.py\", line 5, in invoke\\n    values = dispatch_python({\\'delay\\': delay, \\'directory\\': directory, \\'name\\': name, \\'peers\\': peers, \\'seed\\': seed, \\'spawn_child\\': spawn_child, \\'use_torch\\': use_torch}, spec)\\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/backend/components/runtime.py\", line 276, in dispatch_python\\n    return record_outputs(spec, execute(\"python\", arguments, spec))\\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/workspace/scratch/f9ccb8889bfe/modelbuilder/src/modelbuilder/backend/process_execution.py\", line 219, in execute\\n    raise InterruptedError(\"Native stage execution cancelled\")\\nInterruptedError: Native stage execution cancelled\\n' source='builtins.InterruptedError' message='Native stage execution cancelled' user_code_line=51",
+  "evaluations": [],
+  "executed_node_ids": [
+    "left",
+    "right"
+  ],
+  "executed_recipe_digest": "09ab79de15a4b854b3d2a9a5c5762f402cc8939fa079e3db625fdbc12d048e3a",
+  "execution": {
+    "input_bindings": [],
+    "node_ids": [
+      "left",
+      "right"
+    ]
+  },
+  "invocation_statuses": {
+    "left": {
+      "canonical_node_id": "left",
+      "input_artifact_ids": {},
+      "invocation_id": "left",
+      "status": "failed",
+      "step_id": "11ad49ef-3337-4ab6-b856-8abe2b7e8905"
+    },
+    "right": {
+      "canonical_node_id": "right",
+      "input_artifact_ids": {},
+      "invocation_id": "right",
+      "status": "failed",
+      "step_id": "bdfab4c0-237a-440a-afc3-e8802896963a"
+    }
+  },
+  "last_reconciled_at": "2026-10-13T01:26:17.752310+00:00",
+  "log_available": true,
+  "metrics": {
+    "evaluation_catalog": [],
+    "evaluation_conflicts": {},
+    "evaluation_records": {}
+  },
+  "model_version_ref": "d557c87a-d0c7-4e98-aca0-c7017ec9174a",
+  "node_statuses": {
+    "left": "failed",
+    "right": "failed"
+  },
+  "operation_id": "dc7931cd-2aab-4cb0-87bf-215d70b4ca9a",
+  "parent_checkpoint_ref": null,
+  "parent_invocation": null,
+  "parent_recipe_digest": null,
+  "parent_recipe_id": null,
+  "parent_recipe_revision": null,
+  "parent_run_id": null,
+  "process_group_alive": false,
+  "project_id": "6f41f486-8acf-4666-8107-33c98b656d81",
+  "recipe_digest": "09ab79de15a4b854b3d2a9a5c5762f402cc8939fa079e3db625fdbc12d048e3a",
+  "recipe_id": "b1c307ea-ca9c-40bb-bc59-f7f66af37184",
+  "recipe_revision": 1,
+  "resume_mode": null,
+  "runtime_status_source": "verified_local_supervisor",
+  "skipped_node_ids": [],
+  "status": "cancelled",
+  "submitted_at": "2026-10-13T01:25:59.466423+00:00",
+  "supervisor_alive": true,
+  "termination": {
+    "confirmed": true,
+    "confirmed_at": "2026-10-13T01:26:14.366339+00:00",
+    "process_group_terminated": true,
+    "proof_source": "local_supervisor_wait_and_group_observation",
+    "reason": "cancelled",
+    "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532408]",
+    "worker_identity": "psutil:0x1.ab36229af5c29p+30",
+    "worker_pid": 524
+  },
+  "termination_record_source": "native_run_metadata",
+  "tracking": {
+    "mode": "disabled",
+    "provider": "wandb",
+    "run_id": null,
+    "status": "disabled",
+    "url": null
+  },
+  "worker_alive": false,
+  "worker_exit_code": -15,
+  "worker_pid": 524
+}

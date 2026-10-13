@@ -1,0 +1,287 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "40dd0cdc-abe6-4d27-a045-c40fbc099a02",
+      "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+        "producer_step_run_id": "9226d716-db88-4803-be1a-a2ef83f31d00",
+        "reused": false
+      },
+      "canonical_node_id": "fourth",
+      "invocation_id": "fourth",
+      "name": "data",
+      "node_id": "fourth",
+      "port": "data",
+      "step_id": "9226d716-db88-4803-be1a-a2ef83f31d00",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_barrier_b0/state/backend/zenml-stores/37fdc008-31fc-4f41-b68e-d0bc370bfec6/fourth/data/9226d716-db88-4803-be1a-a2ef83f31d00/13735afa"
+    },
+    {
+      "artifact_id": "beb7acbf-0c40-4f72-ae04-00e810c5f920",
+      "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+        "producer_step_run_id": "9226d716-db88-4803-be1a-a2ef83f31d00",
+        "reused": false
+      },
+      "canonical_node_id": "fourth",
+      "invocation_id": "fourth",
+      "name": "file",
+      "node_id": "fourth",
+      "port": "file",
+      "step_id": "9226d716-db88-4803-be1a-a2ef83f31d00",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_barrier_b0/state/backend/zenml-stores/37fdc008-31fc-4f41-b68e-d0bc370bfec6/fourth/file/9226d716-db88-4803-be1a-a2ef83f31d00/474498aa"
+    },
+    {
+      "artifact_id": "07a90985-97e0-4228-8424-30e139365937",
+      "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+        "producer_step_run_id": "6d7b231c-b464-4001-ad08-ec0662eb62ec",
+        "reused": false
+      },
+      "canonical_node_id": "left",
+      "invocation_id": "left",
+      "name": "file",
+      "node_id": "left",
+      "port": "file",
+      "step_id": "6d7b231c-b464-4001-ad08-ec0662eb62ec",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_barrier_b0/state/backend/zenml-stores/37fdc008-31fc-4f41-b68e-d0bc370bfec6/left/file/6d7b231c-b464-4001-ad08-ec0662eb62ec/c6e9170d"
+    },
+    {
+      "artifact_id": "8bf889ec-d987-4a22-af0b-4cc308d813e1",
+      "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+        "producer_step_run_id": "6d7b231c-b464-4001-ad08-ec0662eb62ec",
+        "reused": false
+      },
+      "canonical_node_id": "left",
+      "invocation_id": "left",
+      "name": "data",
+      "node_id": "left",
+      "port": "data",
+      "step_id": "6d7b231c-b464-4001-ad08-ec0662eb62ec",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_barrier_b0/state/backend/zenml-stores/37fdc008-31fc-4f41-b68e-d0bc370bfec6/left/data/6d7b231c-b464-4001-ad08-ec0662eb62ec/29af1287"
+    },
+    {
+      "artifact_id": "457afdbd-e947-4cbd-b96b-08cb65ea775a",
+      "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+        "producer_step_run_id": "98c431fa-7849-4c67-8c6e-c2b12ec062e8",
+        "reused": false
+      },
+      "canonical_node_id": "right",
+      "invocation_id": "right",
+      "name": "data",
+      "node_id": "right",
+      "port": "data",
+      "step_id": "98c431fa-7849-4c67-8c6e-c2b12ec062e8",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_barrier_b0/state/backend/zenml-stores/37fdc008-31fc-4f41-b68e-d0bc370bfec6/right/data/98c431fa-7849-4c67-8c6e-c2b12ec062e8/3be46170"
+    },
+    {
+      "artifact_id": "bf5468c9-173d-4237-802b-f841bf39f464",
+      "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+        "producer_step_run_id": "98c431fa-7849-4c67-8c6e-c2b12ec062e8",
+        "reused": false
+      },
+      "canonical_node_id": "right",
+      "invocation_id": "right",
+      "name": "file",
+      "node_id": "right",
+      "port": "file",
+      "step_id": "98c431fa-7849-4c67-8c6e-c2b12ec062e8",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_barrier_b0/state/backend/zenml-stores/37fdc008-31fc-4f41-b68e-d0bc370bfec6/right/file/98c431fa-7849-4c67-8c6e-c2b12ec062e8/311b2961"
+    },
+    {
+      "artifact_id": "3c5586f3-393c-4d46-b618-eda93d6c88bd",
+      "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+        "producer_step_run_id": "ef413e91-498b-4710-bcb8-73ac48cc75f8",
+        "reused": false
+      },
+      "canonical_node_id": "third",
+      "invocation_id": "third",
+      "name": "file",
+      "node_id": "third",
+      "port": "file",
+      "step_id": "ef413e91-498b-4710-bcb8-73ac48cc75f8",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_barrier_b0/state/backend/zenml-stores/37fdc008-31fc-4f41-b68e-d0bc370bfec6/third/file/ef413e91-498b-4710-bcb8-73ac48cc75f8/5ac34e8a"
+    },
+    {
+      "artifact_id": "b448ed05-5704-47ef-98f5-a1a3c6f9b8b6",
+      "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+        "producer_step_run_id": "ef413e91-498b-4710-bcb8-73ac48cc75f8",
+        "reused": false
+      },
+      "canonical_node_id": "third",
+      "invocation_id": "third",
+      "name": "data",
+      "node_id": "third",
+      "port": "data",
+      "step_id": "ef413e91-498b-4710-bcb8-73ac48cc75f8",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_barrier_b0/state/backend/zenml-stores/37fdc008-31fc-4f41-b68e-d0bc370bfec6/third/data/ef413e91-498b-4710-bcb8-73ac48cc75f8/ab9483da"
+    },
+    {
+      "artifact_id": "cf42b0be-2657-414e-bcbe-c860cbd088fe",
+      "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+        "producer_step_run_id": "c656236c-87fb-43cc-bb25-3a75e81551f1",
+        "reused": false
+      },
+      "canonical_node_id": "join",
+      "invocation_id": "join",
+      "name": "summary",
+      "node_id": "join",
+      "port": "summary",
+      "step_id": "c656236c-87fb-43cc-bb25-3a75e81551f1",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_barrier_b0/state/backend/zenml-stores/37fdc008-31fc-4f41-b68e-d0bc370bfec6/join/summary/c656236c-87fb-43cc-bb25-3a75e81551f1/8bc83a75"
+    }
+  ],
+  "backend": "zenml",
+  "backend_run_id": "944e6673-0c1c-4ccf-ac20-eba7245f86d0",
+  "backend_snapshot_id": "3defaac9-9659-4753-85f0-d4ee54139ab8",
+  "backend_status": "completed",
+  "backend_version": "0.97.0",
+  "bounded_iterations": {},
+  "cached_node_ids": [],
+  "conditional_execution": {},
+  "conditional_inputs": {},
+  "error": null,
+  "evaluations": [],
+  "executed_node_ids": [
+    "fourth",
+    "join",
+    "left",
+    "right",
+    "third"
+  ],
+  "executed_recipe_digest": "dd72d96fcd3984a07607b2575f2b359ffd931b2c05b5ee96f0caf1206bd5db47",
+  "execution": {
+    "input_bindings": [],
+    "node_ids": [
+      "left",
+      "right",
+      "third",
+      "fourth",
+      "join"
+    ]
+  },
+  "invocation_statuses": {
+    "fourth": {
+      "canonical_node_id": "fourth",
+      "input_artifact_ids": {},
+      "invocation_id": "fourth",
+      "status": "completed",
+      "step_id": "9226d716-db88-4803-be1a-a2ef83f31d00"
+    },
+    "join": {
+      "canonical_node_id": "join",
+      "input_artifact_ids": {
+        "fourth": [
+          "40dd0cdc-abe6-4d27-a045-c40fbc099a02"
+        ],
+        "left": [
+          "8bf889ec-d987-4a22-af0b-4cc308d813e1"
+        ],
+        "left_path": [
+          "07a90985-97e0-4228-8424-30e139365937"
+        ],
+        "right": [
+          "457afdbd-e947-4cbd-b96b-08cb65ea775a"
+        ],
+        "right_path": [
+          "bf5468c9-173d-4237-802b-f841bf39f464"
+        ],
+        "third": [
+          "b448ed05-5704-47ef-98f5-a1a3c6f9b8b6"
+        ]
+      },
+      "invocation_id": "join",
+      "status": "completed",
+      "step_id": "c656236c-87fb-43cc-bb25-3a75e81551f1"
+    },
+    "left": {
+      "canonical_node_id": "left",
+      "input_artifact_ids": {},
+      "invocation_id": "left",
+      "status": "completed",
+      "step_id": "6d7b231c-b464-4001-ad08-ec0662eb62ec"
+    },
+    "right": {
+      "canonical_node_id": "right",
+      "input_artifact_ids": {},
+      "invocation_id": "right",
+      "status": "completed",
+      "step_id": "98c431fa-7849-4c67-8c6e-c2b12ec062e8"
+    },
+    "third": {
+      "canonical_node_id": "third",
+      "input_artifact_ids": {},
+      "invocation_id": "third",
+      "status": "completed",
+      "step_id": "ef413e91-498b-4710-bcb8-73ac48cc75f8"
+    }
+  },
+  "last_reconciled_at": "2026-10-13T01:23:00.213988+00:00",
+  "log_available": true,
+  "metrics": {
+    "evaluation_catalog": [],
+    "evaluation_conflicts": {},
+    "evaluation_records": {}
+  },
+  "model_version_ref": "cbe8defa-45cc-4882-8b9c-100e9d68a493",
+  "node_statuses": {
+    "fourth": "completed",
+    "join": "completed",
+    "left": "completed",
+    "right": "completed",
+    "third": "completed"
+  },
+  "operation_id": "3fb2c368-96d3-4319-a5fc-62070d6638db",
+  "parent_checkpoint_ref": null,
+  "parent_invocation": null,
+  "parent_recipe_digest": null,
+  "parent_recipe_id": null,
+  "parent_recipe_revision": null,
+  "parent_run_id": null,
+  "process_group_alive": false,
+  "project_id": "e5287e7c-95e7-4612-aab0-b0a7004fcd95",
+  "recipe_digest": "dd72d96fcd3984a07607b2575f2b359ffd931b2c05b5ee96f0caf1206bd5db47",
+  "recipe_id": "0287d7d3-cccc-49cb-b469-edd679f68f05",
+  "recipe_revision": 1,
+  "resume_mode": null,
+  "runtime_status_source": "verified_local_supervisor",
+  "skipped_node_ids": [],
+  "status": "succeeded",
+  "submitted_at": "2026-10-13T01:22:48.162874+00:00",
+  "supervisor_alive": true,
+  "termination": {},
+  "termination_record_source": null,
+  "tracking": {
+    "mode": "disabled",
+    "provider": "wandb",
+    "run_id": null,
+    "status": "disabled",
+    "url": null
+  },
+  "worker_alive": false,
+  "worker_exit_code": 0,
+  "worker_pid": 79
+}

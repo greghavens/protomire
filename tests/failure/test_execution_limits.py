@@ -6,9 +6,9 @@ from modelbuilder.backend.execution_limits import active_node, bounded_callable,
 
 def test_completed_node_clears_deadline(tmp_path):
     with active_node(tmp_path, 'test', 10):
-        assert (tmp_path/'active-node.json').exists()
+        assert len(list((tmp_path/'active-nodes').glob('*.json'))) == 1
         assert node_timeout(tmp_path) is None
-    assert not (tmp_path/'active-node.json').exists()
+    assert not list((tmp_path/'active-nodes').glob('*.json'))
 
 
 def test_expired_node_cannot_be_erased_by_next_stage(tmp_path):
@@ -44,7 +44,7 @@ def test_deadline_hook_resolves_without_package_context(tmp_path, monkeypatch):
     hook = FunctionType(execution_limits.deadline_start.__code__,
                         {**execution_limits.deadline_start.__globals__, "__package__": None})
     hook()
-    deadline = json.loads((tmp_path / "active-node.json").read_text())
+    deadline = json.loads(next((tmp_path / "active-nodes").glob("*.json")).read_text())
     assert deadline["node_id"] == deadline["canonical_node_id"] == deadline["invocation_id"] == "prompts"
     assert deadline["timeout_seconds"] == 300
 

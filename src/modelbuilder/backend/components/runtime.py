@@ -121,7 +121,12 @@ def input_identity(value):
 
 
 def dispatch(inputs: dict, spec: dict):
-    from ..worker import context
+    from ..process_execution import context
+    from ..process_execution import enabled, execute
+    if enabled(spec):
+        context(spec)
+        from ..native_cache import record_outputs
+        return record_outputs(spec, execute("component", inputs, spec))
     node = spec["component_node"]
     component = validate_component(node)
     for value in inputs.values():
@@ -215,7 +220,9 @@ def dispatch(inputs: dict, spec: dict):
                     raise ValueError("Export is not bound to its connected selected checkpoint")
         values.append(value)
     from ..native_cache import record_outputs
-    return record_outputs(spec, values[0] if len(values) == 1 else tuple(values))
+    from ..process_execution import in_child
+    result = values[0] if len(values) == 1 else tuple(values)
+    return result if in_child() else record_outputs(spec, result)
 
 
 def _shim_inputs(node: dict, input_names: set[str] | None) -> list[dict]:
@@ -261,12 +268,19 @@ def compile_component(node: dict, job: Path, *, input_names: set[str] | None = N
 
 
 def dispatch_python(arguments: dict, spec: dict):
-    from ..worker import context
+    from ..process_execution import context
+    from ..process_execution import enabled, execute
+    if enabled(spec):
+        context(spec)
+        from ..native_cache import record_outputs
+        return record_outputs(spec, execute("python", arguments, spec))
     node = spec["component_node"]
     context(spec)
     function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
     from ..native_cache import record_outputs
-    return record_outputs(spec, function(**arguments))
+    from ..process_execution import in_child
+    result = function(**arguments)
+    return result if in_child() else record_outputs(spec, result)
 
 
 def compile_python(node: dict, job: Path, *, input_names: set[str] | None = None):

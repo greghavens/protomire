@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import ctypes
+import uuid
 
 import psutil
 from datetime import datetime, timezone
@@ -16,12 +17,15 @@ def now() -> str:
 
 def write_json(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + f".{os.getpid()}.tmp")
-    with temporary.open("w") as handle:
-        json.dump(value, handle, sort_keys=True, indent=2)
-        handle.flush()
-        os.fsync(handle.fileno())
-    os.replace(temporary, path)
+    temporary = path.with_name(path.name + f".{os.getpid()}.{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary.open("x") as handle:
+            json.dump(value, handle, sort_keys=True, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def read_json(path: Path, default=None):

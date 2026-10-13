@@ -195,6 +195,20 @@
       },
       "type": "array"
     },
+    "execution": {
+      "additionalProperties": false,
+      "description": "Canonical per-run stage scheduling. Omitted settings preserve sequential execution.",
+      "properties": {
+        "max_parallel_stages": {
+          "default": 1,
+          "description": "Maximum simultaneously executing independent native stages. Iterations remain sequential barriers; this is not a resource reservation.",
+          "maximum": 8,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "extensions": {
       "type": "object"
     },

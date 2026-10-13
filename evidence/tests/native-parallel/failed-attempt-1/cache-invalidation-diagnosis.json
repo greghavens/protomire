@@ -1,0 +1,77 @@
+{
+  "before_runtime_source": "aa6e534b5e4d58318a18f418ea7df905e74522ab3fdd81b669218786b68b6322",
+  "after_runtime_source": "741de9e7475fe5ad66d2b9184491b276a29aaf8ced9a4731c39d47114dff18ac",
+  "changed_file": "backend/adapter.py",
+  "before_file_sha256": "25a2d4524bbe65cc2aa087d5ecf3c228d850baf0c6fbb476985526f64c7d69b5",
+  "after_file_sha256": "a3cc602fb06b28b3d1f99b44befcf9573122cabc6e46d67a597f21ca91e44377",
+  "records": [
+    {
+      "operation_id": "48dd0c59-045f-479e-ba47-d99d39859cc0",
+      "run_id": "579cbc32-fa96-438a-8e77-f0a7196e3641",
+      "recorded_cache_identity": "4fe4416744a1892f4f6146c9eb33a9737917f1cf5ae2f8a2ee040a5cab10d2f1",
+      "matches_before_adapter_fix": false,
+      "matches_after_adapter_fix": true,
+      "state": {
+        "adopted_children_reaped": [],
+        "cancelled": false,
+        "process_group_terminated": true,
+        "reconciled_at": "2026-10-13T01:15:38.278672+00:00",
+        "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+        "started_at": "2026-10-13T01:15:28.112463+00:00",
+        "supervisor_identity": "psutil:0x1.ab3618bc7ae14p+30",
+        "supervisor_pid": 280,
+        "supervisor_state": "finished",
+        "supervisor_subreaper": true,
+        "termination": {
+          "confirmed": true,
+          "confirmed_at": "2026-10-13T01:15:36.142694+00:00",
+          "process_group_terminated": true,
+          "proof_source": "local_supervisor_wait_and_group_observation",
+          "reason": "completed",
+          "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+          "worker_identity": "psutil:0x1.ab3618bd00000p+30",
+          "worker_pid": 281
+        },
+        "worker_exit_code": 0,
+        "worker_identity": "psutil:0x1.ab3618bd00000p+30",
+        "worker_pid": 281,
+        "worker_reaped": true,
+        "worker_terminated_at": "2026-10-13T01:15:36.142694+00:00"
+      }
+    },
+    {
+      "operation_id": "e711f057-649a-457a-8952-5026066545ab",
+      "run_id": "98329ce0-c7ab-419c-90c7-bca77364947f",
+      "recorded_cache_identity": "48a03edc1f90b4280875e4215532368a4b8d2e14ae4c6d1043fd6d320f7482e9",
+      "matches_before_adapter_fix": true,
+      "matches_after_adapter_fix": false,
+      "state": {
+        "adopted_children_reaped": [],
+        "cancelled": false,
+        "process_group_terminated": true,
+        "reconciled_at": "2026-10-13T01:15:22.881437+00:00",
+        "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+        "started_at": "2026-10-13T01:15:11.677073+00:00",
+        "supervisor_identity": "psutil:0x1.ab36187ab851fp+30",
+        "supervisor_pid": 210,
+        "supervisor_state": "finished",
+        "supervisor_subreaper": true,
+        "termination": {
+          "confirmed": true,
+          "confirmed_at": "2026-10-13T01:15:20.615140+00:00",
+          "process_group_terminated": true,
+          "proof_source": "local_supervisor_wait_and_group_observation",
+          "reason": "completed",
+          "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+          "worker_identity": "psutil:0x1.ab36187b47ae1p+30",
+          "worker_pid": 211
+        },
+        "worker_exit_code": 0,
+        "worker_identity": "psutil:0x1.ab36187b47ae1p+30",
+        "worker_pid": 211,
+        "worker_reaped": true,
+        "worker_terminated_at": "2026-10-13T01:15:20.615140+00:00"
+      }
+    }
+  ]
+}

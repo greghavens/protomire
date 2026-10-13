@@ -68,6 +68,12 @@ uncertain state over duplicate training. Native metadata reads remain bounded
 external calls and can be slow; the HTTP submit/resume call still waits for its
 own preparation. Existing unrelated operations may have their own writer scopes.
 
+The independent-stage bound is the saved recipe's
+`execution.max_parallel_stages` (1–8, default 1), not a run-time override or a
+second configuration. Plan and submit validate the same field; selection keeps
+the exact canonical value. Read [the stage-settings contract](NATIVE_PARALLEL_STAGES.md)
+for default compatibility, editor behavior and supported execution boundaries.
+
 Run status, logs, artifacts, evaluations, events and cancellation use short
 ownership checks with backend I/O outside the application writer. Pending event
 pages preserve the requested cursor and existing response shapes. All statuses

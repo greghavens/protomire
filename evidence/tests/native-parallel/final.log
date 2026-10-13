@@ -1,0 +1,47 @@
+....F.............                                                       [100%]
+=================================== FAILURES ===================================
+________ test_native_parallel_retry_isolated_attempts_and_cache_lineage ________
+
+tmp_path = PosixPath('/tmp/modelbuilder-native-parallel-final/test_native_parallel_retry_iso0')
+
+    def test_native_parallel_retry_isolated_attempts_and_cache_lineage(tmp_path):
+        backend, payload = setup(tmp_path, cache=True, torch=False)
+        left = payload["recipe"]["nodes"][0]
+        left["parameters"]["fail_once"] = True
+        left["retry"]["max_attempts"] = 2
+        original, first = execute(backend, payload)
+        assert original["status"] == "succeeded", original
+        starts = [row for row in events(tmp_path) if row["kind"] == "start"]
+        left_attempts = [row for row in starts if row["name"] == "left"]
+        assert [row["attempt"] for row in left_attempts] == [1, 2]
+        assert len({row["pid"] for row in left_attempts}) == 2
+        assert all(len([row for row in starts if row["name"] == name]) == 1 for name in ("right", "third", "fourth"))
+        replay, second = execute(backend, payload)
+        assert replay["status"] == "succeeded", replay
+>       assert set(replay["cached_node_ids"]) == {"left", "right", "third", "fourth"}
+E       AssertionError: assert set() == {'fourth', 'l...ght', 'third'}
+E         
+E         Extra items in the right set:
+E         'left'
+E         'fourth'
+E         'third'
+E         'right'
+E         Use -v to get more diff
+
+tests/concurrency/test_native_parallel.py:318: AssertionError
+=============================== warnings summary ===============================
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /workspace/scratch/f9ccb8889bfe/modelbuilder/.venv-backend/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/scratch/f9ccb8889bfe/modelbuilder/evidence/tests/native-parallel/final.xml -
+=========================== short test summary info ============================
+FAILED tests/concurrency/test_native_parallel.py::test_native_parallel_retry_isolated_attempts_and_cache_lineage
+1 failed, 17 passed, 2 warnings in 292.95s (0:04:52)

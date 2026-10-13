@@ -8,6 +8,30 @@ from __future__ import annotations
 import copy
 from jsonschema import Draft202012Validator
 
+MAX_PARALLEL_STAGES = 8
+RECIPE_EXECUTION_SCHEMA = {"type": "object", "additionalProperties": False,
+    "description": "Canonical per-run stage scheduling. Omitted settings preserve sequential execution.",
+    "properties": {"max_parallel_stages": {"type": "integer", "minimum": 1,
+        "maximum": MAX_PARALLEL_STAGES, "default": 1,
+        "description": "Maximum simultaneously executing independent native stages. Iterations remain sequential barriers; this is not a resource reservation."}}}
+
+
+def max_parallel_stages(recipe: dict) -> int:
+    """Read canonical scheduling without changing historical manifests/digests.
+
+    Run-request ``execution`` remains an exact subgraph selection, never an
+    alternate source for this recipe setting. Admission and workers share the
+    same strict check, including callers that bypass recipe normalization.
+    """
+    settings = recipe.get("execution", {})
+    if not isinstance(settings, dict) or set(settings) - {"max_parallel_stages"}:
+        raise ValueError("Recipe execution must contain only max_parallel_stages")
+    limit = settings.get("max_parallel_stages", 1)
+    if type(limit) is not int or not 1 <= limit <= MAX_PARALLEL_STAGES:
+        raise ValueError(f"Recipe execution.max_parallel_stages must be an integer from 1 through {MAX_PARALLEL_STAGES}")
+    return limit
+
+
 TEXT = {"type": "string", "minLength": 1}
 BINDING_SCHEMA = {"type": "object", "additionalProperties": False,
     "properties": {**{key: TEXT for key in ("node_id", "input_port", "backend_run_id", "source_node_id", "source_port", "artifact_id")},

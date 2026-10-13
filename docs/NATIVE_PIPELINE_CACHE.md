@@ -94,13 +94,14 @@ Actual installed ZenML 0.97 local probes established:
 - Identical native cache inputs reused the same artifact ID and a public
   `original_step_run_id`; changed input executed anew.
 
-These are real SDK probes, not general Modelbuilder loop/concurrency
-acceptance. The adapter compiles static DAGs except for the separately bounded
-[branch/optional-join path](NATIVE_CONDITIONAL_EXECUTION.md). Its singleton active-node
-supervision journal, job environment, trusted-source import/snapshot state and
-native logging need an explicit safe concurrency design before enabling dynamic
-inline threads. General iterative flow still needs product integration. Nested branches and optional-input
-joins are integrated through sequential public dynamic calls. They are not missing SDK support or credential blockers.
+These historical SDK probes are not general Modelbuilder loop/concurrency
+acceptance. The default adapter retains static DAGs and the synchronous
+[branch/optional-join path](NATIVE_CONDITIONAL_EXECUTION.md). Current
+[bounded iteration](NATIVE_BOUNDED_ITERATION.md) and
+[opt-in parallel stages](NATIVE_PARALLEL_EXECUTION.md) have their own native
+acceptance. Parallel stages use per-invocation deadline journals and fresh trusted
+process bodies to avoid sharing source imports and framework-global state.
+The native public step pool still owns scheduling, retries and cache artifacts.
 The branch-condition document explains the dynamic-parameter cache-key
 adaptation; declared typed input artifact IDs remain authoritative.
 

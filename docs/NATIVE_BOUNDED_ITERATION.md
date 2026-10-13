@@ -1,10 +1,12 @@
 # Explicit bounded native iteration
 
 A recipe can repeat an explicitly declared group of its existing typed nodes.
-This addresses G06 using ZenML 0.97 public synchronous dynamic step calls. ZenML
+This addresses G06 using ZenML 0.97 public dynamic step calls, synchronous by default. ZenML
 owns every actual step, run, artifact and model-version ID. There is no custom
-scheduler, expression evaluator, generated training loop, parallel `.submit`, or
+scheduler, expression evaluator, generated training loop, or
 second run registry. One project continues to own one model and one recipe ID.
+The [opt-in stage bound](NATIVE_PARALLEL_EXECUTION.md) allows independent body
+stages to overlap; iteration barriers and typed feedback remain sequential.
 
 ## Canonical declaration
 
@@ -115,7 +117,8 @@ second graph or validator. Save/validate still use the shared service.
 
 Iteration nodes must currently declare `cache_policy:"disabled"`. Per-invocation
 cache reuse has not been verified. Unrelated ordinary value-stage cache behavior
-is unchanged. Isolation, arbitrary-stage concurrency, hostile-code execution,
+is unchanged. The [canonical stage setting](NATIVE_PARALLEL_STAGES.md) controls
+bounded independent body-stage concurrency. Hostile-code isolation,
 nested blocks, exact loop cursor resume, and repeated-trainer live sidecars are
 not claimed by this implementation.
 

@@ -1,0 +1,28 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> modelbuilder-workbench@0.1.0 test:service
+> npm run compile && node test/serviceParity.cjs
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> modelbuilder-workbench@0.1.0 compile
+> node scripts/build.mjs
+
+{
+  "status": "PASS",
+  "tests": 8,
+  "project_id": "2a29b50a-d78a-4444-9f30-1f5f0d6b24c3",
+  "recipe_id": "5c7ad832-55f2-5c85-bb0d-3c7166e08427",
+  "revision": 3,
+  "digest": "ebcb5f594acc270fdd0d5cf3ef4ae14e2c07c42c0975d2d3be647673e96b1dc2",
+  "checks": [
+    "catalog",
+    "typed-graph-python-save",
+    "typescript-to-mcp-equality",
+    "mcp-to-typescript-equality",
+    "canonical-stage-settings-parity",
+    "stale-409-preserves-base",
+    "server-diff",
+    "read-only-denied"
+  ]
+}

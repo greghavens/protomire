@@ -1,0 +1,15 @@
+✔ missing settings remain sequential without rewriting canonical content (1.224901ms)
+✔ one canonical stage bound preserves project identity, evaluation and unrelated recipe settings (0.16132ms)
+✔ source changes block stale forms, but unrelated source edits are preserved (0.354487ms)
+✔ typed editor refuses invalid bounds or malformed source configuration (0.239706ms)
+✔ settings panel applies, discards, repeats edits, and preserves incomplete restored values (1.061738ms)
+✔ stale source and apply rejection keep dirty field state instead of dropping edits (0.33644ms)
+✔ capability text is conservative unless both support and a bound are explicit (0.348217ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 86.757097

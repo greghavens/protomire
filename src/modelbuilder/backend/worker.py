@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Annotated
 
-from zenml import ArtifactConfig, Model, get_step_context, log_metadata, pipeline, step
+from zenml import ArtifactConfig, Model, get_step_context, pipeline, step
 from zenml.client import Client
 from zenml.config import StepRetryConfig
 
@@ -15,12 +15,15 @@ from . import fixtures
 from .components.runtime import compile_component, compile_python
 from .components import live_evaluator
 from .execution_limits import deadline_start, deadline_end
+from .process_execution import scoped_builtin, metadata as log_metadata, in_child
 from ..evaluation import fixture_evaluation_records, compare_records
 from .common import recipe_provenance, read_json, write_json
 
 
 def context(spec: dict) -> tuple[dict, Path]:
     job = Path(spec["job_dir"])
+    if in_child():
+        return spec["parameters"], job / "outputs" / spec.get("invocation", {}).get("invocation_id", spec["node_id"])
     ctx = get_step_context()
     write_json(job / "native.json", {"backend_run_id": str(ctx.pipeline_run.id),
                                     "model_version_ref": str(ctx.model_version.id) if ctx.model_version else None,
@@ -37,12 +40,14 @@ def context(spec: dict) -> tuple[dict, Path]:
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def dataset_step(spec: dict) -> Annotated[dict, "data"]:
     parameters, _ = context(spec)
     return fixtures.dataset(parameters)
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def import_data_step(spec: dict) -> Annotated[dict, "data"]:
     parameters, _ = context(spec)
     identifier = parameters["resource_id"]
@@ -56,6 +61,7 @@ def import_data_step(spec: dict) -> Annotated[dict, "data"]:
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def import_dataset_version_step(spec: dict) -> Annotated[dict, "data"]:
     from ..dataset import load_portable_split
     parameters, _ = context(spec)
@@ -79,6 +85,7 @@ def import_dataset_version_step(spec: dict) -> Annotated[dict, "data"]:
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def validate_data_step(data: dict, spec: dict) -> Annotated[dict, "data"]:
     context(spec)
     fixtures.verify_data(data)
@@ -86,12 +93,14 @@ def validate_data_step(data: dict, spec: dict) -> Annotated[dict, "data"]:
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def initialize_step(data: dict, spec: dict) -> Annotated[Path, ArtifactConfig(name="initial", is_model_artifact=True)]:
     parameters, out = context(spec)
     return fixtures.initialize(data, parameters, out)
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def train_step(data: dict, initial: Path, spec: dict) -> Annotated[Path, ArtifactConfig(name="checkpoint", is_model_artifact=True)]:
     parameters, out = context(spec)
     parameters = {**parameters, "_execution_device": spec.get("placement", {}).get("device", "cpu"), "_cancel_file": str(Path(spec["job_dir"]) / "cancel.json"),
@@ -125,6 +134,7 @@ def train_step(data: dict, initial: Path, spec: dict) -> Annotated[Path, Artifac
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def evaluate_step(data: dict, checkpoint: Path, spec: dict) -> Annotated[dict, "metrics"]:
     parameters, out = context(spec)
     metrics = fixtures.evaluate(data, checkpoint, parameters, out)
@@ -134,6 +144,7 @@ def evaluate_step(data: dict, checkpoint: Path, spec: dict) -> Annotated[dict, "
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def checkpoint_step(checkpoint: Path, spec: dict) -> Annotated[Path, ArtifactConfig(name="checkpoint", is_model_artifact=True)]:
     context(spec)
     fixtures.load_checkpoint(checkpoint)
@@ -141,12 +152,14 @@ def checkpoint_step(checkpoint: Path, spec: dict) -> Annotated[Path, ArtifactCon
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def export_step(data: dict, checkpoint: Path, spec: dict) -> Annotated[Path, ArtifactConfig(name="export", is_model_artifact=True)]:
     parameters, out = context(spec)
     return fixtures.export_model(data, checkpoint, parameters, out)
 
 
 @step(enable_cache=False)
+@scoped_builtin
 def compare_step(left: dict, right: dict, spec: dict) -> Annotated[dict, "comparison"]:
     parameters, _ = context(spec)
     metric = parameters.get("metric", "validation_loss")
@@ -240,6 +253,8 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
     skipped = set() if skipped is None else skipped
     feedback = feedback or {}
     chosen = set(execution["node_ids"])
+    from ..execution import max_parallel_stages
+    concurrency = max_parallel_stages(recipe)
     for node in ordered:
         if (job / "cancel.json").exists():
             raise InterruptedError("Cancellation requested between native invocations")
@@ -255,7 +270,7 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
             if condition_callback is None:
                 raise ValueError("Conditional nodes require the supported native dynamic executor")
             gate = node["condition"]
-            artifact = outputs[(gate["source_node"], gate["source_port"])]
+            artifact = native_artifact(outputs[(gate["source_node"], gate["source_port"])])
             if not condition_callback(node, artifact, invocation):
                 skipped.add(node["id"])
                 continue
@@ -267,7 +282,7 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
         omitted = [edge for edge in skipped_dependencies(recipe, node, chosen, skipped, optional=True)
                    if (node["id"], edge["target_port"]) not in feedback]
         if omitted and join_callback:
-            join_callback(node, omitted, kwargs, invocation)
+            join_callback(node, omitted, {port: native_artifact(artifact) for port, artifact in kwargs.items()}, invocation)
         function = functions[node["id"]]
         if any(port["name"] not in kwargs and port.get("required", True) is False for port in node.get("inputs", [])):
             compiler = compile_python if node["kind"] == "code.python" else compile_component
@@ -282,7 +297,7 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
             function = function.with_options(retry=StepRetryConfig(max_retries=retries, delay=int(retry.get("backoff_seconds", 0))))
         if node["kind"] == "code.python":
             kwargs.update(node.get("parameters", {}))
-        kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "invocation": invocation, "parameters": node.get("parameters", {}),
+        kwargs["spec"] = {"job_dir": str(job), "node_id": node["id"], "invocation": invocation, "max_parallel_stages": concurrency, "parameters": node.get("parameters", {}),
                               "placement": request.get("placement", {"device": "cpu"}),
                               "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
                               "dataset_source_guards": request.get("dataset_source_guards", {}),
@@ -294,7 +309,7 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
         warm_state = next((state for state in (block or {}).get("state", []) if state["target_node"] == node["id"] and state.get("resume_mode") == "warm_start"), None)
         if warm_state and iteration > 1:
             kwargs["spec"]["iteration_resume_input"] = warm_state["target_port"]
-            kwargs["spec"]["iteration_checkpoint_ref"] = str(kwargs[warm_state["target_port"]].id)
+            kwargs["spec"]["iteration_checkpoint_ref"] = str(native_artifact(kwargs[warm_state["target_port"]]).id)
             kwargs["spec"]["resume_mode"] = "warm_start"
         live = live_evaluator(node, active_recipe, input_bindings=execution_provenance["input_bindings"])
         if live:
@@ -308,7 +323,7 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
                 if condition_callback is None:
                     raise ValueError("Conditional live evaluation requires the native dynamic executor")
                 gate = evaluator["condition"]
-                artifact = outputs[(gate["source_node"], gate["source_port"])]
+                artifact = native_artifact(outputs[(gate["source_node"], gate["source_port"])])
                 if not condition_callback(evaluator, artifact, invocation_identity(evaluator["id"])):
                     live = None
             if live:
@@ -318,6 +333,13 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
                                                   if source in kwargs}}
         kwargs["spec"]["live_evaluation"] = live
         kwargs["spec"]["cache_identity"] = cache_identities.get(node["id"])
+        if concurrency > 1:
+            # Public native futures preserve dependency/artifact identities. The
+            # native runner worker pool enforces the canonical execution bound.
+            future = function.submit(id=invocation["invocation_id"], **kwargs)
+            for port in node["outputs"]:
+                outputs[(node["id"], port["name"])] = future.get_artifact(port["name"])
+            continue
         result = function(id=invocation["invocation_id"], **kwargs)
         declared = node["outputs"]
         values = result if isinstance(result, (tuple, list)) else (result,)
@@ -329,8 +351,19 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
     return outputs, skipped
 
 
+def native_artifact(value):
+    """Resolve only at explicit control/iteration barriers, using public futures."""
+    from zenml.execution.pipeline.dynamic.outputs import ArtifactFuture
+    return value.result() if isinstance(value, ArtifactFuture) else value
+
+
+def drain_artifacts(outputs):
+    for key, value in list(outputs.items()):
+        outputs[key] = native_artifact(value)
+
+
 def invoke_nodes(prepared: dict, condition_callback=None, skip_callback=None, join_callback=None, iteration_callback=None) -> None:
-    """Use only synchronous public ZenML calls for declared bounded bodies."""
+    """Declare native calls/futures; explicit iteration blocks are barriers."""
     from ..iterations import ordered_units
     from ..conditions import condition_decision
     from .native_inputs import validate_native_type
@@ -348,6 +381,7 @@ def invoke_nodes(prepared: dict, condition_callback=None, skip_callback=None, jo
             continue
         if iteration_callback is None:
             raise ValueError("Bounded iteration requires the supported native dynamic pipeline")
+        drain_artifacts(outputs)
         ordered = [node for node in prepared["ordered"] if node["id"] in body]
         feedback = {}
         for index in range(1, unit["max_iterations"] + 1):
@@ -356,6 +390,7 @@ def invoke_nodes(prepared: dict, condition_callback=None, skip_callback=None, jo
             iteration_callback(unit, index, {"status": "started"})
             invoke_node_set({**prepared, "ordered": ordered}, condition_callback, skip_callback, join_callback,
                             outputs=outputs, skipped=skipped, feedback=feedback, block=unit, iteration=index)
+            drain_artifacts(outputs)
             gate = unit.get("until")
             decision = {}
             stop = False
@@ -386,11 +421,16 @@ def invoke_nodes(prepared: dict, condition_callback=None, skip_callback=None, jo
             if stop or index == unit["max_iterations"]:
                 break
 
+    drain_artifacts(outputs)
+
 
 def run(job: Path) -> None:
     prepared = prepare_run(job)
     request, project, provenance = (prepared[key] for key in ("request", "project", "provenance"))
-    if prepared["active_recipe"].get("bounded_iterations") or any("condition" in node for node in prepared["ordered"]):
+    from ..execution import max_parallel_stages
+    concurrency = max_parallel_stages(prepared["recipe"])
+    os.environ["ZENML_DYNAMIC_PIPELINE_WORKER_COUNT"] = str(concurrency)
+    if concurrency > 1 or prepared["active_recipe"].get("bounded_iterations") or any("condition" in node for node in prepared["ordered"]):
         from .conditional_worker import execute_conditional_recipe
         execute_recipe = execute_conditional_recipe
         arguments = {"job_directory": str(job)}

@@ -9,6 +9,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 from jsonschema.exceptions import ValidationError, SchemaError
 from .common import recipe_provenance
@@ -37,6 +38,7 @@ def validate_execution(backend, payload: dict) -> dict:
     except TrackingPolicyError as error:
         raise BackendError("tracking_consent_required", str(error)) from error
     recipe = payload.get("recipe", {})
+    validate_recipe_settings(recipe)
     if payload.get("project_recipe_id") and recipe.get("recipe_id") != payload["project_recipe_id"]:
         raise BackendError("conflict", "Execution must use the project's single canonical recipe identity")
     if payload.get("project_id") and recipe.get("project_id") and recipe["project_id"] != payload["project_id"]:
@@ -315,7 +317,23 @@ def verify_environment(backend, recipe: dict) -> dict:
     return response
 
 
+def validate_recipe_settings(recipe: dict) -> int:
+    """Validate canonical settings on both plan and submission, without writes."""
+    from ..execution import max_parallel_stages
+    try:
+        limit = max_parallel_stages(recipe)
+    except ValueError as error:
+        raise BackendError("validation_error", str(error), {"field": "execution.max_parallel_stages"}) from error
+    if limit > 1 and (sys.platform != "linux" or recipe.get("environment", {}).get("device", "cpu") != "cpu"):
+        raise BackendError("capability_unavailable",
+            "Parallel stage execution currently requires Linux CPU; other platforms and accelerators await native lifecycle and cleanup verification. Use max_parallel_stages=1 for the existing supported sequential route.",
+            {"field": "execution.max_parallel_stages", "supported_platforms": ["linux"], "supported_devices": ["cpu"]})
+    return limit
+
+
 def capabilities(backend) -> dict:
+    from ..execution import MAX_PARALLEL_STAGES
+    parallel_available = sys.platform == "linux"
     return {"schema_version": "1", "executable_kinds": sorted(BUILTINS | PLATFORM_BUILTINS | {"code.python", "component.run"}),
             "unsupported_schema_kinds": {"training.kl_anchor": "Use model.train.parameters.kl anchored to the connected initial model"},
             "node_settings": {"environment_ref": ["default"], "cache_policy": ["disabled", "enabled"],
@@ -325,10 +343,19 @@ def capabilities(backend) -> dict:
                               "retry": {"max_attempts": [1, 100], "backoff_seconds": "nonnegative integer"}},
             "arbitrary_python": {"configured": bool(backend.trusted_code_roots), "isolation": False,
                                  "requires": ["per-run trust consent", "operator trusted source root", "pinned implementation in source closure"]},
-            "control_flow": {"conditions": "nested bool branches, required-input skip propagation, optional-input joins; sequential native dynamic pipeline",
+            "recipe_settings": {"execution": {"max_parallel_stages": {"minimum": 1,
+                "maximum": MAX_PARALLEL_STAGES, "default": 1,
+                "supported_maximum": MAX_PARALLEL_STAGES if parallel_available else 1,
+                "platforms": ["linux"], "devices": ["cpu"],
+                "scope": "independent native stages within one selected recipe; sequential bounded-iteration barriers",
+                "process_boundary": "fresh trusted process bodies; not a hostile-code sandbox",
+                "other_platforms": "pending native lifecycle and cleanup verification; existing sequential routes unchanged",
+                "live_evaluation": True, "iteration_live_evaluation": False,
+                "resource_reservations": False}}},
+            "control_flow": {"conditions": "nested bool branches, required-input skip propagation, optional-input joins; sequential by default, bounded native concurrency on Linux CPU when explicitly configured",
                              "loops": "explicit bounded_iterations; typed prior-artifact feedback; post-body bool early exit; maximum 10000 invocations",
                              "iteration_resume": "explicit warm_start only; restarts at iteration 1; exact loop cursor resume unavailable",
-                             "iteration_live_evaluation": False, "independent_stage_concurrency": False, "conditional_live_evaluation": True,
+                             "iteration_live_evaluation": False, "independent_stage_concurrency": parallel_available, "conditional_live_evaluation": True,
                              "conditional_live_gate_policy": "evaluator gate must already be a canonical ancestor of its trainer; false/skipped gates launch no sidecar"},
             "environment": {"requirements": "exact installed versions with target markers", "oci": False},
             "placement": {"recipe_field": "environment.device", "reservations": False, "live_evaluation_device": "cpu",

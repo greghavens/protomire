@@ -1,0 +1,307 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "a7c71479-da57-4002-a683-7323fafcf187",
+      "backend_run_id": "f7bc5d30-b130-4ebf-aae5-651bc3763ebc",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "f7bc5d30-b130-4ebf-aae5-651bc3763ebc",
+        "producer_step_run_id": "bec1c733-7bc4-4cf7-873d-4d68abb62995",
+        "reused": false
+      },
+      "canonical_node_id": "gate",
+      "invocation_id": "gate",
+      "name": "allowed",
+      "node_id": "gate",
+      "port": "allowed",
+      "step_id": "bec1c733-7bc4-4cf7-873d-4d68abb62995",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_condition1/state/backend/zenml-stores/e006f6b4-ac4c-4bd4-8853-0a6b8d74c421/gate/allowed/bec1c733-7bc4-4cf7-873d-4d68abb62995/2b4018ec"
+    },
+    {
+      "artifact_id": "5881119f-e1a6-44a6-a96a-c1d475d1004f",
+      "backend_run_id": "f7bc5d30-b130-4ebf-aae5-651bc3763ebc",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "f7bc5d30-b130-4ebf-aae5-651bc3763ebc",
+        "producer_step_run_id": "cb1377c6-ccb4-4b91-b088-e212748653c1",
+        "reused": false
+      },
+      "canonical_node_id": "alternate",
+      "invocation_id": "alternate",
+      "name": "metrics",
+      "node_id": "alternate",
+      "port": "metrics",
+      "step_id": "cb1377c6-ccb4-4b91-b088-e212748653c1",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_condition1/state/backend/zenml-stores/e006f6b4-ac4c-4bd4-8853-0a6b8d74c421/alternate/metrics/cb1377c6-ccb4-4b91-b088-e212748653c1/3272118f"
+    },
+    {
+      "artifact_id": "2f74c8e1-9be2-476f-b5ec-b2fcab01fc26",
+      "backend_run_id": "f7bc5d30-b130-4ebf-aae5-651bc3763ebc",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "f7bc5d30-b130-4ebf-aae5-651bc3763ebc",
+        "producer_step_run_id": "7e8fed58-9f9b-4119-ba37-ba6adf09dcfe",
+        "reused": false
+      },
+      "canonical_node_id": "join",
+      "invocation_id": "join",
+      "name": "joined",
+      "node_id": "join",
+      "port": "joined",
+      "step_id": "7e8fed58-9f9b-4119-ba37-ba6adf09dcfe",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_condition1/state/backend/zenml-stores/e006f6b4-ac4c-4bd4-8853-0a6b8d74c421/join/joined/7e8fed58-9f9b-4119-ba37-ba6adf09dcfe/5410a736"
+    },
+    {
+      "artifact_id": "93d7618b-329b-4258-9375-cfc526b10a0f",
+      "backend_run_id": "f7bc5d30-b130-4ebf-aae5-651bc3763ebc",
+      "cache": {
+        "original_step_run_id": null,
+        "producer_backend_run_id": "f7bc5d30-b130-4ebf-aae5-651bc3763ebc",
+        "producer_step_run_id": "596853a3-c77b-4877-ab2c-34a9aa0353d4",
+        "reused": false
+      },
+      "canonical_node_id": "final",
+      "invocation_id": "final",
+      "name": "metrics",
+      "node_id": "final",
+      "port": "metrics",
+      "step_id": "596853a3-c77b-4877-ab2c-34a9aa0353d4",
+      "uri": "/tmp/modelbuilder-native-parallel-frozen/test_native_parallel_condition1/state/backend/zenml-stores/e006f6b4-ac4c-4bd4-8853-0a6b8d74c421/final/metrics/596853a3-c77b-4877-ab2c-34a9aa0353d4/aaf86935"
+    }
+  ],
+  "backend": "zenml",
+  "backend_run_id": "f7bc5d30-b130-4ebf-aae5-651bc3763ebc",
+  "backend_snapshot_id": "289a1761-87dc-4aeb-b548-014097602578",
+  "backend_status": "completed",
+  "backend_version": "0.97.0",
+  "bounded_iterations": {},
+  "cached_node_ids": [],
+  "conditional_execution": {
+    "alternate": {
+      "condition": {
+        "equals": false,
+        "source_node": "gate",
+        "source_port": "allowed"
+      },
+      "gate_artifact_id": "a7c71479-da57-4002-a683-7323fafcf187",
+      "gate_value": false,
+      "gate_value_sha256": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "invocation": {
+        "canonical_node_id": "alternate",
+        "invocation_id": "alternate"
+      },
+      "status": "eligible",
+      "status_source": "native_run_metadata"
+    },
+    "branch_gate": {
+      "condition": {
+        "equals": true,
+        "source_node": "gate",
+        "source_port": "allowed"
+      },
+      "gate_artifact_id": "a7c71479-da57-4002-a683-7323fafcf187",
+      "gate_value": false,
+      "gate_value_sha256": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "invocation": {
+        "canonical_node_id": "branch_gate",
+        "invocation_id": "branch_gate"
+      },
+      "status": "skipped",
+      "status_source": "native_run_metadata"
+    },
+    "never": {
+      "blocked_by": [
+        {
+          "kind": "condition",
+          "source_node": "branch_gate",
+          "source_port": "allowed"
+        }
+      ],
+      "condition": {
+        "equals": false,
+        "source_node": "branch_gate",
+        "source_port": "allowed"
+      },
+      "invocation": {
+        "canonical_node_id": "never",
+        "invocation_id": "never"
+      },
+      "reason": "upstream_skipped",
+      "status": "skipped",
+      "status_source": "native_run_metadata"
+    },
+    "required": {
+      "blocked_by": [
+        {
+          "kind": "input",
+          "source_node": "target",
+          "source_port": "metrics",
+          "target_port": "value"
+        }
+      ],
+      "condition": null,
+      "invocation": {
+        "canonical_node_id": "required",
+        "invocation_id": "required"
+      },
+      "reason": "upstream_skipped",
+      "status": "skipped",
+      "status_source": "native_run_metadata"
+    },
+    "target": {
+      "blocked_by": [
+        {
+          "kind": "condition",
+          "source_node": "branch_gate",
+          "source_port": "allowed"
+        }
+      ],
+      "condition": {
+        "equals": true,
+        "source_node": "branch_gate",
+        "source_port": "allowed"
+      },
+      "invocation": {
+        "canonical_node_id": "target",
+        "invocation_id": "target"
+      },
+      "reason": "upstream_skipped",
+      "status": "skipped",
+      "status_source": "native_run_metadata"
+    }
+  },
+  "conditional_inputs": {
+    "join": {
+      "input_artifact_ids": {
+        "right": "5881119f-e1a6-44a6-a96a-c1d475d1004f"
+      },
+      "invocation": {
+        "canonical_node_id": "join",
+        "invocation_id": "join"
+      },
+      "omitted_inputs": [
+        {
+          "kind": "input",
+          "source_node": "required",
+          "source_port": "metrics",
+          "target_port": "left"
+        }
+      ],
+      "status_source": "native_run_metadata"
+    }
+  },
+  "error": null,
+  "evaluations": [],
+  "executed_node_ids": [
+    "alternate",
+    "final",
+    "gate",
+    "join"
+  ],
+  "executed_recipe_digest": "5489eed23334b1735e2c36c9e8d1ae81f7da5dc7d171335730b7ee8fc3729758",
+  "execution": {
+    "input_bindings": [],
+    "node_ids": [
+      "gate",
+      "branch_gate",
+      "target",
+      "never",
+      "alternate",
+      "required",
+      "join",
+      "final"
+    ]
+  },
+  "invocation_statuses": {
+    "alternate": {
+      "canonical_node_id": "alternate",
+      "input_artifact_ids": {},
+      "invocation_id": "alternate",
+      "status": "completed",
+      "step_id": "cb1377c6-ccb4-4b91-b088-e212748653c1"
+    },
+    "final": {
+      "canonical_node_id": "final",
+      "input_artifact_ids": {
+        "value": [
+          "2f74c8e1-9be2-476f-b5ec-b2fcab01fc26"
+        ]
+      },
+      "invocation_id": "final",
+      "status": "completed",
+      "step_id": "596853a3-c77b-4877-ab2c-34a9aa0353d4"
+    },
+    "gate": {
+      "canonical_node_id": "gate",
+      "input_artifact_ids": {},
+      "invocation_id": "gate",
+      "status": "completed",
+      "step_id": "bec1c733-7bc4-4cf7-873d-4d68abb62995"
+    },
+    "join": {
+      "canonical_node_id": "join",
+      "input_artifact_ids": {
+        "right": [
+          "5881119f-e1a6-44a6-a96a-c1d475d1004f"
+        ]
+      },
+      "invocation_id": "join",
+      "status": "completed",
+      "step_id": "7e8fed58-9f9b-4119-ba37-ba6adf09dcfe"
+    }
+  },
+  "last_reconciled_at": "2026-10-13T01:25:47.786402+00:00",
+  "log_available": true,
+  "metrics": {
+    "evaluation_catalog": [],
+    "evaluation_conflicts": {},
+    "evaluation_records": {},
+    "present": "right"
+  },
+  "model_version_ref": "b61df4d2-3c53-45c6-aa53-942a8fa33093",
+  "node_statuses": {
+    "alternate": "completed",
+    "branch_gate": "skipped",
+    "final": "completed",
+    "gate": "completed",
+    "join": "completed",
+    "never": "skipped",
+    "required": "skipped",
+    "target": "skipped"
+  },
+  "operation_id": "556ad56e-f6b4-429a-a6e7-ecccfbb65c8a",
+  "parent_checkpoint_ref": null,
+  "parent_invocation": null,
+  "parent_recipe_digest": null,
+  "parent_recipe_id": null,
+  "parent_recipe_revision": null,
+  "parent_run_id": null,
+  "process_group_alive": false,
+  "project_id": "414074d1-22d3-4c8f-a0b6-b6a4b25049c7",
+  "recipe_digest": "5489eed23334b1735e2c36c9e8d1ae81f7da5dc7d171335730b7ee8fc3729758",
+  "recipe_id": "972c70ee-22fb-4ff7-9e77-5cb2ccd4a3ac",
+  "recipe_revision": 1,
+  "resume_mode": null,
+  "runtime_status_source": "verified_local_supervisor",
+  "skipped_node_ids": [
+    "branch_gate",
+    "never",
+    "required",
+    "target"
+  ],
+  "status": "succeeded",
+  "submitted_at": "2026-10-13T01:25:38.551513+00:00",
+  "supervisor_alive": true,
+  "termination": {},
+  "termination_record_source": null,
+  "tracking": {
+    "mode": "disabled",
+    "provider": "wandb",
+    "run_id": null,
+    "status": "disabled",
+    "url": null
+  },
+  "worker_alive": false,
+  "worker_exit_code": 0,
+  "worker_pid": 476
+}

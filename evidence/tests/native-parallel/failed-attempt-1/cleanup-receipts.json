@@ -1,0 +1,232 @@
+[
+  {
+    "job": "test_builtin_lifecycle_uses_pr0/backend/jobs/7f42312a-e852-425f-8305-2a01cbbb6707",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": 0,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:18:41.654535+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab361b78e147bp+30",
+      "worker_pid": 626
+    }
+  },
+  {
+    "job": "test_native_parallel_cancel_af0/state/backend/jobs/4163c522-c665-4edc-88ca-2dea208e65a0",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": -15,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:17:27.470684+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "cancelled",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab361a61ccccdp+30",
+      "worker_pid": 534
+    }
+  },
+  {
+    "job": "test_native_parallel_deadlines0/state/backend/jobs/3a2f3b63-fa85-4e4e-89ea-20dcc5c3db59",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": -15,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:16:58.365400+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "cancelled",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab3619ec28f5cp+30",
+      "worker_pid": 488
+    }
+  },
+  {
+    "job": "test_native_parallel_condition1/state/backend/jobs/b6771e17-75ee-448c-a6f3-135edf3e7287",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": 0,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:16:31.119976+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab361996e147bp+30",
+      "worker_pid": 439
+    }
+  },
+  {
+    "job": "test_native_parallel_condition0/state/backend/jobs/c5ed41e0-3782-4fa1-b532-e2525cb096ba",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": 0,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:16:09.137177+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab3619449999ap+30",
+      "worker_pid": 393
+    }
+  },
+  {
+    "job": "test_native_parallel_iteration0/state/backend/jobs/69751bd3-8f93-4737-bf18-ef66158fc542",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": 0,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:15:50.176543+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab3618f31eb85p+30",
+      "worker_pid": 348
+    }
+  },
+  {
+    "job": "test_native_parallel_retry_iso0/state/backend/jobs/48dd0c59-045f-479e-ba47-d99d39859cc0",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": 0,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:15:36.142694+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab3618bd00000p+30",
+      "worker_pid": 281
+    }
+  },
+  {
+    "job": "test_native_parallel_retry_iso0/state/backend/jobs/e711f057-649a-457a-8952-5026066545ab",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": 0,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:15:20.615140+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab36187b47ae1p+30",
+      "worker_pid": 211
+    }
+  },
+  {
+    "job": "test_native_serial_default_and1/state/backend/jobs/aac7bc53-8d2d-48dc-86a1-470719b4379b",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": 0,
+    "process_group_terminated": true,
+    "supervisor_subreaper": false,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:15:03.090016+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab361832c28f6p+30",
+      "worker_pid": 172
+    }
+  },
+  {
+    "job": "test_native_serial_default_and0/state/backend/jobs/258be711-e75b-4fd7-965b-88ead10d7456",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": 0,
+    "process_group_terminated": true,
+    "supervisor_subreaper": false,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:14:44.836509+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab3617eb5c28fp+30",
+      "worker_pid": 133
+    }
+  },
+  {
+    "job": "test_native_parallel_barrier_b0/state/backend/jobs/f79a8b56-1dad-45d0-838a-35f05a372e8c",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": 0,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:14:25.966656+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "completed",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab36179766666p+30",
+      "worker_pid": 78
+    }
+  },
+  {
+    "job": "test_hard_exit_aborts_sibling_0/state/backend/jobs/7866113c-9afa-45a9-a854-ebaa6773dfeb",
+    "supervisor_state": "finished",
+    "worker_reaped": true,
+    "worker_exit_code": -15,
+    "process_group_terminated": true,
+    "supervisor_subreaper": true,
+    "adopted_children_reaped": [
+      53
+    ],
+    "termination": {
+      "confirmed": true,
+      "confirmed_at": "2026-10-13T01:14:07.623000+00:00",
+      "process_group_terminated": true,
+      "proof_source": "local_supervisor_wait_and_group_observation",
+      "reason": "cancelled",
+      "runtime_identity": "linux:0c0ea272-2f48-49c8-99fb-864aac8639d0:pid:[4026532409]",
+      "worker_identity": "psutil:0x1.ab36175ef5c29p+30",
+      "worker_pid": 36
+    }
+  }
+]

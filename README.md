@@ -64,6 +64,7 @@ policy unit test or earlier evaluation is counted as a GUI/backend acceptance pa
 
 - [Architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md), [backend decision](docs/BACKEND_DECISION.md)
 - [Bounded native pipeline iteration](docs/NATIVE_BOUNDED_ITERATION.md)
+- [Canonical stage-concurrency settings](docs/NATIVE_PARALLEL_STAGES.md)
 - [Native MCP tools](docs/MCP_TOOLS.md), [OpenAPI](docs/openapi.json)
 - [ZenML lifecycle and cancellation semantics](docs/ZENML_BACKEND.md)
 - [Local device placement and hardware-verification limits](docs/LOCAL_DEVICE_PLACEMENT.md)

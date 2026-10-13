@@ -16,6 +16,9 @@ from .common import now, process_identity, process_group_state, runtime_identity
 
 
 def main(job: Path, lease_fd: int | None = None) -> None:
+    from .process_execution import enable_child_subreaper, reap_session_children, publish_cancellation
+    subreaper = (enable_child_subreaper() if read_json(job / "request.json").get("recipe", {})
+                 .get("execution", {}).get("max_parallel_stages", 1) > 1 else False)
     # Acknowledge before optional imports or worker creation. The inherited lease
     # spans this window; the durable attempt remains authoritative if we die here.
     attempt = read_json(job / "spawn_attempt.json")
@@ -45,7 +48,7 @@ def main(job: Path, lease_fd: int | None = None) -> None:
             timed_out = bool(expired_node) or time.monotonic() - started > float(request.get("max_runtime_seconds", 600))
             cancellation = (job / "cancel.json").exists()
             if timed_out and not cancellation:
-                write_json(job / "cancel.json", {"requested_at": now(), "reason": "node_timeout_exceeded" if expired_node else "max_runtime_exceeded",
+                publish_cancellation(job, {"requested_at": now(), "reason": "node_timeout_exceeded" if expired_node else "max_runtime_exceeded",
                                                  **({key: expired_node[key] for key in ("node_id", "canonical_node_id", "invocation_id", "iteration_block_id", "iteration", "max_iterations") if key in expired_node} if expired_node else {})})
                 cancellation = True
             if cancellation:
@@ -68,7 +71,8 @@ def main(job: Path, lease_fd: int | None = None) -> None:
             live_tracking.poll()
             time.sleep(0.1)
         code = process.wait()
-        state.update(worker_reaped=True, process_group_terminated=process_group_state(process.pid) is False, worker_exit_code=code, worker_terminated_at=now(),
+        adopted_reaped = reap_session_children(process.pid) if subreaper else []
+        state.update(supervisor_subreaper=subreaper, adopted_children_reaped=adopted_reaped, worker_reaped=True, process_group_terminated=process_group_state(process.pid) is False, worker_exit_code=code, worker_terminated_at=now(),
                      supervisor_state="reconciling", cancelled=(job / "cancel.json").exists())
         if state["process_group_terminated"] is True:
             state["termination"] = {"confirmed": True,

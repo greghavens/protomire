@@ -1,6 +1,34 @@
 # Current verification and remaining gates
 
-## Deterministic rules engine, 2026-10-13
+## Policy-driven Trainer epochs, 2026-10-13
+
+Runtime source `81708511b7c5c47444326aa15c67a187188cb3f6` adds real
+Transformers Trainer v2 epoch decisions and verified exact-state continuation.
+Both shipping recipes pin its complete **163-file** closure. See
+[the supported contract](TRAINER_EPOCH_RULES.md) and
+[scoped acceptance receipt](../evidence/product-completion-20261013/trainer-epoch-rules.json).
+
+The final focused Trainer and exact budget-math suite passed **69 tests**;
+source-pin and budget coverage passed **59**. The complete standard local script
+exited **0** with npm offline: **2,864 Python passed, 198 skipped, 104 deselected**,
+**18 offline Hub SDK** and **582 frontend tests**, plus all service/workspace/
+source-pin/history loopback HTTP stages. Optional interpreter/platform skips are
+not acceptance evidence; the separate native Trainer suite supplies the scoped
+CPU/eager evidence.
+
+This includes real dropout-sensitive uninterrupted/resumed comparisons of model,
+optimizer, scheduler, RNG and row order, with the original full scheduler horizon.
+Custom and combined policies use the existing versioned Method registry; resource
+admission remains distinct from scientific convergence. No inferred thresholds or
+silent warm-start substitution are introduced.
+
+Actual shared-service `run.submit` / checkpoint discovery / `run.resume` acceptance
+is still in progress. Streaming sampling remains in review and is not integrated.
+The fresh full native queue, installed-wheel replay and rebuilt app acceptance
+remain pending. The earlier failed full queue below remains failed; these scoped
+passes do not replace it.
+
+## Deterministic rules engine baseline, 2026-10-13
 
 Runtime source `4e458d632ba23c42145d3afbe507a7cea4a43e76` adds versioned,
 source-pinned rule methods, durable project policy activation, native decision
@@ -26,7 +54,7 @@ concurrency tests**. That does not replace the failed aggregate. Measured added
 coverage exceeds the former aggregate allowance; the documented queue budget is
 now **2,700 seconds**, retaining two processes and every individual deadline
 (**43 runner unit tests passed**). A fresh full run is still required. Fresh installed-wheel replay,
-real Trainer epoch continuation, streaming sampling and native graphical
+service-level Trainer epoch continuation, streaming sampling and native graphical
 acceptance are not claimed complete. Earlier runtime receipts below remain
 historical evidence.
 

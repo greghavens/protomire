@@ -1,0 +1,76 @@
+{
+  "evidence": {
+    "evidence/rules-20261013/trainer-final/epochs.log": {
+      "bytes": 1452,
+      "sha256": "5e8d66c25ff1fa3d881920b32b4a8dae47732c4f887b58bbbeab57ca3e0708a2"
+    },
+    "evidence/rules-20261013/trainer-final/epochs.xml": {
+      "bytes": 11660,
+      "errors": 0,
+      "failures": 0,
+      "sha256": "7dd875cda407238488614791701e238ffae36510a23c6b5b39ddda97cf7d2090",
+      "skipped": 0,
+      "tests": 69
+    },
+    "evidence/rules-20261013/trainer-final/source-and-math.log": {
+      "bytes": 99,
+      "sha256": "7a46ecd937f97757d4204f1cc65dd494c2da65e3572c0e5d28a488b054e7728e"
+    },
+    "evidence/rules-20261013/trainer-final/standard-aggregate.log": {
+      "bytes": 1659407,
+      "sha256": "e877287e77cff699cfc012c684c59a3fee758dc71217d9071ccb6ab69314d6a4"
+    },
+    "evidence/tests/hub-sdk.xml": {
+      "bytes": 2326,
+      "errors": 0,
+      "failures": 0,
+      "sha256": "3b8ecfa6ccdf8aed42c59f561b6c52fc4d031a1e961bc5876c7ff00f21a8a7ab",
+      "skipped": 0,
+      "tests": 18
+    },
+    "evidence/tests/unit-service-mcp.xml": {
+      "bytes": 1967940,
+      "errors": 0,
+      "failures": 0,
+      "sha256": "a502e00c71125aaeae369bd0c64b7314e2ec6dfdbd6f656b2f3afd33b9187c6d",
+      "skipped": 198,
+      "tests": 3062
+    }
+  },
+  "focused_trainer_and_budget_math": {
+    "failed": 0,
+    "passed": 69,
+    "seconds": 283.97
+  },
+  "no_claims": [
+    "No hosted CI or paid cloud execution.",
+    "No external model or dataset rights approval inferred.",
+    "No full product completion, GPU/MPS/MLX/distributed or streaming exact-state continuation claim."
+  ],
+  "pending": [
+    "Real shared-service run.submit/checkpoint discovery/run.resume acceptance is in progress. Component acceptance is not whole-DAG exact continuation.",
+    "Streaming sampling correction and Linux cancellation acceptance remain in review, not yet integrated.",
+    "Fresh complete native queue on final integrated source remains required; prior aggregate failure is preserved.",
+    "Fresh installed-wheel replay and updated native app packaging are not established by these tests.",
+    "Native GUI and OS Keychain acceptance remain pending."
+  ],
+  "recorded_at": "2026-10-13T19:33:40.370254+00:00",
+  "runtime_source_commit": "81708511b7c5c47444326aa15c67a187188cb3f6",
+  "runtime_source_files": 163,
+  "source_pin_and_budget_math": {
+    "failed": 0,
+    "passed": 59
+  },
+  "standard_aggregate": {
+    "exit_code": 0,
+    "frontend_passed": 582,
+    "loopback_http": "All service/workspace/source-pin/history stages passed",
+    "npm_offline": true,
+    "offline_hub_passed": 18,
+    "python_deselected": 104,
+    "python_passed": 2864,
+    "python_skipped": 198
+  },
+  "status": "SCOPED_ACCEPTANCE_PASSED_FULL_NATIVE_PENDING",
+  "supported_scope": "Single-process CPU float32 eager Trainer v2 with completed-epoch exact-state continuation; original scheduler horizon and actual model/optimizer/scheduler/RNG/row-order comparisons. Versioned custom and combined policies use the shared deterministic Method registry."
+}

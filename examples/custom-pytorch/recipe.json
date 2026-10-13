@@ -407,7 +407,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "4e458d632ba23c42145d3afbe507a7cea4a43e76",
+    "commit": "81708511b7c5c47444326aa15c67a187188cb3f6",
     "files": [
       {
         "path": "pyproject.toml",
@@ -603,7 +603,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/__init__.py",
-        "sha256": "6e3dfb37a99a71943608436f6cfffcc7c7ef695faae272740db359d87935035c"
+        "sha256": "1a63f98ee619b8e63351d21487caa16db0f437d639a690ee5cd7cfff63c1c4b1"
       },
       {
         "path": "src/modelbuilder/backend/components/local_inference.py",
@@ -651,11 +651,19 @@
       },
       {
         "path": "src/modelbuilder/backend/components/runtime.py",
-        "sha256": "1494f29d7342d84d7057cb1cb9b99c0c87f2b3c3277845dfc1c74b8c9f638509"
+        "sha256": "aa142ee19f0de82ad0c7fb939667afe752cda85a0817ea7841dc2a8b8ef26df0"
       },
       {
         "path": "src/modelbuilder/backend/components/scientific_gate.py",
         "sha256": "bdfd7f4efb91ab389cdc7f96ded140d0cb8475f41456757a781d4ff1cf5af85c"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/transformers_epoch_policy.py",
+        "sha256": "c2e0be035dd0d793cb882e637d1a607fd265c7facda00a2549453d33ae9ee829"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/transformers_epochs.py",
+        "sha256": "e38e43c4d93d5a28d44c560c232698bd31028eee4e899dbfe82d415febf4ec94"
       },
       {
         "path": "src/modelbuilder/backend/components/transformers_inference.py",
@@ -667,7 +675,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/transformers_training.py",
-        "sha256": "68159d5725009043fc0fc34df68ebb24a9ace84e062f81d2f8d9f1a4f14af37d"
+        "sha256": "bb1dae44116d9a05616648648d5ca9a098e6c69bb0ddc71a7337ad53a82460f0"
       },
       {
         "path": "src/modelbuilder/backend/components/weight_blend.py",
@@ -680,6 +688,10 @@
       {
         "path": "src/modelbuilder/backend/dependency_files.py",
         "sha256": "bd732b549fd7aa735eb9722e2ea890551428106c24f4e14be4e5024c4ecbf661"
+      },
+      {
+        "path": "src/modelbuilder/backend/epoch_context.py",
+        "sha256": "504065995b002b050e890d4f9d38529bf5564b631455a11dbee5577f7db02d0b"
       },
       {
         "path": "src/modelbuilder/backend/evaluation_binding.py",
@@ -747,7 +759,7 @@
       },
       {
         "path": "src/modelbuilder/backend/rule_methods.py",
-        "sha256": "5db41ad879ccac9fdf4d5638bfcf6c8b82d9139c5b506a8e2a5a58e5d2897778"
+        "sha256": "03851ac9d64bc1908537778ee5bbd2aad3b55b8b8bed7ba74994b860a29ba50d"
       },
       {
         "path": "src/modelbuilder/backend/runner.py",

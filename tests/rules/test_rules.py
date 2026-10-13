@@ -6,7 +6,7 @@ import pytest
 from modelbuilder.evaluation import digest
 from modelbuilder.rules import evaluate_policy, sample_rows, validate_policy
 from modelbuilder.backend.components.rule_gate import gate
-from modelbuilder.dataset import DatasetRegistry, validate_manifest
+from modelbuilder.dataset import DatasetRegistry
 from modelbuilder.models import Actor, ServiceError
 from modelbuilder.service import OperationService
 
@@ -190,7 +190,7 @@ def test_percentage_preserves_proportions_and_order_and_selected_identity():
         sample_rows(source, sample_spec(fraction=0.001))
 
 
-def test_real_registry_sampling_and_streaming_fail_closed(tmp_path):
+def test_real_registry_sampling_eager_streaming_parity(tmp_path):
     path = tmp_path / "rows.jsonl"
     path.write_text("".join(json.dumps(x["row"]) + "\n" for x in rows()))
     import hashlib
@@ -223,9 +223,12 @@ def test_real_registry_sampling_and_streaming_fail_closed(tmp_path):
     _, selected, _, report = registry._materialize("p", manifest)
     assert Counter(x["row"]["category"] for x in selected) == {"A": 60, "B": 40}
     assert report[0]["input_rows"] == 1000 and report[0]["output_rows"] == 100
-    with pytest.raises(ServiceError) as error:
-        validate_manifest({**manifest, "access_mode": "streaming"})
-    assert error.value.code == "dataset_sampling_streaming_unsupported"
+    _, index, _, stream_report = registry._materialize("p", {**manifest, "access_mode": "streaming"})
+    with index.connect() as db:
+        actual = [x['sample_id'] for x in db.execute('SELECT sample_id FROM samples WHERE alive=1 ORDER BY seq')]
+    assert actual == [x['sample_id'] for x in selected]
+    assert stream_report[0]['selection_digest'] == report[0]['selection_digest']
+    assert stream_report[0]['policy_digest'] == report[0]['policy_digest']
 
 
 def test_shared_operations_immutable_permissions_project_and_retry(tmp_path):

@@ -256,7 +256,9 @@ def dispatch(inputs: dict, spec: dict):
             max_concurrency=live["settings"].get("max_concurrency", 1), timeout_seconds=live["settings"].get("timeout_seconds", 300))
         run_context["checkpoint_ready"] = coordinator.checkpoint_ready
     try:
-        results = function(inputs=inputs, parameters=parameters, context=run_context)
+        from ...dataset_streaming import compilation_context
+        with compilation_context(run_context.get("cancel_file")):
+            results = function(inputs=inputs, parameters=parameters, context=run_context)
     except BaseException:
         if coordinator:
             coordinator.close(cancel=True)

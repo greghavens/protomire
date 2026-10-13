@@ -83,6 +83,7 @@ def import_dataset_version_step(spec: dict) -> Annotated[dict, "data"]:
     data = load_portable_split(json.loads(content),
         {identifier: path for identifier, path in spec["dependency_paths"].items() if identifier in declared},
         parameters["split_id"], purpose=parameters.get("purpose", "training"),
+        cancel_file=str(Path(spec["job_dir"]) / "cancel.json"),
         expected_project_id=spec["recipe_provenance"]["application_project_id"],
         source_guards=(spec.get("dataset_source_guards") or None)
         if declared[identifier].get("metadata", {}).get("dataset_reference") else None)

@@ -165,8 +165,6 @@ def validate_manifest(manifest: dict) -> dict:
                 or "\\" in source["path"] or ":" in source["path"] or "\x00" in source["path"]):
             _fail("dataset_path_invalid", "Dataset paths must be canonical relative paths")
     for transform in result["transformations"]:
-        if transform['kind'] == 'rows.sample' and result.get('access_mode') == 'streaming':
-            _fail('dataset_sampling_streaming_unsupported', 'Stratified sampling currently requires bounded eager access; streaming cannot bypass representation validation')
         if result["id_column"] in transform.get("fields", []) and transform["kind"] != "columns.select":
             _fail("dataset_transform_invalid", "Transforms cannot change or use the identity column as content")
         if transform["kind"] == "columns.select" and result["id_column"] not in transform["fields"]:
@@ -579,7 +577,7 @@ def _split_data(record, materialized, split_id, purpose):
 
 
 def load_portable_split(reference, dependency_paths, split_id, *, purpose, expected_project_id=None, source_guards=None,
-                        streaming_limits=None, _return_index=False):
+                        streaming_limits=None, _return_index=False, cancel_file=None):
     """Read a portable registered version inside a worker without a service DB.
 
     The caller obtains dependency_paths from operator admission, never from
@@ -634,7 +632,9 @@ def load_portable_split(reference, dependency_paths, split_id, *, purpose, expec
             reader._roots = {project_id: captured}
     except (OSError, ValueError) as exc:
         raise ServiceError("dataset_dependency_unavailable", "A dataset dependency directory is unavailable") from exc
-    materialized = reader._materialize(project_id, manifest)
+    from .dataset_streaming import compilation_context
+    with compilation_context(cancel_file):
+        materialized = reader._materialize(project_id, manifest)
     record = _version_record(project_id, reference["dataset_id"], reference["revision"], *materialized)
     if record["version_id"] != reference["version_id"] or record["content_digest"] != reference["content_digest"]:
         _fail("dataset_identity_mismatch", "Portable dataset contents differ from the pinned version")

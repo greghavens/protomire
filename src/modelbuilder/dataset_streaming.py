@@ -1,4 +1,4 @@
-"""Manifest-backed bounded dataset access; SQLite holds lineage, never row bodies.
+"""Manifest-backed bounded access; SQLite holds lineage and sampling metadata.
 
 Source bytes remain in operator-approved locations. Index compilation is a
 streaming pass and uses SQLite for uniqueness, filtering and split ordering.
@@ -7,6 +7,7 @@ Every access verifies pinned source bytes; pages decode only their selected rows
 from __future__ import annotations
 
 from contextlib import contextmanager, ExitStack
+from contextvars import ContextVar
 from collections import OrderedDict
 import threading
 import copy
@@ -34,12 +35,43 @@ DEFAULT_LIMITS = {
     "max_row_bytes": 1024 * 1024,
     "max_decoded_bytes": 512 * 1024**3,
     "max_index_bytes": 32 * 1024**3,
+    "max_sampling_strata": 10_000,
+    "max_report_bytes": 16 * 1024**2,
 }
 CHAIN_SCHEMA = "sha256-length-prefixed-canonical-json/v1"
 STREAM_SCHEMA = "modelbuilder.dataset-stream/v1"
 CONSUMPTION_SCHEMA = "modelbuilder.dataset-consumption/v2"
 # Individual physical/CSV logical records remain bounded before csv allocates.
 csv.field_size_limit(16 * 1024**2)
+_CANCEL_FILE = ContextVar("dataset_compile_cancel_file", default=None)
+
+
+@contextmanager
+def compilation_context(cancel_file=None):
+    """Use the worker's existing cancel-file signal, scoped to this invocation."""
+    if cancel_file is None:
+        yield
+        return
+    token = _CANCEL_FILE.set(cancel_file)
+    try:
+        yield
+    finally:
+        _CANCEL_FILE.reset(token)
+
+
+def check_cancelled():
+    path = _CANCEL_FILE.get()
+    if path and Path(path).exists():
+        fail("dataset_cancelled", "Dataset compilation was cancelled before publishing its index")
+
+
+def checked_file_digest(stream):
+    sha = hashlib.sha256()
+    while block := stream.read(1024 * 1024):
+        check_cancelled()
+        sha.update(block)
+    check_cancelled()
+    return sha.hexdigest()
 
 
 def fail(code, message, **details):
@@ -132,6 +164,7 @@ def verify_source(registry, project_id, source, stream=None):
     stream.seek(0)
     sha, size = hashlib.sha256(), 0
     while block := stream.read(1024 * 1024):
+        check_cancelled()
         sha.update(block)
         size += len(block)
         if size > registry.streaming_limits["max_file_bytes"]:
@@ -233,7 +266,7 @@ def source_rows(registry, stream, source, schema):
                            {"source_id": source["id"]}) from exc
 
 
-def transform_row(row, manifest, *, defer_errors=False):
+def transform_row(row, manifest, *, defer_errors=False, split_id=None):
     """Compute local output and stage fingerprints; global filters run in SQLite.
 
     A deferred error is checked only when that stage is reached by a surviving
@@ -262,6 +295,16 @@ def transform_row(row, manifest, *, defer_errors=False):
                 row = {field: row[field] for field in fields}
             elif kind == "rows.drop_missing":
                 filters.append("drop" if any(row.get(field) in (None, "") for field in fields) else "keep")
+            elif kind == "rows.sample":
+                # Sampling chooses membership globally. Retain only the stage's
+                # declared stratum values, never the complete row in SQLite.
+                if split_id is None or split_id not in spec["split_ids"]:
+                    filters.append("unselected")
+                elif any(field not in row or row[field] is None for field in fields):
+                    fail("dataset_sampling_blocked", "Sampling stratum evidence is missing")
+                else:
+                    filters.append(json.dumps({key: row[key] for key in fields}, sort_keys=True,
+                                              separators=(",", ":"), allow_nan=False))
             else:
                 selected = fields or [key for key in row if key != manifest["id_column"]]
                 if any(field not in row for field in selected):
@@ -277,16 +320,21 @@ def transform_row(row, manifest, *, defer_errors=False):
 
 
 class StreamingIndex:
-    def __init__(self, registry, project_id, manifest, path, summary, sha256):
+    def __init__(self, registry, project_id, manifest, path, summary, sha256, *, peak_index_bytes=0):
         self.registry, self.project_id, self.manifest = registry, project_id, manifest
-        self.path, self.summary, self.sha256 = Path(path), summary, sha256
+        self.path, self.sha256 = Path(path), sha256
+        self.summary = {key: value for key, value in summary.items() if key != "peak_index_bytes"}
+        # Retain the provisional patch's observation when restoring its cache,
+        # without treating physical allocation as logical lineage.
+        self.peak_index_bytes = max(peak_index_bytes, summary.get("peak_index_bytes", 0))
 
     def __len__(self):
         return self.summary["row_count"]
 
     @contextmanager
     def connect(self):
-        # The cache is operator-local, mode 0700, and never contains row text.
+        # The published operator-local cache stores lineage and stratum hashes.
+        # Temporary declared stratum values are erased before publication.
         # Verify the pinned bytes and fence concurrent changes for the read.
         if self.path.is_symlink():
             fail("dataset_identity_mismatch", "Dataset lineage index is unsafe")
@@ -299,7 +347,7 @@ class StreamingIndex:
                 fail("dataset_identity_mismatch", "Dataset lineage index changed after unlocked verification")
         else:
             with self.path.open("rb") as stream:
-                if hashlib.file_digest(stream, "sha256").hexdigest() != self.sha256:
+                if checked_file_digest(stream) != self.sha256:
                     fail("dataset_identity_mismatch", "Dataset lineage index checksum changed")
             if signature(self.path.stat()) != before:
                 fail("dataset_identity_mismatch", "Dataset lineage index changed during verification")
@@ -320,12 +368,92 @@ def enforce_index_caps(registry, index):
     summary, caps = index.summary, registry.streaming_limits
     pairs = ((summary["source_row_count"], "max_rows"), (summary["source_bytes"], "max_total_bytes"),
              (summary["decoded_bytes"], "max_decoded_bytes"), (summary["largest_row_bytes"], "max_row_bytes"),
-             (index.path.stat().st_size, "max_index_bytes"))
+             (max(index.path.stat().st_size, index.peak_index_bytes), "max_index_bytes"),
+             (summary.get("sampling_strata", 0), "max_sampling_strata"),
+             (len(encoded(summary["transformations"])), "max_report_bytes"))
     if any(value > caps[limit] for value, limit in pairs):
         fail("dataset_limit_exceeded", "Registered dataset exceeds the current operator resource caps")
 
 
+def sample_stage(db, column, spec, caps, stage):
+    """Plan bounded strata, rank on disk, and retain winners by indexed seeks."""
+    from .rules import validate_sampling_spec, sampling_quotas
+    required = validate_sampling_spec(spec)
+    splits = sorted(spec["split_ids"])
+    placeholders = ",".join("?" for _ in splits)
+    scope = f"alive=1 AND split_id IN ({placeholders})"
+    # Main-database tables/indexes share max_page_count with lineage. Temporary
+    # sort files use the existing disk-backed SQLite resource policy.
+    db.execute("CREATE TABLE sample_rank (seq INTEGER PRIMARY KEY, split_id TEXT NOT NULL, "
+               "stratum TEXT NOT NULL, rank TEXT NOT NULL, sample_id TEXT NOT NULL)")
+    db.create_function("sampling_rank", 1, lambda sample_id: digest({"seed": spec["seed"], "sample_id": sample_id}))
+    db.execute(f"INSERT INTO sample_rank SELECT seq,split_id,{column},sampling_rank(sample_id),sample_id "
+               f"FROM samples WHERE {scope}", splits)
+    db.execute("CREATE INDEX sample_rank_order ON sample_rank(split_id,stratum,rank,sample_id)")
+    db.execute("CREATE TABLE sample_winners (seq INTEGER PRIMARY KEY)")
+    reports, cardinality, evidence_bytes = [], 0, len(encoded(spec))
+    before_sources = dict(db.execute(f"SELECT source_id,COUNT(*) FROM samples WHERE {scope} GROUP BY source_id", splits))
+    for split in splits:
+        counts, values = {}, {}
+        for item in db.execute("SELECT stratum,COUNT(*) AS count FROM sample_rank WHERE split_id=? GROUP BY stratum", (split,)):
+            check_cancelled()
+            cardinality += 1
+            if cardinality > caps["max_sampling_strata"]:
+                fail("dataset_limit_exceeded", "Sampling stratum evidence exceeds the configured report/cardinality limit")
+            key = item["stratum"]
+            raw = db.execute("SELECT value FROM sample_strata WHERE stage=? AND stratum=?", (stage, key)).fetchone()[0]
+            value = json.loads(raw)
+            # Match the final report and cached-report cap: canonical UTF-8
+            # JSON, rather than SQLite's ASCII-escaped storage representation.
+            evidence_bytes += len(encoded(value))
+            if evidence_bytes > caps["max_report_bytes"]:
+                fail("dataset_limit_exceeded", "Sampling stratum evidence exceeds the configured report/cardinality limit")
+            counts[key], values[key] = item["count"], value
+        if not counts:
+            raise ValueError("Sampling split is unknown or empty")
+        quotas, observed = sampling_quotas(counts, spec, required)
+        for row in observed["strata"]:
+            row["stratum_values"] = values[row["stratum"]]
+            evidence_bytes += len(encoded({key: value for key, value in row.items() if key != "stratum_values"}))
+            if evidence_bytes > caps["max_report_bytes"]:
+                fail("dataset_limit_exceeded", "Sampling representation report exceeds the configured byte limit")
+        for key, quota in quotas.items():
+            check_cancelled()
+            db.execute("INSERT INTO sample_winners SELECT seq FROM sample_rank WHERE split_id=? AND stratum=? "
+                       "ORDER BY rank,sample_id LIMIT ?", (split, key, quota))
+        reports.append({"split_id": split, **observed})
+    # Match evaluation.digest(sorted(selected)) byte for byte, including JSON's
+    # ASCII escaping for Unicode IDs. Chain remains the distinct lineage schema.
+    selection = hashlib.sha256(b"[")
+    selected_count = 0
+    for item in db.execute("SELECT sample_id FROM sample_rank r JOIN sample_winners w USING(seq) ORDER BY sample_id"):
+        check_cancelled()
+        if selected_count:
+            selection.update(b",")
+        selection.update(json.dumps(item["sample_id"], separators=(",", ":"), allow_nan=False).encode())
+        selected_count += 1
+    selection.update(b"]")
+    removed = Chain()
+    for item in db.execute(f"SELECT sample_id FROM samples WHERE {scope} "
+                           "AND seq NOT IN (SELECT seq FROM sample_winners) ORDER BY seq", splits):
+        check_cancelled()
+        removed.add(item["sample_id"])
+    db.execute(f"UPDATE samples SET alive=0 WHERE {scope} AND seq NOT IN (SELECT seq FROM sample_winners)", splits)
+    after_sources = dict(db.execute(f"SELECT source_id,COUNT(*) FROM samples WHERE {scope} GROUP BY source_id", splits))
+    result = {"representation": reports, "selected_count": selected_count,
+              "selection_digest": selection.hexdigest(), "policy_digest": digest(spec),
+              "source_counts": [{"source_id": key, "before": before_sources[key], "after": after_sources.get(key, 0)}
+                                for key in sorted(before_sources)]}
+    peak_bytes = db.execute("PRAGMA page_count").fetchone()[0] * db.execute("PRAGMA page_size").fetchone()[0]
+    db.execute("DROP TABLE sample_winners")
+    db.execute("DROP TABLE sample_rank")
+    db.execute("DELETE FROM sample_strata WHERE stage=?", (stage,))
+    db.create_function("sampling_rank", 1, None)
+    return result, cardinality, peak_bytes, removed
+
+
 def compile_index(registry, project_id, manifest):
+    check_cancelled()
     cache_key = (project_id, digest(manifest))
     cached = registry._stream_indexes.get(cache_key)
     if cached is not None:
@@ -342,7 +470,8 @@ def compile_index(registry, project_id, manifest):
             if record.get("manifest_digest") == digest(manifest) and pin.get("sha256"):
                 path = Path(registry._stream_directory) / (pin["sha256"] + ".sqlite3")
                 if path.exists():
-                    index = StreamingIndex(registry, project_id, manifest, path, record["lineage"], pin["sha256"])
+                    index = StreamingIndex(registry, project_id, manifest, path, record["lineage"], pin["sha256"],
+                                           peak_index_bytes=pin.get("peak_index_bytes", 0))
                     for source in manifest["sources"]:
                         verify_source(registry, project_id, source)
                     enforce_index_caps(registry, index)
@@ -358,9 +487,22 @@ def compile_index(registry, project_id, manifest):
     db = sqlite3.connect(path)
     db.row_factory = sqlite3.Row
     try:
+        def progress():
+            path = _CANCEL_FILE.get()
+            return int(bool(path and Path(path).exists()))
+        db.set_progress_handler(progress, 1000)
         db.executescript("PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF; PRAGMA cache_size=-2048; PRAGMA temp_store=FILE;")
         db.execute("PRAGMA max_page_count=" + str(max(1, caps["max_index_bytes"] // 4096)))
         filter_specs = [spec for spec in manifest["transformations"] if spec["kind"].startswith("rows.")]
+        filter_stages = [(stage, spec) for stage, spec in enumerate(manifest["transformations"])
+                         if spec["kind"].startswith("rows.")]
+        has_sampling = any(spec["kind"] == "rows.sample" for spec in filter_specs)
+        if has_sampling:
+            # Erase temporary category values and their freed pages. The final
+            # index contains stage hashes, not N repeated projections of text.
+            db.execute("PRAGMA secure_delete=ON")
+            db.execute("CREATE TABLE sample_strata (stage INTEGER, stratum TEXT, value TEXT NOT NULL, "
+                       "PRIMARY KEY(stage,stratum)) WITHOUT ROWID")
         columns = ",".join(f"f{i} TEXT" for i in range(len(filter_specs)))
         db.execute("CREATE TABLE samples (seq INTEGER PRIMARY KEY, sample_id TEXT UNIQUE NOT NULL, source_id TEXT NOT NULL, "
                    "source_row INTEGER NOT NULL, locator TEXT NOT NULL, source_digest TEXT NOT NULL, content_digest TEXT NOT NULL, "
@@ -395,6 +537,7 @@ def compile_index(registry, project_id, manifest):
                 if total_bytes > caps["max_total_bytes"]:
                     fail("dataset_limit_exceeded", "Combined sources exceed the configured streaming byte limit")
                 for number, locator, raw_row in source_rows(registry, stream, source, manifest["row_schema"]):
+                    check_cancelled()
                     count += 1
                     source_count += 1
                     if count > caps["max_rows"]:
@@ -417,7 +560,13 @@ def compile_index(registry, project_id, manifest):
                         fail("dataset_split_invalid", "Splits must assign every source sample exactly once")
                     split_id, role, order = ((split["id"], split["role"], count) if split else
                                             (explicit["split_id"], explicit["role"], explicit["split_order"]))
-                    row, fingerprints, transform_error = transform_row(raw_row, manifest, defer_errors=True)
+                    row, fingerprints, transform_error = transform_row(raw_row, manifest, defer_errors=True, split_id=split_id)
+                    for field_index, (stage, spec) in enumerate(filter_stages):
+                        value = fingerprints[field_index]
+                        if spec["kind"] == "rows.sample" and value not in {"unselected", "unreached"}:
+                            key = digest(json.loads(value))
+                            db.execute("INSERT OR IGNORE INTO sample_strata VALUES (?,?,?)", (stage, key, value))
+                            fingerprints[field_index] = key
                     errors = list(validator.iter_errors(row))
                     # Filtering happens after ingestion; retain a validation marker
                     # so dropped rows preserve eager semantics without row storage.
@@ -443,8 +592,9 @@ def compile_index(registry, project_id, manifest):
             source_stats.append({"id": source["id"], "sha256": source["sha256"], "bytes": size, "row_count": source_count})
         if db.execute("SELECT 1 FROM requested r LEFT JOIN samples s USING(sample_id) WHERE s.sample_id IS NULL LIMIT 1").fetchone():
             fail("dataset_split_invalid", "Split refers to an unknown sample")
-        report, filter_index, remaining = [], 0, count
+        report, filter_index, remaining, sampling_strata, peak_index_bytes = [], 0, count, 0, 0
         for stage, spec in enumerate(manifest["transformations"]):
+            check_cancelled()
             invalid = db.execute("SELECT error FROM samples WHERE alive=1 AND error_stage=? LIMIT 1", (stage,)).fetchone()
             if invalid:
                 error = json.loads(invalid["error"])
@@ -452,24 +602,38 @@ def compile_index(registry, project_id, manifest):
             before = remaining
             removed = Chain()
             kind = spec["kind"]
+            sampling_report = {}
             if kind.startswith("rows."):
                 column = f"f{filter_index}"
                 db.execute(f"CREATE INDEX filter_{filter_index} ON samples(alive, {column}, split_id, seq)")
-                if kind == "rows.drop_missing":
+                if kind == "rows.sample":
+                    try:
+                        sampling_report, strata, peak_bytes, removed = sample_stage(db, column, spec, caps, stage)
+                    except ValueError as exc:
+                        fail("dataset_sampling_blocked", str(exc))
+                    sampling_strata = max(sampling_strata, strata)
+                    peak_index_bytes = max(peak_index_bytes, peak_bytes)
+                elif kind == "rows.drop_missing":
                     predicate = f"{column}='drop'"
                 elif kind == "rows.deduplicate":
                     predicate = f"seq NOT IN (SELECT MIN(seq) FROM samples WHERE alive=1 GROUP BY split_id,{column})"
                 else:
                     predicate = f"role='train' AND {column} IN (SELECT {column} FROM samples WHERE alive=1 AND role!='train')"
-                for item in db.execute(f"SELECT sample_id FROM samples WHERE alive=1 AND ({predicate}) ORDER BY seq"):
-                    removed.add(item["sample_id"])
-                db.execute(f"UPDATE samples SET alive=0 WHERE alive=1 AND ({predicate})")
+                if kind != "rows.sample":
+                    for item in db.execute(f"SELECT sample_id FROM samples WHERE alive=1 AND ({predicate}) ORDER BY seq"):
+                        check_cancelled()
+                        removed.add(item["sample_id"])
+                    db.execute(f"UPDATE samples SET alive=0 WHERE alive=1 AND ({predicate})")
                 remaining -= removed.count
                 filter_index += 1
             report.append({"declaration": copy.deepcopy(spec), "implementation": "modelbuilder.sqlite-stream",
                            "implementation_version": "1", "unicode_version": unicodedata.unidata_version,
                            "input_rows": before, "output_rows": remaining, "removed_count": removed.count,
-                           "removed_ids_digest": removed.value(), "digest_algorithm": CHAIN_SCHEMA})
+                           "removed_ids_digest": removed.value(), "digest_algorithm": CHAIN_SCHEMA, **sampling_report})
+            if len(encoded(report)) > caps["max_report_bytes"]:
+                fail("dataset_limit_exceeded", "Transformation report exceeds the configured byte limit")
+        if has_sampling:
+            db.execute("DROP TABLE sample_strata")
         if db.execute("SELECT 1 FROM samples WHERE alive=1 AND content_digest='oversized:' LIMIT 1").fetchone():
             fail("dataset_limit_exceeded", "Transformed row exceeds the configured row byte limit")
         transformed_bytes, transformed_largest = db.execute("SELECT COALESCE(SUM(row_bytes),0),COALESCE(MAX(row_bytes),0) FROM samples WHERE alive=1").fetchone()
@@ -503,14 +667,24 @@ def compile_index(registry, project_id, manifest):
                    "decoded_bytes": decoded, "largest_row_bytes": largest_row,
                    "sources": source_stats, "lineage_digest": row_chain.value(), "digest_algorithm": CHAIN_SCHEMA,
                    "splits": splits, "transformations": report}
+        if sampling_strata:
+            summary.update(sampling_strata=sampling_strata)
+        # Physical allocation is cache resource evidence, outside semantic
+        # lineage. Include final growth after rank/winner tables were removed.
+        if sampling_strata:
+            peak_index_bytes = max(peak_index_bytes, db.execute("PRAGMA page_count").fetchone()[0]
+                                   * db.execute("PRAGMA page_size").fetchone()[0])
+        check_cancelled()
         db.commit()
         db.close()
         with path.open("rb") as stream:
-            sha = hashlib.file_digest(stream, "sha256").hexdigest()
+            sha = checked_file_digest(stream)
+        check_cancelled()
         destination = Path(root) / (sha + ".sqlite3")
         os.replace(path, destination)
         path = destination
-        index = StreamingIndex(registry, project_id, manifest, path, summary, sha)
+        index = StreamingIndex(registry, project_id, manifest, path, summary, sha,
+                               peak_index_bytes=peak_index_bytes)
         index._verified_signature = signature(path.stat())
         registry._stream_indexes[cache_key] = index
         return manifest, index, splits, report
@@ -521,6 +695,7 @@ def compile_index(registry, project_id, manifest):
     except sqlite3.DatabaseError as exc:
         db.close()
         path.unlink(missing_ok=True)
+        check_cancelled()
         raise ServiceError("dataset_limit_exceeded", "Dataset lineage index exceeds its disk budget or cannot be built") from exc
     except BaseException:
         db.close()
@@ -535,13 +710,16 @@ def row_identity(item):
 
 def version_record(project_id, dataset_id, revision, manifest, index, splits, report, parent=None):
     content = digest({"streaming_lineage": index.summary, "row_schema": manifest["row_schema"]})
+    pin = {"schema": "modelbuilder.dataset-lineage-index/v1", "sha256": index.sha256}
+    if index.peak_index_bytes:
+        pin["peak_index_bytes"] = index.peak_index_bytes
     return {"schema": "modelbuilder.dataset/v1", "project_id": project_id, "dataset_id": dataset_id,
             "revision": revision, "version_id": digest({"manifest": manifest, "content_digest": content}),
             "parent_version_id": parent, "created_at": utcnow(), "name": manifest["name"],
             "benchmark": manifest["benchmark"], "license": manifest["license"], "manifest": manifest,
             "manifest_digest": digest(manifest), "content_digest": content, "row_count": len(index),
             "access_mode": "streaming", "lineage": index.summary, "splits": splits, "transformations": report,
-            "lineage_index": {"schema": "modelbuilder.dataset-lineage-index/v1", "sha256": index.sha256}}
+            "lineage_index": pin}
 
 
 def split_identity(record, split_id, purpose):

@@ -248,7 +248,8 @@ Explicit ordered `sample_ids` remain available for smaller curated splits.
 The service streams ingestion and builds a private SQLite lineage index beside
 its application database, in `<database-name>.dataset-lineage/`. This contains
 sample identities, source row positions/byte spans, row hashes, split membership
-and transformation fingerprints, **never row bodies or private text**. Standard
+and transformation fingerprints. Sampling keeps declared stratum values in a
+temporary distinct-value table, erased before publishing the lineage index. Standard
 SQLite indexes implement global identity uniqueness, stable deduplication and
 training-only decontamination without in-memory ID sets. All transformations
 retain their declared ordering, including filtering before schema validation.
@@ -278,7 +279,9 @@ operator configuration (all values are positive integers):
     "max_rows": 100000000,
     "max_row_bytes": 1048576,
     "max_decoded_bytes": 549755813888,
-    "max_index_bytes": 34359738368
+    "max_index_bytes": 34359738368,
+    "max_sampling_strata": 10000,
+    "max_report_bytes": 16777216
   }
 }
 ```
@@ -291,6 +294,47 @@ and disk-backed sorts, so sufficient local temporary disk is required in additio
 to index storage. Preview remains at most 100 rows/1 MiB regardless of these caps.
 This is a bounded resource policy, not a claim that every configured maximum has
 been benchmarked or is a good fit for a particular computer.
+
+Streaming `rows.sample` uses the same policy validation, constructive quota
+planner and SHA256 ranking as eager sampling. It samples each selected split
+across all its shards after preceding transformations. `proportional` preserves
+the input stratum shares; `equal` requests equal shares. Required strata and
+minimum coverage are allocated before checking the declared share tolerance.
+An absent split/category, missing selected evidence, infeasible coverage or
+infeasible tolerance blocks preparation. Unselected splits are preserved and
+need no sampling fields. Source counts are evidence; there is no implicit source
+balancing or source cap. Source caps would require a separate explicit policy.
+
+SQLite holds temporary distinct stratum values, ranks and winner membership under the same
+index budget, using indexed quota seeks rather than Python collections of IDs
+or row bodies. The default sampling cap allows 10,000 split/stratum pairs per
+stage, and the transformation report is capped at 16 MiB. Both caps are operator
+configurable and rechecked when reusing an index, including after restart.
+Report budgets use canonical UTF-8 JSON consistently during construction and
+cache reuse, irrespective of SQLite's internal JSON escaping. Physical index
+high-water bytes are recorded in `lineage_index` and enforced with actual file
+size on reuse; they do not contribute to semantic lineage/content/version hashes.
+Temporary values are erased and ranking/winner tables removed after membership is chosen; source bytes and
+all original row lineage remain pinned. Output follows original source order;
+consumption follows any explicit split order.
+
+Sampling reports retain representation, source counts, selected count and the
+same policy and canonical selection digests as eager access. They omit the
+unbounded selected-ID list. Unicode selection digests use the eager canonical
+JSON escaping. Overall streaming dataset/version/consumption identities retain
+their existing schemas. Preparation records examples available for use; only
+the consumption tracker records examples actually consumed.
+
+Compilation cooperatively observes the existing worker `cancel.json` signal
+during hashing, ingestion, SQLite ranking/filtering and publication preparation.
+Cancelled compilation removes its incomplete index and publishes no version.
+Local callers can scope that same signal with `compilation_context(cancel_file)`;
+portable loading accepts `cancel_file`. Parquet continues to require the pinned
+optional decoder and verified Linux containment; Mac/Windows reject at that
+boundary rather than decoding in-process.
+The decoder's bounded pipe wait also observes that signal while output is stalled
+or only a partial record is available. Its existing ten-minute stall deadline,
+output bounds, decoder slots and owned-child cleanup remain enforced.
 
 Streaming Parquet retains the optional exact PyArrow pin and Linux-only hard
 memory boundary. It passes an already-open, checked descriptor to an isolated

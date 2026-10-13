@@ -386,8 +386,8 @@ def plan_quotas(counts, total, allocation, minimum, required=()):
     return result
 
 
-def sample_rows(indexed, spec):
-    """Largest-remainder allocation, SHA256 ranking, stable original row order."""
+def validate_sampling_spec(spec):
+    """Shared eager/streaming policy checks; return canonical required keys."""
     Draft202012Validator(SAMPLE_SCHEMA).validate(spec)
     if type(spec['min_per_stratum']) is not int:
         raise ValueError('Minimum coverage requires an actual integer')
@@ -397,6 +397,24 @@ def sample_rows(indexed, spec):
     required = [digest(value) for value in spec['required_strata']]
     if len(required) != len(set(required)):
         raise ValueError('Required strata must be unique')
+    return required
+
+
+def sampling_quotas(counts, spec, required):
+    """Construct coverage before checking the selected representation tolerance."""
+    total = int(Fraction(sum(counts.values())) * _number(spec['fraction']))
+    allocation = plan_quotas(counts, total, spec['allocation'], spec['min_per_stratum'], required)
+    rule = {key: spec[key] for key in ('allocation', 'min_per_stratum', 'max_share_error')}
+    outcome, reasons, observed = representation({**rule, 'required_strata': required},
+                                               {'before': counts, 'after': allocation})
+    if outcome != 'passed':
+        raise ValueError('Sampling representation blocked: ' + ','.join(reasons))
+    return allocation, observed
+
+
+def sample_rows(indexed, spec):
+    """Largest-remainder allocation, SHA256 ranking, stable original row order."""
+    required = validate_sampling_spec(spec)
     ids = [item['sample_id'] for item in indexed]
     if any(type(value) is not str or not value for value in ids) or len(set(ids)) != len(ids):
         raise ValueError('Sampling requires unique nonempty sample identities')
@@ -413,14 +431,7 @@ def sample_rows(indexed, spec):
     selected, reports = set(), []
     for split, strata in sorted(groups.items()):
         counts = {key: len(rows) for key, rows in strata.items()}
-        if set(required) - counts.keys():
-            raise ValueError('A declared required stratum is absent from the input split')
-        total = int(Fraction(sum(counts.values())) * _number(spec['fraction']))
-        allocation = plan_quotas(counts, total, spec['allocation'], spec['min_per_stratum'], required)
-        rule = {'allocation': spec['allocation'], 'min_per_stratum': spec['min_per_stratum'], 'max_share_error': spec['max_share_error'], 'required_strata': required}
-        outcome, reasons, observed = representation(rule, {'before': counts, 'after': allocation})
-        if outcome != 'passed':
-            raise ValueError('Sampling representation blocked: ' + ','.join(reasons))
+        allocation, observed = sampling_quotas(counts, spec, required)
         for row in observed['strata']:
             row['stratum_values'] = {key: strata[row['stratum']][0]['row'][key] for key in spec['fields']}
         for key, rows in strata.items():

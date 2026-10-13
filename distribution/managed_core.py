@@ -13,6 +13,7 @@ import contextlib
 import hashlib
 import json
 import os
+import platform
 from pathlib import Path
 import secrets
 import socket
@@ -201,6 +202,18 @@ def load_source_roots(state: Path, defaults: dict) -> dict:
     return {**defaults, **aliases}
 
 
+def optional_mlx_available(manifest: dict, system: str | None = None, version: str | None = None) -> bool:
+    if not manifest.get("mlx_python") or (system or platform.system()) != "Darwin":
+        return False
+    required = manifest.get("mlx_minimum_os")
+    if not isinstance(required, str):
+        return False
+    try:
+        return tuple(map(int, (version or platform.mac_ver()[0]).split(".")[:2])) >= tuple(map(int, required.split(".")))
+    except ValueError:
+        return False
+
+
 def make_application(root: Path, state: Path, manifest: dict, token: str):
     from modelbuilder.api import create_app
     from modelbuilder.service import OperationService
@@ -237,7 +250,7 @@ def make_application(root: Path, state: Path, manifest: dict, token: str):
         from modelbuilder.backend import ZenMLBackend
         backend = ZenMLBackend(data_dir=state, python_executable=str(relative_file(root, manifest["backend_python"])),
                                source_root=workspace, trusted_code_roots=[str(workspace)] if workspace else [],
-                               mlx_python_executable=str(relative_file(root, manifest["mlx_python"])) if manifest.get("mlx_python") else None)
+                               mlx_python_executable=str(relative_file(root, manifest["mlx_python"])) if optional_mlx_available(manifest) else None)
     defaults = {"local": {"path": str(workspace), "trusted": True, "label": "Local model source"}} if workspace else {}
     source_roots = load_source_roots(state, defaults)
     service = OperationService(db_path=state / "modelbuilder.sqlite3", backend=backend,

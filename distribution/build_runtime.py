@@ -120,8 +120,10 @@ def build_runtime(inputs_file: Path, output: Path) -> dict:
     manifest["git_provenance"] = {"source_url": inputs["git"]["source_url"], "archive_sha256": inputs["git"]["sha256"], "notice": inputs["git"]["notice"]}
     shutil.copyfile(verified_input(base, inputs["source_bundle"]), output / "source.bundle")
     if target.startswith("darwin-"):
-        floors = [macos_floor(output, inputs[component]["python"].get("minimum_os")) for component in components]
-        manifest["minimum_os"] = max(floors, key=lambda value: tuple(map(int, value.split("."))))
+        floors = {component: macos_floor(output / (component + "-python"), inputs[component]["python"].get("minimum_os")) for component in components}
+        manifest["minimum_os"] = max((floor for component, floor in floors.items() if component != "mlx"), key=lambda value: tuple(map(int, value.split("."))))
+        if "mlx" in floors:
+            manifest["mlx_minimum_os"] = floors["mlx"]
     (output / "runtime.json").write_text(json.dumps(manifest, indent=2) + "\n")
     return seal_runtime(output, target)
 

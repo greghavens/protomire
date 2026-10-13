@@ -267,3 +267,11 @@ def test_native_source_registration_project_isolation_restart_and_replacement(ru
     assert entries[0]["operator_trusted"] is False
     assert receipt["repository_id"] != entries[0]["repository_id"]
     close(process)
+
+
+def test_optional_mlx_is_disabled_without_import_on_older_macos():
+    manifest = {"mlx_python": "mlx-python/python", "mlx_minimum_os": "26.0"}
+    assert core.optional_mlx_available(manifest, "Darwin", "26.0")
+    assert not core.optional_mlx_available(manifest, "Darwin", "15.7")
+    assert not core.optional_mlx_available(manifest, "Linux", "26.0")
+    assert not core.optional_mlx_available({"mlx_python": "anything"}, "Darwin", "26.0")

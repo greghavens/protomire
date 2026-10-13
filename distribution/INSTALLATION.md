@@ -98,10 +98,10 @@ Builder input JSON uses these fields (paths are relative to the JSON file):
   (relative to the extracted archive), and `notice` (relative to runtime output,
   for example `notices/CPython-LICENSE.txt`). Python archives also declare
   `version`, matching `.python-version` exactly. macOS archives also declare
-  `minimum_os`; the builder raises that floor to the highest installed native
-  wheel requirement and stamps the application Info.plist accordingly. A profile
-  including the reviewed MLX metal macOS 26 wheels requires macOS 26, even when
-  the editor shell supports older macOS versions.
+  `minimum_os`; the builder computes mandatory service/backend minima independently and stamps
+  that base floor in Info.plist. Optional MLX keeps its own minimum OS and is
+  not configured or imported on older hosts. The reviewed MLX metal profile
+  needs macOS 26; that does not raise the base app minimum to macOS 26.
 - Each wheel description includes `path` and `sha256`
 
 Only reviewed official artifact sources belong in those provenance fields.

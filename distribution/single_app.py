@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import plistlib
+import platform
 import re
 import secrets
 from pathlib import Path
@@ -40,11 +41,13 @@ def safe_version(value: str) -> str:
     return value
 
 
-def macos_floor(root: Path, declared: str) -> str:
+def macos_floor(root: Path, declared: str, exclude_prefixes: tuple[str, ...] = ()) -> str:
     if not isinstance(declared, str) or not re.fullmatch(r"[0-9]+\.[0-9]+", declared):
         raise ValueError("macOS runtime inputs require an explicit minimum_os, including their Python build floor")
     minima = [tuple(map(int, declared.split(".")))]
     for wheel in root.rglob("*.dist-info/WHEEL"):
+        if wheel.relative_to(root).parts[0] in exclude_prefixes:
+            continue
         tags = re.findall(r"macosx_([0-9]+)_([0-9]+)_(?:arm64|x86_64|universal2)", wheel.read_text())
         if tags:
             minima.append(min(tuple(map(int, tag)) for tag in tags))
@@ -129,7 +132,8 @@ def seal_runtime(root: Path, target: str) -> dict:
             raise ValueError("The reviewed MLX runtime is Apple Silicon only")
         relative_file(root, manifest["mlx_python"])
         provenance_fields.append("mlx_python_provenance")
-    if target.startswith("darwin-") and macos_floor(root, manifest.get("minimum_os")) != manifest["minimum_os"]:
+    optional_prefixes = (Path(manifest["mlx_python"]).parts[0],) if manifest.get("mlx_python") else ()
+    if target.startswith("darwin-") and macos_floor(root, manifest.get("minimum_os"), optional_prefixes) != manifest["minimum_os"]:
         raise ValueError("Declared macOS minimum is below an installed native wheel's floor")
     for field in provenance_fields:
         metadata = manifest.get(field, {})
@@ -147,7 +151,13 @@ def seal_runtime(root: Path, target: str) -> dict:
         if backend_reason(target) is None:
             probes["backend"] = probe_python(moved, manifest["backend_python"], ["modelbuilder.backend.sdk", "zenml", "torch"], expected_version)
         if manifest.get("mlx_python"):
-            probes["mlx"] = probe_python(moved, manifest["mlx_python"], ["mlx.core", "mlx_lm"], expected_version)
+            required = manifest.get("mlx_minimum_os")
+            if not isinstance(required, str) or not re.fullmatch(r"[0-9]+\.[0-9]+", required):
+                raise ValueError("Optional MLX requires its own declared macOS floor")
+            if tuple(map(int, platform.mac_ver()[0].split(".")[:2])) >= tuple(map(int, required.split("."))):
+                probes["mlx"] = probe_python(moved, manifest["mlx_python"], ["mlx.core", "mlx_lm"], expected_version)
+            else:
+                probes["mlx"] = {"status": "disabled_on_this_host", "minimum_os": required}
         git = relative_file(moved, manifest["git_executable"])
         git_env = {key: value for key, value in os.environ.items() if key in {"PATH", "SYSTEMROOT", "WINDIR", "LANG"}}
         git_exec = Path(subprocess.check_output([str(git), "--exec-path"], env=git_env, text=True, timeout=30).strip())
@@ -228,7 +238,8 @@ def stage(app: Path, payload: Path, output: Path, target: str) -> dict:
     product.pop("downloadUrl", None)
     (destination / "product.json").write_text(json.dumps(product, indent=2) + "\n")
     if target.startswith("darwin-"):
-        floor = macos_floor(core, manifest.get("minimum_os"))
+        optional_prefixes = (Path(manifest["mlx_python"]).parts[0],) if manifest.get("mlx_python") else ()
+        floor = macos_floor(core, manifest.get("minimum_os"), optional_prefixes)
         info_path = destination.parents[1] / "Info.plist"
         info = plistlib.loads(info_path.read_bytes())
         old = str(info.get("LSMinimumSystemVersion", "0.0")).split(".")[:2]

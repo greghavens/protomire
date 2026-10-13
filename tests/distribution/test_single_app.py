@@ -284,3 +284,24 @@ def test_macos_floor_comes_from_installed_wheel_tags_and_updates_bundle(tmp_path
     packaging.stage(app, payload, output, "darwin-arm64")
     info = plistlib.loads((packaging.application_root(output, "darwin-arm64").parents[1] / "Info.plist").read_bytes())
     assert info["LSMinimumSystemVersion"] == "26.0"
+
+
+def test_optional_mlx_floor_does_not_raise_base_application_minimum(payload, tmp_path):
+    retarget(payload, "darwin-arm64")
+    optional = payload / "mlx-python/lib/site-packages/mlx_metal.dist-info/WHEEL"
+    optional.parent.mkdir(parents=True)
+    optional.write_text("Tag: cp312-cp312-macosx_26_0_arm64\n")
+    (payload / "mlx-python/python").write_text("inert optional interpreter")
+    required = payload / "backend-libs/torch.dist-info/WHEEL"
+    required.parent.mkdir(parents=True)
+    required.write_text("Tag: cp312-none-macosx_14_0_arm64\n")
+    manifest = json.loads((payload / "runtime.json").read_text())
+    manifest.update(minimum_os="14.0", mlx_minimum_os="26.0", mlx_python="mlx-python/python")
+    manifest["files"] = packaging.inventory(payload)
+    (payload / "runtime.json").write_text(json.dumps(manifest))
+    assert packaging.macos_floor(payload, "11.0", ("mlx-python",)) == "14.0"
+    app = app_fixture(tmp_path / "app", "darwin-arm64")
+    output = tmp_path / "staged"
+    packaging.stage(app, payload, output, "darwin-arm64")
+    info = plistlib.loads((packaging.application_root(output, "darwin-arm64").parents[1] / "Info.plist").read_bytes())
+    assert info["LSMinimumSystemVersion"] == "14.0"

@@ -1,6 +1,6 @@
 # Current verification and remaining gates
 
-## Latest acceptance status, 2026-10-13 22:06 UTC
+## Latest acceptance status, 2026-10-13 23:00 UTC
 
 Runtime remains `33397ea30361b9c51dfb6bde219fd5f58c59dc10`, with both
 163-file shipping closures verified. [Current receipt](../evidence/product-completion-20261013/current-33397ea-acceptance.json)
@@ -18,9 +18,12 @@ separates scoped passes from incomplete acceptance.
 - Separate native groups: integration 65 passed; lifecycle 30 passed with one
   public pretrained rights-admission refusal; concurrency 18 passed (4 deselected).
   Components first completed with 649 passes, 11 skips and one fixture failure.
-  The fixture correction passed its two focused tests, but the full rerun was
-  killed before JUnit completion. Its log showed two failures without tracebacks;
-  the cause remains unconfirmed. **No complete native aggregate pass is claimed.**
+  An initial corrected rerun was killed without JUnit; its cause remains
+  unconfirmed. After verified archival cleanup of temporary installations, the
+  complete corrected component group passed **650 tests, with 11 skips**, in
+  1,086.080 seconds. Pytest, runner and orchestration exited 0; cleanup completed
+  with zero signals. Prior failed/incomplete evidence remains preserved.
+  **No complete native aggregate pass is claimed.**
 - Native queue receipts now preserve atomic progress, completed-group evidence
   and explicit unfinished state. The interrupted rerun retained actual exit and
   confirmed cleanup; 128 integrated tooling tests passed (one deselected).

@@ -1,0 +1,14 @@
+{
+  "recorded_at": "2026-10-13T23:01:02.654747+00:00",
+  "status": "CONTRACTS_PASSED_NATIVE_NOT_RUN",
+  "combined_trainer_streaming_passed": 80,
+  "seconds": 1.61,
+  "ruff": "passed",
+  "runtime_changes": false,
+  "runtime_commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
+  "remaining": "Actual installed streaming execution and scientific receipt review; Parquet and streaming exact-state continuation are outside this driver.",
+  "evidence": {
+    "tests.log": "c591fff914b9af40f77b0f9133e83405ed28c443193cbeeffbec3d0cb4bb6475",
+    "tests.xml": "f500f31b6494d08fa6d0f129bd7c8fda515b84e34dbc17027a02ba9399effd6f"
+  }
+}

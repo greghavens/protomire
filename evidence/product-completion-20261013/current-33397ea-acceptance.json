@@ -1,5 +1,5 @@
 {
-  "recorded_at": "2026-10-13T22:07:17.726020+00:00",
+  "recorded_at": "2026-10-13T23:01:02.656487+00:00",
   "status": "SCOPED_INSTALLED_REPLAY_PASSED_AGGREGATE_INCOMPLETE",
   "installed_replay": {
     "additional_driver": {
@@ -30,11 +30,12 @@
     "lifecycle": "30 passed, 1 public pretrained rights admission refusal.",
     "components_first": "649 passed, 11 skipped, 1 incomplete test fixture failure; exit1 with cleanup complete.",
     "components_corrected": "Incomplete SIGKILL returncode-9 after291.629s, missing JUnit;207 pass/6skip/2fail log observations only. Runner exit1; cleanup complete with2signaled processes. Cause unconfirmed.",
-    "concurrency": "18 passed,4deselected; exit0 with cleanup complete."
+    "concurrency": "18 passed,4deselected; exit0 with cleanup complete.",
+    "components_recovered_memory": "650 passed,11 skipped,0 failures/errors in1086.080s. Actual pytest/runner/orchestration exits0; finalizedcleanupcomplete0signals. Full componentgroup only, not aggregate."
   },
   "fixture_correction": "Production already supplies job_dir. Direct-entrypoint fixture corrected;2focused backend tests passed. Full corrected component group not accepted.",
   "remaining": [
-    "Complete corrected component/native acceptance.",
+    "Complete aggregate native acceptance; public pretrained rights admission remains unresolved.",
     "Installed Trainer and streaming scientific acceptance.",
     "Current Mac GUI acceptance, signing and clean-machine installation.",
     "Other platform and external integration gates remain as recorded."
@@ -43,6 +44,7 @@
   "evidence_hashes": {
     "evidence/installed-runtime-33397ea-20261013T2154/evidence/summary.json": "937f4fbede234efaf3c2c38cae10b4bd3457b809fbcdd8b902fa03a890abba0c",
     "evidence/rules-20261013/component-fixture-rerun-2159/completion.json": "5eade6f4da95c4eae125acce4259b88e51ef58672fa199634d15d952517e087d",
-    "evidence/rules-20261013/native-group-reruns-2124/completion.json": "47df2024c3a2fbf0a8d55958a40fc6c921508bc2d516a6ba0eeec9ad61e21cb5"
+    "evidence/rules-20261013/native-group-reruns-2124/completion.json": "47df2024c3a2fbf0a8d55958a40fc6c921508bc2d516a6ba0eeec9ad61e21cb5",
+    "evidence/rules-20261013/component-recovered-memory-2241/completion.json": "680cdb453a3a31887e7535ad229e7dbdfa1d1f39ed8d5a927b4409b54ab55cbe"
   }
 }

@@ -6,7 +6,7 @@ Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATI
 
 ## Current runtime 33397ea
 
-The current runtime has 163 pinned files. See [latest scoped results and open gates](CURRENT_VERIFICATION.md#latest-acceptance-status-2026-10-13-2206-utc). The installed synthetic replay passed its scientific and immutability scope, while strict artifact equality remains 34/35 and full native/GUI/product acceptance remains incomplete. Older candidate sections below are historical.
+The current runtime has 163 pinned files. See [latest scoped results and open gates](CURRENT_VERIFICATION.md#latest-acceptance-status-2026-10-13-2300-utc). The installed synthetic replay passed its scientific and immutability scope, while strict artifact equality remains 34/35 and full native/GUI/product acceptance remains incomplete. Older candidate sections below are historical.
 
 ## Guided quickstart correction
 

@@ -7,14 +7,120 @@ Does not alter the dependency templates, shipping manifests or any user policies
 """
 import argparse
 import datetime
+from decimal import Decimal
 import hashlib
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+
+
+REVIEW_MANIFESTS = frozenset({
+    "initial/checkpoint.manifest.json", "train/checkpoint.manifest.json", "export/export.manifest.json",
+})
+
+
+def _json_differences(left, right, pointer=""):
+    """Return exact structural differences as escaped JSON pointers."""
+    if type(left) is not type(right):
+        return [pointer]
+    if isinstance(left, dict):
+        result = []
+        for key in sorted(left.keys() | right.keys()):
+            child = pointer + "/" + key.replace("~", "~0").replace("/", "~1")
+            result.extend([child] if key not in left or key not in right
+                          else _json_differences(left[key], right[key], child))
+        return result
+    if isinstance(left, list):
+        result = []
+        for index in range(max(len(left), len(right))):
+            child = pointer + "/" + str(index)
+            result.extend([child] if index >= len(left) or index >= len(right)
+                          else _json_differences(left[index], right[index], child))
+        return result
+    return [] if left == right else [pointer]
+
+
+def _unique_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate JSON key: " + key)
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value):
+    raise ValueError("Nonfinite JSON value: " + value)
+
+
+def _finite_json_float(value):
+    result = float(value)
+    if not math.isfinite(result):
+        _reject_json_constant(value)
+    return result
+
+
+def audit_review_provenance(origin, replay):
+    """Read original artifacts; never normalize the strict comparison or files.
+
+    Only the three explicit synthetic-fixture rights envelopes may differ. Keep
+    exact original text/hashes in this separate receipt, including failed audits.
+    """
+    hashes = {"origin": origin["output_sha256"], "replay": replay["output_sha256"]}
+    different = sorted(name for name in hashes["origin"].keys() | hashes["replay"].keys()
+                       if hashes["origin"].get(name) != hashes["replay"].get(name))
+    checks = {
+        "same_output_paths": hashes["origin"].keys() == hashes["replay"].keys(),
+        "only_expected_manifests_differ": set(different) == REVIEW_MANIFESTS,
+        "original_manifests_verified": True,
+        "explicit_rights_objects_present": True,
+        "differences_confined_to_rights": True,
+    }
+    manifests, errors = {}, []
+    for name in sorted(REVIEW_MANIFESTS):
+        row = {"originals": {}, "different_json_paths": []}
+        exact_values = {}
+        for role, run in (("origin", origin), ("replay", replay)):
+            path = Path(run["data_dir"]) / "backend/jobs" / run["run"]["operation_id"] / "outputs" / name
+            original = {"path": str(path)}
+            row["originals"][role] = original
+            try:
+                if path.is_symlink():
+                    raise ValueError("Manifest is a symlink")
+                raw = path.read_bytes()
+                original.update(sha256=hashlib.sha256(raw).hexdigest(), json_text=raw.decode("utf-8"))
+                if original["sha256"] != hashes[role].get(name):
+                    raise ValueError("Manifest bytes differ from recorded run hash")
+                value = json.loads(original["json_text"], object_pairs_hook=_unique_json_object,
+                                   parse_constant=_reject_json_constant, parse_float=_finite_json_float)
+                if not isinstance(value, dict) or not isinstance(value.get("rights"), dict):
+                    checks["explicit_rights_objects_present"] = False
+                    raise ValueError("Manifest requires an explicit rights object")
+                original.update(manifest=value, rights=value["rights"])
+                # Compare decimal values without binary-float rounding hiding drift.
+                # The receipt remains ordinary JSON; json_text retains exact numbers.
+                exact_values[role] = json.loads(original["json_text"], parse_float=Decimal)
+            except (OSError, ValueError) as error:
+                errors.append({"manifest": name, "role": role, "error": str(error)})
+                checks["original_manifests_verified"] = False
+        if all("manifest" in row["originals"][role] for role in ("origin", "replay")):
+            row["different_json_paths"] = _json_differences(
+                exact_values["origin"], exact_values["replay"])
+            row["rights_only"] = bool(row["different_json_paths"]) and all(
+                pointer.startswith("/rights/") for pointer in row["different_json_paths"])
+        else:
+            row["rights_only"] = False
+        checks["differences_confined_to_rights"] &= row["rights_only"]
+        manifests[name] = row
+    return {"status": "PASS" if all(checks.values()) else "FAIL", "checks": checks,
+            "allowed_difference_field": "/rights", "different_output_paths": different,
+            "manifests": manifests, "errors": errors,
+            "scope": "Structural rights-only audit; strict comparison and original artifact bytes remain unchanged"}
 
 
 def main():
@@ -120,15 +226,19 @@ def main():
     left, right = runs
     comparison = replay.compare_results(left, right)
     write("strict-comparison.json", comparison)
+    provenance = audit_review_provenance(left, right)
+    write("review-provenance-audit.json", provenance)
+    if provenance["status"] != "PASS":
+        raise AssertionError("Manifest differences are not verified rights-only; inspect review-provenance-audit.json")
     matching = [name for name in left["output_sha256"] if left["output_sha256"][name] == right["output_sha256"].get(name)]
     different = [name for name in left["output_sha256"] if name not in matching]
-    expected_differences = {"initial/checkpoint.manifest.json", "train/checkpoint.manifest.json", "export/export.manifest.json"}
-    assert len(matching) == 7 and set(different) == expected_differences
+    assert len(matching) == 7 and set(different) == REVIEW_MANIFESTS
     assert [name for name, value in comparison["checks"].items() if not value] == ["output_hashes_equal"]
     assert all(run["status"] == "PASS" and not run["run"]["worker_alive"] for run in runs)
     write("summary.json", {"status": "PASS", "scope": "Synthetic same-host CPU imported-snapshot review; not shipping/native installer acceptance",
         "source_commit": commit, "source_files": len(bundle["files"]), "actual_git_free_runs": 2,
         "scientific_outputs_matching": matching, "independent_review_provenance_differences": different,
+        "review_provenance_audit": "review-provenance-audit.json", "all_manifest_differences_under": "/rights",
         "strict_byte_comparison_status": comparison["status"], "strict_failed_checks": ["output_hashes_equal"],
         "single_owned_recipe_identity": all(replay.valid_recipe_identity(run["recipe_identity"]) for run in runs),
         "installed_source_verified": all(run["installed_source_verified"] for run in runs), "worker_alive": [False, False]})

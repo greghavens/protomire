@@ -8,13 +8,30 @@ The intended end-user install is one app:
 
 **An unsigned macOS arm64 development DMG has been built and tested on the
 Mac build host. There is no published, signed, clean-machine-accepted release.**
-That artifact pins runtime `2e60975`; it does not contain later source changes.
-Its mounted payload passed strict integrity, CLI/import-location and five managed
-service/MCP lifecycle checks. Bundled MPS and MLX checks passed separately.
-Native visual testing, signing/notarization and clean-machine acceptance remain
-open. The complete evidence archive is preserved on the build host; its latest
-Library upload is blocked. Linux AppImage and Windows installers are not built.
-See [current verification](../docs/CURRENT_VERIFICATION.md) for exact scope.
+The current development artifact is candidate `f99c5d5`, pinning runtime
+`1dc969898d8c30a8a0c0a0e590e696639138e588` and both verified **151-file**
+source/lock closures. Its **45,375-file** sealed payload passed CLI and four
+runtime import-location checks, `hdiutil verify`, and six mounted managed-core,
+MCP and snapshot tests (7 deselected), including Git-free registration/restart.
+The mounted test process exited 0 and detached successfully. Separate bundled
+MPS (1 passed/24 deselected), MLX (6 passed in one run), snapshot/rights/packaging
+(116 passed) and frontend (528 passed) selections also passed.
+
+The artifact is `modelbuilder-ide-0.1.0-darwin-arm64-dev-unsigned.dmg`,
+**1,153,628,971 bytes**, with Mac-build-host-reported SHA256
+`7392b41f68df72e4958facc96bc98efd00a5774429c9f8f1cbe86b18ec26c9c8`.
+These are **build-host verified** results. The terminal report is retained, but the full raw evidence archive has not
+been independently retrieved into this verification workspace because
+its evidence-backup upload route is blocked. The archive remains on the build host;
+[scoped evidence and archive hash](../evidence/product-completion-20261013/acceptance-1dc9698/mac-native-executor-report.json)
+retain that limit. The earlier `2e60975` DMG is historical and is not relabeled.
+
+Native visual testing remains blocked by the locked Mac. Signing/notarization,
+clean-machine acceptance and canonical reproducible installer verification remain
+open. Linux AppImage and Windows installers are not built. The full Linux
+aggregate finished with exit 1 solely at the public pretrained rights gate;
+its remaining failure is not resolved by these Mac passes. See
+[current verification](../docs/CURRENT_VERIFICATION.md) for exact scope.
 Do not present development Python/bootstrap/service commands as an end-user
 installation path. Unit tests or a package recipe alone are not installer proof.
 
@@ -105,10 +122,11 @@ release gate. Artifact names derive the application version from the verified wh
 and product metadata, independently of the upstream editor version.
 
 Native packaging and a clean-machine
-launch/close/restart/persistence/MCP smoke test are separate gates. Mac native
-packaging has not been run here; Windows has not been run here. Linux's existing
-upstream npm-cache/network blocker and missing reviewed relocatable runtime
-inputs still prevent an actual artifact in this environment.
+launch/close/restart/persistence/MCP smoke test are separate gates. macOS native
+packaging and mounted build-host checks have run for the candidate above;
+clean-machine acceptance remains unverified. Windows has not been run. Linux's
+existing upstream npm-cache/network blocker and missing reviewed relocatable
+runtime inputs still prevent an actual artifact in this environment.
 
 Builder input JSON uses these fields (paths are relative to the JSON file):
 

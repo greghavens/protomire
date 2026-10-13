@@ -1,0 +1,28 @@
+{
+  "candidate_commit": "f99c5d5024090a20c30ba9077b9614ac2ea86475",
+  "runtime_commit": "1dc969898d8c30a8a0c0a0e590e696639138e588",
+  "source_files": 151,
+  "both_shipping_closures_identical": true,
+  "source_lock_inventory_sha256": "5b2bcca25e98b9bf8772189ade4795393587ee7cb08ebd83140bcf2c47a3ced4",
+  "inventory_hash_encoding": "SHA256 of UTF-8 JSON sorted by path, object keys sorted, compact separators, no final newline",
+  "recipes": [
+    {
+      "path": "examples/custom-pytorch/recipe.json",
+      "sha256": "59b3ee4b3f70a33b305ecea2dd034a1f139398ad29608726b93eaccdd277d6c2",
+      "source_commit": "1dc969898d8c30a8a0c0a0e590e696639138e588",
+      "source_files": 151,
+      "working_tree_matches": true,
+      "runtime_commit_matches": true
+    },
+    {
+      "path": "examples/pretrained-small/recipe.json",
+      "sha256": "9c64fdc281eb056e7bda5198194258487b733df3a8b5beaee5f8115a6c300778",
+      "source_commit": "1dc969898d8c30a8a0c0a0e590e696639138e588",
+      "source_files": 151,
+      "working_tree_matches": true,
+      "runtime_commit_matches": true
+    }
+  ],
+  "tracked_working_tree_clean_at_receipt_preparation": true,
+  "verification_scope": "Independently checked in the verification workspace against working-tree bytes and all 151 runtime-commit blobs; no source, test or recipe changes."
+}

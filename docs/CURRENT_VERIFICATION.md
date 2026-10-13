@@ -1,18 +1,111 @@
 # Current verification and remaining gates
 
-## Latest source: snapshot and generated-data lineage, acceptance running
+## Latest frozen candidate: aggregate complete with one rights-gate failure
 
-Runtime commit `1dc969898d8c30a8a0c0a0e590e696639138e588` adds reviewed
-Git-free source intake and preserves inherited rights through generation,
-judging, selected-subgraph reuse and prepared-dataset registration. Both shipping
-recipes now pin its complete **151-file** source/lock closure. Source-pin and
-portable wheel checks passed **50 tests**; the combined frontend passed
-**528 tests** with type checks and compilation. The pre-repin light diagnostic
-passed **2,673 tests**, with 140 skipped and 90 deselected, explicitly excluding
-the two source-pin checks until repinning. Full integrated acceptance is running;
-these results do not resolve the public pretrained licensing gate or establish a
-complete-product release. The existing Mac DMG below still contains the older
-`2e60975` runtime.
+Candidate `f99c5d5024090a20c30ba9077b9614ac2ea86475` pins runtime
+`1dc969898d8c30a8a0c0a0e590e696639138e588` and the identical **151-file**
+source/lock closure in both shipping recipes. It implements reviewed Git-free
+source intake and inherited rights through generation, judging, selected-subgraph
+reuse and prepared-dataset registration. **The full local aggregate finished
+with exit 1; full-product acceptance remains incomplete.** Source publication
+does not establish a product release.
+
+### Completed frozen Linux aggregate
+
+- Light: **2,675 passed, 140 skipped, 88 deselected** in 198.96 seconds;
+  frontend: **528 passed** with type checks and compilation; offline Hub SDK:
+  **18 passed**; offline Modal SDK: **3 passed**.
+- Native lifecycle: **30 passed, 1 failed** in 1,183.43 seconds; integration:
+  **53 passed, 43 deselected** in 1,628.16 seconds; components: **522 passed,
+  8 skipped** in 681.86 seconds; concurrency: **18 passed, 4 deselected** in
+  424.72 seconds. All four native groups were attempted.
+- The queue completed in **2,054.807 seconds**, below the 2,100-second deadline.
+  Cleanup completed with **zero signaled processes**. Eight component skips
+  remain: four MLX boundary cases, two MLX service cases, one accelerator-Trainer
+  gate and one actual-CUDA gate.
+- The sole aggregate failure is
+  `test_pretrained_validation_selection_parent_and_export`, blocked at admission
+  by `license_rights_unreviewed`. The public pretrained rights issue remains
+  unresolved; no approval was fabricated and no check was weakened or excluded.
+  Component and concurrency groups now pass at this checkpoint; their older
+  failed attempts remain historical failures.
+- Service/workspace/source-pin/history HTTP checks, real local PDF/OCR HTTP/MCP
+  and native component-authoring checks completed. HTTP/dialog-double checks
+  and offline SDK tests do not establish native GUI or live-provider acceptance.
+
+The [compact acceptance record](../evidence/product-completion-20261013/acceptance-1dc9698/README.md)
+contains independently checked Linux receipt hashes, terminal counts, source
+inventory verification and explicit evidence scope. Overlapping selections are
+not summed as unique coverage.
+
+### Current installed-wheel Git-free public-review replay
+
+Two native executions passed through the public receiving-project source bind,
+local evidence review, source-policy bind and prepared-run workflow using
+Git-free imported snapshots. **The unchanged strict comparator failed, 34/35
+checks**, only at `output_hashes_equal`: **seven scientific output files, metrics
+and evaluation records match exactly**; three manifests differ exclusively
+under `/rights` with genuine independent policy/evidence and derived-lineage
+identities. No identity or comparator was normalized to force equality.
+
+Four fresh noneditable wheel environments and all four dependency checks passed.
+All 821 originally tracked checkout files, 151 frozen runtime files, imported
+source bytes and installed application bytes remained unchanged. Explicit
+installation-phase precompilation preceded the replay baseline; afterward no
+runtime/dependency bytecode changed. The unchanged final backend identity probe
+at `scripts/replay_bundle.py:535` uses `-I` without `-B`, so this precompiled
+baseline is **not sealed-payload immutability proof**. Both workers exited 0,
+were reaped with terminated process groups, and exact retries reconciled one
+operation/job per project.
+
+The synthetic review terms cover only self-authored fixture inputs and outputs.
+They do not clear third-party runtime/dependency redistribution, upstream data,
+public pretrained inputs or external publication. Each imported tree has the
+151 frozen files plus separately authored `TERMS.txt`; its synthetic author
+commit is transport provenance, not a new shipping-runtime identity. The first
+staging verifier incorrectly treated the ordinary `editables` dependency as an
+editable application; its failure is retained. The corrected verifier checks
+actual wheel metadata, editable hooks and `.pth` paths, without runtime changes.
+
+[Current replay receipt](../evidence/product-completion-20261013/acceptance-1dc9698/installed-wheel-replay.json)
+records the scoped result, unchanged strict comparison, exact output hashes,
+source/installation checks, cleanup and failed attempts. All **146 indexed raw
+receipt files** and their archive members were independently hash-verified here.
+The older 2e60975 replay is not inherited as current evidence. Scientific equality
+does not make the strict result or full product pass.
+
+### Exact-candidate Mac development DMG
+
+The native Mac build host verified both 151-file closures and clean source, sealed
+**45,375 payload files**, and built an **unsigned arm64 development DMG** for this
+candidate. Verified local outcomes are **6 MLX passes in one run**, **1 bundled
+MPS pass/24 deselected**, **6 mounted core/MCP/snapshot passes/7 deselected** in
+111.99 seconds (including Git-free registration and restart), **116
+snapshot/rights/packaging passes** and **528 frontend passes**. The mounted test
+process exited 0; CLI, four runtime import locations, `hdiutil verify` and detach
+passed.
+
+These results are **build-host verified**. The terminal report is retained here;
+the full raw Mac archive has **not been independently retrieved or hashed in
+this verification workspace**:
+the evidence-backup upload route is explicitly blocked. The complete 60,976,956-byte
+archive remains on the Mac build host. The
+[scoped Mac report](../evidence/product-completion-20261013/acceptance-1dc9698/mac-native-executor-report.json)
+records the build-host-reported DMG/archive hashes without publishing private paths.
+The DMG is 1,153,628,971 bytes; its filename is
+`modelbuilder-ide-0.1.0-darwin-arm64-dev-unsigned.dmg`.
+The earlier 2e60975 development DMG remains historical evidence.
+
+### Remaining gates
+
+Current native GUI remains blocked by the locked Mac. Signing/notarization,
+clean-machine acceptance and a canonical reproducible installer are unverified;
+no product release is published. Linux AppImage assembly still lacks offline
+editor/backend/toolchain inputs. Windows, Linux ARM64, actual CUDA, live providers,
+authenticated vendor assistants and online tracking remain unverified.
+Hostile-code isolation and redistribution clearance remain unresolved. Hosted CI
+remains disabled; these local checks are not a hosted-CI or full-product pass.
+Historical sections below preserve earlier attempts and their original scope.
 
 ## Historical 2e60975 runtime: failed aggregate and later repairs
 

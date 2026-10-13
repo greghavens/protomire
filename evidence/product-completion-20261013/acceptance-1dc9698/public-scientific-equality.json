@@ -1,0 +1,64 @@
+{
+  "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8",
+  "differing_provenance_manifests": {
+    "export/export.manifest.json": {
+      "origin": "dc41cf539e28b42b07376b5f7724e22b0d9f8fec91059bc1a18333a60fae9f36",
+      "replay": "0be849413133740a307dde9330eb09c60d3a43e8339d536c7b5165bd6fd7d85f"
+    },
+    "initial/checkpoint.manifest.json": {
+      "origin": "208b07b10c6b78628cb1368b7d84121051158291deaecd4553918c443ec4ae04",
+      "replay": "941d6e1ac95efc33277e8cb550dd7f38484ec60db71f7339e9ee7ac479ebabbc"
+    },
+    "train/checkpoint.manifest.json": {
+      "origin": "80cfdd188bf1ac22d973669e61386c2e670cda204ba12133b8a23368920391f9",
+      "replay": "6e81b0cfa788ff5f156c25f9baac5058aae36dd61e9df328b5216ada0ba6ee81"
+    }
+  },
+  "exact_evaluation_records_equal": true,
+  "exact_metrics_equal": true,
+  "independent_reviews": [
+    {
+      "policy_id": "447aeb39-a4ca-460f-af13-1763277d6cba",
+      "policy_sha256": "a491b07f29c601e17725a829b364c168ebb5f05c6809245abeda33f50a814e8a",
+      "public_operations": [
+        "project.source.list",
+        "project.get",
+        "project.source.bind",
+        "recipe.get",
+        "hub.license.local.inspect",
+        "hub.license.review",
+        "hub.source.policy.bind"
+      ],
+      "reviewed_at": "2026-10-13T07:03:09.328232+00:00",
+      "role": "origin",
+      "stored_policy_matches_review": true
+    },
+    {
+      "policy_id": "a2fb048b-08ef-41b3-bd5e-f3b654562a88",
+      "policy_sha256": "7620f1d26441bfb36dcd8a17fcd21f2e31bfe6b2a7535aad5099835cb6a30770",
+      "public_operations": [
+        "project.source.list",
+        "project.get",
+        "project.source.bind",
+        "recipe.get",
+        "hub.license.local.inspect",
+        "hub.license.review",
+        "hub.source.policy.bind"
+      ],
+      "reviewed_at": "2026-10-13T07:03:57.298234+00:00",
+      "role": "replay",
+      "stored_policy_matches_review": true
+    }
+  ],
+  "matching_outputs": {
+    "evaluate/metrics.json": "a4f5022efd3a8ec85a1ba647c6190f2e9a4958e6e9a5b7d523132a3b1671dbc5",
+    "export/loader.py": "e3ca9027bf2d230e7c2269c803d6d0bc0616a2f7fd02be944a51ef788d2454c5",
+    "export/model.pt": "8ca40a1f2a076b812bc3bef2345055245c9442a00af73ca070bd016aadb22552",
+    "export/parity.json": "3c7b2598547c009e971cfae2b8c9ee9aa7d1e23b328522eb30e380b7b30661c9",
+    "initial/checkpoint.pt": "9e64a77a85274f1be727aa1882ab16963cf78d608cd070256efc276699bcb517",
+    "train/best.pt": "ca38995a31e1668f8a6263848c6500c616c1b3ba620399f711a4c4bcc0553775",
+    "train/checkpoint.pt": "79ef76ee26282a52275ba951c66a412595b5942d86af11799ea48a7308377ebd"
+  },
+  "normalization_or_identity_rewriting": false,
+  "status": "SCIENTIFIC_OUTPUTS_EXACTLY_EQUAL_PROVENANCE_DIFFERS"
+}

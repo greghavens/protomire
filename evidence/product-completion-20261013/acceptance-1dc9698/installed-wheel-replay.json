@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "recorded_date_utc": "2026-10-13",
+  "candidate_commit": "f99c5d5024090a20c30ba9077b9614ac2ea86475",
+  "runtime_commit": "1dc969898d8c30a8a0c0a0e590e696639138e588",
+  "status": "COMPLETED_WITH_STRICT_COMPARISON_FAILURE",
+  "scope": "Two native Linux CPU executions through receiving-project public source bind, local evidence inspection, explicit synthetic fixture review, source policy bind, prepare/plan and run-prepared. Self-authored deterministic fixture inputs and outputs only.",
+  "terminal_result": {
+    "successful_native_executions": 2,
+    "fresh_noneditable_environments": 4,
+    "independent_native_stores": 2,
+    "offline_hash_locked_dependency_installs": true,
+    "pip_checks_passed": 4
+  },
+  "strict_comparison": {
+    "status": "FAIL",
+    "passed": 34,
+    "total": 35,
+    "failed_checks": [
+      "output_hashes_equal"
+    ],
+    "unchanged_receipt": "public-strict-comparison.json",
+    "comparator_weakened_or_outputs_normalized": false
+  },
+  "scientific_output_comparison": {
+    "status": "EXACT_SCIENTIFIC_EQUALITY_WITH_INDEPENDENT_RIGHTS_PROVENANCE",
+    "scientific_output_files_equal": 7,
+    "metrics_equal": true,
+    "evaluation_records_equal": true,
+    "differing_provenance_manifests": 3,
+    "all_differences_under": "/rights",
+    "reason": "Independent review policy IDs, evidence digests and derived rights-lineage digests are retained.",
+    "receipt": "public-scientific-equality.json"
+  },
+  "source_and_installed_bytes_verification": {
+    "bytecode_setup_documented": true,
+    "dependency_bytecode_changes": [
+      {
+        "added": {},
+        "after_count": 11614,
+        "before_count": 11614,
+        "changed": {},
+        "environment": "origin-backend",
+        "removed": []
+      },
+      {
+        "added": {},
+        "after_count": 2462,
+        "before_count": 2462,
+        "changed": {},
+        "environment": "origin-service",
+        "removed": []
+      },
+      {
+        "added": {},
+        "after_count": 11614,
+        "before_count": 11614,
+        "changed": {},
+        "environment": "replay-backend",
+        "removed": []
+      },
+      {
+        "added": {},
+        "after_count": 2462,
+        "before_count": 2462,
+        "changed": {},
+        "environment": "replay-service",
+        "removed": []
+      }
+    ],
+    "installed": [
+      {
+        "distribution_count": 71,
+        "installed_source_files": 113,
+        "kind": "service",
+        "not_editable": true,
+        "own_installed_modules": true,
+        "role": "origin",
+        "wheel_sha256": "2b4d0a24c07b78026c2a3c70659e9e73990a9c9ef34103a3b2ed7b4a3b502465"
+      },
+      {
+        "distribution_count": 104,
+        "installed_source_files": 88,
+        "kind": "backend",
+        "not_editable": true,
+        "own_installed_modules": true,
+        "role": "origin",
+        "wheel_sha256": "82d9b2d8b3ef30303fa466381291dc1f897632397a9708e2553a8557721c6264"
+      },
+      {
+        "distribution_count": 71,
+        "installed_source_files": 113,
+        "kind": "service",
+        "not_editable": true,
+        "own_installed_modules": true,
+        "role": "replay",
+        "wheel_sha256": "2b4d0a24c07b78026c2a3c70659e9e73990a9c9ef34103a3b2ed7b4a3b502465"
+      },
+      {
+        "distribution_count": 104,
+        "installed_source_files": 88,
+        "kind": "backend",
+        "not_editable": true,
+        "own_installed_modules": true,
+        "role": "replay",
+        "wheel_sha256": "82d9b2d8b3ef30303fa466381291dc1f897632397a9708e2553a8557721c6264"
+      }
+    ],
+    "installed_application_bytes_and_bytecode_unchanged": true,
+    "root_bytecode_unchanged": true,
+    "root_tracked_files_unchanged": 821,
+    "roots": [
+      {
+        "all_bytes_unchanged": true,
+        "frozen_runtime_files": 151,
+        "git_free": true,
+        "role": "origin",
+        "source_bytecode_files": 0,
+        "source_files": 152
+      },
+      {
+        "all_bytes_unchanged": true,
+        "frozen_runtime_files": 151,
+        "git_free": true,
+        "role": "replay",
+        "source_bytecode_files": 0,
+        "source_files": 152
+      }
+    ],
+    "status": "PASS"
+  },
+  "source_transport_provenance": {
+    "frozen_runtime_files": 151,
+    "imported_source_files": 152,
+    "additional_file": "TERMS.txt",
+    "synthetic_author_commit": "68e6d3aa90a1a6acf67bdcbc330c519c4f5a6820",
+    "synthetic_archive_sha256": "de2de43af9bd1dac0abae2794e6db87c6028ac5ed09e643274f0b175b74f4edb",
+    "explanation": "The separately authored fixture terms and synthetic author commit provide transport/review provenance, not a replacement claim about the shipping runtime or clearance for third-party code and dependencies."
+  },
+  "bytecode_baseline_limit": {
+    "setup": "Explicit installation-phase precompilation, with inventories captured before and after setup; the replay comparison baseline is after precompilation.",
+    "observed_runtime_dependency_bytecode_changes": 0,
+    "probe_observation": "The unchanged final backend identity probe at scripts/replay_bundle.py:535 uses -I without -B.",
+    "sealed_payload_immutability_established": false,
+    "no_bytecode_ever_created_claimed": false
+  },
+  "worker_cleanup": {
+    "idempotent_retries_one_operation_each": true,
+    "runs": [
+      {
+        "process_group_terminated": true,
+        "role": "origin",
+        "state_sha256": "3e81120c405765570dd51e48f2e5c618686c0380d6058c65ba1a70bdfc7749fe",
+        "termination_confirmed": true,
+        "worker_alive": false,
+        "worker_exit_code": 0,
+        "worker_reaped": true
+      },
+      {
+        "process_group_terminated": true,
+        "role": "replay",
+        "state_sha256": "468d83f1380c97487bacde34db6e4544ec598c8e579e602b43dce5fadcfd1be7",
+        "termination_confirmed": true,
+        "worker_alive": false,
+        "worker_exit_code": 0,
+        "worker_reaped": true
+      }
+    ],
+    "status": "PASS"
+  },
+  "attempts": [
+    {
+      "name": "Original staging-only verifier",
+      "status": "FAIL",
+      "reason": "Mistook the ordinary pinned editables dependency for an editable application install using a broad filename match. Original verifier and failed log retained.",
+      "raw_evidence_labels": [
+        "current-git-free-replay/verify.py",
+        "current-git-free-replay/logs/verify-orchestrator.log"
+      ]
+    },
+    {
+      "name": "Corrected staging-only verifier",
+      "status": "PASS_SCOPED_VERIFICATION",
+      "reason": "Checked actual wheel direct_url metadata, editable hooks and .pth paths; confirmed all four application installs are noneditable. Runtime and strict comparator remained unchanged.",
+      "raw_evidence_labels": [
+        "current-git-free-replay/verify-v2.py",
+        "current-git-free-replay/logs/verify-v2-orchestrator.log"
+      ]
+    },
+    {
+      "name": "Unchanged strict replay comparator",
+      "status": "FAIL",
+      "passed": 34,
+      "total": 35,
+      "failed_checks": [
+        "output_hashes_equal"
+      ],
+      "preserved": true
+    }
+  ],
+  "evidence_archive": {
+    "filename": "snapshot-f99c5d5-evidence.zip",
+    "bytes": 7756490,
+    "sha256": "8c1fe19d6a7b284814cecbed79316e80d1fa0e70636e0349a1fd2b274fdf27a5",
+    "indexed_files": 146,
+    "all_indexed_local_and_archive_member_hashes_verified": true,
+    "final_index_sha256": "7b0f8c12dd45f474de38f3c9618e05e863df602965334a5b69c23b6fb789fc7c"
+  },
+  "raw_receipt_hashes": [
+    {
+      "label": "current-git-free-replay/RESULTS.txt",
+      "bytes": 4429,
+      "sha256": "7c80b5dadc1581673432fa1032165f0d4c80dfe3a65d2c7bc1c5507fd16f9a50"
+    },
+    {
+      "label": "current-git-free-replay/reproduce.sh",
+      "bytes": 850,
+      "sha256": "50dff760243f67d574e4ec8fb1c8ef3503eece5ddfe00130c2683a1521b40e2c"
+    },
+    {
+      "label": "current-git-free-replay/verify.py",
+      "bytes": 10028,
+      "sha256": "91922026102f7ac69afb3f034c922f0cb4000ca5b23727b396ecb19339b97547"
+    },
+    {
+      "label": "current-git-free-replay/verify-v2.py",
+      "bytes": 10640,
+      "sha256": "29fa912e954cbb0c7cecc943553cd090d63fec0827ea27fbe64198536f449f27"
+    },
+    {
+      "label": "current-git-free-replay/logs/verify-orchestrator.log",
+      "bytes": 244,
+      "sha256": "6436699d383f75b7d3373ad0c0ff54ca2f7123355ccdbba6a7491e7704f10ab2"
+    },
+    {
+      "label": "current-git-free-replay/logs/verify-v2-orchestrator.log",
+      "bytes": 1822,
+      "sha256": "c3f755720d6ad428f4dc70e0f3a7a4fb855ee466fc0455536d322a43c697ac10"
+    },
+    {
+      "label": "current-git-free-replay/evidence/summary.json",
+      "bytes": 1822,
+      "sha256": "6ad8feba6d7479fddaa8321e4ec4339eb907d3f662edf515fb5f94643a16f087"
+    },
+    {
+      "label": "current-git-free-replay/evidence/strict-comparison.json",
+      "bytes": 2056,
+      "sha256": "bee46d11c480f7de381eaf7df86370de80811d925c584fa7595a81f397465643"
+    },
+    {
+      "label": "current-git-free-replay/evidence/scientific-equality.json",
+      "bytes": 2740,
+      "sha256": "94a8f21ae700952dbc70e5fa599647ccebedfca0bf7d18d4fd382353a30de294"
+    },
+    {
+      "label": "current-git-free-replay/evidence/manifest-differences.json",
+      "bytes": 3208,
+      "sha256": "1abb6dac969174d50fbbaccf3a1df5daa03a07b016a4b08583c437b63ba0a1a6"
+    },
+    {
+      "label": "current-git-free-replay/evidence/source-installation-integrity.json",
+      "bytes": 2467,
+      "sha256": "fa7169650b0d81d5438d37580da89850842ade76afe0c87cd5b4fc6b506ee51e"
+    },
+    {
+      "label": "current-git-free-replay/evidence/termination.json",
+      "bytes": 668,
+      "sha256": "d8073044db1d0290cba02c9c246f32fdb6765593fc0e0216ee235263cda2a5e2"
+    },
+    {
+      "label": "current-git-free-replay/evidence/final-receipt-sha256.json",
+      "bytes": 15499,
+      "sha256": "7b0f8c12dd45f474de38f3c9618e05e863df602965334a5b69c23b6fb789fc7c"
+    }
+  ],
+  "historical_results_inherited": false,
+  "limitations": [
+    "Same Linux CPU host only",
+    "Synthetic terms cover test-owned fixture inputs and outputs only, not third-party runtime/dependency redistribution, upstream-data rights, public pretrained approval or external publication",
+    "Strict full-output acceptance remains failed; scientific equality is a narrower result",
+    "Precompiled replay baseline is not sealed-payload immutability proof",
+    "No network/provider, cloud spend, hosted CI, native GUI, Mac/GPU or installer acceptance"
+  ]
+}

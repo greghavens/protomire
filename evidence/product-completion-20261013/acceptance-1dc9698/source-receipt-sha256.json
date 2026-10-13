@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "scope": "Independently read and hashed Linux aggregate log and frozen Linux receipts. Logical repository-relative labels; no raw giant logs or private filesystem paths are copied into this compact record. Mac artifacts are separately labeled build-host-reported.",
+  "files": [
+    {
+      "label": "evidence/product-completion-20261013/aggregate-f99c5d5.log",
+      "bytes": 579667,
+      "sha256": "72d40f49af32175aaba93230fa77ac5fd0ed990f7ca925e2162ba783dfea0197"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/cpu-components.log",
+      "bytes": 70112,
+      "sha256": "22fde4f480f16240104b5e9ed32bc0dcced2d5c4ed7d3f54cddd89f844aa1107"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/cpu-components.xml",
+      "bytes": 84245,
+      "sha256": "8fc291f3094675bd77637497776832054c92e0eb419badaecc1e379e083bd446"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/cpu-concurrency.log",
+      "bytes": 3716,
+      "sha256": "d160891e2a87b1b2c6f6d6f5fa7043c079c4ff23fdfad0d6090025babf102e70"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/cpu-concurrency.xml",
+      "bytes": 2961,
+      "sha256": "fb00076604b473a88e2ac849bed31bd98033c34625cd94f335def54111633aa3"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/cpu-lifecycle.log",
+      "bytes": 7696,
+      "sha256": "86a574517287ee12f5bea1a5fa4a2c1bb0a4b362aa295ae515eb9d8804c9839e"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/cpu-lifecycle.xml",
+      "bytes": 7153,
+      "sha256": "37b7d2021d044f382e7e4a40b1aa725f9f8357861bb12bef7bc27a0f70b9c27b"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/hub-sdk.log",
+      "bytes": 2319,
+      "sha256": "461d90eb1260a777651039ced6db5bc87be9fe9f74ff8093d6116f2efdcb2236"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/hub-sdk.xml",
+      "bytes": 2326,
+      "sha256": "a68f75c75d00dafef7297d8f944d39cb095fd77fe2f780822ef30f5212171453"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/integration.log",
+      "bytes": 8251,
+      "sha256": "123272bc6761b4adcea6d3ce75e3f3c93f25fc9c7180a8ed239285046231f84d"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/integration.xml",
+      "bytes": 8600,
+      "sha256": "af62071b07d14a58fdca912493a40b5c7e1491b1e7986c840a7cbf8feac4ec43"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/native-runner.json",
+      "bytes": 1721,
+      "sha256": "e4bcec1829ed3c3cfa8830c7c377933d4d7017bec5beeb4052337d6d268b6128"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/remote-modal-sdk.log",
+      "bytes": 1754,
+      "sha256": "905f498fcb6f3faf897f801fdf894c8d8b0831809698d3fbc736c6e62edcfc8a"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/remote-modal-sdk.xml",
+      "bytes": 643,
+      "sha256": "5bb2b41690841ffbb3bda7b56d08b9674a524d9edc955f939ba0f1365dea79c7"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/unit-service-mcp.log",
+      "bytes": 511400,
+      "sha256": "cd0cc8c31e381c400aa0ff1f4964a87b467a7bfbe5960790e5d9736d742910a6"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/unit-service-mcp.xml",
+      "bytes": 862718,
+      "sha256": "6725f254fa7dc4eca978ebb21b2edff676b63279962af2c6e74f20a245567f3a"
+    },
+    {
+      "label": "evidence/product-completion-20261013/frozen-1dc9698-native/workbench.log",
+      "bytes": 54500,
+      "sha256": "04a6561d0a7b2649402e00096c5e16a4ca64b37141038148a17a6cedece3ed65"
+    }
+  ]
+}

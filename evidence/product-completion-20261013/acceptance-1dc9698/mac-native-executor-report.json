@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "recorded_date_utc": "2026-10-13",
+  "candidate_commit": "f99c5d5024090a20c30ba9077b9614ac2ea86475",
+  "runtime_commit": "1dc969898d8c30a8a0c0a0e590e696639138e588",
+  "provenance": {
+    "status": "build_host_verified",
+    "source": "Native Mac build-host terminal report; this record is a scoped transcription, not an independently retrieved raw Mac receipt.",
+    "raw_archive_independently_retrieved_here": false,
+    "archive_bytes_independently_verified_here": false,
+    "transfer_status": "blocked",
+    "transfer_blocker": "evidence-backup upload route explicitly blocked; full evidence archive remains on the native Mac build host."
+  },
+  "source": {
+    "both_shipping_closures_match": true,
+    "source_files_per_closure": 151,
+    "source_clean": true,
+    "sealed_payload_files": 45375
+  },
+  "checks": {
+    "mlx": {
+      "passed": 6,
+      "one_run": true
+    },
+    "bundled_mps": {
+      "passed": 1,
+      "deselected": 24
+    },
+    "mounted_core_mcp_snapshot": {
+      "passed": 6,
+      "deselected": 7,
+      "elapsed_seconds": 111.99,
+      "includes_git_free_registration_and_restart": true,
+      "terminal_exit_code": 0
+    },
+    "snapshot_rights_packaging": {
+      "passed": 116
+    },
+    "frontend": {
+      "passed": 528
+    },
+    "mounted_payload_cli": "passed",
+    "four_runtime_import_locations": "passed",
+    "hdiutil_verify": "passed",
+    "mount_detach": "succeeded"
+  },
+  "unsigned_development_dmg": {
+    "filename": "modelbuilder-ide-0.1.0-darwin-arm64-dev-unsigned.dmg",
+    "bytes": 1153628971,
+    "sha256": "7392b41f68df72e4958facc96bc98efd00a5774429c9f8f1cbe86b18ec26c9c8",
+    "hash_verification_scope": "reported by the native build host; artifact bytes not independently retrieved here",
+    "signed": false,
+    "public_release_published": false
+  },
+  "full_evidence_archive": {
+    "filename": "modelbuilder-mac-v9-evidence.tar.gz",
+    "bytes": 60976956,
+    "sha256": "fc3ac71d5e79f60939805c316c49bbf9644e2d21427a5298448722fdcd6a25cf",
+    "hash_verification_scope": "reported by the native build host; archive bytes not independently retrieved here",
+    "location_scope": "retained locally on the Mac build host; no private filesystem path published"
+  },
+  "not_established": [
+    "Current native visual GUI acceptance; Mac locked",
+    "Signing and notarization",
+    "Clean-machine installation and full native dependency closure",
+    "Canonical reproducible installer or public product release"
+  ],
+  "history": "Earlier 2e60975 development DMG and all failed attempts remain historical evidence. Current scoped passes do not rewrite them."
+}

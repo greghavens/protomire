@@ -4,19 +4,30 @@
 
 Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
-## Latest source: snapshot and generated-data lineage, acceptance running
+## Latest frozen candidate: aggregate complete with one rights-gate failure
 
-Runtime commit `1dc969898d8c30a8a0c0a0e590e696639138e588` adds reviewed
-Git-free source intake and preserves inherited rights through generation,
-judging, selected-subgraph reuse and prepared-dataset registration. Both shipping
-recipes now pin its complete **151-file** source/lock closure. Source-pin and
-portable wheel checks passed **50 tests**; the combined frontend passed
-**528 tests** with type checks and compilation. The pre-repin light diagnostic
-passed **2,673 tests**, with 140 skipped and 90 deselected, explicitly excluding
-the two source-pin checks until repinning. Full integrated acceptance is running;
-these results do not resolve the public pretrained licensing gate or establish a
-complete-product release. The existing Mac DMG below still contains the older
-`2e60975` runtime.
+Candidate `f99c5d5024090a20c30ba9077b9614ac2ea86475` pins runtime
+`1dc969898d8c30a8a0c0a0e590e696639138e588`, the identical **151-file**
+source/lock closure in both shipping recipes. Reviewed Git-free source intake and
+generated-data rights lineage are included. The [compact acceptance record](../evidence/product-completion-20261013/acceptance-1dc9698/README.md)
+separates independently inspected Linux receipts from the native Mac build host's
+verified local report. **Full-product acceptance remains incomplete.**
+
+| Scope | Status | Evidence and limits |
+|---|---|---|
+| Complete frozen Linux aggregate | **FAIL, exit 1** | Light 2,675 passed/140 skipped/88 deselected in 198.96 seconds; frontend 528 passed with type checks/build; offline Hub SDK 18 passed; offline Modal SDK 3 passed. |
+| Frozen native queue | **FAIL, sole lifecycle rights failure** | Lifecycle 30 passed/1 failed (1,183.43 seconds); integration 53 passed/43 deselected (1,628.16 seconds); components 522 passed/8 skipped (681.86 seconds); concurrency 18 passed/4 deselected (424.72 seconds). All four groups attempted; queue 2,054.807 seconds under 2,100; cleanup complete, zero signaled processes. |
+| Public pretrained lifecycle | BLOCKED, unresolved rights | Sole failed test: pretrained validation/selection/parent/export. Admission rejects with license_rights_unreviewed. No approval was fabricated and no check was excluded or weakened. |
+| Current installed-wheel Git-free public-review replay | Strict **FAIL, 34/35**; scientific payload equal | Two native public-review executions; four fresh noneditable environments and four dependency checks. Seven scientific outputs, metrics and evaluations match; three manifests differ only under /rights with genuine independent identities. Synthetic terms cover test-owned inputs/outputs only, not third-party or public pretrained rights. [Current receipt](../evidence/product-completion-20261013/acceptance-1dc9698/installed-wheel-replay.json) preserves strict failure and earlier verifier false positive. |
+| Current replay integrity and cleanup | PASS within explicit precompiled baseline | All 821 tracked checkout files, 151 runtime files, imported source and installed application bytes unchanged; no later bytecode changes. Both workers exit 0, reaped/groups terminated; exact retries reconcile. Final probe uses -I without -B; setup precompilation is not sealed-payload proof. All 146 indexed receipts/archive members hash-verified. |
+| Exact-candidate Mac runtime and development DMG | Build-host verified; raw archive not independently retrieved | Both 151-file closures/source clean; 45,375 sealed files. Six MLX passes in one run, one bundled MPS pass/24 deselected, six mounted core/MCP/snapshot passes/7 deselected in 111.99 seconds, 116 snapshot/rights/packaging and 528 frontend passes. Mounted exit 0; CLI, four runtime import locations, hdiutil verify and detach pass. |
+| Mac artifact provenance | Unsigned development artifact, no release | DMG 1,153,628,971 bytes; full evidence archive 60,976,956 bytes. [Executor-reported hashes](../evidence/product-completion-20261013/acceptance-1dc9698/mac-native-executor-report.json). evidence-backup upload route blocked; archive remains local and has not been independently retrieved into this verification workspace. |
+| Native GUI / signing / clean-machine acceptance | BLOCKED / UNVERIFIED | Mac locked; signing/notarization and clean-machine acceptance remain open. Mounted checks do not establish native visual GUI or a canonical reproducible installer. |
+| Linux AppImage / other platforms | BLOCKED / UNVERIFIED | Offline Linux editor/backend/toolchain inputs missing. Windows, Linux ARM64 and actual CUDA not accepted. Linux component hardware skips remain recorded. |
+| Live providers / product release | UNVERIFIED / incomplete | No live-provider, authenticated-assistant, online-tracking, hostile-code-sandbox, redistribution, hosted-CI or full-product pass; no product release published. |
+
+Overlapping counts are not summed. Historical failures, prior Mac development
+DMGs and previous replay outcomes below retain their named source scope.
 
 ## Historical 2e60975 runtime: failed aggregate and later repairs
 

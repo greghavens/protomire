@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "recorded_date_utc": "2026-10-13",
+  "candidate_commit": "f99c5d5024090a20c30ba9077b9614ac2ea86475",
+  "runtime_commit": "1dc969898d8c30a8a0c0a0e590e696639138e588",
+  "source_files": 151,
+  "full_product_complete": false,
+  "aggregate_status": "FAIL",
+  "aggregate_exit_code": 1,
+  "source_verification": "source-verification.json",
+  "evidence_provenance": "Linux aggregate and frozen JSON/XML/log receipts independently inspected in the verification workspace; Mac checks separately transcribed from the native executor terminal report.",
+  "aggregate": {
+    "scope": "Frozen candidate local Linux CPU aggregate; overlapping selections are not summed as unique coverage. Offline SDK tests do not establish live-provider acceptance.",
+    "light": {
+      "passed": 2675,
+      "failed": 0,
+      "skipped": 140,
+      "deselected": 88,
+      "elapsed_seconds": 198.96
+    },
+    "frontend": {
+      "passed": 528,
+      "failed": 0,
+      "skipped": 0,
+      "type_checks": "passed",
+      "compilation": "passed"
+    },
+    "offline_hub_sdk": {
+      "passed": 18,
+      "failed": 0,
+      "elapsed_seconds": 0.27
+    },
+    "offline_modal_sdk": {
+      "passed": 3,
+      "failed": 0,
+      "elapsed_seconds": 1.48
+    },
+    "other_completed_stages": [
+      "dependency check",
+      "Python compilation and lint",
+      "generated-contract and tracked-artifact validation",
+      "service parity and typed workspace/source-pin/history HTTP harnesses",
+      "real local Poppler/Tesseract research HTTP/MCP harness",
+      "native CPU component-authoring harness with quiescent-owner cleanup"
+    ],
+    "native_queue": {
+      "concurrency": 2,
+      "deadline_seconds": 2100,
+      "status": "group_failed",
+      "elapsed_seconds": 2054.807,
+      "continue_on_failure": true,
+      "cleanup": {
+        "complete": true,
+        "signaled_processes": 0
+      },
+      "exit_code": 1,
+      "all_groups_attempted": true,
+      "deadline_met": true,
+      "groups": [
+        {
+          "name": "cpu-lifecycle",
+          "status": "failed",
+          "returncode": 1,
+          "started_seconds": 0.0,
+          "finished_seconds": 1184.876,
+          "passed": 30,
+          "failed": 1,
+          "skipped": 0,
+          "deselected": 0,
+          "pytest_elapsed_seconds": 1183.43
+        },
+        {
+          "name": "integration",
+          "status": "passed",
+          "returncode": 0,
+          "started_seconds": 0.0,
+          "finished_seconds": 1628.75,
+          "passed": 53,
+          "failed": 0,
+          "skipped": 0,
+          "deselected": 43,
+          "pytest_elapsed_seconds": 1628.16
+        },
+        {
+          "name": "cpu-components",
+          "status": "passed",
+          "returncode": 0,
+          "started_seconds": 1184.976,
+          "finished_seconds": 1868.514,
+          "passed": 522,
+          "failed": 0,
+          "skipped": 8,
+          "deselected": 0,
+          "pytest_elapsed_seconds": 681.86
+        },
+        {
+          "name": "cpu-concurrency",
+          "status": "passed",
+          "returncode": 0,
+          "started_seconds": 1628.851,
+          "finished_seconds": 2054.702,
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0,
+          "deselected": 4,
+          "pytest_elapsed_seconds": 424.72
+        }
+      ]
+    },
+    "sole_failed_test": {
+      "test": "tests/integration/test_native_lifecycle.py::test_pretrained_validation_selection_parent_and_export",
+      "error_code": "license_rights_unreviewed",
+      "stage": "execution admission before native submission",
+      "reason": "Declared model/dataset/checkpoint inputs need authoritative reviewed rights before execution.",
+      "rights_approval_fabricated": false,
+      "excluded_or_weakened_to_pass": false
+    },
+    "native_component_skip_scope": [
+      "four required-hardware MLX boundary cases",
+      "two MLX service cases",
+      "one accelerator-Trainer hardware gate",
+      "one actual-CUDA execution gate"
+    ],
+    "entrypoint_and_queue_configuration": "MODELBUILDER_RUN_INTEGRATION=1 MODELBUILDER_NATIVE_TEST_PROCESSES=2 MODELBUILDER_NATIVE_COLLECT_ALL=1 ./scripts/test_all.sh"
+  },
+  "current_installed_wheel_git_free_public_review_replay": "installed-wheel-replay.json",
+  "mac_native_executor_report": "mac-native-executor-report.json",
+  "historical_evidence_policy": "Earlier failed aggregate, diagnostic, invocation and replay attempts remain at their named checkpoints. No earlier 2e60975 replay is inherited as current-candidate acceptance.",
+  "remaining_gates": [
+    "Unresolved public pretrained licensing/rights review",
+    "Current-candidate Git-free replay strict full-output comparator remains FAIL, 34/35; seven scientific outputs equal, independent rights provenance differs",
+    "Native current GUI blocked by locked Mac",
+    "Signing/notarization and clean-machine Mac acceptance unverified",
+    "Mac raw evidence archive not independently retrieved into this verification workspace because evidence-backup upload route is blocked",
+    "Linux AppImage offline editor/backend/toolchain inputs missing",
+    "Windows, Linux ARM64 and actual CUDA acceptance unverified",
+    "Live providers, authenticated vendor assistants and online tracking unverified",
+    "Hostile-code isolation and redistribution clearance unresolved",
+    "Hosted CI disabled; no hosted-CI or full-product release pass claimed"
+  ]
+}

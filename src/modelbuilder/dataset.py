@@ -24,6 +24,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 from .evaluation import digest
+from .rules import SAMPLE_SCHEMA, sample_rows
 from .generated_artifacts import MANIFEST_FIELDS, manifest_rights
 from .models import ServiceError, new_id, utcnow
 from .platform_file_access import WindowsRoot, read_windows_source, snapshot_windows_root
@@ -94,6 +95,7 @@ MANIFEST_SCHEMA = {
         "id_column": _ID, "row_schema": {"type": "object"},
         "splits": {"type": "array", "items": _SPLIT, "minItems": 1, "maxItems": 32},
         "transformations": {"type": "array", "maxItems": 32, "items": {"oneOf": [
+            SAMPLE_SCHEMA,
             _transform_schema("text.normalize", {"fields": _FIELDS,
                 "unicode_form": {"enum": ["NFC", "NFD", "NFKC", "NFKD"]},
                 "strip": {"type": "boolean"}, "casefold": {"type": "boolean"}}, ("fields",)),
@@ -163,6 +165,8 @@ def validate_manifest(manifest: dict) -> dict:
                 or "\\" in source["path"] or ":" in source["path"] or "\x00" in source["path"]):
             _fail("dataset_path_invalid", "Dataset paths must be canonical relative paths")
     for transform in result["transformations"]:
+        if transform['kind'] == 'rows.sample' and result.get('access_mode') == 'streaming':
+            _fail('dataset_sampling_streaming_unsupported', 'Stratified sampling currently requires bounded eager access; streaming cannot bypass representation validation')
         if result["id_column"] in transform.get("fields", []) and transform["kind"] != "columns.select":
             _fail("dataset_transform_invalid", "Transforms cannot change or use the identity column as content")
         if transform["kind"] == "columns.select" and result["id_column"] not in transform["fields"]:
@@ -657,7 +661,17 @@ def _transform(indexed, manifest):
                 _fail("dataset_transform_invalid", "Transform refers to a missing field")
             return digest({key: row[key] for key in selected})
 
-        if spec["kind"] == "text.normalize":
+        sampling_report = {}
+        if spec['kind'] == 'rows.sample':
+            try:
+                prior = indexed
+                indexed, sampling_report = sample_rows(indexed, spec)
+                kept = {item['sample_id'] for item in indexed}
+                removed = [item['sample_id'] for item in prior if item['sample_id'] not in kept]
+            except ValueError as error:
+                _fail('dataset_sampling_blocked', str(error))
+            implementation = 'modelbuilder.stratified-sha256-largest-remainder'
+        elif spec["kind"] == "text.normalize":
             for item in indexed:
                 for field in fields:
                     value = item["row"].get(field)
@@ -697,7 +711,8 @@ def _transform(indexed, manifest):
             implementation = "python.set+sha256" if spec["kind"] != "rows.drop_missing" else "python.mapping.filter"
         report.append({"declaration": copy.deepcopy(spec), "implementation": implementation,
                        "implementation_version": "1", "unicode_version": unicodedata.unidata_version,
-                       "input_rows": before, "output_rows": len(indexed), "removed_sample_ids": removed})
+                       "input_rows": before, "output_rows": len(indexed), "removed_sample_ids": removed,
+                       **sampling_report})
     return indexed, report
 
 

@@ -63,6 +63,11 @@ def validate_component(node: dict) -> dict:
     _local_schema(descriptor["parameter_schema"], "component.parameter_schema")
     Draft202012Validator.check_schema(descriptor["parameter_schema"])
     Draft202012Validator(descriptor["parameter_schema"]).validate(node.get("parameters", {}))
+    if descriptor.get('id') == 'modelbuilder.rules.gate':
+        from ...rules import validate_policy
+        validate_policy(node.get('parameters', {}).get('policy'))
+        if node.get('cache_policy') != 'disabled':
+            raise ValueError('Rule gates must disable cache so current run evidence is revalidated')
     if node.get("parameter_schema") not in (None, descriptor["parameter_schema"]):
         raise ValueError("Component and node parameter schemas disagree")
     if not isinstance(node.get("implementation_ref"), dict):
@@ -98,6 +103,8 @@ def component_catalog(recipe: dict | None = None) -> list[dict]:
     catalog.extend(blend_catalog_entries())
     from .scientific_gate import catalog_entries as gate_catalog_entries
     catalog.extend(gate_catalog_entries())
+    from .rule_gate import catalog_entries as rule_catalog_entries
+    catalog.extend(rule_catalog_entries())
     for node in (recipe or {}).get("nodes", []):
         if node.get("kind") == "component.run":
             descriptor = validate_component(node)

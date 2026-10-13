@@ -178,6 +178,9 @@ def _invoke(operation: str, payload: dict, root: Path, stack: ExitStack):
                     raise BackendError(error.code, error.message, error.details) from error
             descriptor = inspect_export(path, provenance)
             if operation == "model.export.package":
+                from .rule_attestations import verify_action
+                verify_action(payload, root, kind='export', artifact_id=record['artifact_id'], run_id=str(run.id),
+                              model_version_id=str(version.id), checkpoint_digest=descriptor['manifest']['selected_checkpoint'])
                 return package_export(path, root / "export-packages", descriptor, payload["expected_export_digest"], rights_admission=checked["admission"])
             results.append(descriptor)
         except (OSError, ValueError, KeyError, TypeError, tarfile.TarError) as error:

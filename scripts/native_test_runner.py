@@ -25,6 +25,7 @@ SERVICE_ONLY_TESTS = (
     "tests/live_evaluation/test_selected_live_native.py",
     "tests/iterations/test_native_iterations.py",
     "tests/components/test_runner_native.py",
+    "tests/rules/test_native_rules.py", "tests/rules/test_rule_stdio.py", "tests/rules/test_custom_native.py", "tests/rules/test_standalone_native.py",
 )
 SERVICE_TESTS = (
     "tests/service/test_real_backend.py", "tests/integration/test_mcp_training.py",

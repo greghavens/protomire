@@ -21,6 +21,8 @@ from .common import recipe_provenance, read_json, write_json
 
 
 def context(spec: dict) -> tuple[dict, Path]:
+    from .rule_activation import recheck
+    recheck(spec)
     job = Path(spec["job_dir"])
     if in_child():
         return spec["parameters"], job / "outputs" / spec.get("invocation", {}).get("invocation_id", spec["node_id"])
@@ -313,6 +315,7 @@ def invoke_node_set(prepared: dict, condition_callback=None, skip_callback=None,
                               "placement": request.get("placement", {"device": "cpu"}),
                               "runner_environment": request.get("runner_environments", {}).get(node["id"]),
                               "rights_authorization": request.get("rights_authorization"),
+                              "rule_authorization": request.get('rule_authorization'),
                               "rights_extensions": request.get("rights_extensions", {}),
                               "recipe_digest": digest, "recipe_provenance": provenance, "dependency_paths": request.get("dependency_paths", {}),
                               "dataset_source_guards": request.get("dataset_source_guards", {}),

@@ -40,6 +40,8 @@ def test_source_inventory_includes_all_runtime_helpers_and_optional_profiles():
         "src/modelbuilder/dataset_streaming.py", "src/modelbuilder/generated_artifacts.py", "src/modelbuilder/parquet_stream.py",
         "src/modelbuilder/parquet_stream_decode.py", "src/modelbuilder/iterations.py",
         "src/modelbuilder/backend/native_invocations.py",
+        "src/modelbuilder/rules.py", "src/modelbuilder/rule_operations.py",
+        "src/modelbuilder/backend/components/rule_gate.py",
         "src/modelbuilder/backend/components/transformers_loader.py",
         "src/modelbuilder/backend/components/transformers_training.py",
         "src/modelbuilder/backend/components/transformers_inference.py",
@@ -445,7 +447,8 @@ def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_so
     wheel = replay.build_wheel(source, tmp_path / "wheels", kind)
     installed = tmp_path / "installed"
     with zipfile.ZipFile(wheel["wheel"]) as archive:
-        for path in ["platform_file_access.py", "source_workspace.py", "recipe_registry_contract.py",
+        for path in ["rules.py", "rule_operations.py", "backend/components/rule_gate.py",
+                     "platform_file_access.py", "source_workspace.py", "recipe_registry_contract.py",
                      "remote/__init__.py", "remote/contracts.py", "remote/operation_contract.py",
                      "remote/modal_contract.py", "remote/modal_runtime.py", "remote/modal_provider.py",
                      "remote/modal_journal.py", "remote/modal_build_inputs.py",
@@ -491,7 +494,7 @@ for name in ('modelbuilder.dataset', 'modelbuilder.models', 'modelbuilder.source
              'modelbuilder.backend.evaluation_binding', 'modelbuilder.backend.promotion',
              'modelbuilder.remote.operation_contract', 'modelbuilder.remote.provider',
              'modelbuilder.remote.modal_runtime', 'modelbuilder.remote.modal_provider',
-             'modelbuilder.remote.modal_build_inputs'):
+             'modelbuilder.remote.modal_build_inputs', 'modelbuilder.rules', 'modelbuilder.rule_operations'):
     module = importlib.import_module(name)
     assert pathlib.Path(module.__file__).resolve().is_relative_to(root), name
 if sys.argv[2] == 'service':

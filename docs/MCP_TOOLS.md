@@ -146,6 +146,13 @@ The complete payload schemas are in [operation-catalog.json](operation-catalog.j
 | `research_watch_schedule_disable` | `research.watch.schedule_disable` | `modify` | Stop automatic metadata requests and invalidate an in-flight response; manual refresh remains available. |
 | `research_watch_schedule_enable` | `research.watch.schedule_enable` | `modify` | Opt in to automatic OpenAlex metadata requests for this exact query, limit and frequency; no proposals are applied and no training starts. |
 | `research_watch_update` | `research.watch.update` | `modify` | Edit or disable a watch using optimistic concurrency. |
+| `rules_evaluate` | `rules.evaluate` | `read` | Preview deterministic decisions from supplied evidence; preview never authorizes an action. |
+| `rules_method_register` | `rules.method.register` | `modify` | Register a pinned source/schema method declaration without importing or executing its code. |
+| `rules_methods` | `rules.methods` | `read` | List inert built-in and project-registered rule method declarations. |
+| `rules_policy_activate` | `rules.policy.activate` | `modify` | Explicitly activate a pinned policy for selected operation and node-role scopes. |
+| `rules_policy_deactivate` | `rules.policy.deactivate` | `modify` | Explicitly deactivate the active safeguard with optimistic project revision fencing. |
+| `rules_policy_get` | `rules.policy.get` | `read` | Read a content-addressed selected policy. |
+| `rules_policy_register` | `rules.policy.register` | `modify` | Register immutable selected safeguards; does not authorize execution. |
 | `run_artifacts` | `run.artifacts` | `read` | Read authoritative artifact identifiers and optional explicit binding content descriptors. |
 | `run_cancel` | `run.cancel` | `execute` | Request real cancellation; requested is not confirmed termination. |
 | `run_compare` | `run.compare` | `read` | Compare metrics from actual backend runs by a declared criterion. |

@@ -32,6 +32,8 @@ def in_child() -> bool:
 
 
 def context(spec: dict):
+    from .rule_activation import recheck
+    recheck(spec)
     if _CHILD:
         return spec["parameters"], Path(spec["job_dir"]) / "outputs" / spec.get("invocation", {}).get("invocation_id", spec["node_id"])
     from .worker import context as native_context

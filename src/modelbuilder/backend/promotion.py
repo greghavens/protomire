@@ -32,6 +32,8 @@ def _snapshot(client, project, payload, root):
     run_ids = list(run_ids)
     if payload.get("scientific_gate") and payload["scientific_gate"]["backend_run_id"] not in run_ids:
         run_ids.append(payload["scientific_gate"]["backend_run_id"])
+    if payload.get('rule_gate') and payload['rule_gate']['backend_run_id'] not in run_ids:
+        run_ids.append(payload['rule_gate']['backend_run_id'])
     for run_id in run_ids:
         if len(run_ids) > 1000:
             raise BackendError("capability_unavailable", "Promotion lineage exceeds its native run bound")
@@ -58,7 +60,7 @@ def _snapshot(client, project, payload, root):
                               for side in ("inputs", "outputs")}
             steps[invocation["invocation_id"]]["invocation"] = invocation
             node = nodes.get(node_id, {})
-            evaluator = node.get("kind") == "model.evaluate" or node.get("component", {}).get("role") in {"evaluation", "scientific_gate"}
+            evaluator = node.get("kind") == "model.evaluate" or node.get("component", {}).get("role") in {"evaluation", "scientific_gate"} or node.get('component', {}).get('id') == 'modelbuilder.rules.gate'
             for side in ("inputs", "outputs"):
                 for port, versions in getattr(step, side, {}).items():
                     for artifact in versions:
@@ -119,6 +121,9 @@ def prepared_comparison(payload, root: Path, handle):
         from .execution_rights import verify_artifact_authorization
         for rights in body["comparison"].get("checkpoint_rights", {}).get(body["comparison"]["selected_run_id"], []):
             verify_artifact_authorization(payload.get("_execution_rights_authorization"), rights, "promote")
+        if payload.get('rule_authorization'):
+            from .rule_attestations import inspect_gate
+            inspect_gate(payload, root)
         return body["comparison"]
     except (OSError, ValueError, TypeError, KeyError) as error:
         raise BackendError("comparison_changed", "Prepared native selection evidence is no longer valid", {"reason": str(error)}) from error

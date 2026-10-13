@@ -10,6 +10,7 @@ from pathlib import Path
 from modelbuilder.api import create_app
 from modelbuilder.models import ModelProject, OPERATIONS, operation_catalog
 from modelbuilder.recipe import RECIPE_SCHEMA
+from modelbuilder.dataset import MANIFEST_SCHEMA
 from modelbuilder.service import OperationService
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,6 +66,8 @@ def generated_files():
                   for name, spec in sorted(OPERATIONS.items())],
     }
     files = {
+        'schemas/dataset.v1.schema.json': json_text(MANIFEST_SCHEMA),
+        'packages/ide_feature/schemas/dataset.v1.schema.json': json_text(MANIFEST_SCHEMA),
         "docs/openapi.json": json_text(openapi),
         "docs/operation-catalog.json": json_text({"schema_version": "0", "operations": catalog}),
         "distribution/assistant_templates/v1/operation-catalog.json": json_text({"schema_version": "0", "operations": catalog}),

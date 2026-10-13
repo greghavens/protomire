@@ -827,6 +827,15 @@
           "provenance": {
             "type": "object"
           },
+          "required_guards": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+              "type": "string"
+            },
+            "maxItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
           "resource_request": {
             "additionalProperties": false,
             "properties": {

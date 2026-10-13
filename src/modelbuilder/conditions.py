@@ -20,6 +20,23 @@ def control_dependencies(recipe: dict) -> list[tuple[str, str]]:
 def validate_conditions(recipe: dict) -> None:
     nodes = {node["id"]: node for node in recipe.get("nodes", [])}
     for node in nodes.values():
+        for guard_id in node.get('required_guards', []):
+            guard = nodes.get(guard_id, {})
+            condition = node.get('condition', {})
+            if (guard.get('kind') != 'component.run' or guard.get('component', {}).get('id') != 'modelbuilder.rules.gate'
+                    or guard.get('condition') or condition != {'source_node': guard_id, 'source_port': 'allowed', 'equals': True}):
+                raise ConditionError('invalid_required_guard', 'A required rule guard must be unconditional and govern the selected action through its allowed boolean.', node_id=node['id'], guard_id=guard_id)
+            # A guard's evidence producers must not be conditionally skipped.
+            pending, visited = {guard_id}, set()
+            while pending:
+                current = pending.pop()
+                if current in visited:
+                    continue
+                visited.add(current)
+                if nodes[current].get('condition'):
+                    raise ConditionError('conditional_required_guard', 'Required guard evidence cannot come from a conditional producer.', guard_id=guard_id)
+                pending.update(edge['source_node'] for edge in recipe.get('edges', []) if edge['target_node'] == current and edge['source_node'] in nodes)
+    for node in nodes.values():
         if {"loop", "repeat", "iterations"}.intersection(node):
             raise ConditionError("unsupported_control_flow", "Loop/repeat stages are not supported. Use explicit stages or separate immutable recipe revisions; no implicit iteration is executed.", node_id=node["id"])
         if "condition" not in node:
@@ -139,6 +156,8 @@ def recorded_decisions(recipe: dict, chosen: set[str], recorded: dict, native_st
 
 def validate_selected_gates(recipe: dict, chosen: set[str]) -> None:
     for node in recipe.get("nodes", []):
+        if node['id'] in chosen and not set(node.get('required_guards', [])) <= chosen:
+            raise ConditionError('required_guard_omitted', 'Selected actions require their declared rule guards; saved input bindings cannot replace them.', node_id=node['id'])
         if node["id"] in chosen and "condition" in node and node["condition"]["source_node"] not in chosen:
             raise ConditionError("unselected_condition_gate", "Select the declared boolean gate explicitly. Conditional execution never adds or executes unselected ancestors.",
                                  node_id=node["id"], gate_node_id=node["condition"]["source_node"])

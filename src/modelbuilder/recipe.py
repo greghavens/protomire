@@ -153,6 +153,7 @@ NODE_SCHEMA = _object({
     "parameter_schema": {"type": "object"},
     "component": COMPONENT_SCHEMA,
     "condition": CONDITION_SCHEMA,
+    "required_guards": {"type": "array", "items": {"type": "string", "pattern": IDENTIFIER}, "maxItems": 1, "uniqueItems": True},
     "environment_ref": {"type": "string", "minLength": 1},
     "resource_request": _object({"cpu": {"type": "number", "exclusiveMinimum": 0},
                                   "memory_mb": {"type": "integer", "minimum": 1},

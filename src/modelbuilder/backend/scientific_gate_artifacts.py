@@ -63,14 +63,14 @@ def validate_result(result, policy, evidence):
         raise ValueError("Scientific aggregate outcome contradicts its individual rules")
 
 
-def input_receipts(step, root):
+def input_receipts(step, root, ports=('baseline', 'candidate'), types=None):
     receipts = []
-    for port in ("baseline", "candidate"):
+    for port in ports:
         artifacts = step.inputs.get(port, [])
         if len(artifacts) != 1:
             raise ValueError("Scientific gate requires one exact native evaluation artifact per side")
         artifact = artifacts[0]
-        validate_native_type(artifact, "dict")
+        validate_native_type(artifact, (types or {}).get(port, 'dict'))
         if not artifact.producer_pipeline_run_id:
             raise ValueError("Scientific gate input has no native producer run")
         receipts.append({"input_port": port, "artifact_id": str(artifact.id), "backend_project_id": str(artifact.project.id),
@@ -78,13 +78,13 @@ def input_receipts(step, root):
     return receipts
 
 
-def native_context(spec):
+def native_context(spec, ports=('baseline', 'candidate'), types=None):
     from zenml import get_step_context
     ctx = get_step_context()
     producer = {"project_id": spec["recipe_provenance"]["application_project_id"], "backend_project_id": str(ctx.pipeline_run.project.id),
                 "backend_run_id": str(ctx.pipeline_run.id), "node_id": spec["node_id"],
                 "invocation_id": spec.get("invocation", {}).get("invocation_id", spec["node_id"])}
-    return {"producer": producer, "inputs": input_receipts(ctx.step_run, Path(spec["job_dir"]).parent.parent)}
+    return {"producer": producer, "inputs": input_receipts(ctx.step_run, Path(spec["job_dir"]).parent.parent, ports, types)}
 
 
 def seal_results(results, node, native, inputs, source):

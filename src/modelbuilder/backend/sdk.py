@@ -528,6 +528,18 @@ def promotion_comparison(client, project, version, payload, root):
                 verify_artifact_authorization(payload.get("_execution_rights_authorization"), checkpoint.get("rights"), "promote")
     if comparison["selected_model_version_ref"] != str(version.id):
         raise BackendError("validation_error", "Requested model version does not win the declared measured validation criterion")
+    if payload.get('rule_authorization'):
+        from .rule_attestations import verify_action
+        checkpoints = [entry for row in chosen if row.get('model_version_ref') == str(version.id)
+                       for entry in (row.get('checkpoint_verification') or {}).get('inputs', [])]
+        targets = {(entry['artifact_id'], entry['identity'], __import__('json').dumps(entry.get('checkpoint_selection'), sort_keys=True), entry.get('descriptor_digest')): entry for entry in checkpoints}
+        if len(targets) != 1:
+            raise BackendError('active_rule_target_unsupported', 'Generic promotion safeguards require one exact selected checkpoint artifact')
+        entry = next(iter(targets.values()))
+        artifact = client.get_artifact_version(entry['artifact_id'])
+        verify_action(payload, root, kind='checkpoint', artifact_id=entry['artifact_id'],
+                      run_id=str(artifact.producer_pipeline_run_id), model_version_id=str(version.id), checkpoint_digest=entry['identity'],
+                      checkpoint_selection=entry.get('checkpoint_selection'), descriptor_digest=entry.get('descriptor_digest'))
     return comparison
 
 

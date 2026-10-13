@@ -153,6 +153,7 @@ def build_wheel(root: Path, destination: Path, kind: str, *, target: str | None 
                     "src/modelbuilder/models.py", "src/modelbuilder/store.py", "src/modelbuilder/hub_rights.py",
                     "src/modelbuilder/hub_contract.py", "src/modelbuilder/research_context_contract.py",
                     "src/modelbuilder/scientific.py", "src/modelbuilder/scientific_operations.py",
+                    "src/modelbuilder/rules.py", "src/modelbuilder/rule_operations.py",
                     "src/modelbuilder/smoke.py", "src/modelbuilder/artifact_rights.py",
                     "src/modelbuilder/generated_artifacts.py",
                     "src/modelbuilder/research_contract.py", "src/modelbuilder/recipe_registry_contract.py",

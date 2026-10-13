@@ -98,6 +98,7 @@ class ModelProject(DomainModel):
     active_model_version_ref: str | None = None
     research_watch_config: dict | None = None
     scientific_policy_digest: str | None = None
+    rule_policy_activation: dict | None = None
     tracking: TrackingConfig = Field(default_factory=TrackingConfig)
     status: Literal["active", "archived"] = "active"
     revision: int = Field(ge=1)
@@ -411,6 +412,11 @@ OPERATIONS.update({spec.name: spec for spec in source_pin_specs(_spec)})
 
 from .scientific_operations import operation_specs as scientific_specs  # noqa: E402
 OPERATIONS.update({spec.name: spec for spec in scientific_specs(_spec)})
+from .rule_operations import operation_specs as rule_specs  # noqa: E402
+OPERATIONS.update({spec.name: spec for spec in rule_specs(_spec)})
+from .rule_operations import GATE_SELECTOR as RULE_GATE_SELECTOR  # noqa: E402
+for _rule_action in ('model.export.package', 'model.version.promote'):
+    OPERATIONS[_rule_action].properties['rule_gate'] = RULE_GATE_SELECTOR
 
 
 from .smoke import operation_specs as smoke_specs  # noqa: E402

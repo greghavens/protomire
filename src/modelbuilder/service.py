@@ -320,6 +320,9 @@ class OperationService:
             json.dumps(after, indent=2, sort_keys=True).splitlines(), fromfile="client", tofile="server", lineterm=""))
 
     def _dispatch(self, op, p, actor, *, prepared_evidence=None):
+        if op.startswith('rules.'):
+            from .rule_operations import dispatch
+            return dispatch(self, op, p)
         if op in {"run.smoke.plan", "recipe.smoke.prepare"}:
             from .smoke import dispatch
             return dispatch(self, op, p)
@@ -742,9 +745,12 @@ class OperationService:
 
     def _evidence_snapshot(self, operation, payload):
         """Only stable project/research inputs and immutable run provenance cross I/O."""
+        payload = copy.deepcopy(payload)
         project_id = payload["project_id"]
         project = self._get("project", project_id, project_id)
         if operation == "model.version.promote":
+            from .rule_operations import enforce_activation
+            enforce_activation(self, operation, project, payload)
             self._revision(project, payload["expected_revision"])
             decision = self._get("decision", payload["decision_id"], project_id)
             if decision["outcome"] != "accepted":
@@ -760,6 +766,8 @@ class OperationService:
             enriched = enrich_comparison(self, enriched)
             _, provenance = self._comparison_snapshot({"project_id": project_id, "run_ids": decision["run_ids"]})
             enriched["_rights_usage_context"] = self._rights_usage_context(project)
+            if payload.get('rule_authorization'):
+                enriched['rule_authorization'] = copy.deepcopy(payload['rule_authorization'])
             return {"project": project, "decision": decision, "enriched": enriched, "provenance": provenance, "license_policies": self._rights_policy_snapshot(project_id)}
         hypothesis = self._get("hypothesis", payload["hypothesis_id"], project_id)
         recipe = self._get("recipe", payload["recipe_id"], project_id, payload["recipe_revision"])
@@ -883,6 +891,9 @@ class OperationService:
         project_id = p["project_id"]
         project = self._get("project", project_id, project_id)
         enriched = {**p, "model_name": project["model_name"], "project_recipe_id": project["recipe_id"]}
+        if op in {'model.export.package', 'model.version.promote'}:
+            from .rule_operations import enforce_activation
+            enforce_activation(self, op, project, enriched)
         if op in {"run.plan", "run.submit", "run.resume"}:
             enriched["tracking"] = resolve_tracking(project.get("tracking"), p.get("tracking"),
                 online_consent=op == "run.plan" or p.get("tracking_online_consent", False))
@@ -1004,6 +1015,9 @@ class OperationService:
             enriched = enrich_comparison(self, enriched)
             if decision["selection_rule"].get("evaluations"):
                 enriched["evaluations"] = decision["selection_rule"]["evaluations"]
+        if op in {'run.plan', 'run.submit', 'run.resume'}:
+            from .rule_operations import enforce_activation
+            enforce_activation(self, op, project, enriched)
         if prepare_only:
             return enriched
         result = self._call_backend(op, enriched, actor, prepared_promotion=prepared_promotion)

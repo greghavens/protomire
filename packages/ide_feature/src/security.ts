@@ -7,6 +7,7 @@ export function serviceUrl(raw: string): string {
 }
 export function escapeHtml(value: string): string { return value.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!)); }
 export const UI_OPERATIONS = new Set([
+  'rules.policy.register', 'rules.policy.get', 'rules.evaluate', 'rules.methods', 'rules.method.register', 'rules.policy.activate', 'rules.policy.deactivate',
   'component.list', 'component.get',
   'scientific.methods', 'scientific.policy.register', 'scientific.policy.get', 'scientific.policy.activate', 'scientific.sample.plan', 'run.smoke.plan', 'recipe.smoke.prepare',
   'dataset.register', 'dataset.version', 'dataset.bind', 'dataset.get', 'dataset.list', 'dataset.validate', 'dataset.preview',

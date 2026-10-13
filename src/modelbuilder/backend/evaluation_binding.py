@@ -54,7 +54,7 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None, derivati
         raise ValueError("Evaluator was not in the executed node selection")
     root = Path(request["root"])
 
-    semantic_cache, rights_cache = {}, {}
+    semantic_cache, rights_cache, descriptor_cache = {}, {}, {}
 
     def semantic(artifact):
         key = (str(artifact.id), artifact.uri)
@@ -65,9 +65,12 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None, derivati
         with native_directory(artifact, root) as directory:
             if (directory / "checkpoint.manifest.json").is_file():
                 descriptor = read_checkpoint(directory)
+                descriptor_cache[key] = {'descriptor_digest': identity(descriptor), 'checkpoint_selection': None}
                 if node["kind"] == "model.evaluate":
                     from .fixture_artifacts import selected_identity
-                    checkpoint = selected_identity(descriptor, node.get("parameters", {}).get("checkpoint_kind", "best"))
+                    selection_kind = node.get("parameters", {}).get("checkpoint_kind", "best")
+                    checkpoint = selected_identity(descriptor, selection_kind)
+                    descriptor_cache[key]["checkpoint_selection"] = {"kind": selection_kind, **descriptor["selections"][selection_kind]}
                 else:
                     checkpoint = identity(descriptor)
                 rights_cache[key] = descriptor.get("rights")
@@ -171,7 +174,7 @@ def checkpoint_candidates(run, request, node_id, *, invocation_id=None, derivati
                 version, checkpoint_bindings, production_eligible = owner(node_id, port["name"], artifact, evaluator_info)
                 checkpoint = semantic(artifact)
                 candidates.append({"artifact_id": str(artifact.id), "input_port": port["name"], "identity": checkpoint,
-                                   "model_version_ref": version, "checkpoint_bindings": checkpoint_bindings, "production_eligible": production_eligible, "rights": rights_cache.get((str(artifact.id), artifact.uri))})
+                                   "model_version_ref": version, "checkpoint_bindings": checkpoint_bindings, "production_eligible": production_eligible, "rights": rights_cache.get((str(artifact.id), artifact.uri)), **descriptor_cache.get((str(artifact.id), artifact.uri), {})})
             except (BackendError, OSError, ValueError, KeyError, TypeError, AttributeError, tarfile.TarError) as error:
                 errors.append(str(error))
     return candidates, errors

@@ -252,6 +252,19 @@
       "title": "Revision",
       "type": "integer"
     },
+    "rule_policy_activation": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rule Policy Activation"
+    },
     "schema_version": {
       "const": "0",
       "default": "0",

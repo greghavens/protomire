@@ -639,6 +639,19 @@
             "title": "Revision",
             "type": "integer"
           },
+          "rule_policy_activation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Rule Policy Activation"
+          },
           "schema_version": {
             "const": "0",
             "default": "0",
@@ -11169,6 +11182,34 @@
                   "request_id": {
                     "minLength": 1,
                     "type": "string"
+                  },
+                  "rule_gate": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "artifact_id": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "backend_run_id": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "content_sha256": {
+                        "pattern": "^[a-f0-9]{64}$",
+                        "type": "string"
+                      },
+                      "node_id": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "backend_run_id",
+                      "node_id",
+                      "artifact_id",
+                      "content_sha256"
+                    ],
+                    "type": "object"
                   }
                 },
                 "required": [
@@ -11839,6 +11880,34 @@
                   "request_id": {
                     "minLength": 1,
                     "type": "string"
+                  },
+                  "rule_gate": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "artifact_id": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "backend_run_id": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "content_sha256": {
+                        "pattern": "^[a-f0-9]{64}$",
+                        "type": "string"
+                      },
+                      "node_id": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "backend_run_id",
+                      "node_id",
+                      "artifact_id",
+                      "content_sha256"
+                    ],
+                    "type": "object"
                   },
                   "stage": {
                     "minLength": 1,
@@ -20805,6 +20874,1416 @@
           }
         ],
         "summary": "Edit or disable a watch using optimistic concurrency.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/rules.evaluate": {
+      "post": {
+        "operationId": "rules_evaluate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "evidence": {
+                    "type": "object"
+                  },
+                  "policy_digest": {
+                    "pattern": "^[a-f0-9]{64}$",
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "policy_digest",
+                  "evidence"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Preview deterministic decisions from supplied evidence; preview never authorizes an action.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/rules.method.register": {
+      "post": {
+        "operationId": "rules_method_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "method": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "decision_domain": {
+                        "enum": [
+                          "predicate",
+                          "continuation"
+                        ]
+                      },
+                      "id": {
+                        "maxLength": 200,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "implementation_ref": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "commit": {
+                            "maxLength": 200,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "entrypoint": {
+                            "maxLength": 200,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "module": {
+                            "maxLength": 200,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "path": {
+                            "maxLength": 200,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "sha256": {
+                            "maxLength": 200,
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "module",
+                          "entrypoint",
+                          "commit",
+                          "path",
+                          "sha256"
+                        ],
+                        "type": "object"
+                      },
+                      "method_digest": {
+                        "maxLength": 64,
+                        "minLength": 64,
+                        "type": "string"
+                      },
+                      "parameter_schema": {
+                        "type": "object"
+                      },
+                      "parameter_schema_digest": {
+                        "maxLength": 64,
+                        "minLength": 64,
+                        "type": "string"
+                      },
+                      "version": {
+                        "maxLength": 200,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "version",
+                      "decision_domain",
+                      "implementation_ref",
+                      "parameter_schema",
+                      "parameter_schema_digest",
+                      "method_digest"
+                    ],
+                    "type": "object"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "method",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Register a pinned source/schema method declaration without importing or executing its code.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/rules.methods": {
+      "post": {
+        "operationId": "rules_methods",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List inert built-in and project-registered rule method declarations.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/rules.policy.activate": {
+      "post": {
+        "operationId": "rules_policy_activate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "node_roles": {
+                    "items": {
+                      "enum": [
+                        "training",
+                        "export",
+                        "model",
+                        "dataset",
+                        "utility",
+                        "evaluation",
+                        "derivation"
+                      ]
+                    },
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "operations": {
+                    "items": {
+                      "enum": [
+                        "run.submit",
+                        "run.resume",
+                        "model.export.package",
+                        "model.version.promote"
+                      ]
+                    },
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "policy_digest": {
+                    "pattern": "^[a-f0-9]{64}$",
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "policy_digest",
+                  "expected_revision",
+                  "operations",
+                  "node_roles",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Explicitly activate a pinned policy for selected operation and node-role scopes.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/rules.policy.deactivate": {
+      "post": {
+        "operationId": "rules_policy_deactivate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "expected_revision",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Explicitly deactivate the active safeguard with optimistic project revision fencing.",
+        "x-required-scope": "modify",
+        "x-required-scopes": [
+          "modify"
+        ]
+      }
+    },
+    "/v1/operations/rules.policy.get": {
+      "post": {
+        "operationId": "rules_policy_get",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "policy_digest": {
+                    "pattern": "^[a-f0-9]{64}$",
+                    "type": "string"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "policy_digest"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read a content-addressed selected policy.",
+        "x-required-scope": "read",
+        "x-required-scopes": [
+          "read"
+        ]
+      }
+    },
+    "/v1/operations/rules.policy.register": {
+      "post": {
+        "operationId": "rules_policy_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "idempotency_key": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "policy": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "maxLength": 200,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "rules": {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "cost_unit": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "criterion": {
+                                  "enum": [
+                                    "target",
+                                    "plateau"
+                                  ]
+                                },
+                                "direction": {
+                                  "enum": [
+                                    "minimize",
+                                    "maximize"
+                                  ]
+                                },
+                                "id": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "insufficient_window": {
+                                  "enum": [
+                                    "block",
+                                    "collect_within_bounds"
+                                  ]
+                                },
+                                "kind": {
+                                  "const": "convergence/v1"
+                                },
+                                "max_cost": {
+                                  "maximum": 1000000000000000,
+                                  "minimum": 0,
+                                  "type": "number"
+                                },
+                                "max_epochs": {
+                                  "maximum": 1000000000,
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "max_runtime_seconds": {
+                                  "maximum": 1000000000000000,
+                                  "minimum": 0,
+                                  "type": "number"
+                                },
+                                "max_steps": {
+                                  "maximum": 1000000000,
+                                  "minimum": 0,
+                                  "type": "integer"
+                                },
+                                "metric": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "min_epochs": {
+                                  "maximum": 1000000000,
+                                  "minimum": 0,
+                                  "type": "integer"
+                                },
+                                "next_epoch_cost": {
+                                  "maximum": 1000000000000000,
+                                  "minimum": 0,
+                                  "type": "number"
+                                },
+                                "next_epoch_seconds": {
+                                  "maximum": 1000000000000000,
+                                  "minimum": 0,
+                                  "type": "number"
+                                },
+                                "next_epoch_steps": {
+                                  "maximum": 1000000000,
+                                  "minimum": 0,
+                                  "type": "integer"
+                                },
+                                "resource_modes": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "cost": {
+                                      "enum": [
+                                        "active",
+                                        "not_applicable"
+                                      ]
+                                    },
+                                    "runtime_seconds": {
+                                      "enum": [
+                                        "active",
+                                        "not_applicable"
+                                      ]
+                                    },
+                                    "steps": {
+                                      "enum": [
+                                        "active",
+                                        "not_applicable"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "steps",
+                                    "runtime_seconds",
+                                    "cost"
+                                  ],
+                                  "type": "object"
+                                },
+                                "step_unit": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "threshold": {
+                                  "type": "number"
+                                },
+                                "window": {
+                                  "maximum": 10000,
+                                  "minimum": 2,
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "kind",
+                                "metric",
+                                "direction",
+                                "criterion",
+                                "threshold",
+                                "window",
+                                "insufficient_window",
+                                "min_epochs",
+                                "max_epochs",
+                                "max_steps",
+                                "max_runtime_seconds",
+                                "max_cost",
+                                "resource_modes",
+                                "cost_unit",
+                                "step_unit",
+                                "next_epoch_steps",
+                                "next_epoch_seconds",
+                                "next_epoch_cost"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "allocation": {
+                                  "enum": [
+                                    "proportional",
+                                    "equal"
+                                  ]
+                                },
+                                "id": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "const": "representation/v1"
+                                },
+                                "max_share_error": {
+                                  "maximum": 1,
+                                  "minimum": 0,
+                                  "type": "number"
+                                },
+                                "min_per_stratum": {
+                                  "maximum": 1000000000,
+                                  "minimum": 0,
+                                  "type": "integer"
+                                },
+                                "required_strata": {
+                                  "items": {
+                                    "maxLength": 200,
+                                    "minLength": 1,
+                                    "type": "string"
+                                  },
+                                  "maxItems": 10000,
+                                  "type": "array",
+                                  "uniqueItems": true
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "kind",
+                                "allocation",
+                                "min_per_stratum",
+                                "required_strata",
+                                "max_share_error"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "expected": {
+                                  "additionalProperties": {
+                                    "type": [
+                                      "string",
+                                      "number",
+                                      "boolean",
+                                      "null"
+                                    ]
+                                  },
+                                  "maxProperties": 32,
+                                  "minProperties": 1,
+                                  "type": "object"
+                                },
+                                "id": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "const": "identity/v1"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "kind",
+                                "expected"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "const": "overlap/v1"
+                                },
+                                "max_overlap": {
+                                  "maximum": 1000000000,
+                                  "minimum": 0,
+                                  "type": "integer"
+                                },
+                                "scope": {
+                                  "enum": [
+                                    "cross_run",
+                                    "cross_lineage"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "kind",
+                                "scope",
+                                "max_overlap"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "const": "method/v1"
+                                },
+                                "method": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "decision_domain": {
+                                      "enum": [
+                                        "predicate",
+                                        "continuation"
+                                      ]
+                                    },
+                                    "id": {
+                                      "maxLength": 200,
+                                      "minLength": 1,
+                                      "type": "string"
+                                    },
+                                    "implementation_ref": {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "commit": {
+                                          "maxLength": 200,
+                                          "minLength": 1,
+                                          "type": "string"
+                                        },
+                                        "entrypoint": {
+                                          "maxLength": 200,
+                                          "minLength": 1,
+                                          "type": "string"
+                                        },
+                                        "module": {
+                                          "maxLength": 200,
+                                          "minLength": 1,
+                                          "type": "string"
+                                        },
+                                        "path": {
+                                          "maxLength": 200,
+                                          "minLength": 1,
+                                          "type": "string"
+                                        },
+                                        "sha256": {
+                                          "maxLength": 200,
+                                          "minLength": 1,
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "module",
+                                        "entrypoint",
+                                        "commit",
+                                        "path",
+                                        "sha256"
+                                      ],
+                                      "type": "object"
+                                    },
+                                    "method_digest": {
+                                      "maxLength": 64,
+                                      "minLength": 64,
+                                      "type": "string"
+                                    },
+                                    "parameter_schema": {
+                                      "type": "object"
+                                    },
+                                    "parameter_schema_digest": {
+                                      "maxLength": 64,
+                                      "minLength": 64,
+                                      "type": "string"
+                                    },
+                                    "version": {
+                                      "maxLength": 200,
+                                      "minLength": 1,
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "version",
+                                    "decision_domain",
+                                    "implementation_ref",
+                                    "parameter_schema",
+                                    "parameter_schema_digest",
+                                    "method_digest"
+                                  ],
+                                  "type": "object"
+                                },
+                                "parameters": {
+                                  "type": "object"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "kind",
+                                "method",
+                                "parameters"
+                              ],
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "maxItems": 32,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "schema_version": {
+                        "const": "modelbuilder.rules/v1"
+                      },
+                      "version": {
+                        "maxLength": 200,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "schema_version",
+                      "id",
+                      "version",
+                      "rules"
+                    ],
+                    "type": "object"
+                  },
+                  "project_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "request_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "project_id",
+                  "policy",
+                  "idempotency_key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Structured authoritative operation result"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Invalid request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Revision or idempotency conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Execution precondition failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationError"
+                }
+              }
+            },
+            "description": "Capability unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Register immutable selected safeguards; does not authorize execution.",
         "x-required-scope": "modify",
         "x-required-scopes": [
           "modify"

@@ -91,7 +91,7 @@ def runtime_source_identity(package_root: Path | None = None) -> str:
     profile = root / "backend/components/mlx-darwin-arm64.lock"
     if profile.is_file():
         files.append(profile)
-    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py", "scientific.py", "scientific_operations.py", "smoke.py", "artifact_rights.py", "generated_artifacts.py", "hub_rights.py", "hub_contract.py", "research_context_contract.py") if (root / name).is_file()]
+    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py", "scientific.py", "scientific_operations.py", "rules.py", "rule_operations.py", "smoke.py", "artifact_rights.py", "generated_artifacts.py", "hub_rights.py", "hub_contract.py", "research_context_contract.py") if (root / name).is_file()]
     return identity({str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in sorted(files)})
 
@@ -135,6 +135,10 @@ def dispatch(inputs: dict, spec: dict):
     if spec["component_node"].get("component", {}).get("role") == "scientific_gate" and not in_child():
         from ..scientific_gate_artifacts import native_context
         spec = {**spec, "scientific_context": native_context(spec)}
+    if spec['component_node'].get('component', {}).get('id') == 'modelbuilder.rules.gate' and not in_child():
+        from ..scientific_gate_artifacts import native_context
+        types = {port['name']: port['type'] for port in spec['component_node']['inputs'] if port['name'] in inputs}
+        spec = {**spec, 'rule_context': native_context(spec, tuple(sorted(types)), types)}
     if enabled(spec):
         context(spec)
         from ..native_cache import record_outputs
@@ -211,6 +215,20 @@ def dispatch(inputs: dict, spec: dict):
         descriptor = validate_resume(previous, "warm_start", identities, {**component["capabilities"], "resume_modes": resume_modes})
         run_context.update(resume={"path": str(previous), "descriptor": descriptor, "artifact_id": spec["iteration_checkpoint_ref"]}, resume_mode="warm_start")
     scientific_contract = (deepcopy(node), deepcopy(inputs), deepcopy(spec["source"])) if component["role"] == "scientific_gate" else None
+    rule_contract = (deepcopy(parameters), deepcopy(inputs)) if component['id'] == 'modelbuilder.rules.gate' else None
+    platform_provenance = {'source': deepcopy(spec['source']), 'component': deepcopy(component),
+                           'implementation_ref': deepcopy(node['implementation_ref']),
+                           'runtime_source_digest': actual_environment['modelbuilder_runtime_source']}
+    platform_target = None
+    if rule_contract is not None and 'target' in rule_contract[1]:
+        from ..rule_attestations import target_descriptor
+        platform_target = target_descriptor(rule_contract[1]['target'], rule_contract[0].get('target_checkpoint_kind'))
+    rule_methods = ()
+    if rule_contract is not None:
+        from ..rule_methods import load_methods
+        rule_methods = load_methods(rule_contract[0]['policy'], spec)
+    run_context = deepcopy(run_context)
+    run_context['rule_methods'] = rule_methods
     function = load_callable(node["implementation_ref"], spec["source_root"], spec["trusted_code_roots"], spec["source"]["files"])
     run_context["source_root"] = function.__source_snapshot_root__
     coordinator = None
@@ -239,6 +257,30 @@ def dispatch(inputs: dict, spec: dict):
     if scientific_contract is not None:
         from ..scientific_gate_artifacts import seal_results
         results = seal_results(results, scientific_contract[0], spec["scientific_context"], scientific_contract[1], scientific_contract[2])
+    if rule_contract is not None:
+        from .rule_gate import gate
+        expected = gate(inputs=rule_contract[1], parameters=rule_contract[0],
+                        context={'cancel_file': str(Path(spec['job_dir']) / 'cancel.json'), 'rule_methods': rule_methods})
+        if identity(results) != identity(expected):
+            raise ValueError('Native rule result differs from deterministic evaluation')
+        native = spec['rule_context']
+        subject = rule_contract[1]['evidence']['subject']
+        if (subject['project_id'] != native['producer']['project_id']
+                or subject['run_id'] != native['producer']['backend_run_id']
+                or subject['config_digest'] != spec['recipe_digest']
+                or any(x['backend_project_id'] != native['producer']['backend_project_id'] for x in native['inputs'])):
+            raise ValueError('Native rule evidence subject differs from the immutable executed run')
+        results = deepcopy(expected)
+        results['result']['native_execution'] = {**native, 'source_digest': identity(platform_provenance['source']),
+            'runtime_source_digest': platform_provenance['runtime_source_digest'],
+            'methods': [deepcopy(method.implementation) for method in rule_methods],
+            'evaluator': {'component_digest': identity(platform_provenance['component']), 'implementation_ref': platform_provenance['implementation_ref']}}
+        authorization = spec.get('rule_authorization')
+        results['result']['native_execution']['activation'] = deepcopy(authorization['activation']) if authorization else None
+        if 'target' in rule_contract[1]:
+            receipt = next(row for row in native['inputs'] if row['input_port'] == 'target')
+            results['result']['native_execution']['target'] = {**deepcopy(receipt), **platform_target}
+        results['result']['digest'] = identity({k: v for k, v in results['result'].items() if k != 'digest'})
     if not isinstance(results, dict) or set(results) != {p["name"] for p in node["outputs"]}:
         raise ValueError("Component results must exactly match declared output ports")
     if runner:

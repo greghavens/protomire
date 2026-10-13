@@ -39,11 +39,23 @@ cancellation/deadline checks passed **2, with 66 deselected, in 2.18 seconds**.
 The initial **70 passed/1 failed** terminal `dead`-state fixture attempt remains
 preserved; corrected terminal/race handling continues to reject live descendants.
 
-The **51 source-pin/wheel checks passed in 4.30 seconds** and are not full
-installed scientific replay. No current 154-file full replay is claimed. The
-historical 1dc9698 strict comparison remains **FAIL 34/35**, with equal scientific
-outputs and independent rights-only provenance differences. No provider/actual
-teacher/training/full HTTP-MCP/whole-service cancellation claim is made here.
+The **51 source-pin/wheel checks passed in 4.30 seconds**. Separate current
+154-file installed replay now verifies four fresh offline noneditable environments,
+four dependency checks, two successful independently reviewed Git-free native
+runs, retry reconciliation and complete worker/process-group cleanup.
+All **64,322 installed files** remain unchanged from ordinary installation,
+with zero bytecode before/after and no precompilation. All 866 tracked checkout
+files, 154 runtime files and imported source bytes also remain unchanged.
+
+Strict comparison remains **FAIL, 34/35** solely for three independent rights
+manifests; seven scientific outputs, metrics and evaluations match exactly.
+[Current receipt](installed-wheel-replay.json) preserves full scope and archive
+hashes. All 182 indexed local receipts and archive members were independently
+hash-verified. This is same-host Linux CPU synthetic-fixture acceptance, not
+third-party rights clearance or full-product/GUI/GPU/provider acceptance.
+Earlier 151-file evidence remains unchanged. The Moonshiner focused evidence
+above does not claim actual teacher/training/full HTTP-MCP/whole-service
+cancellation acceptance.
 
 ## Current Mac artifact, with evidence-provenance limits
 

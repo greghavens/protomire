@@ -44,10 +44,30 @@ teacher execution, training/token masking, GUI, full-flow HTTP/MCP transport or
 whole-service cancellation. [Focused checks and hashes](../evidence/product-completion-20261013/acceptance-6323bfd/focused-source-checks.json)
 separate those results from the aggregate.
 
-The current **51 source-pin/wheel checks passed in 4.30 seconds**. They are not a
-complete installed scientific replay. No new 154-file full replay is claimed;
-the historical 1dc9698 strict result remains **FAIL 34/35**, with scientific
-outputs equal and independent rights provenance retained.
+The current **51 source-pin/wheel checks passed in 4.30 seconds**. A separate
+fresh installed replay now covers this exact **154-file runtime**: four offline
+noneditable environments and four dependency checks passed; two independently
+reviewed Git-free native runs succeeded and exact retries reconciled their
+existing operations. Both workers exited 0, were reaped, and their process
+groups terminated.
+
+All **64,322 installed files** remained byte-identical from ordinary installation
+through execution, with **zero bytecode files before and after** and no explicit
+precompilation or warmup. All **866 tracked checkout files**, 154 runtime files
+and extracted source bytes remained unchanged. The real identity-subprocess
+regression separately passed one test. This verifies the `-I -B` probe correction
+without the historical precompilation workaround.
+
+The unchanged strict comparator still reports **FAIL, 34/35**, solely at
+`output_hashes_equal`: **seven scientific outputs**, deterministic metrics and
+evaluation records match exactly, while three manifests differ exclusively
+under `/rights` with legitimate independent review identities. No provenance or
+comparator was normalized. This same-host Linux CPU synthetic-fixture result
+does not grant third-party redistribution or public pretrained rights, or imply
+full-product, GUI, GPU or provider acceptance. All **182 indexed raw receipts**
+and their archive members were independently hash-verified.
+[Current installed replay receipt](../evidence/product-completion-20261013/acceptance-6323bfd/installed-wheel-replay.json)
+records exact hashes and scope. Earlier 151-file evidence remains unchanged.
 
 ### Current Mac unsigned development DMG: v12
 

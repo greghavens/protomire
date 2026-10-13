@@ -1,0 +1,214 @@
+{
+  "candidate_commit": "34fe6c75dda74e07eb8c6bf048d03e6694e0c886",
+  "comparison": {
+    "all_differences_under": "/rights",
+    "checks_passed": 34,
+    "checks_total": 35,
+    "comparator_unchanged": true,
+    "dataset_sha256": "d8f8ca9b570268fa283f631f8692e0b3f19b94c8728d0d337fbd1841af8fd0a8",
+    "differing_manifest_count": 3,
+    "differing_manifest_sha256": {
+      "export/export.manifest.json": {
+        "origin": "c7bb87fbd06b84432ff023301f90d9496ec0da3b91e87c06c4bc5c0bfc23b559",
+        "replay": "a9888c22d02df3589fc03aceaed562ff947944f2cca2a30e8d2b9a725467fe1b"
+      },
+      "initial/checkpoint.manifest.json": {
+        "origin": "afb2ccc0212173b8e7704a7a7fb785a928bcf77df30578910aa61772b9ce4b76",
+        "replay": "77243cd9e0ba945826e48832efbac60f96ad6f5f7f8b1cde7a6fdd01cf8d3412"
+      },
+      "train/checkpoint.manifest.json": {
+        "origin": "641343160b24d41fa499909d44ec23834cfba8d276ba413705443914a60bd9b0",
+        "replay": "d2576a4a343207cda1f52205b690b26f26dc9f0769b01724d8779c387fdc319d"
+      }
+    },
+    "exact_deterministic_metrics_equal": true,
+    "exact_evaluation_records_equal": true,
+    "exact_scientific_output_sha256": {
+      "evaluate/metrics.json": "a4f5022efd3a8ec85a1ba647c6190f2e9a4958e6e9a5b7d523132a3b1671dbc5",
+      "export/loader.py": "e3ca9027bf2d230e7c2269c803d6d0bc0616a2f7fd02be944a51ef788d2454c5",
+      "export/model.pt": "8ca40a1f2a076b812bc3bef2345055245c9442a00af73ca070bd016aadb22552",
+      "export/parity.json": "3c7b2598547c009e971cfae2b8c9ee9aa7d1e23b328522eb30e380b7b30661c9",
+      "initial/checkpoint.pt": "9e64a77a85274f1be727aa1882ab16963cf78d608cd070256efc276699bcb517",
+      "train/best.pt": "ca38995a31e1668f8a6263848c6500c616c1b3ba620399f711a4c4bcc0553775",
+      "train/checkpoint.pt": "79ef76ee26282a52275ba951c66a412595b5942d86af11799ea48a7308377ebd"
+    },
+    "failed_checks": [
+      "output_hashes_equal"
+    ],
+    "independent_review_records_preserved": true,
+    "provenance_normalization": false,
+    "scientific_output_count": 7,
+    "strict_status": "FAIL"
+  },
+  "environments": [
+    {
+      "application_source_files": 116,
+      "bytecode_files_after": 0,
+      "bytecode_files_before": 0,
+      "dependency_check_returncode": 0,
+      "distribution_count": 71,
+      "installed_file_count": 8747,
+      "installed_inventory_sha256_after": "f0ed1b834f7f8390748238f93e1f87e7ea9a5e957f5559eb28c07e4cbcdefd98",
+      "installed_inventory_sha256_before": "f0ed1b834f7f8390748238f93e1f87e7ea9a5e957f5559eb28c07e4cbcdefd98",
+      "kind": "service",
+      "noneditable": true,
+      "offline_hash_locked_dependencies": true,
+      "role": "origin",
+      "wheel_file_count": 120,
+      "wheel_sha256": "47df606539663640ef38b3e377cf3ea99fe2ab2f876dd4dd78798899f3fa2447"
+    },
+    {
+      "application_source_files": 91,
+      "bytecode_files_after": 0,
+      "bytecode_files_before": 0,
+      "dependency_check_returncode": 0,
+      "distribution_count": 104,
+      "installed_file_count": 23414,
+      "installed_inventory_sha256_after": "cf642e82b0c2c17be3a708528365d631441c607e56e1ebf39b53e6ab17730ff6",
+      "installed_inventory_sha256_before": "cf642e82b0c2c17be3a708528365d631441c607e56e1ebf39b53e6ab17730ff6",
+      "kind": "backend",
+      "noneditable": true,
+      "offline_hash_locked_dependencies": true,
+      "role": "origin",
+      "wheel_file_count": 94,
+      "wheel_sha256": "f047f32dd33b9c76013483af7fe233250cbe22730339e2350560e9007f58b90f"
+    },
+    {
+      "application_source_files": 116,
+      "bytecode_files_after": 0,
+      "bytecode_files_before": 0,
+      "dependency_check_returncode": 0,
+      "distribution_count": 71,
+      "installed_file_count": 8747,
+      "installed_inventory_sha256_after": "0d84c59aaf109d62855bfe124a277a0d9dde1d61e2e21ab2e13acb0a838ac8c7",
+      "installed_inventory_sha256_before": "0d84c59aaf109d62855bfe124a277a0d9dde1d61e2e21ab2e13acb0a838ac8c7",
+      "kind": "service",
+      "noneditable": true,
+      "offline_hash_locked_dependencies": true,
+      "role": "replay",
+      "wheel_file_count": 120,
+      "wheel_sha256": "47df606539663640ef38b3e377cf3ea99fe2ab2f876dd4dd78798899f3fa2447"
+    },
+    {
+      "application_source_files": 91,
+      "bytecode_files_after": 0,
+      "bytecode_files_before": 0,
+      "dependency_check_returncode": 0,
+      "distribution_count": 104,
+      "installed_file_count": 23414,
+      "installed_inventory_sha256_after": "08578d475d3dde7adebc2d68df82f8805f1f5d35c9a77c2462b68e0c358780ef",
+      "installed_inventory_sha256_before": "08578d475d3dde7adebc2d68df82f8805f1f5d35c9a77c2462b68e0c358780ef",
+      "kind": "backend",
+      "noneditable": true,
+      "offline_hash_locked_dependencies": true,
+      "role": "replay",
+      "wheel_file_count": 94,
+      "wheel_sha256": "f047f32dd33b9c76013483af7fe233250cbe22730339e2350560e9007f58b90f"
+    }
+  ],
+  "focused_test": {
+    "errors": 0,
+    "failures": 0,
+    "name": "test_final_backend_identity_probe_preserves_isolation_without_writing_bytecode",
+    "skipped": 0,
+    "tests": 1,
+    "xml_sha256": "c953627af128d6d054aec510e19c5aff0e7c4bf311174bb2bf32760c621dee97"
+  },
+  "installation_integrity": {
+    "all_installed_bytes_unchanged": true,
+    "all_installed_files_verified": 64322,
+    "bytecode_added_removed_or_changed": 0,
+    "bytecode_files_after": 0,
+    "bytecode_files_before": 0,
+    "extracted_source_bytes_unchanged": true,
+    "final_backend_identity_flags": [
+      "-I",
+      "-B"
+    ],
+    "ordinary_installation_baseline": true,
+    "precompilation_or_warmup": false,
+    "source_bytecode_files": 0,
+    "tracked_checkout_files_unchanged": 866
+  },
+  "limits": [
+    "Same-host Linux CPU synthetic fixture installed replay only; not full product, native GUI, installer, Mac/GPU, provider, hosted CI or cloud execution acceptance.",
+    "Strict all-output comparison remains FAIL because independent genuine rights manifests differ.",
+    "No third-party runtime/dependency redistribution or public pretrained rights approval."
+  ],
+  "observed_checkout_commit": "a7bf03203acc77399dad6c2dfa9ed4d3aef82347",
+  "previous_151_receipts_and_archive_preserved": true,
+  "raw_evidence": {
+    "acceptance_receipt_sha256": "d645105d67c7a77c4318579406695e18ad65376be4d72263324267e5d96c64e0",
+    "archive_bytes": 11521436,
+    "archive_sha256": "c8b5653fa34037384be7ab854433877bced7aca5c2c8efd5b1eaf8c8f2fe42a1",
+    "final_index_sha256": "cedbeab533d8a8f9e880960fd011d435bf4a763b66c3a7b1f79406f9ff23cc77",
+    "indexed_files": 182,
+    "scientific_equality_sha256": "a2db981328a9fd5aa773c915da151710ab8722433f3e395bc706990bd90b7aa6",
+    "strict_comparison_sha256": "35e8e3fce529c61ca1c14a76b8cda5e10a7005218591e1e24e6c8b6f4b2ab062"
+  },
+  "root_modified": false,
+  "runs": [
+    {
+      "exact_retry_reconciled_existing_operation": true,
+      "execution_recipe_digest": "43db649638cc0f437111ec8c4ea03415bfa7f20778fbb6ca464e4bd927e58f18",
+      "installed_source_verified": true,
+      "operation_and_native_job_count": 1,
+      "process_group_terminated": true,
+      "role": "origin",
+      "single_owned_recipe_identity": true,
+      "source_git_free": true,
+      "status": "PASS",
+      "termination_confirmed": true,
+      "worker_alive": false,
+      "worker_exit_code": 0,
+      "worker_reaped": true
+    },
+    {
+      "exact_retry_reconciled_existing_operation": true,
+      "execution_recipe_digest": "026b839bdc4512e344893754b55a847b594b20547e7ac1faf669b37f0892dd9b",
+      "installed_source_verified": true,
+      "operation_and_native_job_count": 1,
+      "process_group_terminated": true,
+      "role": "replay",
+      "single_owned_recipe_identity": true,
+      "source_git_free": true,
+      "status": "PASS",
+      "termination_confirmed": true,
+      "worker_alive": false,
+      "worker_exit_code": 0,
+      "worker_reaped": true
+    }
+  ],
+  "runtime_commit": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92",
+  "runtime_inventory_sha256": "aeb2fbb00ca8fef96d3e682f050972bd965a20aa1f11e9c9e8b7045841a50540",
+  "runtime_source_files": 154,
+  "runtime_source_matches_git_and_both_shipping_manifests": true,
+  "schema_version": "modelbuilder.current-installed-replay/v1",
+  "shipping_recipe_files": {
+    "custom-pytorch": {
+      "runtime_commit": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92",
+      "sha256": "bd4766c7d40c5a36f881d94de78fc13649a62598e49afc1d2311b5981512a265",
+      "source_files": 154
+    },
+    "pretrained-small": {
+      "runtime_commit": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92",
+      "sha256": "84a1615777b97641e6f64598e325b9ddaa387bdad1bfa4eaf2918c12b97d9199",
+      "source_files": 154
+    }
+  },
+  "status": "PASS_SCOPED_INSTALLED_REPLAY_AND_ZERO_BYTECODE_MUTATION",
+  "synthetic_transport": {
+    "added_files": [
+      "TERMS.txt"
+    ],
+    "archive_sha256": "861db1373b707e07adfd3c091e81223112740a18682bc90620368bf48cc2538c",
+    "author_commit": "4d02ba6209c723f19f36729ffc1a6c5058d5714e",
+    "bundle_digest": "8bc7e72d5f88302c2502868a6192465c355254f111afe8b90004347266f4584f",
+    "recipe_digest": "f72076801b15485d20f149ca40fb03247df328db58c13c2fad8e91d1ce27ebfa",
+    "runtime_files_unchanged": 154,
+    "scope": "Separate test-owned fixture transport; no third-party legal, redistribution or pretrained approval",
+    "source_files": 155,
+    "terms_sha256": "434b9abde799ace31f9f43a82c85ae3f073faed291f59ce3a16b581695ab399c"
+  },
+  "temporary_environment_cleanup_performed": false
+}

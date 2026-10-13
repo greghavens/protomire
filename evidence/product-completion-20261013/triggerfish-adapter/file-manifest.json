@@ -1,0 +1,71 @@
+{
+  "base_commit": "f99c5d5024090a20c30ba9077b9614ac2ea86475",
+  "files": [
+    {
+      "path": "distribution/TRIGGERFISH_COMPATIBILITY.md",
+      "before_sha256": null,
+      "after_sha256": "4be14da8e2e687893795df9f2b3db93b867c24f6d969649d00860f9089e5fd17",
+      "bytes": 8282
+    },
+    {
+      "path": "distribution/assistant_project.py",
+      "before_sha256": "83aa6044ff685841158e7c800772ec217145da98d01dac84e19b66339ea74a43",
+      "after_sha256": "0bbd660cf7c43fb285e17c0352a18b3750503ed04eab70b891ce7b6f4959996b",
+      "bytes": 25318
+    },
+    {
+      "path": "distribution/assistant_templates/v1/triggerfish-instructions.md",
+      "before_sha256": null,
+      "after_sha256": "e02ffa4ad5e00688f1b56c7e70d76d92aef74b64a11150b3110a58be463cc4a9",
+      "bytes": 1419
+    },
+    {
+      "path": "distribution/assistant_templates/v1/triggerfish-setup.md",
+      "before_sha256": null,
+      "after_sha256": "76159a492817ba111d05808ca7aa7917c502e08ca42e157777a09e1148817c2f",
+      "bytes": 3146
+    },
+    {
+      "path": "distribution/managed_core.py",
+      "before_sha256": "47f13117b2fa9d5c4435be39f4e4cef4de7f3c35ae94cfc3781d1c3a7c756fcd",
+      "after_sha256": "0584e1555a24c92c3c79875b8437ab3a2194800fd5d59a4c33ff5784d89a5137",
+      "bytes": 36106
+    },
+    {
+      "path": "distribution/reviewed_mcp.py",
+      "before_sha256": "f5ec4e5aef0c05a3b66dbd5be6476100382522697cb3f70f54a8151464b58e96",
+      "after_sha256": "b6cfd2051d4e82e1e58699131f7b3c36f17f25a3f5cfcfe45b7b84146a471ff0",
+      "bytes": 9281
+    },
+    {
+      "path": "packages/ide_feature/src/assistantSetup.ts",
+      "before_sha256": "8443d454354c709e1e718c49900fac94464187f6fd19f08968dc805056a6d342",
+      "after_sha256": "60d580d2ef04836f6039faefcae38e98dea9662807cd87f3b34f7a77a6a86b36",
+      "bytes": 12159
+    },
+    {
+      "path": "packages/ide_feature/test/assistantSetup.test.cjs",
+      "before_sha256": "4df24763ca95d1164e0df9ad5799bd0083497f641c3f60dc4308bac5dc3ff182",
+      "after_sha256": "f63e57ef343b41fcd67aa1943a9aedd6fd8737c0607cdf365f374c9c9a8202fd",
+      "bytes": 8778
+    },
+    {
+      "path": "tests/assistant_setup/test_project_setup.py",
+      "before_sha256": "72a2a39dabc0745d129871f8024599ac2f847df718c9032cd26f7bb558a86414",
+      "after_sha256": "6c6349ba5dcc074ec41c6ed4c1449e2d5dfd6ac518dd7c440090e5458f39dae6",
+      "bytes": 10509
+    },
+    {
+      "path": "tests/assistant_setup/test_triggerfish_setup.py",
+      "before_sha256": null,
+      "after_sha256": "200b130445026668aa27745f3249b7ca094c43069d6faefe9558028cb6cbcfc8",
+      "bytes": 8984
+    },
+    {
+      "path": "tests/distribution/test_triggerfish_mcp.py",
+      "before_sha256": null,
+      "after_sha256": "1e091ebe6e24d26ff541759e9cc1b270995b5090624e74cfc264e199cf7852ac",
+      "bytes": 11569
+    }
+  ]
+}

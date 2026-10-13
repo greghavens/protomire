@@ -1,0 +1,80 @@
+{
+  "status": "ModelBuilder-side implementation and local protocol tests passed; vendor activation remains blocked",
+  "base_commit": "f99c5d5024090a20c30ba9077b9614ac2ea86475",
+  "apply_check_target_commit": "aa8f857b630a27409a2466704328099e9c8b1c62",
+  "patch_sha256": "b4c69387b80ca4e5d15434f62122623b3ce0406a1886d010091f9b87c7592854",
+  "files": 11,
+  "tests": [
+    {
+      "scope": "focused setup, flat real MCP, reviewed requests/publication, native adapter",
+      "passed": 164,
+      "log": "python-focused-final.log"
+    },
+    {
+      "scope": "managed core and sealed packaging regression",
+      "passed": 40,
+      "log": "managed-regression-final.log"
+    },
+    {
+      "scope": "TypeScript build and all native host tests",
+      "passed": 530,
+      "log": "frontend-tests-final.log"
+    },
+    {
+      "scope": "changed Python lint",
+      "passed": true,
+      "log": "lint-final.log"
+    },
+    {
+      "scope": "patch whitespace and current-root apply check",
+      "passed": true
+    }
+  ],
+  "initial_staging_failures": [
+    "Managed regression first pass: 39 passed, one failed because the source-clone fixture requires local Git metadata, absent from the archive staging tree. Supplied staging-only local clone metadata; rerun all 40 passed.",
+    "Frontend first broad pass lacked its conventional staging .venv/bin/python fixture path. Pointed staging-only .venv to the existing installed service environment without installing anything; rerun all530 passed."
+  ],
+  "source_audit": {
+    "repository": "greghavens/triggerfish",
+    "head": "571c42b9299ab3006ce96fb541b7f1a23988d3b5",
+    "release": "v0.7.19",
+    "release_commit": "d2c7f06d80e5b22cbacb794a2067afd020c8e63a",
+    "files_unchanged_since_release": 25
+  },
+  "remaining_gates": [
+    "Rebuild/reseal/repin the managed application runtime; source changes do not retrofit runtime1dc9698.",
+    "No Triggerfish binary was present on PATH, installed, or executed. Official binary provenance/install/provider authentication/actual vendor-agent tests remain unverified.",
+    "Upstream fixed gateway/CLI port18789 prevents automatic concurrent project-isolated launch; no daemon is started or joined.",
+    "Upstream only accepts python/python3 basenames for managed Python. python3.12/python.exe are rejected and config drops allowedCommands.",
+    "Inactive MCP fragment has enabled:false and no classification; skill-template path cannot be autodiscovered. Separate reviewed vendor activation/classification is required.",
+    "Same-user unrestricted shell is not a hostile-process sandbox.",
+    "Native GUI/platform installer acceptance was not performed by this worker."
+  ],
+  "root_writes_commits_pushes": false,
+  "root_integration": {
+    "tests": [
+      {
+        "scope": "assistant setup, flat managed MCP and managed core",
+        "passed": 118,
+        "seconds": 52.92
+      },
+      {
+        "scope": "all distribution and assistant setup",
+        "passed": 216,
+        "skipped": 1,
+        "seconds": 54.9
+      },
+      {
+        "scope": "all frontend host tests, type checks and compilation",
+        "passed": 530
+      }
+    ],
+    "lint": "PASS",
+    "scope": "source only; no upstream Triggerfish execution or packaged acceptance"
+  },
+  "root_logs": {
+    "triggerfish-integrated.log": "ff92ab83d8664cb310bfb9c366242cb68d5c9d05e3ecfa8e74f701459717483f",
+    "triggerfish-frontend-integrated.log": "7f4ecc7aa629a0ab8197caa2a869a9df53af33c695e7b8787abfcf66ad8e4b38",
+    "triggerfish-distribution-integrated.log": "5cb1d0e31f0711e98f15a9a9de0eaf5005ed04aeb1cd363bb9cabe105f004e65"
+  }
+}

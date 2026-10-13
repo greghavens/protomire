@@ -33,6 +33,11 @@ test fixtures and accounting simulations do not establish production acceptance.
 - Source-bound framework components, immutable dataset versions, live checkpoint
   evaluation and notifications, private recipe discovery/versioning, and scheduled
   research watches. Each has its own capability and verification limits.
+- Optional Codex, Claude Code and Triggerfish harness choices. Triggerfish has a
+  locally tested ModelBuilder-side flat MCP adapter and reviewed inactive
+  project setup; upstream execution and complete harness acceptance remain
+  unverified. Packaged use requires a rebuilt/resealed runtime; gateway-port,
+  command-allowlist, provider and native GUI gates remain explicit.
 - Historical source-built Linux IDE launch with Python, basedpyright diagnostics,
   debugpy, terminal, Git and Jupyter execution tests. Current native GUI acceptance
   is recorded separately from those earlier passes.
@@ -82,6 +87,7 @@ installation experience.
 - [Reproducible scientific operations](docs/SCIENTIFIC_WORKFLOWS.md)
 - [Training runner compatibility](docs/TRAINING_RUNNERS.md)
 - [Research retrieval and harness context](docs/RESEARCH_CONTEXT.md)
+- [Triggerfish adapter, inactive setup and remaining gates](distribution/TRIGGERFISH_COMPATIBILITY.md)
 
 - [Architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md), [backend decision](docs/BACKEND_DECISION.md)
 - [Bounded native pipeline iteration](docs/NATIVE_BOUNDED_ITERATION.md)

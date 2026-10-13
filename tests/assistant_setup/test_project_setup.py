@@ -130,14 +130,14 @@ def test_rollback_refuses_modified_owned_skill_and_overrides_untouched(tmp_path,
     assert skill.read_text().endswith("Owner edits")
 
 
-def test_symlinks_and_unsupported_harness_cannot_fake_setup(tmp_path, command):
+def test_symlinks_and_unknown_harness_cannot_fake_setup(tmp_path, command):
     outside = tmp_path / "outside"
     outside.mkdir()
     (tmp_path / ".agents").symlink_to(outside, target_is_directory=True)
     with pytest.raises(setup.SetupError):
         preview(tmp_path, command)
     with pytest.raises(setup.SetupError) as error:
-        preview(tmp_path, command, "triggerfish")
+        preview(tmp_path, command, "unknown")
     assert error.value.code == "capability_unavailable" and list(outside.iterdir()) == []
 
 
@@ -171,7 +171,7 @@ def test_cli_project_setup_repeat_and_errors_return_safe_json(tmp_path, command)
     blocked = subprocess.run([*args, "preview-project", "--client", "triggerfish", "--workspace", str(tmp_path),
                               "--project-id", "project-1"], capture_output=True, text=True)
     assert blocked.returncode == 2 and blocked.stderr == ""
-    assert json.loads(blocked.stdout)["error"]["code"] == "capability_unavailable"
+    assert json.loads(blocked.stdout)["error"]["code"] == "managed_runtime_required"
 
 
 def test_codex_rollback_preserves_comments_outside_owned_stanza_and_blocks_inside(tmp_path, command):
@@ -189,3 +189,10 @@ def test_codex_rollback_preserves_comments_outside_owned_stanza_and_blocks_insid
         project.preview_rollback("codex", tmp_path)
     assert error.value.code == "managed_file_changed"
     assert "Edited owner comment" in path.read_text()
+
+
+@pytest.mark.parametrize("client", ["codex", "claude"])
+def test_current_native_command_preserves_bytecode_suppression(tmp_path, command, client):
+    command = {**command, "args": [command["args"][0], "-B", *command["args"][1:]]}
+    report, _ = preview(tmp_path, command, client)
+    assert report["plan"]["entry"]["args"] == command["args"]

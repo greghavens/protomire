@@ -4,6 +4,23 @@
 
 Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
+## Later source changes: Triggerfish compatibility adapter
+
+These results cover later source changes, not the frozen runtime or Mac artifact
+below. They do not establish complete harness acceptance or a new source pin.
+
+| Scope | Status | Evidence and limits |
+|---|---|---|
+| ModelBuilder-side flat MCP profile | PASS, local adapter stage | Real managed stdio/HTTP/SQLite tests retain original service schemas, project read-only grants and exact owner-reviewed mutations; text envelopes preserve errors. Validation, bounds, isolation, replay, denial, cancellation and stale-state checks pass. Codex/Claude transport is retained. |
+| Reviewed inactive project preparation | PASS, source/host tests | Disabled MCP fragment and non-autoloaded skill templates; no credentials, classification, installation, daemon, global-plugin or port changes. Exact review, cancellation, conflicts, rollback and passive stale-runtime detection tested. |
+| Focused regression selections | PASS, not a full aggregate | 164 focused Python, 40 managed-core/packaging and 530 frontend host tests; TypeScript build and lint pass. Overlapping counts are not summed. |
+| Triggerfish execution and activation | BLOCKED / UNVERIFIED | No upstream code executed. Audited fixed gateway/CLI port 18789 blocks automatic concurrent project isolation; python3.12/python.exe fail the command allowlist and config does not forward allowedCommands. Official install/provenance, provider authentication, actual client/agent calls and native GUI remain unverified. |
+| Packaged adapter and current GUI | UNVERIFIED | Rebuild/reseal/repin required; frozen runtime and prior unsigned Mac DMG do not contain these source changes. Host tests are not native GUI or installer acceptance. |
+
+[Compatibility details and audited source links](../distribution/TRIGGERFISH_COMPATIBILITY.md)
+retain all vendor, same-user-shell and activation limits. Historical records
+below are unchanged; no full-product or complete Triggerfish harness pass is claimed.
+
 ## Latest frozen candidate: aggregate complete with one rights-gate failure
 
 Candidate `f99c5d5024090a20c30ba9077b9614ac2ea86475` pins runtime

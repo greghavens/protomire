@@ -630,7 +630,11 @@ def main() -> int:
     parser.add_argument("--runtime-root", type=Path, default=Path(__file__).resolve().parent)
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--project-id", help="Required for MCP; grants read-only access to this one project")
+    parser.add_argument("--mcp-profile", choices=["native", "triggerfish"], default="native",
+                        help="Explicit MCP compatibility transport; never changes service authorization")
     args = parser.parse_args()
+    if args.mode != "mcp" and args.mcp_profile != "native":
+        parser.error("--mcp-profile applies only to mcp")
     if args.mode == "mcp" and not args.project_id:
         parser.error("mcp requires --project-id; unscoped assistant access is forbidden")
     os.umask(0o077)
@@ -663,7 +667,7 @@ def main() -> int:
                 sys.path.insert(0, str(Path(__file__).resolve().parent))
                 from reviewed_mcp import serve as serve_mcp
                 grant = rpc(session, "/_desktop/bridge", {"id": lease.identity, "project_id": args.project_id})
-                asyncio.run(serve_mcp(Configuration(api_url=f"http://127.0.0.1:{session['port']}", token=grant["token"]), args.project_id))
+                asyncio.run(serve_mcp(Configuration(api_url=f"http://127.0.0.1:{session['port']}", token=grant["token"]), args.project_id, profile=args.mcp_profile))
         finally:
             lease.close()
         return 0

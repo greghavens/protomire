@@ -7,6 +7,7 @@ receipt for explicit recovery, while ordinary errors restore originals in memory
 """
 from __future__ import annotations
 
+import ast
 import json
 import os
 from pathlib import Path
@@ -17,7 +18,7 @@ import tomllib
 import assistant_setup as setup
 
 VERSION = "1"
-CLIENTS = frozenset({"codex", "claude"})
+CLIENTS = frozenset({"codex", "claude", "triggerfish"})
 
 
 def checked_root(workspace: Path) -> Path:
@@ -69,6 +70,10 @@ def entry_from_command(client: str, command: dict, project_id: str) -> dict:
             or not Path(command["command"]).is_file() or not isinstance(command["args"], list)):
         raise setup.SetupError("invalid_managed_command", "Use the native managed-core command for this project.")
     args = command["args"]
+    # Current native commands suppress bytecode; accept the previous exact
+    # vector too, without admitting arbitrary Python flags or changing either.
+    if len(args) == 10 and args[:2] == ["-I", "-B"]:
+        args = [args[0], *args[2:]]
     if (len(args) != 9 or args[0] != "-I" or not isinstance(args[1], str)
             or not Path(args[1]).is_absolute() or Path(args[1]).name != "managed_core.py"
             or not Path(args[1]).is_file() or args[2] != "mcp"
@@ -110,18 +115,23 @@ def instruction_block(client):
 
 def preview_project(client, workspace, project_id, *, command=None, python=None, service_url=None):
     if client not in CLIENTS:
-        raise setup.SetupError("capability_unavailable", "Triggerfish setup is an interface only; compatibility has not been accepted.")
+        raise setup.SetupError("capability_unavailable", "This assistant has no supported project preparation path.")
     if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}", project_id or ""):
         raise setup.SetupError("project_required", "Create or select one model project before configuring its assistant.")
     root = checked_root(workspace)
     if command is not None:
         entry = entry_from_command(client, command, project_id)
     else:
+        if client == "triggerfish":
+            raise setup.SetupError("managed_runtime_required", "Triggerfish preparation requires the exact native project-scoped managed MCP command.")
         if not python or not service_url:
             raise setup.SetupError("runtime_required", "Choose the native managed runtime, or an explicit external service interpreter and URL.")
         python = setup.interpreter_path(python)
         setup.inspect_interpreter(python)
         entry = setup.server_entry(client, python, setup.validate_url(service_url))
+    if client == "triggerfish":
+        verify_triggerfish_profile(entry)
+        entry = {"command": entry["command"], "args": [*entry["args"], "--mcp-profile", "triggerfish"], "enabled": False}
     receipt, receipt_raw = load_receipt(root, client)
     current = receipt if receipt and receipt["state"] != "rolled_back" else None
     if current:
@@ -131,6 +141,8 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
         for item in current["files"]:
             if hash_bytes(setup.config_bytes(root / item["path"])) != item["after_sha256"]:
                 raise setup.SetupError("managed_file_changed", "A managed file changed since setup. Review rollback before reconfiguring; edits are preserved.")
+    if client == "triggerfish":
+        return preview_triggerfish(root, project_id, entry, current, receipt_raw)
     config = ".codex/config.toml" if client == "codex" else ".mcp.json"
     instructions = "AGENTS.md" if client == "codex" else "CLAUDE.md"
     originals = {}
@@ -166,6 +178,76 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
             "warnings": warnings, "credentials_stored": False,
             "capability": "project_read_only" if command else "external_service_scopes",
             "notice": "Review the exact project paths. Only managed files/blocks are added. Vendor sign-in, trust, approval settings and global files are unchanged. Runtime permissions are enforced by the service."}
+    return {"ok": True, "plan": plan, "approval": setup.digest(plan)}, files
+
+
+
+def verify_triggerfish_profile(entry):
+    """Read a capability declaration as data; never execute caller-supplied code.
+
+    This compatibility check is not executable trust. The native runtime seal
+    and packaging lifecycle hashes remain authoritative before any launch.
+    """
+    args = entry["args"]
+    script = args[2] if args[:2] == ["-I", "-B"] else args[1]
+    try:
+        raw = setup.config_bytes(Path(script))
+        tree = ast.parse(raw.decode("utf-8") if raw is not None else "")
+        supported = any(
+            isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name) and node.func.value.id == "parser"
+            and node.func.attr == "add_argument" and node.args
+            and isinstance(node.args[0], ast.Constant) and node.args[0].value == "--mcp-profile"
+            and any(keyword.arg == "choices" and isinstance(keyword.value, (ast.List, ast.Tuple))
+                    and all(isinstance(value, ast.Constant) for value in keyword.value.elts)
+                    and [value.value for value in keyword.value.elts] == ["native", "triggerfish"]
+                    for keyword in node.keywords)
+            for node in ast.walk(tree))
+    except (OSError, ValueError, SyntaxError, UnicodeError, RecursionError):
+        supported = False
+    if not supported:
+        raise setup.SetupError("managed_runtime_stale", "This managed runtime does not declare the Triggerfish MCP profile. Update/rebuild and reseal the ModelBuilder application before preparing this integration. No executable was invoked or project files changed.")
+
+
+def preview_triggerfish(root, project_id, entry, current, receipt_raw):
+    """Prepare inert, source-scoped artifacts, never a global/active vendor config."""
+    base = ".modelbuilder/triggerfish"
+    templates = Path(__file__).with_name("assistant_templates") / f"v{VERSION}"
+    # JSON is YAML-compatible and safely quotes all paths. This is deliberately
+    # a fragment, not triggerfish.yaml: provider/sign-in/classification belong
+    # to the owner. enabled:false plus omitted classification fail closed.
+    content = {f"{base}/mcp.fragment.yaml": json.dumps({"mcp": {"servers": {"modelbuilder": entry}}}, indent=2) + "\n",
+               f"{base}/SETUP.md": (templates / "triggerfish-setup.md").read_text(),
+               f"{base}/skill-template/modelbuilder-project/SKILL.md": (templates / "SKILL.md").read_text() + "\n" + (templates / "triggerfish-instructions.md").read_text(),
+               f"{base}/skill-template/modelbuilder-project/references/instructions.md": (templates / "instructions.md").read_text(),
+               f"{base}/skill-template/modelbuilder-project/references/operation-catalog.json": (templates / "operation-catalog.json").read_text()}
+    files = []
+    for path, text in content.items():
+        raw = setup.config_bytes(checked_path(root, path))
+        if raw is not None and not current:
+            raise setup.SetupError("config_conflict", "An existing Triggerfish preparation file was preserved. Review it before managed preparation.")
+        files.append({"path": path, "kind": "owned", "content": text,
+                      "before_sha256": hash_bytes(raw), "after_sha256": setup.digest(text.encode()), "created": raw is None})
+    basename = entry["command"].replace("\\", "/").rsplit("/", 1)[-1]
+    allowed = basename in {"npx", "node", "python3", "python", "deno", "uvx"}
+    warnings = [
+        "Inactive preparation only: this fragment is not loaded by Triggerfish. No vendor is installed, launched, signed in or configured globally.",
+        "Upstream hardcodes gateway/CLI port 18789. Concurrent per-project daemons are unsupported; ModelBuilder cannot safely launch or join one automatically.",
+        "The owner must review provider authentication, data classification, skill classification and activation in a separately installed Triggerfish. No classification is chosen here.",
+        "The managed service is read-only by default; exact one-use native approval is required for mutations. A same-user unrestricted shell is not a security sandbox."]
+    if not allowed:
+        warnings.append("The managed interpreter basename is rejected by upstream's MCP allowlist. Config startup does not forward allowedCommands. Do not invent an override or substitute an unverified executable.")
+    plan = {"action": "configure-project", "client": "triggerfish", "project_id": project_id,
+            "workspace": str(root), "scope": "project", "template_version": VERSION,
+            "entry": entry, "files": [{k: v for k, v in item.items() if k != "content"} for item in files],
+            "receipt_before_sha256": hash_bytes(receipt_raw), "change": "unchanged" if current else "add",
+            "warnings": warnings, "credentials_stored": False, "capability": "inactive_compatibility_bundle",
+            "mcp_profile": "triggerfish", "upstream_commit": "571c42b9299ab3006ce96fb541b7f1a23988d3b5",
+            "latest_release_observed": "v0.7.19", "upstream_checked_at": "2026-10-13", "vendor_acceptance": "UNVERIFIED",
+            "activation": "blocked_pending_owner_vendor_setup_and_port_isolation",
+            "command_allowlist": "compatible_basename" if allowed else "blocked_basename",
+            "skill_template_directory": str(root / base / "skill-template"),
+            "notice": "Review the exact project-only inactive files. TRIGGERFISH_DATA_DIR is supported upstream, but does not isolate its fixed ports. No active config, provider, daemon, global plugin or port is changed."}
     return {"ok": True, "plan": plan, "approval": setup.digest(plan)}, files
 
 
@@ -254,7 +336,8 @@ def apply_project(preview, files, approval):
                "project_id": plan["project_id"], "state": "applied", "approval": approval,
                "entry": plan["entry"], "files": [{k: v for k, v in item.items() if k != "content"} for item in files]}
     _transaction(root, files, receipt_raw, receipt)
-    return {"ok": True, "status": "configured", "receipt": str(root / receipt_name(plan["client"])),
+    return {"ok": True, "status": "prepared" if plan["client"] == "triggerfish" else "configured",
+            "capability": plan.get("capability"), "receipt": str(root / receipt_name(plan["client"])),
             "files": [item["path"] for item in files], "credentials_stored": False,
             "authentication": "UNVERIFIED", "transport": "UNVERIFIED", "warnings": plan["warnings"]}
 

@@ -1,5 +1,43 @@
 # Current verification and remaining gates
 
+## Later source changes: Triggerfish compatibility adapter
+
+The ModelBuilder-side Triggerfish flat MCP transport and reviewed inactive
+project preparation are implemented in source. This is a later change, separate
+from the frozen candidate and Mac artifact below; it is **not complete harness
+or vendor acceptance**. No new final source/runtime pin is claimed here.
+
+- The explicit Triggerfish profile exposes flat catalog/dispatch tools with
+  JSON-string arguments and text success/error envelopes. Original service
+  schemas, one-project read-only grants and the exact native owner-review queue
+  remain authoritative. Codex/Claude retain their normal transport; the actual
+  native `-I -B` command vector is accepted without allowing arbitrary flags.
+- Project preparation requires exact native review and writes only an inactive
+  MCP fragment and non-autoloaded skill templates. It stores no credentials,
+  selects no classification, and does not install, launch or join Triggerfish,
+  modify global plugins, or change ports. A non-executing declaration check
+  rejects older managed entrypoints lacking the profile; executable trust still
+  depends on native sealed-runtime checks.
+- Adapter-stage verification: **164 focused Python tests**, **40 managed-core/
+  packaging tests**, and **530 frontend host tests** passed, with TypeScript
+  build and lint. Real local stdio/HTTP/SQLite tests cover unchanged schemas,
+  validation/bounds, project isolation, exact approval, denial, cancellation,
+  replay and stale state. These overlapping selections are not a new aggregate.
+- **Upstream execution remains UNVERIFIED**: the protocol fixture did not execute
+  Triggerfish. Its audited gateway/CLI fixes port 18789, preventing automatic
+  concurrent per-project activation; the MCP command allowlist rejects
+  `python3.12`/`python.exe`, and configuration does not forward `allowedCommands`.
+  Official binary provenance, provider authentication, actual vendor-client/
+  agent calls and native GUI acceptance remain separate gates. An isolated
+  upstream-client source test has not been run.
+- The managed app must be **rebuilt, resealed and repinned** with the new helper
+  code. The frozen runtime and unsigned Mac DMG below do not include this change;
+  their results cannot establish its packaged or current GUI acceptance.
+
+See [Triggerfish compatibility contracts and limits](../distribution/TRIGGERFISH_COMPATIBILITY.md)
+for audited upstream references, configuration paths, test scopes and the
+same-user-shell limitation. Existing rights, release and platform gates remain.
+
 ## Latest frozen candidate: aggregate complete with one rights-gate failure
 
 Candidate `f99c5d5024090a20c30ba9077b9614ac2ea86475` pins runtime

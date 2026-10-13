@@ -1,0 +1,84 @@
+{
+  "actual_parquet": "Pinned Linux decoder parity and cancellation passed; stalled/partial/closed-output child cleanup covered",
+  "evidence": {
+    "evidence/rules-20261013/streaming-corrected/integrated.xml": {
+      "bytes": 59643,
+      "sha256": "4fda4166b71bb3ad06dd87f7d16723ff748be0ac8359cb26ba390b5f9107d2ab"
+    },
+    "evidence/rules-20261013/streaming-corrected/large-120001.json": {
+      "bytes": 324,
+      "sha256": "b1534c63a6853dd7aba3291eb67a8a3bbebbeab9f11d5d6e044b9fc38a2b880e"
+    },
+    "evidence/rules-20261013/streaming-corrected/large-240001.json": {
+      "bytes": 326,
+      "sha256": "cf1045f7042d7ea37448010d092a750a86413553529c938f15c85a8d0ca82133"
+    },
+    "evidence/rules-20261013/streaming-corrected/tests.xml": {
+      "bytes": 47927,
+      "sha256": "48b653ae32f3aa719f17b6edd97fa7b568c7a4c65bda7534107abc52d8c8139a"
+    }
+  },
+  "independent_probes": [
+    "Unicode report cap 4005 rejects cold/warm, 4006/4007/5000 accepts identically.",
+    "Physical index high-water changes do not change logical dataset content/version identity.",
+    "Partial-record stalled decoder cancellation observed in approximately 0.10 seconds."
+  ],
+  "integrated_dataset_rules_pins_audit": {
+    "deselected": 17,
+    "passed": 383,
+    "seconds": 50.12,
+    "skipped": 8
+  },
+  "large_input": [
+    {
+      "eager_file_limit": 16777216,
+      "eager_row_limit": 100000,
+      "index_bytes": 90480640,
+      "peak_index_bytes": 90480640,
+      "peak_rss_bytes": 38027264,
+      "sampling_strata": 3,
+      "selected_rows": 12000,
+      "selection_digest": "4ffed8ef86e7886cd9fd659ff6e0e8481b7d34d8dd3302386571004c16a31d7a",
+      "source_bytes": 42018132,
+      "source_rows": 120001
+    },
+    {
+      "eager_file_limit": 16777216,
+      "eager_row_limit": 100000,
+      "index_bytes": 181088256,
+      "peak_index_bytes": 181088256,
+      "peak_rss_bytes": 38178816,
+      "sampling_strata": 3,
+      "selected_rows": 24000,
+      "selection_digest": "e2a3c012ed6a378d98c22758f8d9e82fd1bbd2c58da01ba63d22126b56b355e8",
+      "source_bytes": 84258132,
+      "source_rows": 240001
+    }
+  ],
+  "limits": [
+    "SQLite temporary sort scratch is outside the main index-byte cap.",
+    "This adds streaming dataset preparation, not streaming Trainer exact-state continuation.",
+    "Representation follows explicit proportional/equal allocation, required strata, tolerance and minimum settings; no implicit source balancing."
+  ],
+  "linux_dataset_rules": {
+    "deselected": 17,
+    "passed": 308,
+    "seconds": 46.09,
+    "skipped": 8
+  },
+  "no_claims": [
+    "No hosted CI, paid cloud or inferred rights approval.",
+    "No full product completion."
+  ],
+  "pending": [
+    "Complete standard aggregate on combined runtime is running.",
+    "Fresh complete native queue and installed-wheel replay remain pending.",
+    "The service Trainer resume test passed on Linux but its negative-case and cleanup evidence is being strengthened before final acceptance.",
+    "Updated application packaging and native GUI acceptance remain pending."
+  ],
+  "recorded_at": "2026-10-13T19:50:48.194690+00:00",
+  "runtime_source_commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
+  "runtime_source_files": 163,
+  "skips": "Six native Windows cases, one Mac-only negative containment case, one module missing ZenML in the service interpreter. No skip counted as acceptance.",
+  "status": "SCOPED_ACCEPTANCE_PASSED_FULL_NATIVE_PENDING"
+}

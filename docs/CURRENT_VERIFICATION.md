@@ -1,6 +1,34 @@
 # Current verification and remaining gates
 
-## Policy-driven Trainer epochs, 2026-10-13
+## Streaming dataset safeguards, 2026-10-13
+
+Runtime source `33397ea30361b9c51dfb6bde219fd5f58c59dc10` combines the
+reviewed Trainer implementation below with bounded streaming stratified sampling.
+Both shipping recipes pin its **163-file** runtime closure. See
+[dataset contracts](DATASET_LIFECYCLE.md) and
+[scoped receipt](../evidence/product-completion-20261013/streaming-sampling.json).
+
+Linux dataset/rule tests passed **308**, with **8 platform/interpreter skips** and
+**17 integration deselections**, including real pinned Parquet parity and
+cancellation. The integrated dataset/rule/source-pin/structural-audit selection
+passed **383**, with the same skips and deselections. These counts overlap.
+Generated inputs of **120,001 and 240,001 rows** crossed the actual eager limits;
+peak process RSS was approximately **38.0 and 38.2 MB**, respectively. Input and
+SQLite disk usage still scale with dataset size. SQLite temporary sort scratch
+is outside the main index-byte cap.
+
+Cold, warm and restarted compilation use identical canonical UTF-8 report-budget
+accounting. Physical index allocation is recorded and enforced separately from
+logical dataset identity. Stalled and partial Parquet output observes the existing
+cancellation signal while retaining decoder limits, containment and owned-child
+cleanup. User-selected proportional/equal allocation and explicit representation
+constraints reuse the same deterministic quota planner as eager preparation.
+
+The combined standard local aggregate is running. Fresh full native queue,
+installed-wheel replay and rebuilt application acceptance remain pending. This
+feature does not establish streaming Trainer exact-state continuation.
+
+## Policy-driven Trainer epochs baseline, 2026-10-13
 
 Runtime source `81708511b7c5c47444326aa15c67a187188cb3f6` adds real
 Transformers Trainer v2 epoch decisions and verified exact-state continuation.

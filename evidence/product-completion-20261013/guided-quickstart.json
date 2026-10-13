@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-13",
+  "base_main": "262e0dfb342e653d23fd9bad9c26ff09c4c62d2d",
+  "scope": "Guided quickstart, first-run routing and encrypted setup recovery; not full product or native GUI acceptance",
+  "implementation_files": {
+    "packages/ide_feature/media/newProject.css": "ca585023e2a35eab488d41929620357fc98d42b8fb2862b25573cdb55d85941a",
+    "packages/ide_feature/media/newProject.js": "3c79249ff446e4663de302538d43d6d851489233d558542f170cc4fece99e6cb",
+    "packages/ide_feature/media/projectWizard.js": "14cdaefd23872c90d963c72a551274e7a5240278f1d7daa18ee368f5bfcc904b",
+    "packages/ide_feature/scripts/build.mjs": "61154021ca3ae05adb91805a9abdd6b5c0cbd96008a78ddadea865d476f61396",
+    "packages/ide_feature/src/extension.ts": "2ed911783212aa7eee0b1f6cb64c08c09cc9137d7db29cd601dcce9a8a0f8348",
+    "packages/ide_feature/src/firstRun.ts": "fb12c4f40247312ebfeb87dc8c808ed4137ae4526e51532aca6c982a051bbcaf",
+    "packages/ide_feature/src/newProject.ts": "965ca938452927a86d1674781c60b9c068f13306b04bc367f04052cffac0239a",
+    "packages/ide_feature/src/projectDraftRecovery.ts": "a010e1a295b619ae10f74ad74b7c82e085a976dd5b92a59e3535a4193321a8a1",
+    "packages/ide_feature/src/projectQuickstart.ts": "7bd0e433a76b62f8c001c83b6958ce2bf55360acbb5c09236e5b05ee7115af51",
+    "packages/ide_feature/src/projectWizardDraft.ts": "6f8b14a9ed5a2cf78d3eafba3cd04a29e1565c4fae007b9f9f3d64a2e0d81bc2",
+    "packages/ide_feature/test/firstRun.test.cjs": "5cf722c92c348761160858b92fe124645aea490f1e63176d5436afc3e36d61fe",
+    "packages/ide_feature/test/newProjectDom.cjs": "693bbdffa4192c47ba85b2b58471ebcc54313197ca48bc0b41eb531e6e738b6b",
+    "packages/ide_feature/test/newProjectHttp.cjs": "fd9a78926e6916bd47e47475fd20f56373680dde537d7d8a2747c467bb02ca8f",
+    "packages/ide_feature/test/newProjectLifecycle.test.cjs": "93adb423c5be948a4ff65597040c07651da1a6a5329e8e08cea5f2086550e738",
+    "packages/ide_feature/test/projectDraftRecovery.test.cjs": "1a7a2074fe2449e636308d67a68ee64693ee1bfb50788471bdeac7309656323b",
+    "packages/ide_feature/test/projectWizard.test.cjs": "6dd1591e2df9d4ee4b0d97730ae489af7759eecf97a3fd1b1726e8b0a3db51f7",
+    "packages/ide_feature/test/projectWizardDraft.test.cjs": "f83b30d14b73f5a115883a6a2905553ed554bf0503b2f97817cabe67e795dc6b"
+  },
+  "local_standard_aggregate": {
+    "exit_code": 0,
+    "python_passed": 2780,
+    "python_skipped": 141,
+    "python_deselected": 89,
+    "python_seconds": 212.39,
+    "offline_hub_sdk_passed": 18,
+    "frontend_passed": 582,
+    "frontend_failed": 0,
+    "frontend_skipped": 0,
+    "typecheck_and_build": "PASS",
+    "service_typed_workspace_source_pin_history_http": "PASS",
+    "native_integration_enabled": false
+  },
+  "local_quickstart_http": "PASS; real service and files, mocked native host/dialogs",
+  "independent_review": {
+    "status": "no remaining must-fix blockers in reviewed scope",
+    "lifecycle_checks_passed": 8
+  },
+  "mac_reported": {
+    "frontend_passed": 582,
+    "focused_passed": 66,
+    "real_http": "PASS",
+    "native_gui_passes": 0,
+    "ide_running": false
+  },
+  "runtime_source": {
+    "custom-pytorch": {
+      "files": 154,
+      "status": "PASS",
+      "source": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92"
+    },
+    "pretrained-small": {
+      "files": 154,
+      "status": "PASS",
+      "source": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92"
+    }
+  },
+  "new_upstream_edits": 0,
+  "limitations": [
+    "Native GUI pending Mac unlock; no OS Keychain acceptance",
+    "Existing v12 DMG predates correction",
+    "Restored stock Welcome migration remains unresolved",
+    "Obsolete encrypted snapshot and discard-marker garbage collection deferred",
+    "Root sandboxed Chromium launch blocked by socket EPERM; no security weakening",
+    "Prior full native aggregate license_rights_unreviewed failure and strict replay34/35 remain unchanged"
+  ],
+  "log_sha256": {
+    "durable-cleanup-aggregate.log": "7f6da9df0a5bdf22f0938d128335211c09aa69f250b6cb953ae79617db7d31fe",
+    "durable-cleanup-frontend-http.log": "9ca76896f594ad2504db51b432d7089eec6972f1c32f5318a864987238178b8f",
+    "dom.log": "6273ce5ea4b03ef2be3cf2740d09f21ec6b0027009a66e1050ec2255312a4e6b",
+    "runtime-source.json": "7fe282248812eb1e2063c570dcad71cf0a43ec119a0e0b332a25c0b8ba67701d"
+  },
+  "patch_chain_sha256": [
+    "9e6290a1162d9ac91447589f1053ed6839160c3deb07c17488eb10be7953786a",
+    "b6d2d20d99c1f2a76ca31c9ac49748a1b8ff7db557abc9577188e842def867ef",
+    "e4e9fe17fff47cd255b104542ae23fb0353bbe21a0104adde6f4e0a0b23d2ab8",
+    "92204a1c748621f585345f7378e9d46c8c3c326294fadfa9fc42493ecbd0a716",
+    "440f7eb9c8c403932009b86ec3e2db07600b94fc3aeaa556c15b666b1ea2bb12"
+  ]
+}

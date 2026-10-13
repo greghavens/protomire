@@ -6,13 +6,24 @@ wiring patch must be reviewed and integrated before it is an enabled app feature
 
 ## New Project
 
-A dedicated native New Project page supplements the existing opened workspace.
-It asks the owner for a model name/slug, optional goal, starting point, assistant,
-and explicitly selected local folder. Research, an optional base model, and code/
-training from scratch are equal choices. Skipping quickstart creates a blank
-project. All paths invoke the existing atomic `project.create` once: one project,
-one model, one stable recipe identity and actual revision 1. No download, training,
-vendor model call, Git initialization/commit, remote creation or publication occurs.
+The native New Project wizard walks through separate screens: optional coding
+assistant, model goal, research/base-model/from-scratch starting point, local
+project name/slug and folder, then review. Next validates the current screen;
+Back preserves choices. Skipping guidance keeps the existing blank-project path.
+Assistant selection records intent only: installation, sign-in and protocol setup
+remain separate reviewed actions. An optional base model is chosen after creation;
+nothing downloads while moving through the wizard.
+
+The bundled app opens this existing wizard on its first empty session, once per
+profile. Existing workspaces, restored editors, pending project recovery and newer
+navigation take priority. Cancel or Close does not cause another automatic opening.
+The New Model Project command can reopen unfinished work. No restored editor is
+closed by the public extension startup path, including an unidentified stock
+Welcome tab from an older installation.
+
+All paths invoke the existing atomic `project.create` once: one project, one model,
+one stable recipe identity and actual revision 1. No download, training, vendor
+model call, Git initialization/commit, remote creation or publication occurs.
 
 The strict `ProjectIntent` v1 schema is optional within the existing project v0
 schema. It contains owner-authored `goal`, `starting_point` and `assistant`, with
@@ -21,14 +32,34 @@ project revision and immutable versions/audit history. HTTP and MCP expose the
 same validation and service dispatch. The operation count stays 111 on this base;
 the bundled catalog is generated from the live contract when contracts are exported.
 
-The page has explicit review, Back, Cancel and repeated-click guards. Only an
-approved create request is persisted to native SecretStorage before dispatch;
-ordinary app state indexes its workspace path only. A lost response/tab close/
-restart can restore the exact reviewed payload and idempotency key. Recovery shows
-Review/Retry and never auto-submits. Closing a submitted operation retains recovery.
-The owner can also start a different project while keeping pending requests.
-Filesystem failure after service acceptance retries the same project; it never
-creates a replacement project or recipe.
+The wizard has explicit review, Back, Cancel and repeated-click guards. Unfinished
+choices and screen position are kept in native SecretStorage, never ordinary
+settings or app-state goal fields. Partial input cannot create a project; final
+review still requires valid project details and the selected native folder. Native
+dialog results from a closed or replaced session cannot modify a reopened wizard.
+A failed encrypted write does not prevent later reopening from reading preserved
+data. Unreadable drafts offer Retry, Cancel, or an explicit scoped Discard; no
+corrupt draft is silently deleted. Storage-read failures offer Retry/Cancel without
+discarding data. Opening waits for approval persistence within the shared
+SecretStorage context, so delayed completion cannot turn the approved project into
+a new editable draft or clear a subsequently saved draft. Approval clears only the
+originating unfinished draft; retrying a restored approved request preserves any
+unrelated unfinished project. New encrypted drafts use a per-draft UUID and
+fingerprint-specific immutable snapshot keys, with a separate encrypted latest
+pointer. Approved recovery stores the originating fingerprint before cleanup, so
+failed cleanup remains retryable after a controller restart. Cleanup deletes only
+that snapshot; it never deletes the shared pointer. Unreadable-draft discard writes
+a marker for the captured bytes, preserving a newer window’s draft even when a
+read races a write. Pointer and discard metadata remain encrypted; this bounded
+change does not add a cross-window merge policy or snapshot garbage collector.
+
+Before dispatch, the approved create request is stored separately with its exact
+reviewed payload and idempotency key. The unfinished draft is then cleared. A lost
+response/tab close/restart restores Review/Retry and never auto-submits. Closing a
+submitted operation retains this approved recovery. The owner can also start a
+different project while keeping pending requests. Filesystem failure after service
+acceptance retries the same project; it never creates a replacement project or
+recipe.
 
 ## Versioned Git/provider split
 
@@ -170,9 +201,16 @@ browser security was used. Real Code-OSS rendering, native multi-window close/re
 OS SecretStorage, installed vendor authentication/MCP acceptance, and the final
 managed runtime/source-registration integration require acceptance after parent merge.
 
-Full non-integration Python aggregate on the archive staging tree: 2089 passed,
+Historical non-integration Python aggregate on the original archive staging tree: 2089 passed,
 139 skipped, 84 deselected; 2 existing portability source-closure tests fail because
 this isolated archive has no Git history at their pinned source revision. This is
 not a full aggregate pass. The parent must rerun final tests in a history-bearing
 integration checkout. No source-closure baseline or fixture pin was altered to
-hide these failures.
+hide these failures. That historical requirement is now superseded by the
+history-bearing integration checkout's 2026-10-13 standard local aggregate:
+2,780 Python passed, 141 skipped, 89 deselected; 18 offline Hub SDK and 582
+frontend passed. Type/build, actual loopback quickstart recovery, and eight
+independent lifecycle-review checks passed. Native graphical/OS SecretStorage
+acceptance remains pending Mac unlock; the existing v12 DMG predates this change.
+See [current verification](CURRENT_VERIFICATION.md) for the distinct native
+backend and full-product gates, which have not been promoted to passing.

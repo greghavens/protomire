@@ -7,13 +7,19 @@ export interface ApprovedProjectRequest {schema_version:'1';idempotencyKey:strin
 export type QuickstartStage='details'|'review'|'creating'|'created'|'cancelled';
 export const emptyProjectDraft=():ProjectDraft=>({modelName:'',slug:'',goal:'',startingPoint:'scratch',assistant:'none',quickstart:true});
 const allowedDraftKeys=new Set(['modelName','slug','goal','startingPoint','assistant','quickstart']);
-export function validateProjectDraft(value:unknown):ProjectDraft{
+export function validateProjectDraftFields(value:unknown):ProjectDraft{
   if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(key=>!allowedDraftKeys.has(key)))throw new Error('Invalid project details.');
   const d=value as ProjectDraft;
-  if(typeof d.modelName!=='string'||!d.modelName.trim()||d.modelName.length>200)throw new Error('Enter a model name of 1–200 characters.');
-  if(typeof d.slug!=='string'||!/^[a-z0-9][a-z0-9-]{0,79}$/.test(d.slug))throw new Error('Use a lowercase project slug with letters, numbers and hyphens (up to 80 characters).');
+  if(typeof d.modelName!=='string'||d.modelName.length>200)throw new Error('Enter a model name of 1–200 characters.');
+  if(typeof d.slug!=='string'||d.slug.length>80)throw new Error('Use a lowercase project slug with letters, numbers and hyphens (up to 80 characters).');
   if(typeof d.goal!=='string'||d.goal.length>8000)throw new Error('The project goal must be at most 8,000 characters.');
   if(!['blank','research','base_model','scratch'].includes(d.startingPoint)||!['none','codex','claude','triggerfish'].includes(d.assistant)||typeof d.quickstart!=='boolean')throw new Error('Choose a supported starting point and optional assistant.');
+  return {...d};
+}
+export function validateProjectDraft(value:unknown):ProjectDraft{
+  const d=validateProjectDraftFields(value);
+  if(!d.modelName.trim())throw new Error('Enter a model name of 1–200 characters.');
+  if(!/^[a-z0-9][a-z0-9-]{0,79}$/.test(d.slug))throw new Error('Use a lowercase project slug with letters, numbers and hyphens (up to 80 characters).');
   return {...d,modelName:d.modelName.trim()};
 }
 /** A single native page owns one immutable create payload and idempotency key.

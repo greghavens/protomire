@@ -1,5 +1,38 @@
 # Current verification and remaining gates
 
+## Guided quickstart correction, 2026-10-13
+
+The current extension replaces the worksheet with separate assistant, goals,
+starting-point, project-details and review screens. Eligible empty first sessions
+open this wizard once; existing tabs/workspaces and pending project recovery are
+preserved. A restored stock Welcome tab is not automatically closed or migrated.
+The existing extension, branding overlay and single upstream composition-import
+boundary are unchanged: this correction adds **no upstream Code - OSS edits**.
+
+Encrypted unfinished drafts and approved creation recovery have distinct durable
+identities. Regression coverage includes failed and queued saves, lost responses,
+close/reopen, retrying A while preserving unfinished B, and cross-window cleanup
+and discard races. Obsolete encrypted snapshots/markers do not yet have garbage
+collection. These are setup-metadata tests, not OS Keychain or graphical acceptance.
+
+Final affected type checks, compilation, **582 frontend tests**, and real loopback
+project creation/recovery passed in the integration checkout. The independent
+read-only review passed eight additional lifecycle checks. See the accompanying
+ [quickstart evidence](../evidence/product-completion-20261013/guided-quickstart.json)
+for the final local aggregate and precise limitations. The standard local aggregate
+exited 0: **2,780 Python passed, 141 skipped, 89 deselected**, **18 offline Hub SDK**
+and **582 frontend passed**, plus service/workspace/source-pin/history HTTP checks.
+Native integration was not rerun for these extension-only changes; the previous
+full native aggregate failure is still reported below.
+The native backend remains the frozen 154-file `6323bfd` runtime below.
+
+**Native wizard GUI acceptance is pending the Mac being unlocked.** All test IDE
+instances were closed normally. Mac DOM/host-mocked checks do not establish native
+Code - OSS behavior; the integration-host Chromium attempt was blocked at launch
+by sandbox socket permissions. No browser security or Workspace Trust was disabled.
+The existing v12 DMG predates these extension changes and is not a verified wizard
+release. Full-product/release gates below remain open.
+
 ## Current frozen candidate 34fe6c7 / 6323bfd
 
 Candidate `34fe6c75dda74e07eb8c6bf048d03e6694e0c886` pins runtime

@@ -4,6 +4,18 @@
 
 Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
+## Guided quickstart correction
+
+Separate assistant/goals/starting-point/project-details/review screens replace
+the worksheet. First-run routing preserves existing tabs and workspaces; legacy
+restored stock Welcome migration remains unresolved. Final affected integration
+checks passed: type/build, 582 frontend tests, real HTTP project creation/recovery,
+and eight independent read-only draft-lifecycle checks. Native graphical acceptance
+is **UNRUN pending Mac unlock**, and v12 DMG evidence below predates this correction.
+The integration-host DOM attempt was blocked by sandbox socket permissions; no
+security settings were weakened. Encrypted obsolete-snapshot garbage collection
+is deferred. No new upstream Code - OSS edits or backend source changes were made.
+
 ## Current frozen candidate 34fe6c7 / 6323bfd
 
 Candidate `34fe6c75dda74e07eb8c6bf048d03e6694e0c886` pins runtime

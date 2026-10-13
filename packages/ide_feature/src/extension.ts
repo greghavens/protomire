@@ -14,6 +14,7 @@ import { saveNativeModel } from './modelExport';
 import { importResearchPdf } from './researchDocuments';
 import { configureOptionalAssistant } from './assistantSetup';
 import { NewProjectView } from './newProject';
+import { FirstRunQuickstart, emptyFirstRunSession } from './firstRun';
 import { attachProjectProjection } from './projectProjection';
 import { registerProjectSource } from './projectSourceSetup';
 import { openHubWorkflow } from './hubWorkflow';
@@ -679,6 +680,14 @@ export function activate(context:vscode.ExtensionContext) {
     return vscode.window.showTextDocument(await files.open(projectId,recipeId));
   });
   const pending=context.globalState?.get<{projectId:string;folderPath:string;section?:string}>('modelbuilder.pendingSourceProject');const openFolders=vscode.workspace.workspaceFolders??[];if(pending&&openFolders.length===1&&openFolders[0].uri.scheme==='file'&&openFolders[0].uri.fsPath===pending.folderPath){void (async()=>{await context.globalState.update('modelbuilder.pendingSourceProject',undefined);await workbench.open({projectId:pending.projectId,section:pending.section});})().catch(error=>vscode.window.showErrorMessage(error instanceof Error?error.message:String(error)));}
+  const firstRun=new FirstRunQuickstart(context.globalState,!!managed,()=>emptyFirstRunSession({
+    folders:vscode.workspace.workspaceFolders?.length??0,
+    workspaceFile:!!vscode.workspace.workspaceFile,
+    editors:vscode.window.tabGroups?.all.reduce((count,group)=>count+group.tabs.length,0)??1,
+    pendingProject:!!context.globalState.get('modelbuilder.pendingSourceProject')||context.globalState.get<string[]>('modelbuilder.pendingProjects.v1',[]).length>0,
+    projectOpen:!!workbench.currentProject
+  }),current=>newProject.open(current));
+  void firstRun.show().catch(error=>vscode.window.showErrorMessage(error instanceof Error?error.message:String(error)));
   return {client,explorer,files,workbench,managed,hub,clearConnection:()=>context.secrets.delete(TOKEN_KEY)};
 }
 export function deactivate() {}

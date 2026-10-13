@@ -1,28 +1,92 @@
 # Current verification and remaining gates
 
-Current shipping recipes pin runtime `6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92` with the same complete **154-file** source/lock closure. The corrected Moonshiner public-workflow tests below cover this adapter source; full aggregate and current Mac packaging are being rerun. Prior frozen evidence is not relabeled as current acceptance.
+## Current frozen candidate 34fe6c7 / 6323bfd
 
-## Integrated Moonshiner public-workflow correction
+Candidate `34fe6c75dda74e07eb8c6bf048d03e6694e0c886` pins runtime
+`6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92` and identical **154-file** source/lock
+closures in both shipping recipes. **The complete local aggregate exited 1**.
+Its sole aggregate failure is the public pretrained lifecycle admission gate,
+`license_rights_unreviewed`. Full-product and release acceptance remain incomplete.
 
-The adapter now uses the existing dictionary dataset port and validates the
-actual registered split/consumption contract, including ordered row hashes.
-The normal public dataset binding path no longer needs a producer shim or a
-fictional top-level schema marker. Both earlier defects and failed attempts
-remain recorded in the frozen evidence below.
+### Completed local Linux aggregate
 
-Root verification passed **71 tests** in 42.67 seconds, including the official
-Moonshiner 0.8.23 service-to-ZenML source-bound execution, explicit prepared
-output validation/registration/policy binding/dataset binding, and inherited
-teacher/data/source rights. An initial root fixture assertion rejected Linux's
-terminal `dead` process state (70 passed, 1 failed); terminal-state handling and
-the disappearance race were corrected without accepting live descendants.
-The final targeted cancellation/deadline checks passed **2 tests**. The new
-full aggregate and rebuilt Mac package remain separate acceptance steps.
+- Light: **2,780 passed, 141 skipped, 89 deselected** in 209.85 seconds;
+  frontend: **530 passed** with type checks and compilation; offline Hub SDK:
+  **18 passed**; offline Modal SDK: **3 passed**.
+- Native lifecycle: **30 passed, 1 failed** in 1,170.74 seconds; integration:
+  **53 passed, 43 deselected** in 1,614.13 seconds; components: **589 passed,
+  10 skipped** in 676.14 seconds; concurrency: **18 passed, 4 deselected** in
+  401.40 seconds.
+- All four groups were attempted. The native queue completed in
+  **2,017.170 seconds**, below its **2,100-second** deadline.
+  Cleanup completed with **0 signaled processes**. Skips remain recorded.
+  No rights approval was fabricated, and no rights check was weakened or excluded.
 
-[Current focused receipts](../evidence/product-completion-20261013/moonshiner-public-workflow/verification.json)
-do not claim provider generation, actual teacher execution, training, GUI,
-full-flow HTTP/MCP transport or whole-service cancellation acceptance.
+[Compact terminal evidence](../evidence/product-completion-20261013/acceptance-6323bfd/README.md)
+retains raw receipt hashes, independently verified source closures and exact
+scope. Overlapping selections are not added as unique coverage.
 
+### Integrated Moonshiner public-workflow correction
+
+This frozen runtime includes the corrected dictionary dataset port and actual
+registered split/consumption validation with ordered row hashes. Source-matched
+focused verification passed **71 tests in 42.67 seconds**, including official
+Moonshiner 0.8.23 service-to-ZenML source-bound execution and explicit prepared
+output validation/registration/policy binding/dataset binding, preserving inherited
+teacher/data/source rights. The final targeted cancellation/deadline checks
+passed **2 tests, 66 deselected, in 2.18 seconds**.
+
+The initial **70 passed, 1 failed** attempt remains recorded: its fixture rejected
+Linux's terminal `dead` state. Terminal-state handling and the disappearance race
+were corrected without accepting live descendants. Prior d573fe0 adapter defects
+remain historical. These scoped checks do not claim provider generation, actual
+teacher execution, training/token masking, GUI, full-flow HTTP/MCP transport or
+whole-service cancellation. [Focused checks and hashes](../evidence/product-completion-20261013/acceptance-6323bfd/focused-source-checks.json)
+separate those results from the aggregate.
+
+The current **51 source-pin/wheel checks passed in 4.30 seconds**. They are not a
+complete installed scientific replay. No new 154-file full replay is claimed;
+the historical 1dc9698 strict result remains **FAIL 34/35**, with scientific
+outputs equal and independent rights provenance retained.
+
+### Current Mac unsigned development DMG: v12
+
+The Mac build host reports clean exact-candidate source, both **154-file**
+closures matching and **45,381 sealed payload files**. Current scoped passes:
+
+- Frontend **530**; source/rights/packaging/assistant **151 passed, 68 Linux-only
+  cases skipped**; mandatory actual MPS **1 passed**
+- Mandatory MLX **6 passed in 349.74 seconds**, including full/LoRA training,
+  evaluation, checkpoints, warm start, fresh-process export and cancellation;
+  the full pipeline also verifies deadline cleanup
+- Bundled ModelBuilder-side Triggerfish preparation **33 passed**; packaged core
+  **6 passed**; read-only mounted-DMG core **6 passed in 112.89 seconds**
+- Mounted strict inventory, four runtime module locations and Code - OSS CLI
+  passed; detach exited **0**
+
+These are **build-host reported** results. The actual current unsigned arm64
+**v12 DMG is 1,166,352,946 bytes**, reported SHA256
+`04695dbb092599ec3868480f675e27d6c5dd4b0f72b236f161a6f1a368b59178`.
+It supersedes v9 as the current candidate artifact; the older v9 and held v11
+records below retain their historical scope. The full **55,260,489-byte** raw Mac
+archive remains on the build host, reported SHA256
+`fc9fc931b70012436297c73ce44b90fd429e74af727f7ed441bd8052e0b0c31c`.
+The evidence-backup upload route is blocked and has not been retried; raw archive
+and artifact bytes have **not been independently retrieved or hashed here**.
+[Mac scope and run identities](../evidence/product-completion-20261013/acceptance-6323bfd/mac-build-host-report.json)
+retain this distinction. These overlapping selections are not summed.
+
+### Remaining gates
+
+Current native GUI remains blocked by the locked Mac. Signing/notarization and
+clean-machine acceptance have not been performed; no product release is published.
+Moonshiner remains Linux-only; the Mac platform gate does not establish Mac
+composition. Bundled Triggerfish preparation does not establish upstream
+client/agent/provider execution. Linux AppImage inputs, Windows/Linux ARM64/actual
+CUDA, live providers, authenticated assistants, online tracking, hostile-code
+isolation and redistribution remain unresolved or unverified. Local checks are
+not a hosted-CI pass. Historical sections below apply only to their named source
+checkpoints; their status wording does not describe the current candidate.
 
 ## Current frozen candidate d573fe0: aggregate completed with one rights failure
 

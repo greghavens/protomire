@@ -4,6 +4,30 @@
 
 Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
+## Current frozen candidate 34fe6c7 / 6323bfd
+
+Candidate `34fe6c75dda74e07eb8c6bf048d03e6694e0c886` pins runtime
+`6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92`, with both **154-file** closures verified.
+[Compact evidence](../evidence/product-completion-20261013/acceptance-6323bfd/README.md)
+distinguishes independently inspected Linux receipts from build-host-reported
+Mac artifact checks. **Full-product and release acceptance remain incomplete.**
+
+| Scope | Status | Evidence and limits |
+|---|---|---|
+| Complete local aggregate | **FAIL, exit 1** | Light 2,780 passed/141 skipped/89 deselected (209.85 seconds); frontend 530 with checks/build; offline Hub SDK 18 and Modal SDK 3 passed. |
+| Native queue | **FAIL, sole lifecycle rights failure** | lifecycle: 30 passed, 1 failed in 1,170.74 seconds; integration: 53 passed, 43 deselected in 1,614.13 seconds; components: 589 passed, 10 skipped in 676.14 seconds; concurrency: 18 passed, 4 deselected in 401.40 seconds. All four groups attempted; 2,017.170 seconds below 2,100; cleanup complete, 0 signaled processes. |
+| Public pretrained lifecycle | BLOCKED | test_pretrained_validation_selection_parent_and_export fails at license_rights_unreviewed admission. No fabricated approval or weakened check. |
+| Corrected Moonshiner public workflow | PASS, scoped Linux source-matched checks | 71 passed in 42.67 seconds; final cancellation/deadline 2 passed/66 deselected in 2.18 seconds. Official 0.8.23 service-to-ZenML composition and explicit prepared-data rights/registration/binding. Initial 70-pass/1-failure fixture attempt retained. No provider/teacher/training/full-transport claim. |
+| Source-pin / wheel selection | PASS, limited scope | 51 passed in 4.30 seconds. Not full installed scientific replay; no current 154-file replay inherited from prior source. |
+| Exact-candidate Mac runtime | Build-host reported scoped passes | Source clean, both 154-file closures, 45,381 sealed files. Frontend 530; source/rights/packaging/assistant 151 passed/68 Linux-only skips; actual MPS 1; MLX 6 in 349.74 seconds; bundled Triggerfish preparation 33; packaged core 6. Overlapping selections. |
+| Current unsigned Mac v12 DMG | Build-host reported mounted checks passed | Read-only mounted core 6 passed in 112.89 seconds; strict inventory, four module paths, Code - OSS CLI pass; detach 0. DMG 1,166,352,946 bytes. [Reported artifact/archive hashes](../evidence/product-completion-20261013/acceptance-6323bfd/mac-build-host-report.json). Actual current artifact supersedes v9. |
+| Mac evidence availability / release | Raw archive not independently retrieved; release incomplete | Full 55,260,489-byte archive remains on Mac; upload route blocked, not retried. GUI locked; signing/notarization and clean-machine acceptance unperformed. Unsigned mounted checks do not establish release. |
+| Moonshiner Mac / Triggerfish upstream | Unsupported / UNVERIFIED | Moonshiner Linux-only platform gate is retained; no Mac composition. Bundled-side preparation is not upstream Triggerfish client/agent/provider acceptance. |
+| Remaining product/platform gates | Incomplete | Public pretrained rights, Linux AppImage inputs, Windows/Linux ARM64/actual CUDA, live providers, authenticated assistants, tracking, hostile-code isolation and redistribution unresolved/unverified. No hosted-CI or product-release pass. |
+
+Counts overlap and are not summed. Historical d573fe0 and earlier sections below
+retain their original source scope, including their failed attempts.
+
 ## Current frozen candidate d573fe0 / edca415
 
 Candidate `d573fe0e3656cdcb77608c0c3ff0bb841756d8f4` pins runtime

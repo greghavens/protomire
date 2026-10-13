@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "34fe6c75dda74e07eb8c6bf048d03e6694e0c886",
+  "runtime_commit": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92",
+  "provenance": {
+    "status": "BUILD_HOST_REPORTED_CURRENT_CANDIDATE",
+    "source": "Native Mac build-host terminal report completed 2026-10-13; raw evidence archive has not been independently retrieved into this verification workspace.",
+    "raw_archive_independently_retrieved": false,
+    "raw_archive_independently_hashed_here": false,
+    "transfer_status": "evidence-backup upload route blocked and not retried; archive remains on Mac"
+  },
+  "source": {
+    "clean": true,
+    "source_files_per_closure": 154,
+    "both_shipping_closures_match": true,
+    "sealed_payload_files": 45381
+  },
+  "checks": {
+    "frontend": {
+      "passed": 530
+    },
+    "source_rights_packaging_assistant": {
+      "passed": 151,
+      "skipped": 68,
+      "skip_scope": "Linux-only cases"
+    },
+    "mandatory_actual_mps": {
+      "passed": 1
+    },
+    "mandatory_mlx": {
+      "passed": 6,
+      "elapsed_seconds": 349.74,
+      "full_backend_run_id": "f2b04c12-bbf5-4ffc-9ab7-ace81a59154a",
+      "lora_backend_run_id": "33b3c38e-c088-4b42-bd6c-11e72f38ae84",
+      "scope": [
+        "training",
+        "evaluation",
+        "checkpoints",
+        "warm start",
+        "fresh-process export",
+        "cancellation",
+        "full-pipeline deadline cleanup"
+      ]
+    },
+    "bundled_modelbuilder_triggerfish_preparation": {
+      "passed": 33
+    },
+    "packaged_core": {
+      "passed": 6
+    },
+    "read_only_mounted_dmg_core": {
+      "passed": 6,
+      "elapsed_seconds": 112.89
+    },
+    "mounted_strict_inventory": "passed",
+    "four_runtime_module_locations": "passed",
+    "code_oss_cli": "passed",
+    "detach_exit_code": 0
+  },
+  "unsigned_development_dmg": {
+    "build_revision": "v12",
+    "candidate_commit": "34fe6c75dda74e07eb8c6bf048d03e6694e0c886",
+    "runtime_commit": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92",
+    "bytes": 1166352946,
+    "sha256": "04695dbb092599ec3868480f675e27d6c5dd4b0f72b236f161a6f1a368b59178",
+    "hash_provenance": "Mac build-host reported; artifact bytes not independently retrieved here",
+    "signed": false,
+    "published_product_release": false,
+    "supersedes_actual_v9_for_current_candidate": true
+  },
+  "full_evidence_archive": {
+    "bytes": 55260489,
+    "sha256": "fc9fc931b70012436297c73ce44b90fd429e74af727f7ed441bd8052e0b0c31c",
+    "hash_provenance": "Mac build-host reported; bytes remain local and have not been independently retrieved here"
+  },
+  "limits": [
+    "Current native GUI blocked by locked Mac",
+    "Signing/notarization not performed",
+    "Clean-machine acceptance not performed",
+    "Moonshiner remains Linux-only; Mac checks establish the platform gate rather than Mac composition",
+    "Bundled ModelBuilder-side Triggerfish preparation is not upstream client/agent/provider acceptance",
+    "No general accelerator, public pretrained rights, hosted-CI or full-product pass",
+    "Overlapping selections are not added as unique coverage"
+  ]
+}

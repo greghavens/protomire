@@ -1,0 +1,121 @@
+{
+  "source_candidate": "34fe6c75dda74e07eb8c6bf048d03e6694e0c886",
+  "files": [
+    {
+      "label": "aggregate-34fe6c7.log",
+      "bytes": 1645665,
+      "sha256": "bcc074a360edbf94a46b8bd1047ab93080cb46a3dada3e4e722ba6b30ca77cab"
+    },
+    {
+      "label": "unit-service-mcp.log",
+      "bytes": 1577265,
+      "sha256": "16137bbe3085afb420674a6962925c1348066f9e9937c118c03d01c9a1ffa80c"
+    },
+    {
+      "label": "unit-service-mcp.xml",
+      "bytes": 1931730,
+      "sha256": "ee304b11f94de05c7d0e8634979fffce416e2b58d031e754793421cc82795dd9"
+    },
+    {
+      "label": "hub-sdk.log",
+      "bytes": 2319,
+      "sha256": "d6087bedab16987e87dc91483bfc9539728bf89d8e35baaa3b600b918467075a"
+    },
+    {
+      "label": "hub-sdk.xml",
+      "bytes": 2326,
+      "sha256": "e0cb5f21af3409741812955243f6caf4f1e83666340f4a5815b3d93cd342e95e"
+    },
+    {
+      "label": "workbench.log",
+      "bytes": 54683,
+      "sha256": "095e34ebe356b1d51ab2ed928c9a51a1d5780e893a46c6fe13f7fc58baea2dba"
+    },
+    {
+      "label": "remote-modal-sdk.log",
+      "bytes": 1754,
+      "sha256": "487c47f51dc462128ccb3bba3e668929621c50d0a3713bc468a2c5e08f109dd1"
+    },
+    {
+      "label": "remote-modal-sdk.xml",
+      "bytes": 643,
+      "sha256": "f2be2798572932896f703029c43f5be8a5aa05c760459d7cc8e874a412a1103c"
+    },
+    {
+      "label": "cpu-lifecycle.log",
+      "bytes": 7696,
+      "sha256": "b4e39b7e47365ee45a1e52f3d09b88049f4534d951c92c715c240e66a6c7d448"
+    },
+    {
+      "label": "cpu-lifecycle.xml",
+      "bytes": 7153,
+      "sha256": "31525e4db0f71d42d3c9e70c148375db5abab5fc147b8b128918e93919b41431"
+    },
+    {
+      "label": "integration.log",
+      "bytes": 8251,
+      "sha256": "c03b4f070e9e4e28a5bbda3b4969d2e49a700608e6f569f6cb06d5317d2ca811"
+    },
+    {
+      "label": "integration.xml",
+      "bytes": 8600,
+      "sha256": "bf245c5007d2b9479f0306a7a6cfd01441c626e890de45fa2ddc2d4f0b8447d8"
+    },
+    {
+      "label": "cpu-components.log",
+      "bytes": 78391,
+      "sha256": "5970c4279c7f6c81b80a5153be77284566da4f9756ff23427d81e0ab1b6c6399"
+    },
+    {
+      "label": "cpu-components.xml",
+      "bytes": 94894,
+      "sha256": "bb3065ecba08da45b9b00ac44f509631d07f19059a7fa75233626c3cc9ebab45"
+    },
+    {
+      "label": "cpu-concurrency.log",
+      "bytes": 3716,
+      "sha256": "b40e0c69429de645e86fa1c211cc8b2069e9be2e5a9ab564d6f0e518468fe440"
+    },
+    {
+      "label": "cpu-concurrency.xml",
+      "bytes": 2961,
+      "sha256": "d6a99becec2096ed6a09fdb30e1d5c891552fd484b8d76ea59d1900432880870"
+    },
+    {
+      "label": "native-runner.json",
+      "bytes": 1721,
+      "sha256": "4bf807af80c95f34277e8cf2c0dc69569d4b57d39e68bc950371a720fadedee2"
+    },
+    {
+      "label": "component-authoring-native.log",
+      "bytes": 1321,
+      "sha256": "6f881a63ab14d75139d6f15be65d51aa419472de66ecf26bc7c0d70c6dae4bd2"
+    },
+    {
+      "label": "native-dependencies.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "research-document-http.log",
+      "bytes": 1473,
+      "sha256": "e3faf151d4997eb65d4fa1b9bd2b6e874613214004104832f2a71eb302cb7240"
+    },
+    {
+      "label": "research-document-http.json",
+      "bytes": 1289,
+      "sha256": "cbc940121c0521d2104046ce368f11b3561a4cd410e47e13259b633a21ea533c"
+    },
+    {
+      "label": "research-document-dependencies.log",
+      "bytes": 754,
+      "sha256": "4bdc51bd9e8a075451b9606725add5a8b46eac57ac3ab681a788671b8caf34b9"
+    },
+    {
+      "label": "research-document-dependencies.json",
+      "bytes": 754,
+      "sha256": "4bdc51bd9e8a075451b9606725add5a8b46eac57ac3ab681a788671b8caf34b9"
+    }
+  ],
+  "scope": "Original terminal aggregate and named raw receipts retained outside the checkout before another aggregate can replace evidence/tests. Only this compact index is part of the documentation patch; no raw giant logs or private executor paths are included."
+}

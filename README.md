@@ -36,8 +36,13 @@ test fixtures and accounting simulations do not establish production acceptance.
 - Optional Codex, Claude Code and Triggerfish harness choices. Triggerfish has a
   locally tested ModelBuilder-side flat MCP adapter and reviewed inactive
   project setup; upstream execution and complete harness acceptance remain
-  unverified. Packaged use requires a rebuilt/resealed runtime; gateway-port,
-  command-allowlist, provider and native GUI gates remain explicit.
+  unverified. The adapter is included in the current unsigned Mac development
+  app; gateway-port, command-allowlist, provider and native GUI gates remain.
+- Linux-only Moonshiner 0.8.23 local composition of registered, reviewed traces,
+  verified through the native ZenML workflow and explicit prepared-dataset
+  registration/binding. Final-target metadata and inherited rights are preserved.
+  New provider trace generation and token-level training masks are not supplied
+  by this adapter.
 - Historical source-built Linux IDE launch with Python, basedpyright diagnostics,
   debugpy, terminal, Git and Jupyter execution tests. Current native GUI acceptance
   is recorded separately from those earlier passes.
@@ -53,8 +58,10 @@ a DMG containing the app on macOS, and a native Windows installer. The native
 MCP server is mandatory and managed by the app alongside its service and isolated
 runtime payloads. It is not an optional plugin or a separate end-user setup step.
 
-Installer assembly and current native GUI acceptance are still in progress;
-there is no verified downloadable release yet. See
+An unsigned arm64 Mac development DMG has passed mounted runtime/MCP checks
+and actual bundled MLX/MPS tests on the build host. Graphical acceptance,
+signing/notarization and clean-machine testing remain open. Linux/Windows
+installer delivery is unfinished; there is no verified downloadable release. See
 [packaging and installation status](distribution/INSTALLATION.md).
 
 ## Developer source build

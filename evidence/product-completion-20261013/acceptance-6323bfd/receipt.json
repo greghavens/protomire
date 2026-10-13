@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "recorded_date_utc": "2026-10-13",
+  "candidate_commit": "34fe6c75dda74e07eb8c6bf048d03e6694e0c886",
+  "runtime_commit": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92",
+  "source_files": 154,
+  "full_product_complete": false,
+  "aggregate_status": "FAIL",
+  "aggregate_exit_code": 1,
+  "aggregate_exit_confirmation": "Aggregate process terminal exit, cross-checked against the independently inspected native queue receipt.",
+  "source_verification": "source-verification.json",
+  "light": {
+    "passed": 2780,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 141,
+    "deselected": 89,
+    "pytest_elapsed_seconds": 209.85
+  },
+  "frontend": {
+    "passed": 530,
+    "failed": 0,
+    "skipped": 0,
+    "type_checks": "passed",
+    "compilation": "passed"
+  },
+  "offline_hub_sdk": {
+    "passed": 18,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 0,
+    "pytest_elapsed_seconds": 0.38
+  },
+  "offline_modal_sdk": {
+    "passed": 3,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 0,
+    "pytest_elapsed_seconds": 1.5
+  },
+  "native_queue": {
+    "concurrency": 2,
+    "deadline_seconds": 2100,
+    "status": "group_failed",
+    "elapsed_seconds": 2017.17,
+    "continue_on_failure": true,
+    "cleanup": {
+      "complete": true,
+      "signaled_processes": 0
+    },
+    "exit_code": 1,
+    "all_groups_attempted": true,
+    "deadline_met": true,
+    "groups": [
+      {
+        "name": "cpu-lifecycle",
+        "status": "failed",
+        "returncode": 1,
+        "started_seconds": 0.0,
+        "finished_seconds": 1172.361,
+        "passed": 30,
+        "failed": 1,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 0,
+        "pytest_elapsed_seconds": 1170.74
+      },
+      {
+        "name": "integration",
+        "status": "passed",
+        "returncode": 0,
+        "started_seconds": 0.0,
+        "finished_seconds": 1614.602,
+        "passed": 53,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 43,
+        "pytest_elapsed_seconds": 1614.13
+      },
+      {
+        "name": "cpu-components",
+        "status": "passed",
+        "returncode": 0,
+        "started_seconds": 1172.461,
+        "finished_seconds": 1850.104,
+        "passed": 589,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 10,
+        "deselected": 0,
+        "pytest_elapsed_seconds": 676.14
+      },
+      {
+        "name": "cpu-concurrency",
+        "status": "passed",
+        "returncode": 0,
+        "started_seconds": 1614.702,
+        "finished_seconds": 2017.066,
+        "passed": 18,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 4,
+        "pytest_elapsed_seconds": 401.4
+      }
+    ]
+  },
+  "failed_tests": [
+    {
+      "group": "cpu-lifecycle",
+      "test": "tests.integration.test_native_lifecycle::test_pretrained_validation_selection_parent_and_export",
+      "message": "modelbuilder.backend.admission.BackendError: Declared model/dataset/checkpoint inputs need authoritative reviewed rights before execution"
+    }
+  ],
+  "failure_code": "license_rights_unreviewed",
+  "rights_approval_fabricated": false,
+  "native_component_skips": [
+    {
+      "test": "tests.components.test_mlx_boundaries::test_hostile_python_environment_cannot_shadow_worker",
+      "reason": "Required-hardware isolated MLX worker gate"
+    },
+    {
+      "test": "tests.components.test_mlx_boundaries::test_full_checkpoint_is_self_contained_and_sharded_warm_start",
+      "reason": "Required-hardware isolated MLX worker gate"
+    },
+    {
+      "test": "tests.components.test_mlx_boundaries::test_stalled_reader_large_payload_respects_deadline",
+      "reason": "Required-hardware isolated MLX worker gate"
+    },
+    {
+      "test": "tests.components.test_mlx_boundaries::test_architecture_and_asset_budget_precede_model_loading",
+      "reason": "Required-hardware isolated MLX worker gate"
+    },
+    {
+      "test": "tests.components.test_moonshiner::test_official_installed_compose_through_native_process_abi",
+      "reason": "Explicit reviewed installed Moonshiner interpreter required"
+    },
+    {
+      "test": "tests.components.test_moonshiner_native_workflow::test_official_installed_compose_service_zenml_source_bound_runner",
+      "reason": "Explicit reviewed Moonshiner and existing native backend interpreters required"
+    },
+    {
+      "test": "tests.components.test_transformers_training::test_required_accelerator_trainer_hardware",
+      "reason": "Set MODELBUILDER_REQUIRE_TRAINER_DEVICE=cuda:<ordinal> or mps on the real pinned target"
+    },
+    {
+      "test": "tests.placement.test_cuda_execution::test_real_cuda_training_checkpoint_evaluation_warm_start_and_cancel",
+      "reason": "Real CUDA hardware acceptance is unverified on this host"
+    },
+    {
+      "test": "tests.integration.test_mlx_service::test_registered_project_mlx_native_pipeline[full]",
+      "reason": "Set MODELBUILDER_REQUIRE_MLX=1 with the reviewed operator MLX interpreter"
+    },
+    {
+      "test": "tests.integration.test_mlx_service::test_registered_project_mlx_native_pipeline[lora]",
+      "reason": "Set MODELBUILDER_REQUIRE_MLX=1 with the reviewed operator MLX interpreter"
+    }
+  ],
+  "focused_source_checks": "focused-source-checks.json",
+  "mac_current_candidate_report": "mac-build-host-report.json",
+  "current_installed_wheel_replay": "Not established for this 154-file candidate. The 51 source-pin/wheel checks are not complete installed scientific replay. Historical 1dc9698 strict comparison remains FAIL 34/35, with exact scientific outputs and rights-only differences.",
+  "scope_limits": [
+    "Public pretrained licensing/rights remains unresolved",
+    "Current Mac v12 results are build-host reported; raw Mac artifact/archive bytes not independently retrieved here",
+    "Native GUI blocked by locked Mac; signing/notarization and clean-machine acceptance unperformed",
+    "Linux AppImage inputs, Windows/Linux ARM64/actual CUDA, live providers, authenticated assistants and online tracking unverified",
+    "Upstream Triggerfish client/agent/provider acceptance not established by bundled-side preparation tests",
+    "Moonshiner local Linux offline composition is not provider/real-teacher execution, downstream training, full HTTP/MCP transport or whole-service cancellation acceptance",
+    "Hostile-code isolation and redistribution clearance unresolved",
+    "Hosted CI disabled; local test selections overlap and are not summed as unique coverage"
+  ]
+}

@@ -6,6 +6,44 @@ The intended end-user install is one app:
 - macOS: drag Modelbuilder from its DMG into Applications
 - Windows: run the Modelbuilder user installer
 
+## Current unsigned development DMG: v12
+
+**The current candidate has an unsigned macOS arm64 development DMG tested on
+the Mac build host. There is no published, signed, clean-machine-accepted release.**
+Candidate `34fe6c75dda74e07eb8c6bf048d03e6694e0c886` pins runtime
+`6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92`, with both **154-file** source/lock
+closures checked and **45,381 sealed payload files**. The read-only mounted DMG
+passed **6 core tests in 112.89 seconds**, strict inventory, four runtime module
+locations and the Code - OSS CLI. Detach exited 0.
+
+The **v12 unsigned development DMG is 1,166,352,946 bytes**, with build-host-
+reported SHA256
+`04695dbb092599ec3868480f675e27d6c5dd4b0f72b236f161a6f1a368b59178`.
+Separate build-host checks passed: frontend 530; source/rights/packaging/assistant
+151 with 68 Linux-only skips; actual MPS 1; MLX 6 in 349.74 seconds; bundled
+ModelBuilder-side Triggerfish preparation 33; packaged core 6. Counts overlap.
+
+These results and hashes are **build-host reported**. The full 55,260,489-byte Mac
+evidence archive remains local, reported SHA256
+`fc9fc931b70012436297c73ce44b90fd429e74af727f7ed441bd8052e0b0c31c`.
+Its upload route is blocked and has not been retried; raw archive and artifact
+bytes have not been independently retrieved into this verification workspace.
+[Current scoped artifact evidence](../evidence/product-completion-20261013/acceptance-6323bfd/mac-build-host-report.json)
+records those limits and current native run identities.
+
+**v12 supersedes v9 as the current development artifact.** Native GUI remains
+blocked by the locked Mac. Signing/notarization and clean-machine acceptance
+have not been performed. Linux AppImage and Windows installers remain unbuilt.
+Moonshiner is Linux-only; bundled Triggerfish preparation does not establish
+upstream client/agent/provider acceptance. The remaining public pretrained
+rights failure is not resolved by these Mac passes. No public download or
+product release is claimed. See [current verification](../docs/CURRENT_VERIFICATION.md).
+
+## Historical development checkpoints
+
+The following v9 and d573fe0/v11 records retain their original scope. Their
+words “current” refer to those earlier checkpoints, not the v12 artifact above.
+
 **An unsigned macOS arm64 development DMG has been built and tested on the
 Mac build host. There is no published, signed, clean-machine-accepted release.**
 The current development artifact is candidate `f99c5d5`, pinning runtime
@@ -52,6 +90,8 @@ DMG. The later staged Moonshiner public-workflow correction is outside this
 nor its separate 71-test staging result establish complete Triggerfish/vendor,
 current GUI, signed or clean-machine installer acceptance. See the
 [current source evidence](../evidence/product-completion-20261013/acceptance-edca415/README.md).
+
+## Package behavior
 
 The new package path embeds the operation service, its CPython environment,
 mandatory MCP bridge, verified native dependency resources, Git and an initial

@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "34fe6c75dda74e07eb8c6bf048d03e6694e0c886",
+  "runtime_commit": "6323bfdbce9dd9bb55f8403e69d5e2dd5f234b92",
+  "scope": "Source-matched focused checks recorded before the full aggregate; counts overlap and are not added as unique coverage.",
+  "moonshiner_public_workflow": {
+    "status": "PASS_SCOPED_FOCUSED_CHECKS",
+    "included_in_current_frozen_runtime": true,
+    "adapter_source_sha256": "56e7b2aa97e138fd48b17c2d5e0f2fafb480857da1420588a7f6b62056ae0c8f",
+    "integrated_tests": {
+      "passed": 71,
+      "seconds": 42.67
+    },
+    "final_targeted_cancellation_deadline_tests": {
+      "passed": 2,
+      "deselected": 66,
+      "seconds": 2.18
+    },
+    "initial_failed_attempt": {
+      "passed": 70,
+      "failed": 1,
+      "cause": "Cancellation fixture observed Linux terminal process state dead; assertion previously allowed only absent or zombie. Corrected terminal-state handling and disappearance race; live descendants remain rejected."
+    },
+    "correction": "Adapter uses native dict port and validates actual dataset/split/consumption plus ordered row hashes; no producer shim or global type relaxation",
+    "upstream_installation": {
+      "environment_sha256": "ac8a9f2f02c69de396c5a02789d5db162ebc7ef4fdc978f32c294bfeb0520869",
+      "reviewed_upstream_commit": "7abb66ac5328db6a5d5f3990cf85ddc40310f0b8",
+      "source_sha256": "a3d5c3159459a137020ad89751c70707ced14b6fbedf3a5dc6702551de3589c5",
+      "version": "0.8.23"
+    },
+    "backend_run_id": "c17707d9-4a29-43e6-b4d4-4f458e39fb4e",
+    "operation_id": "693d4ffc-846f-5274-8dda-50f10e179c74",
+    "prepared_manifest_sha256": "2c11e7714a98d0c0f02db851bb2cf651a03b377a98fa2bfba9781f1a1d971cad",
+    "rows": 2,
+    "input_boundary": "ordinary dataset.register, reviewed dataset policy and dataset.bind target compose.traces",
+    "output_boundary": "Explicit prepared validation, registration, policy binding and dataset binding with inherited teacher/data/source rights",
+    "native_owners": [
+      {
+        "canonical_node_id": "compose",
+        "descendant_cleanup": {
+          "observed_pids": [],
+          "remaining_pids": [],
+          "subreaper": true
+        },
+        "direct_child_reaped": true,
+        "exit_code": 0,
+        "node_id": "compose",
+        "reaped": true,
+        "remaining_observed_descendants": []
+      }
+    ],
+    "provider_execution": false,
+    "training_started": false,
+    "registration_started_automatically": false,
+    "not_claimed": [
+      "provider generation",
+      "real teacher execution",
+      "training/token-level masking",
+      "GUI",
+      "full-flow HTTP/MCP transport",
+      "full-service cancellation"
+    ]
+  },
+  "source_pin_wheel_selection": {
+    "passed": 51,
+    "elapsed_seconds": 4.3,
+    "full_installed_scientific_replay": false
+  },
+  "original_receipt_hashes": [
+    {
+      "label": "evidence/product-completion-20261013/moonshiner-public-integrated.log",
+      "bytes": 1854,
+      "sha256": "4d6c3692a9c03e32664eaa361050849f038e541b6f2a1484d17d519b69c67f5b"
+    },
+    {
+      "label": "evidence/product-completion-20261013/moonshiner-public-integrated-corrected.log",
+      "bytes": 100,
+      "sha256": "e29e35e7f0809a33df4f1c4c6fea8b8670b0da93d76dd2528ca318404a351be3"
+    },
+    {
+      "label": "evidence/product-completion-20261013/repin-6323bfd.log",
+      "bytes": 99,
+      "sha256": "ac05b4a9afecb158b6c488b499e5d3c2014f94957f4f43ac6674f2c15309310b"
+    },
+    {
+      "label": "evidence/product-completion-20261013/moonshiner-public-workflow/verification.json",
+      "bytes": 1594,
+      "sha256": "6108b8d560866d02b74763c4d08129505f54a93652fb2e178c25104fec623928"
+    },
+    {
+      "label": "evidence/product-completion-20261013/moonshiner-public-workflow/accepted-native-workflow.json",
+      "bytes": 5522,
+      "sha256": "70e887529d8591c13beef9dc8ca7f6283a8bf7fd9f9b27af17d27bf55b0abc12"
+    }
+  ],
+  "historical_evidence_policy": "The initial 70-pass/1-failure terminal-state fixture attempt and prior d573fe0 product gaps remain preserved. Corrected source does not rewrite old aggregate/replay results."
+}

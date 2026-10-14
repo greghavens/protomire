@@ -1,5 +1,27 @@
 # Current verification and remaining gates
 
+## Combined local CI, 2026-10-14 00:45 UTC
+
+The canonical offline run on `89d180a` finished with **exit 1**, not a pass.
+Pre-native checks passed: 3,087 Python tests (199 skips, 106 deselections),
+18 offline Hub SDK checks, the frontend/HTTP checks, required local PDF/OCR,
+three offline Modal SDK checks and native component authoring.
+
+Native results: components **651 passed / 10 skipped**, concurrency **18 passed /
+4 deselected**, integration **64 passed / 1 failed / 43 deselected**. Lifecycle
+was terminated by SIGKILL with no JUnit, so its cases are not counted as passed.
+The integration failure was a post-restart MCP status HTTP 503; the native worker
+itself finished successfully. Its status RPC took about 58 seconds against MCP's
+30-second default; exact transport exception and the cause of delay were not
+recorded. OOM is not established for the separate lifecycle termination.
+
+The queue finalized after 1,907.147 seconds, with cleanup complete and zero
+signals. Prior results and copied failure state are preserved. A fresh run after
+removing verified archived historical tmpfs test state is pending; assertions
+and deadlines are unchanged. Local CI now explicitly disables npm registry
+maintenance, using the same offline settings that passed the preceding compile.
+The first attempt's blocked npm request remains recorded separately.
+
 ## Latest acceptance status, 2026-10-13 23:00 UTC
 
 Runtime remains `33397ea30361b9c51dfb6bde219fd5f58c59dc10`, with both

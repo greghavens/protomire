@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Local CI uses bootstrapped dependencies; suppress npm maintenance requests.
+# Clear uppercase aliases without changing bootstrap or npm configuration files.
+unset NPM_CONFIG_OFFLINE NPM_CONFIG_UPDATE_NOTIFIER NPM_CONFIG_AUDIT NPM_CONFIG_FUND
+export npm_config_offline=true npm_config_update_notifier=false
+export npm_config_audit=false npm_config_fund=false
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT"
 mkdir -p evidence/tests
 case "${MODELBUILDER_NATIVE_TEST_PROCESSES:-1}" in

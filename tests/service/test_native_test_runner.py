@@ -274,7 +274,8 @@ from pathlib import Path
 arguments = sys.argv[1:]
 with Path(os.environ["AGGREGATE_SPY_LOG"]).open("a") as stream:
     stream.write(json.dumps({"executable": sys.argv[0], "args": arguments,
-        "environment": {key: value for key, value in os.environ.items() if key.startswith("MODELBUILDER_")}}) + "\n")
+        "environment": {key: value for key, value in os.environ.items() if key.startswith("MODELBUILDER_")
+            or key.lower() in {"npm_config_offline", "npm_config_update_notifier", "npm_config_audit", "npm_config_fund"}}}) + "\n")
 if arguments == ["-"]:
     module = types.ModuleType("modelbuilder.research_documents")
     ready = os.environ.get("SPY_DOCUMENT_TOOLS", "1") == "1"
@@ -329,6 +330,29 @@ def aggregate_harness(tmp_path, *, integration=True, modal=True, processes=1, **
                             capture_output=True, text=True, timeout=30)
     commands = [json.loads(line) for line in (root / "commands.jsonl").read_text().splitlines()]
     return result, root, commands
+
+
+@pytest.mark.parametrize("integration", [False, True])
+@pytest.mark.parametrize("inherited", ["absent", "lowercase", "uppercase"])
+def test_local_ci_npm_invocations_inherit_offline_maintenance_settings(tmp_path, monkeypatch, integration, inherited):
+    expected = {"npm_config_offline": "true", "npm_config_update_notifier": "false",
+                "npm_config_audit": "false", "npm_config_fund": "false"}
+    for key in expected:
+        monkeypatch.delenv(key, raising=False)
+        monkeypatch.delenv(key.upper(), raising=False)
+    conflicting = {} if inherited == "absent" else {
+        key.upper() if inherited == "uppercase" else key: "false" if value == "true" else "true"
+        for key, value in expected.items()}
+    result, root, commands = aggregate_harness(tmp_path, integration=integration, processes=2, **conflicting)
+    assert result.returncode == 0, result.stdout + result.stderr
+    npm = [row for row in commands if row["executable"] == str(root / "bin/npm")]
+    assert [row["args"] for row in npm] == [
+        ["run", "check"], ["run", "compile"], ["test"], ["run", "test:service"],
+        ["run", "test:workspace-http"], ["run", "test:source-pin-http"], ["run", "test:history-http"],
+        *([["run", "test:research-document-http"], ["run", "test:component-http"]] if integration else [])]
+    for row in npm:
+        assert {key: row["environment"].get(key) for key in expected} == expected
+        assert not any(key.upper() in row["environment"] for key in expected)
 
 
 @pytest.mark.parametrize("processes", [1, 2])

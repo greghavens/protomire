@@ -1,0 +1,13 @@
+{
+  "recorded_at": "2026-10-14T00:46:15.185201+00:00",
+  "scope": "Local CI npm metadata/update requests disabled; no dependency installation or runtime change.",
+  "tests_passed": 70,
+  "seconds": 26.95,
+  "ruff": "passed",
+  "shell_syntax": "passed",
+  "unchanged": "Production runtime, dependencies, test selections and deadlines.",
+  "evidence_sha256": {
+    "tests.log": "01b7949d133068545f1127b38ea2a4559b1744ca1a889c440915b9c4ef490a4e",
+    "tests.xml": "c773c8fae357f61ae065d93703ac5ed3320b4920f8ddc9aaa6460d98b7b26005"
+  }
+}

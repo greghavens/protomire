@@ -512,7 +512,9 @@ if sys.argv[2] == 'service':
     helper = root / 'modelbuilder/research_document_decode.py'
     child = subprocess.run([sys.executable, '-I', str(helper)], input=b'not a PDF',
                            capture_output=True, timeout=5)
-    assert child.returncode == 1 and json.loads(child.stdout)['error'] == 'invalid_document'
+    # Unsupported hosts prove the isolation gate, not document parsing.
+    expected_error = 'invalid_document' if sys.platform == 'linux' else 'document_capability_unavailable'
+    assert child.returncode == 1 and json.loads(child.stdout)['error'] == expected_error
 else:
     assert importlib.util.find_spec('modelbuilder.service') is None
 sample = pathlib.Path(sys.argv[3])

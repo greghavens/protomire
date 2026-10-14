@@ -82,6 +82,40 @@ def isolated_snapshot():
     return json.loads(result.stdout)
 
 
+@pytest.fixture
+def supported_host_facts(monkeypatch):
+    """Simulate Linux validation facts; never change real process-control support."""
+    facts = runner.inspect_environment(sys.executable)
+    facts["platform"] = "linux"
+    def inspect_environment(python):
+        assert python == sys.executable
+        return deepcopy(facts)
+
+    monkeypatch.setattr(runner, "inspect_environment", inspect_environment)
+    monkeypatch.setattr(runner, "environment_snapshot", lambda: deepcopy(facts))
+    original_command = runner.command
+
+    def command(python, module, *arguments):
+        argv = original_command(python, module, *arguments)
+        # The rejection tests cross a fresh-process boundary. Supply the same
+        # explicit facts there, without patching sys.platform or kernel calls.
+        argv[4] = ("import importlib,json,sys; sys.path.insert(0,sys.argv.pop(1)); "
+                   "runner=importlib.import_module('modelbuilder.backend.runner'); "
+                   "facts=json.loads(sys.argv.pop(1)); runner.environment_snapshot=lambda:facts; "
+                   "importlib.import_module(sys.argv.pop(1)).main()")
+        argv.insert(6, json.dumps(facts))
+        return argv
+
+    monkeypatch.setattr(runner, "command", command)
+    return facts
+
+
+def drift_value(original, field, value):
+    alternatives = {"python": "3.12.2", "executable_sha256": "1" * 64,
+                    "platform": "linux", "machine": "different-machine"}
+    return alternatives[field] if value == original[field] else value
+
+
 def test_environment_snapshot_and_isolated_probe_agree():
     assert isolated_snapshot() == runner.inspect_environment(sys.executable)
 
@@ -127,7 +161,7 @@ def test_descriptor_fails_closed(change):
     (lambda b, r, p: r["nodes"][0]["component"]["runner"]["stack"][0].update(version="0.0.0"), "differs"),
     (lambda b, r, p: r["nodes"][0]["component"]["runner"]["stack"][0].update(category="distributed-strategy"), "Distributed"),
 ])
-def test_selection_is_feature_specific_and_fail_closed(tmp_path, mutation, match):
+def test_selection_is_feature_specific_and_fail_closed(tmp_path, mutation, match, supported_host_facts):
     backend, recipe, profile = setup(tmp_path)
     mutation(backend, recipe, profile)
     with pytest.raises(ValueError, match=match):
@@ -138,7 +172,8 @@ def test_selection_is_feature_specific_and_fail_closed(tmp_path, mutation, match
                                          ("platform", "darwin"), ("machine", "another-machine")])
 def test_environment_identity_drift_rejected(field, value):
     original = isolated_snapshot()
-    changed = {**original, field: value}
+    changed = {**original, field: drift_value(original, field, value)}
+    assert changed[field] != original[field]
     with pytest.raises(ValueError, match="differs"):
         runner.verify_snapshot(original, changed)
 
@@ -207,7 +242,7 @@ def run(*, inputs, parameters, context):
     assert owner["descendant_cleanup"]["remaining_pids"] == []
 
 
-def test_preimport_recheck_blocks_changed_profile_and_source(tmp_path):
+def test_preimport_recheck_blocks_changed_profile_and_source(tmp_path, supported_host_facts):
     marker = tmp_path / "imported"
     code = f'from pathlib import Path\nPath({str(marker)!r}).touch()\ndef run(**kwargs): return {{"result": {{}}}}\n'
     backend, recipe, _ = setup(tmp_path, code=code)
@@ -218,7 +253,7 @@ def test_preimport_recheck_blocks_changed_profile_and_source(tmp_path):
     assert not marker.exists()
 
 
-def test_source_trust_is_not_granted_by_environment_receipt(tmp_path):
+def test_source_trust_is_not_granted_by_environment_receipt(tmp_path, supported_host_facts):
     marker = tmp_path / "imported"
     code = f'from pathlib import Path\nPath({str(marker)!r}).touch()\ndef run(**kwargs): return {{"result": {{}}}}\n'
     backend, recipe, _ = setup(tmp_path, code=code)
@@ -273,7 +308,7 @@ def run(*, inputs, parameters, context):
     assert owner["reaped"] and not owner["remaining_observed_descendants"]
 
 
-def test_changed_source_bytes_refused_before_import_in_selected_interpreter(tmp_path):
+def test_changed_source_bytes_refused_before_import_in_selected_interpreter(tmp_path, supported_host_facts):
     marker = tmp_path / "imported"
     code = f'from pathlib import Path\nPath({str(marker)!r}).touch()\ndef run(**kwargs): return {{"result": {{}}}}\n'
     backend, recipe, _ = setup(tmp_path, code=code)
@@ -301,3 +336,28 @@ def test_evaluation_scalar_and_name_must_match_immutable_record():
             runner.validate_evaluation_outputs({"result": {"mse": value, "evaluation_records": {"mse": record}}}, candidate)
     with pytest.raises(ValueError, match="differs"):
         runner.validate_evaluation_outputs({"result": {"other": 1., "evaluation_records": {"other": record}}}, candidate)
+
+
+def test_simulated_supported_facts_are_consistent_at_validation_boundaries(tmp_path, supported_host_facts):
+    backend, recipe, profile = setup(tmp_path, code="def run(**kwargs): return {'result': {}}\n")
+    assert profile == supported_host_facts == runner.environment_snapshot()
+    spec = spec_for(tmp_path, backend, recipe)
+    assert spec["runner_environment"]["profile"] == profile
+    assert runner.verify_runtime(spec)["framework_smoke"] == "not_implied"
+
+
+@pytest.mark.skipif(sys.platform == "linux", reason="Real host is a supported Runner platform")
+def test_real_unsupported_host_is_rejected_before_execution(tmp_path):
+    backend, recipe, profile = setup(tmp_path)
+    assert profile["platform"] == sys.platform != "linux"
+    with pytest.raises(ValueError, match="Linux CPU"):
+        runner.resolve_environments(backend, recipe)
+
+
+@pytest.mark.parametrize("platform", ["linux", "darwin", "win32"])
+def test_platform_drift_always_differs_from_baseline(platform):
+    original = {**isolated_snapshot(), "platform": platform}
+    changed = {**original, "platform": drift_value(original, "platform", "darwin")}
+    assert changed["platform"] != platform
+    with pytest.raises(ValueError, match="differs"):
+        runner.verify_snapshot(original, changed)

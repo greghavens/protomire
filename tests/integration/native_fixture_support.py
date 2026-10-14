@@ -6,6 +6,22 @@ import subprocess
 from tests.components.rights_test_support import USAGE_CONTEXT, local_source_review, write_reviewed_policies
 
 
+def native_backend_profile(recipe, source, *, target=None):
+    """Select the reviewed host lock before narrowing a transport fixture's source."""
+    from distribution.platform_config import detect_target
+    from scripts.dependency_profiles import backend_reason
+    from scripts.replay_bundle import profile_requirements
+
+    target = target or detect_target()
+    if reason := backend_reason(target):
+        raise ValueError(reason)
+    selected = deepcopy(recipe)
+    requirements, profile = profile_requirements(
+        Path(source), selected, selected["environment"]["requirements"], "backend", target, "default")
+    selected["environment"].update(requirements=requirements, lock_file=profile["lock_file"])
+    return selected
+
+
 def pinned_builtin_source(directory):
     import modelbuilder.backend
     source = Path(directory) / "fixture-source"

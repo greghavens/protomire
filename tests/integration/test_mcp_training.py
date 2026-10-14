@@ -8,7 +8,7 @@ import time
 
 import pytest
 
-from tests.integration.native_fixture_support import synthetic_review
+from tests.integration.native_fixture_support import native_backend_profile, synthetic_review
 from tests.components.rights_test_support import write_reviewed_policies
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -40,7 +40,8 @@ async def test_mcp_real_training_and_service_crash(tmp_path):
             project_id = project["project_id"]
             draft = await call("recipe_get", {"project_id": project_id, "recipe_id": project["recipe_id"]})
             assert draft["revision"] == 1
-            manifest = json.loads((ROOT / "examples/custom-pytorch/recipe.json").read_text())
+            manifest = native_backend_profile(
+                json.loads((ROOT / "examples/custom-pytorch/recipe.json").read_text()), ROOT)
             # This probes transport/restart, not clean portability. Pin the checked-out workload.
             commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
             source_path = "src/modelbuilder/backend/fixtures.py"

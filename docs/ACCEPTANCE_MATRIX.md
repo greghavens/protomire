@@ -2,11 +2,11 @@
 
 > Owner-requested corrections are verified below: one fixed model project and one recipe identity with immutable revisions; recipe transfer belongs only in the native File menu. Original design inputs are unchanged. Earlier selector and workspace-transfer screenshots are historical, not accepted UI. This is technical verification, not a claim of owner acceptance or full-product completion.
 
-Current status updated 2026-10-13; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
+Current status updated 2026-10-14; see [current verification](CURRENT_VERIFICATION.md) for the in-progress full implementation and its unpassed gates. The 2026-10-10 and earlier checkpoints below remain historical.
 
 ## Current runtime 33397ea
 
-The current runtime has 163 pinned files. See [latest scoped results and open gates](CURRENT_VERIFICATION.md#latest-acceptance-status-2026-10-13-2300-utc). The installed synthetic replay passed its scientific and immutability scope, while strict artifact equality remains 34/35 and full native/GUI/product acceptance remains incomplete. Older candidate sections below are historical.
+The current runtime has 163 pinned files. See [latest scoped results and open gates](CURRENT_VERIFICATION.md#mac-acceptance-update-2026-10-14). The installed synthetic replay passed its scientific and immutability scope, while strict artifact equality remains 34/35 and full native/GUI/product acceptance remains incomplete. Source `7752040` additionally passed the Mac standard suite (2,954 Python, 582 frontend, four HTTP suites), targeted MCP restart, and five real MPS/CPU/MLX native checks. These scoped results leave the Linux aggregate, native GUI/signing, optional Mac Hub environment and public pretrained rights gates open. Older candidate sections below are historical.
 
 ## Guided quickstart correction
 

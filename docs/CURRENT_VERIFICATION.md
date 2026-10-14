@@ -1,6 +1,41 @@
 # Current verification and remaining gates
 
-## Combined local CI, 2026-10-14 00:45 UTC
+## Mac acceptance update, 2026-10-14
+
+Tested source is `7752040a3b003f03b7af9b77c57f39c06c2aeb61`; the standard
+run tested the reviewed two-file portability patch subsequently committed there.
+Frozen runtime remains `33397ea30361b9c51dfb6bde219fd5f58c59dc10`.
+Both shipping recipes' 163-file closures matched declared hashes and Git source
+bytes. These are scoped passes, not full-product completion.
+
+- Standard non-native `scripts/test_all.sh`: **2,954 Python passed**, 306 skipped,
+  106 deselected; **582 frontend passed** and all four HTTP suites passed
+  (`test:service`, `test:workspace-http`, `test:source-pin-http`,
+  `test:history-http`). Actual script exit was 0.
+- Targeted `tests/integration/test_mcp_training.py::test_mcp_real_training_and_service_crash`
+  passed after the host-profile fixture correction committed in `5343407`.
+  This Mac result does not erase the historical Linux restart failure below.
+- Explicit Mac native set: **5 passed, zero failures or skips**, pytest exit 0.
+  `tests/components/test_transformers_training.py::test_required_accelerator_trainer_hardware`
+  ran real MPS training and fresh-process export with required Trainer/device
+  flags and MPS fallback disabled. The two CPU checks were
+  `tests/placement/test_placement.py::test_real_cpu_probe_forward_backward_in_configured_interpreter`
+  and `tests/placement/test_placement.py::test_real_device_aware_training_cpu_checkpoint_eval_and_cancel`.
+  `tests/integration/test_mlx_service.py::test_registered_project_mlx_native_pipeline`
+  passed both `full` and `lora`, including full-mode native deadline cleanup.
+  Fixtures were synthetic and locally authored; test deadlines were unchanged.
+  Ownership monitoring found no remaining processes after either completed set.
+
+The **complete Linux native aggregate remains incomplete**; its queue requires
+Linux process containment, and Linux PDF/OCR isolation is not Mac coverage.
+The MPS-unavailable negative test was not selected on available MPS hardware.
+The optional offline Hub suite was **not run in this Mac standard run** because
+its reviewed environment was absent. Native GUI, signing/notarization and
+clean-machine acceptance remain open. Public pretrained asset rights review
+remains unresolved; no public pretrained acceptance was run in this Mac set.
+Earlier failed and interrupted runs below remain historical evidence.
+
+## Historical combined local CI, 2026-10-14 00:45 UTC
 
 The canonical offline run on `89d180a` finished with **exit 1**, not a pass.
 Pre-native checks passed: 3,087 Python tests (199 skips, 106 deselections),

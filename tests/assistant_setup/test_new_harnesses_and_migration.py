@@ -83,3 +83,49 @@ def test_inventory_never_imports_repo_code_and_reports_omissions(tmp_path):
     assert {p.name:p.read_bytes() for p in tmp_path.iterdir() if not p.is_symlink()} == before
     assert scanner.inventory(tmp_path,max_files=1)['truncated']
     assert scanner.inventory(tmp_path,max_hash_bytes=31) == deepcopy(report)
+
+
+@pytest.mark.parametrize('client', ['claude','codex','opencode','kilocode'])
+def test_flatpak_config_launcher_works_inside_and_on_host(tmp_path, command, monkeypatch, client):
+    import os
+    import subprocess
+    app_id = 'io.github.greghavens.Modelbuilder'
+    packaged_profile = tmp_path/'flatpak-profile.json'
+    packaged_profile.write_text(json.dumps({'app_id': app_id}))
+    monkeypatch.setattr(project, 'FLATPAK_PROFILE', packaged_profile)
+    monkeypatch.setenv('FLATPAK_ID', app_id)
+    # An inert native entrypoint records its vector; it does not start any service.
+    Path(command['args'][1]).write_text('import json,sys; print(json.dumps(sys.argv[1:]))\n')
+    workspace = tmp_path/'repo with spaces'
+    workspace.mkdir()
+    report, files = project.preview_project(client, workspace, 'project-1', command=command)
+    project.apply_project(report, files, report['approval'])
+    entry = report['plan']['entry']
+    vector = entry['command'] if client in project.JSON_CLIENTS else [entry['command'],*entry['args']]
+    assert vector[0] == '/bin/sh'
+    native = subprocess.run(vector,capture_output=True,text=True,check=True)
+    assert json.loads(native.stdout) == command['args'][2:]
+    binary = tmp_path/'bin'
+    binary.mkdir()
+    flatpak = binary/'flatpak'
+    flatpak.write_text('#!'+sys.executable+'\nimport json,sys; print(json.dumps(sys.argv[1:]))\n')
+    flatpak.chmod(0o755)
+    env={key:value for key,value in os.environ.items() if key != 'FLATPAK_ID'}
+    env['PATH']=str(binary)+os.pathsep+env.get('PATH','')
+    host=subprocess.run(vector,env=env,capture_output=True,text=True,check=True)
+    assert json.loads(host.stdout) == ['run','--command=modelbuilder-mcp',app_id,'--state-dir',str(tmp_path/'private-state'),'--project-id','project-1']
+    repeat, _=project.preview_project(client,workspace,'project-1',command=command)
+    assert repeat['plan']['change']=='unchanged'
+    rb, changes=project.preview_rollback(client,workspace)
+    project.rollback_project(rb,changes,rb['approval'])
+    assert not (workspace/f'.modelbuilder/assistant-setup/{client}-mcp.sh').exists()
+
+
+def test_flatpak_identity_mismatch_never_writes_config(tmp_path,command,monkeypatch):
+    path=tmp_path/'profile.json'
+    path.write_text(json.dumps({'app_id':'org.example.Wrong'}))
+    monkeypatch.setenv('FLATPAK_ID','org.example.Expected')
+    monkeypatch.setattr(project,'FLATPAK_PROFILE',path)
+    with pytest.raises(setup.SetupError,match='identity'):
+        project.preview_project('claude',tmp_path,'project-1',command=command)
+    assert not (tmp_path/'.mcp.json').exists()

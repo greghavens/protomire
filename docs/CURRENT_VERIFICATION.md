@@ -1,5 +1,49 @@
 # Current verification and remaining gates
 
+## Functionality-family coverage and delivery update, 2026-10-18
+
+Backend runtime source is `2dd294d831a5223fe982bbd8fe324c12832c76ea`, identical
+to locally tested source commit `1494364a2ac8fcd07ab544902147b2165b43a526`.
+Both shipping recipes now pin its **166-file** source/lock closure. This is newer
+source, not a rebuilt or release-accepted Mac/Windows/Linux application.
+
+- Actual standard local `scripts/test_all.sh` exited **0**: **3,211 Python passed**,
+  217 skipped, 108 deselected; **586 frontend passed**; four HTTP suites passed.
+  The optional offline Hub SDK environment was absent and explicitly not run.
+  The complete native aggregate was not enabled; no hosted CI was run.
+- Real native functionality-family training/evaluation tests include v1 prefix
+  and streaming exposure, successful-update accounting, masked causal targets,
+  v2 convergence/budget behavior and exact resume. **15 focused tests passed**.
+- A registered, serialized ZenML pipeline passed **2 cases**, including live
+  checkpoint evaluation with an explicitly missing family preserved in durable
+  records and completion events. Independent native family evaluation/target
+  checks passed **3 cases**, including token-weighted causal-LM measurements.
+- Native scientific comparison/promotion/integrity regression passed after an
+  actual schema-admission failure exposed unsupported regex keywords. The fix
+  preserves semantic SHA validation without weakening inert-schema restrictions.
+- Generated Claude/Codex/OpenCode/Kilo commands each cold-started the real MCP
+  service after the IDE lease and service had stopped: **4 cases passed**.
+  This is command/configuration transport acceptance, not vendor sign-in or
+  upstream extension discovery/inference acceptance.
+- The migration skill's read-only inventory and reviewed setup/rollback paths
+  have local tests. Flatpak packager contracts use explicitly inert tool fixtures;
+  **no installable Flatpak or Bazzite/GPU acceptance is claimed**.
+- Additional Flatpak host/sandbox launcher routing, identity rejection and
+  rollback tests passed after the standard run. They are unit-level routing
+  evidence, not actual Flatpak execution.
+
+The new family-exposure native contract currently supports **single-process CPU
+float32 without AMP**. GPU/MLX/distributed exposure adapters remain unsupported;
+required native guards reject unsupported producers. A dataset policy alone does
+not intercept arbitrary custom training scripts. Use the explicit required guard
+and full evaluation-cohort pin described in [the contract](functionality-family-coverage.md).
+
+Linux delivery is now **Flatpak for Bazzite**, with mandatory bundled MCP. Native
+packaging, host-terminal MCP launch, device access, first-open GUI and clean-machine
+acceptance remain release gates; see [Flatpak status](../distribution/FLATPAK.md).
+The prior Mac artifact does not contain these changes. Earlier failed/interrupted
+runs and unrelated release gates below are retained, not retroactively marked passed.
+
 ## Mac acceptance update, 2026-10-14
 
 Tested source is `7752040a3b003f03b7af9b77c57f39c06c2aeb61`; the standard

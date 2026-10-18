@@ -4,7 +4,7 @@ Flatpak is the required Linux end-user delivery, replacing AppImage as the defau
 
 ## Current state
 
-The packaging command path and its refusal/permission/integrity contracts have unit tests. **No installable Flatpak has been built or tested on Bazzite.** The current build workspace lacks Flatpak and a staged native Linux Code - OSS app. Inert packager fixtures are not installation evidence.
+The packaging command path and its refusal/permission/integrity contracts have unit tests. **No installable Flatpak has been built or tested on Bazzite.** Workspace-local Flatpak tooling has been prepared; native Linux editor/runtime assembly and actual installation acceptance remain unfinished. Inert packager fixtures are not installation evidence.
 
 The release-engineering entry point is `distribution/single_app.py package --target linux-x64 --app <sealed-staged-app> --output <fresh-directory> --flatpak-profile <reviewed-profile.json>`. This is a build-host command, not an end-user multi-step installation. The stage must already contain the mandatory operation service, native MCP, backend and reviewed runtime. The packager validates that sealed payload before invoking Flatpak; it does not download dependencies, install the app, change host configuration, or publish it.
 
@@ -21,7 +21,7 @@ Before telling a user the product is ready:
 - Verify bundled MCP/core operation without external Python/Git setup.
 - Verify CPU and the intended GPU training/evaluation/export paths, checkpoint notifications and family guardrails.
 - Verify access to selected local project files and persistent app state across restarts.
-- Verify external Claude/Codex/OpenCode/Kilo startup from a host terminal with the IDE closed. Current native project commands use installed interpreter paths; sandbox-only `/app` paths are **not yet a verified host launcher**. A sandbox/host-aware launch bridge is a release blocker.
+- Verify external Claude/Codex/OpenCode/Kilo startup from a host terminal with the IDE closed. Packaged project setup now creates a reviewed shell launcher: inside the matching Flatpak it runs the bundled MCP command; outside it calls `flatpak run --command=modelbuilder-mcp` with exact project/state arguments. Both routing branches and rollback have unit tests, but **real host-to-Flatpak cold-start acceptance remains open**. Triggerfish remains an inactive compatibility bundle.
 - Verify assistant discovery, owner-reviewed mutations, project isolation and disconnect behavior.
 - Complete redistribution/license, signing/update and native safety checks. Do not relabel the existing Mac DMG as containing later source changes.
 

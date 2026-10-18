@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 
@@ -72,6 +73,21 @@ def package_flatpak(app: Path, output: Path, target: str, artifact: Path, profil
     launcher = files / "bin/modelbuilder"
     launcher.write_text('#!/bin/sh\nset -eu\nexec /app/bin/zypak-wrapper /app/lib/modelbuilder/modelbuilder-ide "$@"\n')
     launcher.chmod(0o755)
+    core_root = "/app/lib/modelbuilder/resources/app/extensions/modelbuilder-workbench/resources/core"
+    manifest = json.loads((app / "resources/app/extensions/modelbuilder-workbench/resources/core/runtime.json").read_text())
+    service_python = manifest["service_python"]
+    if not isinstance(service_python, str) or Path(service_python).is_absolute() or ".." in Path(service_python).parts:
+        raise ValueError("Flatpak MCP requires a safe bundled service interpreter")
+    mcp = files / "bin/modelbuilder-mcp"
+    mcp.write_text('#!/bin/sh\nset -eu\n'
+                   'if [ "$#" -ne 4 ] || [ "$1" != "--state-dir" ] || [ "$3" != "--project-id" ]; then exit 2; fi\n'
+                   + "exec " + shlex.quote(core_root + "/" + service_python) + " -I -B "
+                   + shlex.quote(core_root + "/managed_core.py") + " mcp --runtime-root " + shlex.quote(core_root)
+                   + ' --state-dir "$2" --project-id "$4"\n')
+    mcp.chmod(0o755)
+    profile_path = files / "share/modelbuilder/flatpak-profile.json"
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
+    profile_path.write_text(json.dumps(profile, indent=2) + "\n")
     app_id = profile["app_id"]
     desktop = files / "share/applications" / (app_id + ".desktop")
     desktop.parent.mkdir(parents=True, exist_ok=True)

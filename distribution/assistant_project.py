@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import tempfile
 import tomllib
 
@@ -21,6 +22,7 @@ VERSION = "1"
 CLIENTS = frozenset({"codex", "claude", "triggerfish", "opencode", "kilocode"})
 JSON_CLIENTS = frozenset({"opencode", "kilocode"})
 SKILL_ROOTS = {"codex": ".agents/skills", "claude": ".claude/skills", "opencode": ".opencode/skills", "kilocode": ".kilo/skills"}
+FLATPAK_PROFILE = Path("/app/share/modelbuilder/flatpak-profile.json")
 CONFIG_PATHS = {"codex": ".codex/config.toml", "claude": ".mcp.json", "opencode": "opencode.json", "kilocode": ".kilo/kilo.json"}
 
 
@@ -89,6 +91,31 @@ def entry_from_command(client: str, command: dict, project_id: str) -> dict:
     return {**command, **({"type": "stdio"} if client == "claude" else {})}
 
 
+def flatpak_project_launcher(root, client, command):
+    """Same reviewed config works inside the app and from a host terminal."""
+    app_id = os.environ.get("FLATPAK_ID")
+    if not app_id or client == "triggerfish":
+        return None
+    if (not FLATPAK_PROFILE.is_file() or FLATPAK_PROFILE.stat().st_size > 65536
+            or any(path.is_symlink() for path in (FLATPAK_PROFILE, *FLATPAK_PROFILE.parents))):
+        raise setup.SetupError("flatpak_profile_invalid", "Packaged Flatpak identity is unavailable or unsafe.")
+    profile = setup.parse_json(FLATPAK_PROFILE.read_bytes())
+    if profile.get("app_id") != app_id or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*){2,}", app_id):
+        raise setup.SetupError("flatpak_profile_invalid", "Packaged Flatpak identity is missing or differs; no host launcher was configured.")
+    args = command["args"]
+    state_dir = args[args.index("--state-dir") + 1]
+    project_id = args[args.index("--project-id") + 1]
+    native = shlex.join([command["command"], *args])
+    host = shlex.join(["flatpak", "run", "--command=modelbuilder-mcp", app_id,
+                      "--state-dir", state_dir, "--project-id", project_id])
+    relative = f".modelbuilder/assistant-setup/{client}-mcp.sh"
+    text = '#!/bin/sh\nset -eu\nif [ "${FLATPAK_ID:-}" = ' + shlex.quote(app_id) + ' ]; then\n  exec ' + native + '\nelse\n  exec ' + host + '\nfi\n'
+    vector = {"command": "/bin/sh", "args": [str(checked_path(root, relative))]}
+    entry = ({"type": "local", "command": [vector["command"], *vector["args"]], "enabled": True, "timeout": 30000}
+             if client in JSON_CLIENTS else {**vector, **({"type": "stdio"} if client == "claude" else {})})
+    return relative, text, entry
+
+
 def config_entry(client, raw):
     try:
         data = setup.parse_json(raw or b"{}") if client == "claude" or client in JSON_CLIENTS else tomllib.loads((raw or b"").decode())
@@ -128,8 +155,12 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
     if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}", project_id or ""):
         raise setup.SetupError("project_required", "Create or select one model project before configuring its assistant.")
     root = checked_root(workspace)
+    launcher = None
     if command is not None:
         entry = entry_from_command(client, command, project_id)
+        launcher = flatpak_project_launcher(root, client, command)
+        if launcher:
+            entry = launcher[2]
     else:
         if client == "triggerfish" or client in JSON_CLIENTS:
             raise setup.SetupError("managed_runtime_required", "This harness requires the native project-scoped managed MCP command; external token interpolation is not configured.")
@@ -158,8 +189,11 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
         if any(setup.config_bytes(checked_path(root, path)) is not None for path in alternatives):
             raise setup.SetupError("config_conflict", "An alternate or legacy harness config exists. Review precedence in the vendor UI; no competing config was created.")
     instructions = "CLAUDE.md" if client == "claude" else "AGENTS.md"
+    owned_templates = template_files(client)
+    if launcher:
+        owned_templates[launcher[0]] = launcher[1].encode()
     originals = {}
-    for path in [config, instructions, *template_files(client)]:
+    for path in [config, instructions, *owned_templates]:
         originals[path] = setup.config_bytes(checked_path(root, path))
     old_entry = config_entry(client, originals[config])
     if old_entry is not None and not current:
@@ -171,7 +205,7 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
         raise setup.SetupError("instruction_conflict", "Untracked managed instruction markers exist. No instructions were changed.")
     files.append({"path": instructions, "kind": "append", "content":
                   ((originals[instructions] or b"") + (b"" if current else block)).decode(), "managed_block": block.decode()})
-    for path, content in template_files(client).items():
+    for path, content in owned_templates.items():
         if originals[path] is not None and not current:
             raise setup.SetupError("skill_conflict", "A project skill already occupies the managed name. It was preserved.")
         files.append({"path": path, "kind": "owned", "content": content.decode()})

@@ -407,7 +407,7 @@
   "revision": 1,
   "schema_version": "0",
   "source": {
-    "commit": "33397ea30361b9c51dfb6bde219fd5f58c59dc10",
+    "commit": "2dd294d831a5223fe982bbd8fe324c12832c76ea",
     "files": [
       {
         "path": "pyproject.toml",
@@ -559,7 +559,7 @@
       },
       {
         "path": "scripts/replay_bundle.py",
-        "sha256": "07fb05223d7a0b752f95f45287310af24e520743886ad324be0247c3ba5e094d"
+        "sha256": "8731b062e6871cc580a0da3521da9ff0697a30d157584f92cb8a349309b37aa7"
       },
       {
         "path": "src/modelbuilder/__init__.py",
@@ -647,11 +647,11 @@
       },
       {
         "path": "src/modelbuilder/backend/components/rule_gate.py",
-        "sha256": "768c335bd011ae07cd04d2013759f3933d11d04db2c6c73b852be8f2c6119803"
+        "sha256": "0e8f62d6c17ca6548cad300625809ad22d530430e1c3cbd4c84d368da8ed5ff2"
       },
       {
         "path": "src/modelbuilder/backend/components/runtime.py",
-        "sha256": "dcaca2e652da383690f9b743c1227285ed3bc1301a6dbbc8287469116b449eba"
+        "sha256": "f04c57603ed3bb4185ae0688cf0a3cf021f4418a95bbb27a6d8e930dc277d283"
       },
       {
         "path": "src/modelbuilder/backend/components/scientific_gate.py",
@@ -663,7 +663,11 @@
       },
       {
         "path": "src/modelbuilder/backend/components/transformers_epochs.py",
-        "sha256": "e38e43c4d93d5a28d44c560c232698bd31028eee4e899dbfe82d415febf4ec94"
+        "sha256": "dad0b228666677d1ff935165b0429856854277d2f057407cb0b1b09200397d0e"
+      },
+      {
+        "path": "src/modelbuilder/backend/components/transformers_family_exposure.py",
+        "sha256": "3d399e5f24aa1650e0752b1309c08a2ff6bb3b5d35eb5ba79c307686b73351a9"
       },
       {
         "path": "src/modelbuilder/backend/components/transformers_inference.py",
@@ -675,7 +679,7 @@
       },
       {
         "path": "src/modelbuilder/backend/components/transformers_training.py",
-        "sha256": "bb1dae44116d9a05616648648d5ca9a098e6c69bb0ddc71a7337ad53a82460f0"
+        "sha256": "721e9da3e7391bfaba5dbbbcf482ff010f9f7f15df761eb8ea66fea68ec60a72"
       },
       {
         "path": "src/modelbuilder/backend/components/weight_blend.py",
@@ -715,7 +719,7 @@
       },
       {
         "path": "src/modelbuilder/backend/live_evaluation.py",
-        "sha256": "2af97f5c8ffa42f4389d0ab1e64dd9ed8e7a24bd71b9f422f3244d2b61563efb"
+        "sha256": "85788548e7324fdf253eec071baabeca8a26a10aaf1043d7addc70cc6a7595e2"
       },
       {
         "path": "src/modelbuilder/backend/native_cache.py",
@@ -755,7 +759,7 @@
       },
       {
         "path": "src/modelbuilder/backend/rule_attestations.py",
-        "sha256": "76746caa611e0b5c2d9a160a3d348aff99f4b96a17a6734aeedc58103d8a83d4"
+        "sha256": "75e39315e6f4731fbd97e875c2df57b809cfb704ff8a2289a8f957abb177564d"
       },
       {
         "path": "src/modelbuilder/backend/rule_methods.py",
@@ -775,7 +779,7 @@
       },
       {
         "path": "src/modelbuilder/backend/scientific_gate_artifacts.py",
-        "sha256": "b52a412b9965793b35058bf651c1862fbe713f5b58f4cccc4cc448f579331f32"
+        "sha256": "89a4b6defa4f1073dfe660b7323c2329355a2e1a2f42ad02574dd08f7f54aa2f"
       },
       {
         "path": "src/modelbuilder/backend/sdk.py",
@@ -811,7 +815,7 @@
       },
       {
         "path": "src/modelbuilder/dataset.py",
-        "sha256": "ce116ae1c716966acb1d7ed09ee8d82333de7efe9c77a8e3ebb6087ea7b2498d"
+        "sha256": "8e93bde16b65ab4106d84b5be8e4620604089196f83d2c028a8f3a6f8a9214a8"
       },
       {
         "path": "src/modelbuilder/dataset_binding.py",
@@ -823,11 +827,11 @@
       },
       {
         "path": "src/modelbuilder/dataset_streaming.py",
-        "sha256": "546e2642566dc2b986c62c4a3b9236522466e3cbda716edce834168dd3e50de8"
+        "sha256": "fa377525dc3183eec3d5efcff1ebffbd572e2c8fd1a75d118a99a4123199b50b"
       },
       {
         "path": "src/modelbuilder/evaluation.py",
-        "sha256": "a09ff1080fa75f4aa0e6823f170d9b5a4e4900391d77528cff29a73620df0847"
+        "sha256": "acee9e04d1aa64e7265d8ed8b1f557645a85ac3c0c2f95f48d2e81cfc6b82de6"
       },
       {
         "path": "src/modelbuilder/execution.py",
@@ -836,6 +840,14 @@
       {
         "path": "src/modelbuilder/export_packages.py",
         "sha256": "03726bcb31c236d02a69c2853908317fa08d674fbf2eb882eead0ec6d2226652"
+      },
+      {
+        "path": "src/modelbuilder/family_coverage.py",
+        "sha256": "b93cb151a2d3402eb0c98f7e66e396be8a0de21b2732f616a471d7f3bfd86afc"
+      },
+      {
+        "path": "src/modelbuilder/family_evaluation.py",
+        "sha256": "d96758d24cdc36a033c932f560cca00f80d3853476568a16d9e41de1c63666d5"
       },
       {
         "path": "src/modelbuilder/generated_artifacts.py",
@@ -891,7 +903,7 @@
       },
       {
         "path": "src/modelbuilder/models.py",
-        "sha256": "67ff11f95d75cee49aae07364aca0c645613316deed5bc0dbe6926f7a5464f0d"
+        "sha256": "4e9ed9346e4c0aef9ddbababe48575e0791e07bff8a4b3dff637872fe136689e"
       },
       {
         "path": "src/modelbuilder/parquet_decode.py",
@@ -987,11 +999,11 @@
       },
       {
         "path": "src/modelbuilder/research_context.py",
-        "sha256": "3bbf7c77c03e8aa0a5a0683a2a157ddc86b1d1e43860f2c8bc40ef713ba68263"
+        "sha256": "2f20b6c2fdcdebd8be962d378309c1dffd720fc16e2437d16188ab82910df1f8"
       },
       {
         "path": "src/modelbuilder/research_context_contract.py",
-        "sha256": "326546ab26e0ea9f75b7dfde55787f4b11339a6042fcffdb8b323058b17251fa"
+        "sha256": "3daf0ffe852b174deba41a90cb5f13c8161af161ff6c8672ce908e9d51eb6686"
       },
       {
         "path": "src/modelbuilder/research_contract.py",
@@ -1015,7 +1027,7 @@
       },
       {
         "path": "src/modelbuilder/rules.py",
-        "sha256": "45b5331a1efc9f2cce197658064e27f44771a0358f6864f7e963ec1c14979d63"
+        "sha256": "804eec3892f6ede4edd6869183bd02216497f37ec9ef62db6c10b8c1bf925803"
       },
       {
         "path": "src/modelbuilder/run_preparation.py",
@@ -1023,7 +1035,7 @@
       },
       {
         "path": "src/modelbuilder/scientific.py",
-        "sha256": "9c8e4179efd0ded2b1dec0029f47db19f1de5f03669d249188fbcae5891fb1a3"
+        "sha256": "b080f6dceaea918489e21dab638826eb6bc469d658fc1e433313df6439c5e463"
       },
       {
         "path": "src/modelbuilder/scientific_operations.py",

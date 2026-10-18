@@ -1,5 +1,5 @@
 import { Project, RecordValue, ServiceTransport } from './types';
-export type Harness='none'|'codex'|'claude'|'triggerfish';
+export type Harness='none'|'codex'|'claude'|'triggerfish'|'opencode'|'kilocode';
 export type StartingPoint='blank'|'research'|'base_model'|'scratch';
 export interface ProjectDraft {modelName:string;slug:string;goal:string;startingPoint:StartingPoint;assistant:Harness;quickstart:boolean}
 export interface ProjectSource {source_alias:string;source_repository_id:string;trusted:true}
@@ -13,7 +13,7 @@ export function validateProjectDraftFields(value:unknown):ProjectDraft{
   if(typeof d.modelName!=='string'||d.modelName.length>200)throw new Error('Enter a model name of 1–200 characters.');
   if(typeof d.slug!=='string'||d.slug.length>80)throw new Error('Use a lowercase project slug with letters, numbers and hyphens (up to 80 characters).');
   if(typeof d.goal!=='string'||d.goal.length>8000)throw new Error('The project goal must be at most 8,000 characters.');
-  if(!['blank','research','base_model','scratch'].includes(d.startingPoint)||!['none','codex','claude','triggerfish'].includes(d.assistant)||typeof d.quickstart!=='boolean')throw new Error('Choose a supported starting point and optional assistant.');
+  if(!['blank','research','base_model','scratch'].includes(d.startingPoint)||!['none','codex','claude','triggerfish','opencode','kilocode'].includes(d.assistant)||typeof d.quickstart!=='boolean')throw new Error('Choose a supported starting point and optional assistant.');
   return {...d};
 }
 export function validateProjectDraft(value:unknown):ProjectDraft{
@@ -54,5 +54,7 @@ export const HARNESS_CAPABILITIES=[
   {id:'none',name:'No assistant',install:'not_required',authentication:'not_required',mcp:'not_required'},
   {id:'codex',name:'Codex',install:'optional_vendor_extension',authentication:'separate_unverified',mcp:'project_config_supported'},
   {id:'claude',name:'Claude Code',install:'optional_vendor_extension',authentication:'separate_unverified',mcp:'project_config_supported'},
+  {id:'opencode',name:'OpenCode',install:'vendor_installation_unverified',authentication:'separate_unverified',mcp:'project_config_supported'},
+  {id:'kilocode',name:'Kilo Code',install:'vendor_installation_unverified',authentication:'separate_unverified',mcp:'project_config_supported'},
   {id:'triggerfish',name:'Triggerfish',install:'unavailable_pending_compatibility',authentication:'unverified',mcp:'interface_only'},
 ] as const;

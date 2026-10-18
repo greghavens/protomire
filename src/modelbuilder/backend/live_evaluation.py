@@ -13,6 +13,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from pathlib import Path
 import shutil
 import sqlite3
@@ -123,6 +124,8 @@ def _event(connection, job: Path, kind: str, record: dict) -> None:
              **{k: record[k] for k in ("evaluation_id", "checkpoint_id", "checkpoint_digest", "node_id", "step", "status") if k in record}}
     if kind == "evaluation.completed":
         event.update(metrics=record["metrics"], comparisons=record.get("comparisons", {}))
+        if "family_evaluation" in record:
+            event["family_evaluation"] = record["family_evaluation"]
     if kind in {"evaluation.failed", "evaluation.canceled"}:
         event["error"] = record.get("error")
     connection.execute("INSERT OR IGNORE INTO events(event_id,record) VALUES (?,?)", (event["event_id"], _json(event)))
@@ -357,7 +360,60 @@ def _comparisons(connection, record: dict) -> dict:
     return result
 
 
-def _finish(job: Path, evaluation_id: str, status: str, *, metrics=None, records=None, error=None) -> bool:
+def _validate_family_evaluation(report, records):
+    """Validate bounded observational metadata; this never grants gate authority."""
+    from ..evaluation import digest
+    from ..family_evaluation import family_metric_id
+    def invalid():
+        raise ValueError("Evaluator returned invalid family_evaluation report")
+    def bounded_string(value, maximum=200):
+        return isinstance(value, str) and bool(value.strip()) and len(value) <= maximum
+    if not isinstance(report, dict) or set(report) != {"policy_id", "families"}:
+        invalid()
+    if not isinstance(report["policy_id"], str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", report["policy_id"]):
+        invalid()
+    families = report["families"]
+    if not isinstance(families, dict) or not 1 <= len(families) <= 256:
+        invalid()
+    expected_fields = {"support", "minimum_support", "status", "cohort_digest", "metric_ids"}
+    for name, family in families.items():
+        if not bounded_string(name) or not isinstance(family, dict) or set(family) != expected_fields:
+            invalid()
+        support, minimum = family["support"], family["minimum_support"]
+        if type(support) is not int or support < 0 or type(minimum) is not int or minimum < 1:
+            invalid()
+        if family["status"] != ("available" if support >= minimum else "unavailable"):
+            invalid()
+        if not isinstance(family["cohort_digest"], str) or not re.fullmatch(r"[0-9a-f]{64}", family["cohort_digest"]):
+            invalid()
+        metrics = family["metric_ids"]
+        if not isinstance(metrics, dict) or not 1 <= len(metrics) <= 256:
+            invalid()
+        for metric, identity in metrics.items():
+            if not bounded_string(metric) or identity != family_metric_id(name, metric):
+                invalid()
+            record = records.get(identity)
+            if family["status"] == "unavailable":
+                if record is not None:
+                    invalid()
+                continue
+            if not isinstance(record, dict):
+                invalid()
+            metadata = record.get("protocol", {}).get("configuration", {}).get("family")
+            expected = {"policy_id": report["policy_id"], "family_id": name,
+                        "minimum_support": minimum, "cohort_digest": family["cohort_digest"]}
+            sample_ids = record.get("split", {}).get("sample_ids", [])
+            if metadata != expected or len(sample_ids) != support or digest(sample_ids) != family["cohort_digest"]:
+                invalid()
+    for record in records.values():
+        metadata = record.get("protocol", {}).get("configuration", {}).get("family")
+        if metadata is not None and (not isinstance(metadata, dict) or metadata.get("family_id") not in families
+                or record["metric"]["name"] not in families[metadata["family_id"]]["metric_ids"].values()):
+            invalid()
+    return report
+
+
+def _finish(job: Path, evaluation_id: str, status: str, *, metrics=None, records=None, family_evaluation=None, error=None) -> bool:
     with _connect(job, write=True) as connection:
         row = connection.execute("SELECT record FROM evaluations WHERE evaluation_id=?", (evaluation_id,)).fetchone()
         if not row:
@@ -368,6 +424,8 @@ def _finish(job: Path, evaluation_id: str, status: str, *, metrics=None, records
         record.update(status=status, finished_at=now(), error=error)
         if status == "completed":
             record.update(metrics=metrics, evaluation_records=records)
+            if family_evaluation is not None:
+                record["family_evaluation"] = _validate_family_evaluation(family_evaluation, records)
             record["comparisons"] = _comparisons(connection, record)
         connection.execute("UPDATE evaluations SET status=?,record=? WHERE evaluation_id=?", (status, _json(record), evaluation_id))
         _event(connection, job, "evaluation." + status, record)
@@ -658,8 +716,13 @@ def _evaluate(job: Path, evaluation_id: str) -> None:
             raise ValueError("Evaluator returned invalid or mismatched measurement evidence: " + _json(errors))
         if record["treatment"]["checkpoint"] != request["checkpoint"]["checkpoint_digest"]:
             raise ValueError("Evaluation evidence is not bound to the published checkpoint digest")
-    write_json(output / "result.json", {"metrics": scalars, "evaluation_records": records})
-    _finish(job, evaluation_id, "completed", metrics=scalars, records=records)
+    result = {"metrics": scalars, "evaluation_records": records}
+    family_report = None
+    if "family_evaluation" in metrics:
+        family_report = _validate_family_evaluation(metrics["family_evaluation"], records)
+        result["family_evaluation"] = family_report
+    write_json(output / "result.json", result)
+    _finish(job, evaluation_id, "completed", metrics=scalars, records=records, family_evaluation=family_report)
 
 
 def main():

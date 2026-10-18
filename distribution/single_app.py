@@ -61,12 +61,14 @@ def artifact_name(product: dict, target: str) -> str:
     return name + "-" + safe_version(product.get("modelbuilderVersion")) + "-" + validate_target(target) + "-dev-unsigned"
 
 
-def plan(target: str, root: Path = ROOT) -> dict:
+def plan(target: str, root: Path = ROOT, linux_format: str = "flatpak") -> dict:
+    if linux_format not in {"flatpak", "appimage"}:
+        raise ValueError("Unsupported Linux package format")
     target = validate_target(target)
     upstream = build_plan(root, target)
     return {"target": target, "upstream_task": upstream["package_task"],
             "upstream_output": str(Path(upstream["source"]).parent / ("VSCode-" + target)),
-            "format": "AppImage" if target.startswith("linux-") else "dmg" if target.startswith("darwin-") else "exe",
+            "format": ("AppImage" if linux_format == "appimage" else "flatpak") if target.startswith("linux-") else "dmg" if target.startswith("darwin-") else "exe",
             "core": "mandatory bundled operation service and per-consumer project-scoped read-only MCP",
             "build_status": "not_built", "release_status": "private_unsigned_development_only",
             "native_local_backend": backend_reason(target) or "requires_native_acceptance",
@@ -355,7 +357,10 @@ def stage(app: Path, payload: Path, output: Path, target: str) -> dict:
 
 
 def package(app: Path, output: Path, target: str, appimagetool: Path | None = None,
-            appimagetool_sha256: str | None = None) -> dict:
+            appimagetool_sha256: str | None = None, *, linux_format: str = "flatpak",
+            flatpak_profile: dict | None = None) -> dict:
+    if linux_format not in {"flatpak", "appimage"}:
+        raise ValueError("Unsupported Linux package format")
     if target != detect_target():
         raise ValueError("Installers must be built and tested on the native target")
     destination = application_root(app, target)
@@ -365,6 +370,9 @@ def package(app: Path, output: Path, target: str, appimagetool: Path | None = No
     validate_payload(destination / "extensions/modelbuilder-workbench/resources/core", target)
     output.mkdir(parents=True, exist_ok=True)
     artifact = output / artifact_name(product, target)
+    if target.startswith("linux-") and linux_format == "flatpak":
+        from flatpak_package import package_flatpak
+        return package_flatpak(app, output, target, artifact, flatpak_profile)
     if target.startswith("linux-"):
         if not appimagetool or not appimagetool_sha256 or digest(appimagetool) != appimagetool_sha256:
             raise ValueError("Supply a reviewed appimagetool and its exact SHA256; no automatic tool download")
@@ -441,15 +449,17 @@ def main():
     parser.add_argument("--runtime", type=Path)
     parser.add_argument("--app", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--linux-format", choices=["flatpak", "appimage"], default="flatpak")
+    parser.add_argument("--flatpak-profile", type=Path, help="Reviewed installed runtime/SDK/Electron-base commit lock")
     parser.add_argument("--appimagetool", type=Path)
     parser.add_argument("--appimagetool-sha256")
     args = parser.parse_args()
     try:
         if args.action == "plan":
-            result = plan(args.target)
+            result = plan(args.target, linux_format=args.linux_format)
         elif args.action == "build-editor":
             build(ROOT, build_plan(ROOT, args.target), "package")
-            result = plan(args.target)
+            result = plan(args.target, linux_format=args.linux_format)
             result["build_status"] = "upstream_package_completed"
         elif args.action == "seal-runtime":
             if not args.runtime:
@@ -462,7 +472,9 @@ def main():
         else:
             if not all([args.app, args.output]):
                 parser.error("--app and --output are required")
-            result = package(args.app.resolve(), args.output.resolve(), args.target, args.appimagetool, args.appimagetool_sha256)
+            result = package(args.app.resolve(), args.output.resolve(), args.target, args.appimagetool, args.appimagetool_sha256,
+                             linux_format=args.linux_format,
+                             flatpak_profile=json.loads(args.flatpak_profile.read_text()) if args.flatpak_profile else None)
         print(json.dumps(result, indent=2))
         return 0
     except (ValueError, CoreError, OSError, subprocess.SubprocessError) as error:

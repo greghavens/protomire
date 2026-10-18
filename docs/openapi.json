@@ -398,7 +398,9 @@
                   "none",
                   "codex",
                   "claude",
-                  "triggerfish"
+                  "triggerfish",
+                  "opencode",
+                  "kilocode"
                 ],
                 "title": "Assistant",
                 "type": "string"
@@ -12470,7 +12472,9 @@
                               "none",
                               "codex",
                               "claude",
-                              "triggerfish"
+                              "triggerfish",
+                              "opencode",
+                              "kilocode"
                             ],
                             "title": "Assistant",
                             "type": "string"

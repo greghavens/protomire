@@ -410,9 +410,9 @@ def render_codex(raw: bytes, entry: dict) -> bytes:
 
 def render_config(client: str, raw: bytes | None, entry: dict) -> tuple[bytes, str]:
     try:
-        if client == "claude":
+        if client in {"claude", "opencode", "kilocode"}:
             data = parse_json(raw or b"{}")
-            servers = data.setdefault("mcpServers", {})
+            servers = data.setdefault("mcpServers" if client == "claude" else "mcp", {})
             if not isinstance(servers, dict):
                 raise ValueError("MCP servers must be an object")
             old = servers.get("modelbuilder")
@@ -701,7 +701,7 @@ def main(argv=None) -> int:
             cmd.add_argument("--approval", required=True)
     for action in ("preview-project", "apply-project", "preview-rollback", "rollback-project"):
         cmd = commands.add_parser(action)
-        cmd.add_argument("--client", choices=[*CLIENTS, "triggerfish"], required=True)
+        cmd.add_argument("--client", choices=[*CLIENTS, "triggerfish", "opencode", "kilocode"], required=True)
         cmd.add_argument("--workspace", type=Path, required=True)
         if action in {"preview-project", "apply-project"}:
             cmd.add_argument("--project-id", required=True)

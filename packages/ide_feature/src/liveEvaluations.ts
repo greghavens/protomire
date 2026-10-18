@@ -169,6 +169,25 @@ export function renderLiveEvaluations(container:HTMLElement, page:EvaluationPage
     const {root:card,body,provenance}=entry;card.className=`checkpoint-card evaluation-${evaluation.status}`;
     const heading=element('div',undefined,'toolbar');heading.append(element('h4',`Step ${evaluation.step}`),element('span',evaluation.status,'pill'));body.replaceChildren(heading,element('p',`Checkpoint ${evaluation.checkpoint_id}`,'mono checkpoint-identity'),element('p',`Evaluation ${evaluation.evaluation_id}${evaluation.node_id?` · ${evaluation.node_id}`:''}`,'muted'));
     const metrics=element('dl',undefined,'evaluation-metrics');for(const [name,value]of Object.entries(evaluation.metrics??{}).slice(0,32)){if(typeof value!=='number'||!Number.isFinite(value))continue;metrics.append(element('dt',name),element('dd',metricNumber(value)));}if(metrics.childElementCount)body.append(metrics);
+    const familyReport=evaluation.family_evaluation;
+    if(familyReport&&typeof familyReport==='object'&&familyReport.families&&typeof familyReport.families==='object'){
+      const familySection=element('section',undefined,'family-evaluation-results');
+      familySection.append(element('h5','Functionality families'),element('p','Support and measured results for this checkpoint. Availability is not a quality-gate pass.','muted'));
+      const families=Object.entries(familyReport.families);
+      for(const [name,raw]of families.slice(0,256)){
+        if(!raw||typeof raw!=='object')continue;
+        const family=raw as RecordValue;
+        const row=element('div',undefined,'family-evaluation-row');
+        row.append(element('strong',text(name)),element('p',`${family.status==='available'?'Available':'Unavailable'} · ${metricNumber(family.support)} evaluated samples; minimum ${metricNumber(family.minimum_support)}.`));
+        if(family.status!=='available')row.append(element('p','Required family evidence is missing or undersized. It must not be treated as a passing result.','evaluation-error'));
+        const entries=Object.entries(family.metric_ids??{});
+        for(const [metric,id]of entries.slice(0,32))row.append(element('p',`${text(metric)}: ${typeof id==='string'?metricNumber(evaluation.metrics?.[id]):'Unavailable'}`));
+        if(entries.length>32)row.append(element('p',`${entries.length-32} additional family metrics are not shown in this bounded view.`,'muted'));
+        familySection.append(row);
+      }
+      if(families.length>256)familySection.append(element('p',`${families.length-256} additional families are not shown in this bounded view.`,'muted'));
+      body.append(familySection);
+    }
     if(evaluation.status==='queued'||evaluation.status==='running')body.append(element('p',evaluation.status==='queued'?'Checkpoint saved. Evaluation is queued.':'Evaluation in progress. Training may continue.','muted'));
     if(evaluation.status==='failed')body.append(element('p',typeof evaluation.error==='string'?text(evaluation.error):text(evaluation.error?.message)||'Evaluation failed. Training status is tracked separately.','evaluation-error'));
     if(evaluation.status==='canceled')body.append(element('p','Evaluation canceled. No completed result is claimed.','muted'));

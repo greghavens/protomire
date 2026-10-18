@@ -11,6 +11,9 @@ complete**. P0–P4 was the initial integration sequence, not the final scope or
 reason to defer the remaining requirements. The implementation below is real;
 test fixtures and accounting simulations do not establish production acceptance.
 
+Linux delivery for Bazzite is a **Flatpak**, with the mandatory MCP service bundled.
+It is not built or installation-accepted yet; see [delivery gates](distribution/FLATPAK.md).
+
 - One model project per workspace, with its research, data, training/evaluation
   recipe, runs, exports and native model-version lineage. Build the recipe or
   import an existing one; saved revisions retain one recipe identity.
@@ -27,13 +30,22 @@ test fixtures and accounting simulations do not establish production acceptance.
   model comparison and validation-based selection.
 - Content-addressed, inert portable recipe bundles; source/dependency validation;
   fail-closed permissions, unsupported targets and untrusted code execution.
+- A packaged repository-migration skill maps existing source, research, datasets,
+  checkpoints and evaluations without replacing the training framework or silently
+  uploading artifacts. Its bounded inventory helper is read-only; adoption still
+  requires the selected native validators and guardrails.
+- Configurable functionality-family policies distinguish final data composition,
+  optimizer-committed checkpoint exposure and per-family evaluation.
+  [Supported modes and limits](docs/functionality-family-coverage.md) are explicit.
 - Streaming/sharded CSV, JSONL and optional Parquet datasets with immutable
   indexes, bounded previews and actual-consumption lineage.
 - Reviewed local PDF/OCR ingestion with page hashes and exact citation offsets.
 - Source-bound framework components, immutable dataset versions, live checkpoint
   evaluation and notifications, private recipe discovery/versioning, and scheduled
   research watches. Each has its own capability and verification limits.
-- Optional Codex, Claude Code and Triggerfish harness choices. Triggerfish has a
+- Optional Codex, Claude Code, Triggerfish, OpenCode and Kilo Code harness choices.
+  OpenCode/Kilo have reviewed project-local skill/MCP configuration support; vendor
+  installation and upstream acceptance remain separate [gates](docs/OPENCODE_KILOCODE.md). Triggerfish has a
   locally tested ModelBuilder-side flat MCP adapter and reviewed inactive
   project setup; upstream execution and complete harness acceptance remain
   unverified. The adapter is included in the current unsigned Mac development

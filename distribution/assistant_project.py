@@ -18,7 +18,10 @@ import tomllib
 import assistant_setup as setup
 
 VERSION = "1"
-CLIENTS = frozenset({"codex", "claude", "triggerfish"})
+CLIENTS = frozenset({"codex", "claude", "triggerfish", "opencode", "kilocode"})
+JSON_CLIENTS = frozenset({"opencode", "kilocode"})
+SKILL_ROOTS = {"codex": ".agents/skills", "claude": ".claude/skills", "opencode": ".opencode/skills", "kilocode": ".kilo/skills"}
+CONFIG_PATHS = {"codex": ".codex/config.toml", "claude": ".mcp.json", "opencode": "opencode.json", "kilocode": ".kilo/kilo.json"}
 
 
 def checked_root(workspace: Path) -> Path:
@@ -81,13 +84,15 @@ def entry_from_command(client: str, command: dict, project_id: str) -> dict:
             or args[8] != project_id or any(not isinstance(v, str) or "\x00" in v for v in args)
             or not Path(args[4]).is_absolute() or not Path(args[6]).is_absolute()):
         raise setup.SetupError("invalid_managed_command", "Managed MCP requires the exact native project-scoped command.")
+    if client in JSON_CLIENTS:
+        return {"type": "local", "command": [command["command"], *command["args"]], "enabled": True, "timeout": 30000}
     return {**command, **({"type": "stdio"} if client == "claude" else {})}
 
 
 def config_entry(client, raw):
     try:
-        data = setup.parse_json(raw or b"{}") if client == "claude" else tomllib.loads((raw or b"").decode())
-        servers = data.get("mcpServers" if client == "claude" else "mcp_servers", {})
+        data = setup.parse_json(raw or b"{}") if client == "claude" or client in JSON_CLIENTS else tomllib.loads((raw or b"").decode())
+        servers = data.get("mcp" if client in JSON_CLIENTS else "mcpServers" if client == "claude" else "mcp_servers", {})
         if not isinstance(servers, dict):
             raise ValueError("servers")
         return servers.get("modelbuilder")
@@ -97,14 +102,18 @@ def config_entry(client, raw):
 
 def template_files(client):
     base = Path(__file__).with_name("assistant_templates") / f"v{VERSION}"
-    skill = ".agents/skills/modelbuilder-project" if client == "codex" else ".claude/skills/modelbuilder-project"
-    return {f"{skill}/SKILL.md": (base / "SKILL.md").read_bytes(),
+    skill = SKILL_ROOTS[client] + "/modelbuilder-project"
+    files = {f"{skill}/SKILL.md": (base / "SKILL.md").read_bytes(),
             f"{skill}/references/instructions.md": (base / "instructions.md").read_bytes(),
             f"{skill}/references/operation-catalog.json": (base / "operation-catalog.json").read_bytes()}
+    for path in sorted((base / "skills").rglob("*")):
+        if path.is_file() and not path.is_symlink() and "__pycache__" not in path.parts and path.suffix != ".pyc":
+            files[SKILL_ROOTS[client] + "/" + path.relative_to(base / "skills").as_posix()] = path.read_bytes()
+    return files
 
 
 def instruction_block(client):
-    skill = ".agents/skills/modelbuilder-project" if client == "codex" else ".claude/skills/modelbuilder-project"
+    skill = SKILL_ROOTS[client] + "/modelbuilder-project"
     # Appended without normalizing/reformatting existing instructions. Never touch
     # AGENTS.override.md, nested files or the .claude/CLAUDE.md hierarchy.
     return (f"\n<!-- modelbuilder:{client}:v{VERSION}:begin -->\n"
@@ -122,8 +131,8 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
     if command is not None:
         entry = entry_from_command(client, command, project_id)
     else:
-        if client == "triggerfish":
-            raise setup.SetupError("managed_runtime_required", "Triggerfish preparation requires the exact native project-scoped managed MCP command.")
+        if client == "triggerfish" or client in JSON_CLIENTS:
+            raise setup.SetupError("managed_runtime_required", "This harness requires the native project-scoped managed MCP command; external token interpolation is not configured.")
         if not python or not service_url:
             raise setup.SetupError("runtime_required", "Choose the native managed runtime, or an explicit external service interpreter and URL.")
         python = setup.interpreter_path(python)
@@ -143,8 +152,12 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
                 raise setup.SetupError("managed_file_changed", "A managed file changed since setup. Review rollback before reconfiguring; edits are preserved.")
     if client == "triggerfish":
         return preview_triggerfish(root, project_id, entry, current, receipt_raw)
-    config = ".codex/config.toml" if client == "codex" else ".mcp.json"
-    instructions = "AGENTS.md" if client == "codex" else "CLAUDE.md"
+    config = CONFIG_PATHS[client]
+    if client in JSON_CLIENTS:
+        alternatives = ["opencode.jsonc", ".opencode/opencode.json", ".opencode/opencode.jsonc"] if client == "opencode" else ["kilo.json", "kilo.jsonc", ".kilo/kilo.jsonc", ".kilocode/mcp.json"]
+        if any(setup.config_bytes(checked_path(root, path)) is not None for path in alternatives):
+            raise setup.SetupError("config_conflict", "An alternate or legacy harness config exists. Review precedence in the vendor UI; no competing config was created.")
+    instructions = "CLAUDE.md" if client == "claude" else "AGENTS.md"
     originals = {}
     for path in [config, instructions, *template_files(client)]:
         originals[path] = setup.config_bytes(checked_path(root, path))
@@ -221,6 +234,9 @@ def preview_triggerfish(root, project_id, entry, current, receipt_raw):
                f"{base}/skill-template/modelbuilder-project/SKILL.md": (templates / "SKILL.md").read_text() + "\n" + (templates / "triggerfish-instructions.md").read_text(),
                f"{base}/skill-template/modelbuilder-project/references/instructions.md": (templates / "instructions.md").read_text(),
                f"{base}/skill-template/modelbuilder-project/references/operation-catalog.json": (templates / "operation-catalog.json").read_text()}
+    for path in sorted((templates / "skills").rglob("*")):
+        if path.is_file() and not path.is_symlink() and "__pycache__" not in path.parts and path.suffix != ".pyc":
+            content[f"{base}/skill-template/" + path.relative_to(templates / "skills").as_posix()] = path.read_text()
     files = []
     for path, text in content.items():
         raw = setup.config_bytes(checked_path(root, path))
@@ -345,11 +361,12 @@ def apply_project(preview, files, approval):
 def remove_entry(client, raw, expected):
     if config_entry(client, raw) != expected:
         raise setup.SetupError("managed_file_changed", "The managed MCP entry changed. Rollback will not remove an edited entry.")
-    if client == "claude":
+    if client == "claude" or client in JSON_CLIENTS:
         data = setup.parse_json(raw)
-        data["mcpServers"].pop("modelbuilder")
-        if not data["mcpServers"]:
-            data.pop("mcpServers")
+        key = "mcp" if client in JSON_CLIENTS else "mcpServers"
+        data[key].pop("modelbuilder")
+        if not data[key]:
+            data.pop(key)
         return (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode()
     # Match the exact public stanza written by this helper. This preserves owner
     # comments/formatting outside it and refuses edits inside the owned stanza.

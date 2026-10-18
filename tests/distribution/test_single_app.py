@@ -72,7 +72,7 @@ def retarget(payload, target):
 
 
 def test_plan_reuses_exact_native_upstream_target_and_does_not_claim_artifact():
-    for target, extension in [("linux-x64", "AppImage"), ("darwin-arm64", "dmg"), ("win32-x64", "exe")]:
+    for target, extension in [("linux-x64", "flatpak"), ("darwin-arm64", "dmg"), ("win32-x64", "exe")]:
         result = packaging.plan(target)
         assert result["upstream_task"] == "vscode-" + target + "-min"
         assert result["format"] == extension
@@ -138,13 +138,13 @@ def test_linux_appimage_recipe_uses_verified_tool_and_preserves_sandbox(payload,
     tool = tmp_path / "appimagetool"
     tool.write_text("inert packager fixture")
     with pytest.raises(ValueError, match="reviewed appimagetool"):
-        packaging.package(staged, tmp_path / "bad", "linux-x64", tool, "0" * 64)
+        packaging.package(staged, tmp_path / "bad", "linux-x64", tool, "0" * 64, linux_format="appimage")
     calls = []
     def fake_run(command, **options):
         calls.append((command, options))
         Path(command[-1]).write_text("inert artifact fixture")
     monkeypatch.setattr(packaging.subprocess, "run", fake_run)
-    result = packaging.package(staged, tmp_path / "output", "linux-x64", tool, packaging.digest(tool))
+    result = packaging.package(staged, tmp_path / "output", "linux-x64", tool, packaging.digest(tool), linux_format="appimage")
     assert Path(result["artifact"]).name == "modelbuilder-ide-2.7.4-linux-x64-dev-unsigned.AppImage"
     assert result["native_acceptance"] == "not_run" and not result["signed"] and not result["published"]
     launcher = (tmp_path / "output/Modelbuilder.AppDir/AppRun").read_text()

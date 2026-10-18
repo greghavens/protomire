@@ -58,3 +58,10 @@ test('new incompatible series never inherits a retained chart disclosure',()=>{
  renderLiveEvaluations(root,{evaluations:[rows[1],{...base('c',3),comparisons:comparison('b',false)}]},'running','p/run');
  const charts=byClass(root,'evaluation-curve');assert.equal(charts.length,2);assert.equal(charts[1],old);assert.equal(summary.parentNode.open,true);assert.equal(root.ownerDocument.activeElement,summary);assert.notEqual(byTag(charts[0],'details')[0].open,true);assert.equal(byClass(root,'curve-link').length,0);
 });
+
+test('family results expose missing support beyond the chart metric limit with safe readable labels',()=>{
+ const root=container(),row=base('family',1);row.metrics=Object.fromEntries(Array.from({length:33},(_,i)=>[`metric${i}`,i]));
+ row.family_evaluation={policy_id:'policy',families:{'<script>reasoning':{status:'unavailable',support:0,minimum_support:2,metric_ids:{accuracy:'missing'}},parsing:{status:'available',support:3,minimum_support:2,metric_ids:{accuracy:'metric32'}}}};
+ renderLiveEvaluations(root,{evaluations:[row]},'running','run');
+ const section=byClass(root,'family-evaluation-results')[0];assert(section);assert.match(section.textContent,/reasoning/);assert.match(section.textContent,/Unavailable · 0 evaluated samples; minimum 2/);assert.match(section.textContent,/must not be treated as a passing result/);assert.match(section.textContent,/accuracy: 32/);assert.equal(byTag(section,'script').length,0);
+});

@@ -2,11 +2,15 @@
 
 The intended end-user install is one app:
 
-- Linux: open the Modelbuilder AppImage
+- Linux / Bazzite: install the Modelbuilder Flatpak (required delivery; not built yet)
 - macOS: drag Modelbuilder from its DMG into Applications
 - Windows: run the Modelbuilder user installer
 
-## Current unsigned development DMG: v12
+## Current delivery gate, 2026-10-18
+
+The newest functionality-family safeguards, migration skill and harness changes are source changes, not a newly built native app. Flatpak packaging is now the Linux default; see [Flatpak delivery and acceptance](FLATPAK.md). No ready-to-use Flatpak or clean-machine release is claimed. [Current verification](../docs/CURRENT_VERIFICATION.md) takes precedence over the historical artifact records below.
+
+## Historical unsigned development DMG: v12
 
 **The current candidate has an unsigned macOS arm64 development DMG tested on
 the Mac build host. There is no published, signed, clean-machine-accepted release.**

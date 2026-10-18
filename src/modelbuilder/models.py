@@ -76,7 +76,7 @@ class ProjectIntent(DomainModel):
     schema_version: Literal["1"] = "1"
     goal: str = Field(default="", max_length=8000)
     starting_point: Literal["blank", "research", "base_model", "scratch"] = "blank"
-    assistant: Literal["none", "codex", "claude", "triggerfish"] = "none"
+    assistant: Literal["none", "codex", "claude", "triggerfish", "opencode", "kilocode"] = "none"
 
 
 class ModelProject(DomainModel):

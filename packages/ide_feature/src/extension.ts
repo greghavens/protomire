@@ -13,6 +13,7 @@ import { chooseLocalSource, acknowledgeSource, sourceBindingPayload, matchLocalS
 import { saveNativeModel } from './modelExport';
 import { importResearchPdf } from './researchDocuments';
 import { configureOptionalAssistant } from './assistantSetup';
+import { offerProjectAssistantSetup } from './assistantNotice';
 import { NewProjectView } from './newProject';
 import { FirstRunQuickstart, emptyFirstRunSession } from './firstRun';
 import { attachProjectProjection } from './projectProjection';
@@ -164,6 +165,11 @@ export class Workbench implements vscode.Disposable {
     this.project=snapshot.project;this.projectChanged(this.project!.project_id); if(changedProject){this.watchedRuns.clear();if(this.notifications.state.pending?.projectId!==this.project!.project_id)this.notifications.state.pending=undefined;}
     this.runId=nav.runId??(snapshot.runs??[]).find((run:RecordValue)=>['pending','submitted','queued','running','cancel_requested','cancel_pending'].includes(run.status))?.operation_id??(snapshot.runs??[])[0]?.operation_id;this.explorer.setProject?.(this.project);await vscode.commands.executeCommand('setContext','modelbuilder.projectOpen',true);if(this.panel)this.panel.title=this.project!.model_name;
     await this.post('project',{snapshot,section:nav.section === 'Recipes' ? 'Recipe' : nav.section ?? 'Recipe',runId:this.runId,notificationPreferences:this.notifications.preferences});
+    if(changedProject&&vscode.workspace.isTrusted)void offerProjectAssistantSetup(snapshot.project.project_id,this.context.globalState,
+      (message,...choices)=>vscode.window.showInformationMessage(message,...choices),
+      ()=>vscode.commands.executeCommand('modelbuilder.setupAssistant'),
+      ()=>generation===this.generation&&this.project?.project_id===snapshot.project.project_id
+    ).catch(error=>void vscode.window.showWarningMessage(error instanceof Error?error.message:'Assistant setup notice could not complete. Use Set Up Optional Coding Tool.'));
     if(this.document.current?.recipe_id!==current.recipe_id || !this.dirty)await this.loadRecipe(current.recipe_id);
     await this.refreshRun();
     await this.refreshCapabilities();

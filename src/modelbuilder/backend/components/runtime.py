@@ -91,7 +91,7 @@ def runtime_source_identity(package_root: Path | None = None) -> str:
     profile = root / "backend/components/mlx-darwin-arm64.lock"
     if profile.is_file():
         files.append(profile)
-    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py", "scientific.py", "scientific_operations.py", "rules.py", "rule_operations.py", "smoke.py", "artifact_rights.py", "generated_artifacts.py", "hub_rights.py", "hub_contract.py", "research_context_contract.py") if (root / name).is_file()]
+    files += [root / name for name in ("__init__.py", "recipe.py", "execution.py", "conditions.py", "iterations.py", "evaluation.py", "tracking.py", "dataset.py", "dataset_streaming.py", "family_coverage.py", "family_evaluation.py", "parquet_stream.py", "parquet_stream_decode.py", "platform_file_access.py", "models.py", "store.py", "research_contract.py", "scientific.py", "scientific_operations.py", "rules.py", "rule_operations.py", "smoke.py", "artifact_rights.py", "generated_artifacts.py", "hub_rights.py", "hub_contract.py", "research_context_contract.py") if (root / name).is_file()]
     return identity({str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in sorted(files)})
 

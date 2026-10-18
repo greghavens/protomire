@@ -295,14 +295,18 @@ def test_revoked_grant_cannot_return_context_even_if_revoked_during_retrieval(se
     assert error.value.code == "forbidden"
 
 
-async def test_http_official_mcp_and_service_return_identical_context_with_read_scope(service):
+@pytest.mark.parametrize("with_families", [False, True])
+async def test_http_official_mcp_and_service_return_identical_context_with_read_scope(service, with_families):
     import httpx
     from mcp.shared.memory import create_connected_server_and_client_session
     from modelbuilder.mcp_server import OperationGateway, create_server
-    project, _, _ = setup(service)
+    project, evidence, _ = setup(service)
     auth = TokenAuth({"reader": Actor("reader", {"read"}, project_ids={project["project_id"]})})
     app = create_app(service, auth)
     payload = {"project_id": project["project_id"], "query": "calibration"}
+    if with_families:
+        payload.update(family_policy=family_policy(), family_sources=[{
+            "family_id": "calibration", "source_kind": "evidence", "source_id": evidence["evidence_id"]}])
     async with httpx.AsyncClient(base_url="http://test", headers={"Authorization": "Bearer reader"},
                                 transport=httpx.ASGITransport(app=app)) as client:
         gateway = OperationGateway(client)
@@ -453,3 +457,86 @@ def test_narrowing_source_kinds_cannot_hide_intermediate_restricted_links(servic
         build(service, project, source_kinds=["hypothesis"], source_ids=[hypothesis["hypothesis_id"]],
               exclude_source_ids=[evidence["evidence_id"]], max_sources=1)
     assert error.value.code == "context_scan_budget_exceeded"
+
+
+
+def family_policy():
+    return {"schema_version": "modelbuilder.family-policy.v1",
+            "mapping": {"version": "fixture-v1", "field": "capability"},
+            "families": [{"id": name, "min_rows": 2, "min_exposure": 3, "min_eval_support": 2}
+                         for name in ("calibration", "reasoning", "missing")]}
+
+
+def test_family_inventory_uses_explicit_links_and_preserves_default(service):
+    project, evidence, text = setup(service)
+    default = build(service, project)
+    assert "family_coverage" not in default["coverage"]
+    policy = family_policy()
+    links = [{"family_id": "calibration", "source_kind": "evidence", "source_id": evidence["evidence_id"]},
+             {"family_id": "reasoning", "source_kind": "research_text", "source_id": text["text_id"], "revision": 1}]
+    result = build(service, project, family_policy=policy, family_sources=links, max_bytes=16000)
+    inventory = result["coverage"]["family_coverage"]
+    assert inventory["represented_families"] == ["calibration", "reasoning"]
+    assert inventory["missing_families"] == ["missing"]
+    assert inventory["families"]["missing"]["declared_links"] == 0
+    assert inventory["scientific_adequacy"] == "not_assessed"
+    assert inventory["evaluation_coverage"] == "not_assessed"
+    assert inventory["policy_id"] == result["context"]["family_policy_id"]
+    assert result == build(service, project, family_policy=policy, family_sources=links, max_bytes=16000)
+    policy["families"][0]["min_rows"] = 3
+    changed = build(service, project, family_policy=policy, family_sources=links, max_bytes=16000)
+    assert changed["context_sha256"] != result["context_sha256"]
+    assert changed["context"]["family_policy_id"] != result["context"]["family_policy_id"]
+
+
+def test_family_inventory_distinguishes_budget_missing_excluded_and_unresolved(service):
+    project, evidence, text = setup(service)
+    links = [{"family_id": "calibration", "source_kind": "evidence", "source_id": evidence["evidence_id"]},
+             {"family_id": "reasoning", "source_kind": "research_text", "source_id": text["text_id"]},
+             {"family_id": "missing", "source_kind": "evidence", "source_id": "nonexistent"}]
+    options = {"family_policy": family_policy(), "family_sources": links, "max_bytes": 16000}
+    result = build(service, project, **options, max_items=1)
+    inventory = result["coverage"]["family_coverage"]
+    assert len(inventory["represented_families"]) == 1
+    assert len(inventory["budget_omitted_families"]) == 1
+    assert inventory["families"]["missing"]["unresolved_links"] == 1
+    excluded = build(service, project, **options, exclude_source_ids=[text["text_id"]])
+    assert excluded["coverage"]["family_coverage"]["families"]["reasoning"]["excluded_source_revisions"] == 1
+    blocked = build(service, project, **options, use_scope="external_harness")
+    assert not blocked["coverage"]["family_coverage"]["represented_families"]
+    assert not blocked["context"]["items"]
+    absent = build(service, project, **options, query="no_literal_match")
+    assert absent["coverage"]["family_coverage"]["families"]["reasoning"]["unretrieved_source_revisions"] == 1
+    assert not absent["coverage"]["family_coverage"]["budget_omitted_families"]
+
+
+def test_family_inventory_never_infers_labels_and_rejects_unknown_family(service):
+    project, _, text = setup(service)
+    result = build(service, project, family_policy=family_policy(), max_bytes=16000)
+    assert not result["coverage"]["family_coverage"]["represented_families"]
+    link = {"family_id": "undeclared", "source_kind": "research_text", "source_id": text["text_id"]}
+    for options in ({"family_sources": [link]}, {"family_policy": family_policy(), "family_sources": [link]}):
+        with pytest.raises(ServiceError) as error:
+            build(service, project, **options)
+        assert error.value.code == "validation_error"
+
+
+def test_family_inventory_respects_context_bytes_and_revision_scope(service):
+    project, _, text = setup(service)
+    link = {"family_id": "calibration", "source_kind": "research_text", "source_id": text["text_id"], "revision": 99}
+    result = build(service, project, family_policy=family_policy(), family_sources=[link], max_bytes=4000)
+    assert result["budget"]["used_bytes"] <= 4000
+    assert result["budget"]["used_bytes"] == len(canonical_json(result["context"]).encode())
+    assert result["coverage"]["family_coverage"]["families"]["calibration"]["unresolved_links"] == 1
+
+
+def test_family_links_do_not_resolve_foreign_project_sources(service):
+    project, _, _ = setup(service)
+    _, _, foreign = setup(service, "foreign-family", "PRIVATE family calibration")
+    link = {"family_id": "calibration", "source_kind": "research_text", "source_id": foreign["text_id"]}
+    result = build(service, project, family_policy=family_policy(), family_sources=[link])
+    assert "PRIVATE" not in json.dumps(result)
+    family = result["coverage"]["family_coverage"]["families"]["calibration"]
+    assert family["unresolved_links"] == 1
+    assert family["selected_source_revisions"] == 0
+    assert family["status"] == "missing"

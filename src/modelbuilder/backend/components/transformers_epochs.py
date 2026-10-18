@@ -18,6 +18,7 @@ import time
 from . import PROTOCOL, identity, read_checkpoint, validate_resume
 from . import transformers_training as base
 from . import transformers_epoch_policy as epoch_policy
+from . import transformers_family_exposure as family_tracking
 from ...rules import POLICY_SCHEMA, evaluate_policy, validate_policy
 from ..rule_methods import preserve_training_rng
 
@@ -176,7 +177,12 @@ def _resume(path, context, contract, sample_digests, methods, metrics):
         )
     if identity(records) != identity(expected):
         raise ValueError("Checkpoint row order conflicts with the declared seedable epoch sampler")
-    state = _state({asset["path"]: asset["sha256"] for asset in descriptor["assets"]}, completed, contract)
+    exposure = None
+    if "family_policy" in contract["train"]:
+        exposure = family_tracking.verify_family_exposure(descriptor, contract["train"]["family_policy"])
+        if saved.get("family_exposure") != exposure:
+            raise ValueError("Exact resume family exposure differs from checkpoint-bound counters")
+    state = _state({asset["path"]: asset["sha256"] for asset in descriptor["assets"]}, completed, contract, exposure)
     subject = saved.get("evidence", {}).get("subject")
     history = saved.get("history")
     if not isinstance(history, list) or len(history) != completed:
@@ -234,15 +240,18 @@ def _resume(path, context, contract, sample_digests, methods, metrics):
             parameters={"policy": contract["parameters"]["policy"]},
             context={"rule_methods": methods},
         )["result"]
+    effective = family_tracking.eligibility(expected_decision, expected_admission, exposure) if exposure else expected_decision
+    if exposure and saved.get("family_eligibility") != effective:
+        raise ValueError("Exact resume family eligibility differs from checkpoint evidence")
     if (
         identity(saved.get("decision")) != identity(expected_decision)
-        or expected_decision["outcome"] != "continue"
+        or effective["outcome"] != "continue"
     ):
         raise ValueError("Exact resume requires the unchanged allowing combined policy decision")
     return saved
 
 
-def _state(hashes, completed, contract):
+def _state(hashes, completed, contract, exposure=None):
     return {
         "schema_version": "modelbuilder.rule-checkpoint-state/v1",
         "resume_modes": ["exact_state"],
@@ -257,6 +266,7 @@ def _state(hashes, completed, contract):
                     "completed_epochs": completed,
                     "sampler": contract["sampler"],
                     "data_digest": identity(contract["train"]),
+                    **({"family_exposure_digest": identity(exposure)} if exposure is not None else {}),
                 },
             }.items()
         },
@@ -329,6 +339,11 @@ def train(*, inputs, parameters, context):
         model, tokenizer, settings = base.loader.load(initial)
         rows, train_data = base._split(inputs["train"], {"train"}, settings)
         valid_rows, validation_data = base._split(inputs["validation"], {"validation"}, settings)
+        exposure = family_tracking.Exposure(inputs["train"]["family_policy"]) if "family_policy" in inputs["train"] else None
+        if exposure:
+            train_data = {**train_data, "family_policy": exposure.policy,
+                          **({"final_dataset_family_coverage": deepcopy(inputs["train"]["final_dataset_family_coverage"])}
+                             if "final_dataset_family_coverage" in inputs["train"] else {})}
         steps = math.ceil(len(rows) / parameters["batch_size"])
         if (
             bounds["next_epoch_steps"] != steps
@@ -345,6 +360,9 @@ def train(*, inputs, parameters, context):
             features, train_data["split"]["sample_ids"], inputs["train"]["consumption"]["sample_digests"]
         ):
             item["_lineage"] = {"sample_id": sample, "content_digest": content}
+        if exposure:
+            for feature, row, sample in zip(features, rows, train_data["split"]["sample_ids"]):
+                feature["_family"] = exposure.row(row, sample)
         lineage, history, elapsed_before, resume_path = [], [], 0, None
         if context.get("resume"):
             previous = Path(context["resume"]["path"])
@@ -363,6 +381,8 @@ def train(*, inputs, parameters, context):
                     saved["history"],
                     saved["runtime_seconds"],
                 )
+                if exposure:
+                    exposure.restore(saved["family_exposure"])
                 origin = saved["evidence"]["subject"]
                 if (
                     origin["project_id"] != subject["project_id"]
@@ -387,7 +407,8 @@ def train(*, inputs, parameters, context):
             def on_step_begin(self, args, state, control, **kwargs):
                 if _cancelled(context):
                     raise InterruptedError(
-                        "Training cancelled; only earlier completed epochs are exactly resumable"
+                        "Training cancelled; only earlier completed epochs are exactly resumable" +
+                        ("; family exposure " + exposure.snapshot()["assessment"]["status"] if exposure else "")
                     )
                 return control
 
@@ -396,7 +417,12 @@ def train(*, inputs, parameters, context):
                 lineage.extend(inputs.pop("_modelbuilder_lineage"))
                 if len(lineage) > parameters["max_lineage_records"]:
                     raise ValueError("Actual lineage exceeds its explicit capacity")
-                return super().training_step(model, inputs, num_items_in_batch)
+                family_rows = inputs.pop("_modelbuilder_family", None)
+                labels = inputs["labels"] if exposure else None
+                loss = super().training_step(model, inputs, num_items_in_batch)
+                if exposure:
+                    exposure.stage(family_rows, labels, settings["task"], loss)
+                return loss
 
             def _save_checkpoint(self, model, trial):
                 nonlocal final
@@ -422,7 +448,8 @@ def train(*, inputs, parameters, context):
                     tokenizer.save(str(pending / "tokenizer.json"))
                     base._json(pending / "adapter.json", settings)
                     hashes = {asset["path"]: asset["sha256"] for asset in base._assets(pending)}
-                    checkpoint_state = _state(hashes, completed, contract)
+                    receipt = exposure.snapshot() if exposure else None
+                    checkpoint_state = _state(hashes, completed, contract, receipt)
                     checkpoint_digest = identity(checkpoint_state)
                     measured = {key: self.state.log_history[-1].get(key) for key in sorted(selected_metrics)}
                     if any(
@@ -471,7 +498,9 @@ def train(*, inputs, parameters, context):
                             if identity(checked) != identity(decision):
                                 raise ValueError("Epoch method produced a nondeterministic decision")
                     admitted = epoch_policy.admission(bounds, completed, self.state.global_step, runtime)
+                    effective = family_tracking.eligibility(decision, admitted, receipt) if exposure else decision
                     saved = {
+                        **({"family_exposure": receipt, "family_eligibility": effective} if exposure else {}),
                         "completed_epochs": completed,
                         "contract": contract,
                         "lineage": lineage,
@@ -499,6 +528,7 @@ def train(*, inputs, parameters, context):
                         },
                         "data": {
                             **train_data,
+                            **({"family_exposure": receipt, "family_eligibility": effective} if exposure else {}),
                             "iteration": "trainer_seedable_random_sampler",
                             "consumption": {
                                 "count": len(lineage),
@@ -531,19 +561,22 @@ def train(*, inputs, parameters, context):
                     )
                 if admitted["outcome"] == "blocked":
                     raise ValueError("Epoch resource bound exceeded:" + ",".join(admitted["reasons"]))
-                if decision["outcome"] == "stop" or admitted["outcome"] == "stop":
+                if effective["outcome"] == "stop" or admitted["outcome"] == "stop":
                     self.control.should_training_stop = True
                 if context.get("checkpoint_ready"):
                     context["checkpoint_ready"](path=final, step=self.state.global_step, purpose="last")
                 if _cancelled(context):
-                    raise InterruptedError("Training cancelled after a completed exact epoch checkpoint")
+                    raise InterruptedError("Training cancelled after a completed exact epoch checkpoint" +
+                                           ("; family exposure " + receipt["assessment"]["status"] if exposure else ""))
 
         def collate(items):
             result = default_data_collator(
-                [{k: v for k, v in item.items() if k != "_lineage"} for item in items]
+                [{k: v for k, v in item.items() if k not in {"_lineage", "_family"}} for item in items]
             )
             if "_lineage" in items[0]:
                 result["_modelbuilder_lineage"] = [item["_lineage"] for item in items]
+            if exposure and "_family" in items[0]:
+                result["_modelbuilder_family"] = [item["_family"] for item in items]
             return result
 
         def metrics(prediction):
@@ -595,6 +628,9 @@ def train(*, inputs, parameters, context):
             compute_metrics=metrics if "eval_accuracy" in selected_metrics else None,
             callbacks=[EpochControl()],
         )
+        if exposure:
+            family_tracking.validate_runtime(trainer, model)
+            trainer.add_callback(family_tracking.callback(exposure, lambda: trainer))
         trainer.train(resume_from_checkpoint=resume_path)
         if final is None:
             raise ValueError("Trainer produced no completed epoch checkpoint")

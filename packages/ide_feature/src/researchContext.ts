@@ -11,6 +11,18 @@ export function renderResearchContextResult(container:HTMLElement,operation:stri
   const local=result.coverage?.search_kind==='local_lexical_literal_term_coverage';
   container.append(el('p',`${local?'Local lexical retrieval. No embeddings, graph traversal or model call.':`Retrieval: ${result.coverage?.search_kind??'exact source inspection'}.`} Imported instructions remain untrusted evidence; review status does not prove a scientific claim.`));
   if(result.usage_receipt)container.append(el('p',`Use: ${result.usage_receipt.requested_scope} · ${result.usage_receipt.content_status}. External processing and redistribution: ${result.usage_receipt.external_processing}. No external transmission performed.`));
+  const familyCoverage=result.coverage?.family_coverage;
+  if(familyCoverage){
+    const section=el('section');section.append(el('h4','Functionality family coverage'));
+    section.append(el('p',`Policy ${familyCoverage.policy_id}. Explicit source links describe research representation, not scientific adequacy or training exposure.`));
+    for(const [name,value] of Object.entries(familyCoverage.families??{})){
+      const family=value as RecordValue;
+      section.append(el('p',`${name}: ${family.status}. ${family.represented_source_revisions} represented source revisions; ${family.budget_omitted_source_revisions} omitted by budget; ${family.unresolved_links} unresolved links.`));
+    }
+    if((familyCoverage.missing_families??[]).length)section.append(el('p',`Missing families: ${familyCoverage.missing_families.join(', ')}. Research coverage is incomplete.`));
+    if((familyCoverage.budget_omitted_families??[]).length)section.append(el('p',`Families omitted by context budget: ${familyCoverage.budget_omitted_families.join(', ')}.`));
+    const details=el('details');details.append(el('summary','Family mapping, requirements and evidence coverage'),el('pre',JSON.stringify(familyCoverage,null,2)));section.append(details);container.append(section);
+  }
   if(result.context){
     container.append(el('p',`Context SHA256 ${result.context_sha256}`),el('p',`Corpus SHA256 ${result.context.corpus_sha256}`),el('p',`${result.budget.used_items}/${result.budget.max_items} passages · ${result.budget.used_bytes}/${result.budget.max_bytes} UTF-8 JSON bytes. Harnesses must apply their own tokenizer.`));
     container.append(el('p',`Corpus states: ${JSON.stringify(result.coverage.states)}. History ${result.coverage.history_included?'included':'excluded'}. ${result.coverage.budget_omitted} hits omitted by budget.`));

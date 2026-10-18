@@ -16,6 +16,8 @@ from typing import Callable
 from jsonschema import Draft202012Validator
 
 from .evaluation import compare_records, digest, validate_evaluation_record
+from .family_coverage import FAMILY_POLICY_SCHEMA
+from .family_evaluation import family_metric_id, scientific_family_diagnostics, scientific_family_failures, scientific_partition_diagnostics
 
 TEXT = {"type": "string", "minLength": 1}
 NUMBER = {"type": "number"}
@@ -35,6 +37,14 @@ POLICY_SCHEMA = {"type": "object", "additionalProperties": False,
         "allowed_variations": {"type": "array", "uniqueItems": True, "items": {"enum": ["model", "checkpoint", "architecture", "objective", "calibration", "reference"]}},
         "rules": {"type": "array", "minItems": 1, "maxItems": 32, "items": RULE_SCHEMA},
         "unknown_behavior": {"const": "block"},
+        "family_policy": FAMILY_POLICY_SCHEMA,
+        "family_metrics": {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"enum": ["cross_entropy", "accuracy", "perplexity"]}},
+        "required_benchmark": TEXT,
+        "required_evaluation": {"type": "object", "additionalProperties": False,
+            "properties": {"dataset_digest": {"type": "string", "minLength": 64, "maxLength": 64},
+                "split_digest": {"type": "string", "minLength": 64, "maxLength": 64},
+                "sample_count": {"type": "integer", "minimum": 1}},
+            "required": ["dataset_digest", "split_digest", "sample_count"]},
         "evaluator": {"type": "object", "additionalProperties": False,
             "properties": {"component_digest": {"type": "string", "minLength": 64, "maxLength": 64},
                            "implementation_ref": {"type": "object", "minProperties": 1}},
@@ -135,6 +145,22 @@ def method_catalog():
 def validate_policy(policy):
     Draft202012Validator(POLICY_SCHEMA).validate(policy)
     digest(policy)  # finite JSON only
+    if any(not re.fullmatch(r"[0-9a-f]{64}", policy.get("required_evaluation", {}).get(key, "0" * 64))
+           for key in ("dataset_digest", "split_digest")):
+        raise ValueError("Required evaluation cohort digests must be lowercase SHA256")
+    if ("family_policy" in policy) != ("family_metrics" in policy):
+        raise ValueError("Scientific family policy and family_metrics must be configured together")
+    if "family_policy" in policy:
+        from .family_coverage import validate_policy as validate_family_policy
+        validate_family_policy(policy["family_policy"])
+        if any(set(family.get("metrics", {})) - set(policy["family_metrics"]) for family in policy["family_policy"]["families"]):
+            raise ValueError("Scientific family_metrics must include all family policy metric obligations")
+        required = {family_metric_id(family["id"], metric)
+                    for family in policy["family_policy"]["families"] for metric in policy["family_metrics"]}
+        if len(required) > POLICY_SCHEMA["properties"]["rules"]["maxItems"]:
+            raise ValueError("Family scientific policy exceeds the supported 32 rules; no families may be truncated")
+        if not required <= {rule["metric"] for rule in policy["rules"]}:
+            raise ValueError("Scientific rules must cover every required family and metric")
     if policy.get("evaluator") and not re.fullmatch(r"[0-9a-f]{64}", policy["evaluator"]["component_digest"]):
         raise ValueError("Scientific evaluator component digest must be SHA256")
     if policy["family_error_rate"] / len(policy["rules"]) <= 0:
@@ -158,6 +184,7 @@ def evaluate_policy(policy, evidence, *, extensions=()):
         registered[(method.id, method.version)] = method
     if set(evidence) != {r["id"] for r in policy["rules"]}:
         raise ValueError("Policy evidence must exactly match declared rule IDs")
+    partition_diagnostics = scientific_partition_diagnostics(policy, evidence)
     results = []
     alpha = policy["family_error_rate"] / len(policy["rules"])
     for rule in policy["rules"]:
@@ -169,6 +196,8 @@ def evaluate_policy(policy, evidence, *, extensions=()):
         records = [{"backend_run_id": side, "model_version_ref": side, "status": "succeeded", "metrics": {rule["metric"]: item["record"].get("value"), "evaluation_record": item["record"]}} for side, item in pair.items()]
         comparison = compare_records(records, rule["metric"], rule["direction"], {"allowed_variations": policy["allowed_variations"]})
         diagnostics.extend(comparison["diagnostics"])
+        diagnostics.extend(scientific_family_diagnostics(policy, rule, pair))
+        diagnostics.extend(partition_diagnostics)
         method = registered.get((rule["method"]["id"], rule["method"]["version"]))
         if diagnostics:
             result.update(outcome="unknown", diagnostics=diagnostics)
@@ -184,6 +213,9 @@ def evaluate_policy(policy, evidence, *, extensions=()):
             if measured.get("outcome") not in {"passed", "failed", "unknown"}:
                 raise ValueError("Scientific method must return a typed outcome")
             result.update(measured)
+            failures = scientific_family_failures(policy, rule, pair)
+            if failures:
+                result.update(outcome="failed", reason="; ".join(failures), significance_claim=False)
         result["cohort_digest"] = digest(baseline.get("split"))
         results.append(result)
     outcome = "failed" if any(r["outcome"] == "failed" for r in results) else "unknown" if any(r["outcome"] == "unknown" for r in results) else "passed"

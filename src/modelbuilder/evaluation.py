@@ -88,6 +88,30 @@ def validate_evaluation_record(record: dict) -> list[dict]:
                 measured = sum(p["value"] for p in predictions) / len(predictions)
                 if not math.isclose(measured, record["value"], rel_tol=1e-6, abs_tol=1e-8):
                     fail("value", "Mean metric disagrees with recorded per-item values")
+            if isinstance(metric, dict) and metric.get("aggregation") in {"token_weighted_mean", "exp_token_weighted_mean"}:
+                valid = predictions and all(_finite(p.get("negative_log_likelihood_sum")) and p["negative_log_likelihood_sum"] >= 0
+                    and type(p.get("token_count")) is int and p["token_count"] > 0 for p in predictions)
+                if not valid:
+                    fail("predictions", "Token-weighted metrics require finite loss sums and positive supervised token counts")
+                elif _finite(record.get("value")):
+                    measured = sum(p["negative_log_likelihood_sum"] for p in predictions) / sum(p["token_count"] for p in predictions)
+                    if metric["aggregation"] == "exp_token_weighted_mean":
+                        try:
+                            measured = math.exp(measured)
+                        except OverflowError:
+                            measured = float("inf")
+                    if not math.isclose(measured, record["value"], rel_tol=1e-6, abs_tol=1e-8):
+                        fail("value", "Token-weighted metric disagrees with recorded per-item contributions")
+    family = record.get("protocol", {}).get("configuration", {}).get("family") if isinstance(record.get("protocol"), dict) and isinstance(record.get("protocol", {}).get("configuration"), dict) else None
+    if family is not None:
+        if not isinstance(predictions, list):
+            fail("predictions", "Family evaluation requires exact item-addressed measured contributions")
+        if (not isinstance(family, dict) or type(family.get("minimum_support")) is not int
+                or family["minimum_support"] < 1 or len(ids) < family["minimum_support"]
+                or family.get("cohort_digest") != digest(ids)
+                or not isinstance(family.get("policy_id"), str) or not family["policy_id"].startswith("sha256:")
+                or not isinstance(family.get("family_id"), str) or not family["family_id"]):
+            fail("protocol.configuration.family", "Family record requires pinned policy, cohort and sufficient exact item support")
     try:
         expected = digest({k: v for k, v in record.items() if k != "digest"})
         if record.get("digest") != expected:

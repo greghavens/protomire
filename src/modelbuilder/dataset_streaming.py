@@ -493,6 +493,8 @@ def compile_index(registry, project_id, manifest):
         db.set_progress_handler(progress, 1000)
         db.executescript("PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF; PRAGMA cache_size=-2048; PRAGMA temp_store=FILE;")
         db.execute("PRAGMA max_page_count=" + str(max(1, caps["max_index_bytes"] // 4096)))
+        family_policy = manifest.get("family_policy")
+        family_ids = {family["id"] for family in family_policy["families"]} if family_policy else set()
         filter_specs = [spec for spec in manifest["transformations"] if spec["kind"].startswith("rows.")]
         filter_stages = [(stage, spec) for stage, spec in enumerate(manifest["transformations"])
                          if spec["kind"].startswith("rows.")]
@@ -508,6 +510,7 @@ def compile_index(registry, project_id, manifest):
                    "source_row INTEGER NOT NULL, locator TEXT NOT NULL, source_digest TEXT NOT NULL, content_digest TEXT NOT NULL, "
                    "split_id TEXT NOT NULL, split_order INTEGER NOT NULL, role TEXT NOT NULL, alive INTEGER NOT NULL DEFAULT 1, "
                    "row_bytes INTEGER NOT NULL, error_stage INTEGER, error TEXT"
+                   + (",family_value TEXT" if family_policy else "")
                    + ("," + columns if columns else "") + ")")
         db.execute("CREATE TABLE source_headers (source_id TEXT PRIMARY KEY, fields TEXT NOT NULL)")
         db.execute("CREATE TABLE requested (sample_id TEXT PRIMARY KEY, split_id TEXT, split_order INTEGER, role TEXT)")
@@ -580,9 +583,12 @@ def compile_index(registry, project_id, manifest):
                         fields = locator.pop("fields")
                         if source_count == 1:
                             db.execute("INSERT INTO source_headers VALUES (?,?)", (source["id"], json.dumps(fields)))
+                    family = row.get(family_policy["mapping"]["field"]) if family_policy else None
+                    family_value = family if isinstance(family, str) and family in family_ids else None
                     values = (count, sample_id, source["id"], number, json.dumps(locator), digest(raw_row), content,
                               split_id, order, role, 1, row_bytes, transform_error["stage"] if transform_error else None,
-                              json.dumps(transform_error) if transform_error else None, *fingerprints)
+                              json.dumps(transform_error) if transform_error else None,
+                              *((family_value,) if family_policy else ()), *fingerprints)
                     try:
                         db.execute("INSERT INTO samples VALUES (" + ",".join("?" for _ in values) + ")", values)
                     except sqlite3.IntegrityError:
@@ -661,12 +667,22 @@ def compile_index(registry, project_id, manifest):
                 fail("dataset_split_empty", "Every declared split must retain at least one sample", split_id=spec["id"])
             split = {"id": spec["id"], "role": spec["role"], "sample_count": chain.count,
                      "lineage_digest": chain.value(), "decoded_bytes": split_bytes, "digest_algorithm": CHAIN_SCHEMA}
+            if family_policy and spec["role"] == "train":
+                from .dataset import final_family_coverage
+                counts = {family: 0 for family in family_ids}
+                for family, family_count in db.execute("SELECT family_value,COUNT(*) FROM samples WHERE alive=1 AND split_id=? GROUP BY family_value", (spec["id"],)):
+                    if family is None:
+                        fail("dataset_family_coverage_invalid", "Final training row has a missing or unsupported family", split_id=spec["id"])
+                    counts[family] = family_count
+                split["final_dataset_family_coverage"] = final_family_coverage(family_policy, spec["id"], counts=counts)
             split["digest"] = digest(split)
             splits.append(split)
         summary = {"row_count": remaining, "source_row_count": count, "source_bytes": total_bytes,
                    "decoded_bytes": decoded, "largest_row_bytes": largest_row,
                    "sources": source_stats, "lineage_digest": row_chain.value(), "digest_algorithm": CHAIN_SCHEMA,
                    "splits": splits, "transformations": report}
+        if family_policy and len(encoded(summary)) > caps["max_report_bytes"]:
+            fail("dataset_limit_exceeded", "Family coverage report exceeds the configured byte limit")
         if sampling_strata:
             summary.update(sampling_strata=sampling_strata)
         # Physical allocation is cache resource evidence, outside semantic
@@ -735,7 +751,8 @@ def split_identity(record, split_id, purpose):
 
 def check_record(record, materialized):
     current = version_record(record["project_id"], record["dataset_id"], record["revision"], *materialized)
-    if current["version_id"] != record["version_id"] or current["content_digest"] != record["content_digest"]:
+    if (current["version_id"] != record["version_id"] or current["content_digest"] != record["content_digest"]
+            or current["splits"] != record["splits"]):
         fail("dataset_identity_mismatch", "Dataset materialization changed since registration")
 
 
@@ -821,9 +838,10 @@ def stream_identity(reference, split_id, purpose):
 
 def stream_data(record, reference, dependency_paths, source_guards, split_id, purpose, resource_limits):
     from .generated_artifacts import manifest_rights
+    from .dataset import family_metadata
     rights = manifest_rights(record["manifest"])
     identity = split_identity(record, split_id, purpose)
-    return {**identity, **({"rights": copy.deepcopy(rights)} if rights is not None else {}), "version_id": record["version_id"], "stream": {
+    return {**identity, **family_metadata(record, split_id), **({"rights": copy.deepcopy(rights)} if rights is not None else {}), "version_id": record["version_id"], "stream": {
         "schema": STREAM_SCHEMA, "identity": stream_identity(reference, split_id, purpose),
         "reference": copy.deepcopy(reference), "dependency_paths": {key: str(value) for key, value in dependency_paths.items()},
         "source_guards": copy.deepcopy(source_guards), "split_id": split_id, "purpose": purpose,
@@ -876,7 +894,8 @@ def _resolve_stream(data):
         checked, index = load_portable_split(stream["reference"], stream["dependency_paths"], stream["split_id"],
             purpose=stream["purpose"], expected_project_id=stream["reference"]["project_id"],
             source_guards=stream["source_guards"], streaming_limits=stream["limits"], _return_index=True)
-        if checked["dataset"] != data["dataset"] or checked["split"] != data["split"]:
+        if (checked["dataset"] != data["dataset"] or checked["split"] != data["split"]
+                or any(checked.get(key) != data.get(key) for key in ("family_policy", "final_dataset_family_coverage"))):
             fail("dataset_identity_mismatch", "Streaming artifact differs from its verified split")
         entry = checked, index
         with _RUNTIME_LOCK:
@@ -890,7 +909,8 @@ def _resolve_stream(data):
                                 index.summary["splits"], index.summary["transformations"])
         checked = stream_data(record, ref, stream["dependency_paths"], stream["source_guards"],
                               stream["split_id"], stream["purpose"], stream["limits"])
-        if checked["dataset"] != data["dataset"] or checked["split"] != data["split"]:
+        if (checked["dataset"] != data["dataset"] or checked["split"] != data["split"]
+                or any(checked.get(key) != data.get(key) for key in ("family_policy", "final_dataset_family_coverage"))):
             fail("dataset_identity_mismatch", "Streaming artifact differs from its verified split")
         for source in index.manifest["sources"]:
             verify_source(index.registry, index.project_id, source)
@@ -925,7 +945,9 @@ class StreamingConsumption:
     """
     def __init__(self, data):
         self.identity = _validate_descriptor(data, purpose=data.get("stream", {}).get("purpose"))
-        _, self.index = _resolve_stream(data)
+        checked, self.index = _resolve_stream(data)
+        if "final_dataset_family_coverage" in checked:
+            self.identity["final_dataset_family_coverage"] = copy.deepcopy(checked["final_dataset_family_coverage"])
         self.chain = Chain()
         self._index_signature = signature(self.index.path.stat())
         self._db = sqlite3.connect(self.index.path.as_uri() + "?mode=ro", uri=True)
@@ -992,5 +1014,8 @@ def materialize_stream_split(data, *, max_rows, max_bytes):
     consumption = {"schema": "modelbuilder.dataset-consumption/v1", "project_id": data["stream"]["reference"]["project_id"],
                    "dataset": checked["dataset"], "split": split, "version_id": checked["version_id"], "purpose": purpose,
                    "sample_ids": list(ids), "sample_digests": hashes, "count": len(ids), "unique_count": len(ids)}
+    if "final_dataset_family_coverage" in checked:
+        consumption["final_dataset_family_coverage"] = copy.deepcopy(checked["final_dataset_family_coverage"])
     consumption["digest"] = digest(consumption)
-    return {"dataset": checked["dataset"], "split": split, "rows": values, "consumption": consumption}
+    return {"dataset": checked["dataset"], "split": split, "rows": values, "consumption": consumption,
+            **{key: copy.deepcopy(checked[key]) for key in ("family_policy", "final_dataset_family_coverage") if key in checked}}

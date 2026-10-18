@@ -25,6 +25,7 @@ from jsonschema.exceptions import ValidationError
 
 from .evaluation import digest
 from .rules import SAMPLE_SCHEMA, sample_rows
+from .family_coverage import FAMILY_POLICY_SCHEMA, validate_policy, assess_composition
 from .generated_artifacts import MANIFEST_FIELDS, manifest_rights
 from .models import ServiceError, new_id, utcnow
 from .platform_file_access import WindowsRoot, read_windows_source, snapshot_windows_root
@@ -92,6 +93,7 @@ MANIFEST_SCHEMA = {
                                       "description": {"type": "string", "maxLength": 10000}}},
         "sources": {"type": "array", "items": _SOURCE, "minItems": 1, "maxItems": 4096},
         "access_mode": {"enum": ["eager", "streaming"]},
+        "family_policy": FAMILY_POLICY_SCHEMA,
         "id_column": _ID, "row_schema": {"type": "object"},
         "splits": {"type": "array", "items": _SPLIT, "minItems": 1, "maxItems": 32},
         "transformations": {"type": "array", "maxItems": 32, "items": {"oneOf": [
@@ -122,6 +124,11 @@ def validate_manifest(manifest: dict) -> dict:
         manifest_rights(manifest)
     except (ValueError, TypeError, KeyError, ValidationError) as error:
         _fail("dataset_manifest_invalid", "Generated dataset parent rights lineage is invalid", reason=str(error))
+    if "family_policy" in manifest:
+        try:
+            validate_policy(manifest["family_policy"])
+        except ValueError as error:
+            _fail("dataset_family_policy_invalid", str(error))
     result = copy.deepcopy(manifest)
     result.setdefault("description", "")
     result.setdefault("transformations", [])
@@ -419,6 +426,10 @@ class DatasetRegistry:
             if not values:
                 _fail("dataset_split_empty", "Every declared split must retain at least one sample", split_id=spec["id"])
             split = {"id": spec["id"], "role": spec["role"], "sample_ids": values}
+            if "family_policy" in manifest and spec["role"] == "train":
+                split["final_dataset_family_coverage"] = final_family_coverage(
+                    manifest["family_policy"], spec["id"],
+                    (item["row"] for item in indexed if item["split_id"] == spec["id"]))
             split["digest"] = digest(split)
             splits.append(split)
         return manifest, indexed, splits, report
@@ -566,12 +577,13 @@ def _split_data(record, materialized, split_id, purpose):
     manifest, indexed, splits, _ = materialized
     sample_index = [{k: v for k, v in item.items() if k != "row"} for item in indexed]
     content = digest({"sample_index": sample_index, "splits": splits, "row_schema": manifest["row_schema"]})
-    if content != record["content_digest"] or digest({"manifest": manifest, "content_digest": content}) != record["version_id"]:
+    if (content != record["content_digest"] or digest({"manifest": manifest, "content_digest": content}) != record["version_id"]
+            or splits != record["splits"]):
         _fail("dataset_identity_mismatch", "Dataset materialization changed since registration")
     identity = evaluation_identity(record, split_id)
     lineage = consumption(record, split_id, identity["split"]["sample_ids"], purpose=purpose)
     lookup = {item["sample_id"]: item["row"] for item in indexed}
-    return {**identity, "rows": [lookup[sample_id] for sample_id in identity["split"]["sample_ids"]],
+    return {**identity, **family_metadata(record, split_id), "rows": [lookup[sample_id] for sample_id in identity["split"]["sample_ids"]],
             "consumption": lineage,
             **({"rights": copy.deepcopy(manifest_rights(manifest))} if manifest_rights(manifest) is not None else {})}
 
@@ -716,6 +728,38 @@ def _transform(indexed, manifest):
     return indexed, report
 
 
+def final_family_coverage(policy, split_id, rows=None, *, counts=None):
+    """Validate final train composition; reports never claim observed exposure."""
+    if counts is None:
+        counts = {family["id"]: 0 for family in policy["families"]}
+        field = policy["mapping"]["field"]
+        for row in rows:
+            family = row.get(field)
+            if not isinstance(family, str) or family not in counts:
+                _fail("dataset_family_coverage_invalid", "Final training row has a missing or unsupported family", split_id=split_id)
+            counts[family] += 1
+    try:
+        report = assess_composition(policy, counts)
+    except ValueError as error:
+        _fail("dataset_family_coverage_invalid", str(error), split_id=split_id)
+    if report["status"] != "passed":
+        _fail("dataset_family_coverage_invalid", "Final training split does not satisfy its family policy", split_id=split_id, assessment=report)
+    result = {**report, "scope": "final_dataset_split", "split_id": split_id, "role": "train"}
+    result["digest"] = digest(result)
+    return result
+
+
+def family_metadata(record, split_id):
+    policy = record["manifest"].get("family_policy")
+    split = next((item for item in record["splits"] if item["id"] == split_id), None)
+    if policy is None or split is None or split["role"] != "train":
+        return {}
+    report = split.get("final_dataset_family_coverage")
+    if not isinstance(report, dict) or report != final_family_coverage(policy, split_id, counts=report.get("counts", {})):
+        _fail("dataset_family_coverage_invalid", "Final training family coverage evidence is missing or inconsistent")
+    return {"family_policy": copy.deepcopy(policy), "final_dataset_family_coverage": copy.deepcopy(report)}
+
+
 def evaluation_identity(record, split_id):
     """Bridge to evaluation.py's single canonical identity contract."""
     split = next((item for item in record["splits"] if item["id"] == split_id), None)
@@ -745,6 +789,7 @@ def consumption(record, split_id, sample_ids, *, purpose):
     result = {"schema": CONSUMPTION_SCHEMA, "project_id": record["project_id"], **identity,
               "version_id": record["version_id"], "purpose": purpose,
               "sample_ids": list(sample_ids), "sample_digests": [lookup[item]["content_digest"] for item in sample_ids],
-              "count": len(sample_ids), "unique_count": len(set(sample_ids))}
+              "count": len(sample_ids), "unique_count": len(set(sample_ids)),
+              **{key: value for key, value in family_metadata(record, split_id).items() if key != "family_policy"}}
     result["digest"] = digest(result)
     return result

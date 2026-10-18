@@ -37,6 +37,7 @@ def test_source_inventory_includes_all_runtime_helpers_and_optional_profiles():
     inventory = replay.source_inventory(ROOT)
     assert len(inventory) == len(set(inventory))
     assert {
+        "src/modelbuilder/family_coverage.py", "src/modelbuilder/family_evaluation.py",
         "src/modelbuilder/dataset_streaming.py", "src/modelbuilder/generated_artifacts.py", "src/modelbuilder/parquet_stream.py",
         "src/modelbuilder/parquet_stream_decode.py", "src/modelbuilder/iterations.py",
         "src/modelbuilder/backend/native_invocations.py",
@@ -455,6 +456,7 @@ def test_runtime_wheel_contains_integrated_module_closure_and_imports_without_so
                      "source_pinning_contract.py", "export_packages.py", "backend/native_exports.py",
                      "execution.py", "conditions.py", "iterations.py", "backend/native_invocations.py",
                      "backend/conditional_worker.py", "compute_discovery.py", "backend/native_inputs.py",
+                     "family_coverage.py", "family_evaluation.py", "backend/components/transformers_family_exposure.py",
                      "dataset_streaming.py", "generated_artifacts.py", "parquet_reader.py", "parquet_decode.py",
                      "parquet_stream.py", "parquet_stream_decode.py",
                      "backend/components/transformers_loader.py", "backend/components/transformers_training.py",

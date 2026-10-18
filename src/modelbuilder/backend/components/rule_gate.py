@@ -41,6 +41,11 @@ def gate(*, inputs, parameters, context):
     cancel = context.get('cancel_file')
     if cancel and Path(cancel).exists():
         raise RuntimeError('rule_cancelled')
+    if any(rule['kind'] == 'family_exposure/v1' for rule in parameters['policy']['rules']):
+        if 'target' not in inputs:
+            raise ValueError('rule_blocked:family_exposure_native_target_required')
+        from ..rule_attestations import verify_family_exposure_target
+        verify_family_exposure_target(parameters, inputs['evidence'], inputs['target'])
     continuation_rules = [rule for rule in parameters['policy']['rules'] if rule['kind'] == 'convergence/v1'
                           or rule['kind'] == 'method/v1' and rule['method']['decision_domain'] == 'continuation']
     if continuation_rules:

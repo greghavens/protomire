@@ -1,5 +1,6 @@
 """One bounded research-context contract for the workbench, HTTP and MCP."""
 from .research_contract import PROJECT, REVISION, STRING
+from .family_coverage import FAMILY_POLICY_SCHEMA
 
 KINDS = ["evidence", "research_text", "claim", "hypothesis", "decision", "research_finding", "research_proposal"]
 STATES = ["unreviewed", "supported", "contradicted", "uncertain", "proposed", "testing", "accepted",
@@ -24,6 +25,12 @@ def operation_specs(spec):
               "states": {"type": "array", "items": {"enum": STATES}, "minItems": 1, "uniqueItems": True},
               "include_history": {"type": "boolean", "default": False},
               "expected_corpus_sha256": SHA256,
+              "family_policy": FAMILY_POLICY_SCHEMA,
+              "family_sources": {"type": "array", "maxItems": 256, "uniqueItems": True,
+                  "items": {"type": "object", "additionalProperties": False,
+                      "required": ["family_id", "source_kind", "source_id"],
+                      "properties": {"family_id": STRING, "source_kind": {"enum": KINDS},
+                                     "source_id": STRING, "revision": REVISION}}},
               "max_items": {"type": "integer", "minimum": 1, "maximum": 30, "default": 10},
               "max_bytes": {"type": "integer", "minimum": 2048, "maximum": 131072, "default": 24000},
               "passage_chars": {"type": "integer", "minimum": 80, "maximum": 4000, "default": 1200},

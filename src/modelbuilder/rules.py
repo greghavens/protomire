@@ -12,6 +12,8 @@ from typing import Literal, TypedDict
 from jsonschema import Draft202012Validator
 from .evaluation import digest
 from .scientific import Method
+from .family_coverage import (FAMILY_POLICY_SCHEMA, assess_exposure, canonical_policy_identity,
+                              validate_policy as validate_family_policy)
 
 
 class Decision(TypedDict):
@@ -53,6 +55,8 @@ REPRESENTATION = obj({'id': TEXT, 'kind': {'const': 'representation/v1'},
     'allocation': {'enum': ['proportional', 'equal']}, 'min_per_stratum': COUNT,
     'required_strata': {'type': 'array', 'maxItems': 10000, 'uniqueItems': True, 'items': TEXT},
     'max_share_error': {'type': 'number', 'minimum': 0, 'maximum': 1}})
+FAMILY_EXPOSURE = obj({'id': TEXT, 'kind': {'const': 'family_exposure/v1'},
+                       'policy': FAMILY_POLICY_SCHEMA})
 IDENTITY = obj({'id': TEXT, 'kind': {'const': 'identity/v1'},
     'expected': {'type': 'object', 'minProperties': 1, 'maxProperties': 32,
                  'additionalProperties': {'type': ['string', 'number', 'boolean', 'null']}}})
@@ -68,7 +72,7 @@ CUSTOM_RULE = obj({'id': TEXT, 'kind': {'const': 'method/v1'}, 'method': METHOD_
                    'parameters': {'type': 'object'}})
 POLICY_SCHEMA = obj({'schema_version': {'const': 'modelbuilder.rules/v1'}, 'id': TEXT,
     'version': TEXT, 'rules': {'type': 'array', 'minItems': 1, 'maxItems': 32,
-                             'items': {'oneOf': [CONVERGENCE, REPRESENTATION, IDENTITY, OVERLAP, CUSTOM_RULE]}}})
+                             'items': {'oneOf': [CONVERGENCE, REPRESENTATION, FAMILY_EXPOSURE, IDENTITY, OVERLAP, CUSTOM_RULE]}}})
 SAMPLE_SCHEMA = obj({'kind': {'const': 'rows.sample'}, 'version': {'const': '1'},
     'split_ids': {'type': 'array', 'minItems': 1, 'uniqueItems': True, 'items': TEXT},
     'fields': {'type': 'array', 'minItems': 1, 'maxItems': 32, 'uniqueItems': True, 'items': TEXT},
@@ -96,6 +100,8 @@ def validate_policy(policy: dict) -> RulePolicy:
             for used, maximum, increment in (('steps', 'max_steps', 'next_epoch_steps'), ('runtime_seconds', 'max_runtime_seconds', 'next_epoch_seconds'), ('cost', 'max_cost', 'next_epoch_cost')):
                 if rule['resource_modes'][used] == 'not_applicable' and (rule[maximum] != 0 or rule[increment] != 0):
                     raise ValueError('Not-applicable resource counters require zero bounds and projections')
+        if rule['kind'] == 'family_exposure/v1':
+            validate_family_policy(rule['policy'])
         if rule['kind'] == 'method/v1':
             validate_method(rule['method'])
             Draft202012Validator(rule['method']['parameter_schema']).validate(rule['parameters'])
@@ -238,6 +244,22 @@ def representation(rule, facts):
         'coverage_status': 'declared' if rule['required_strata'] else 'unspecified'}
 
 
+def family_exposure_rule(rule, facts, subject):
+    """Predicate over target-bound counts; callers authenticate receipt provenance."""
+    required = {'policy_id', 'checkpoint_digest', 'expected_checkpoint_digest', 'counts'}
+    if set(facts) != required:
+        raise ValueError('Family exposure evidence fields differ')
+    if facts['policy_id'] != canonical_policy_identity(rule['policy']):
+        raise ValueError('Family exposure policy identity differs')
+    if (not _sha(facts['checkpoint_digest'])
+            or facts['checkpoint_digest'] != facts['expected_checkpoint_digest']):
+        raise ValueError('Family exposure checkpoint identity differs or is missing')
+    report = assess_exposure(rule['policy'], facts['counts'])
+    passed = report['status'] == 'passed'
+    reasons = ['family_exposure_satisfied'] if passed else report['failures'] + report['unknowns']
+    return ('passed' if passed else 'blocked'), reasons, report
+
+
 def identity_rule(rule, facts, subject):
     if set(facts) != {'actual'} or not isinstance(facts['actual'], dict):
         raise ValueError('Identity evidence requires actual identities')
@@ -260,6 +282,8 @@ def builtin_methods():
                    lambda rule, facts, subject: convergence(rule, facts, digest(subject))),
             Method('representation', '1', {'module': __name__, 'entrypoint': 'representation'}, REPRESENTATION,
                    lambda rule, facts, subject: representation(rule, facts)),
+            Method('family_exposure', '1', {'module': __name__, 'entrypoint': 'family_exposure_rule'},
+                   FAMILY_EXPOSURE, family_exposure_rule),
             Method('identity', '1', {'module': __name__, 'entrypoint': 'identity_rule'}, IDENTITY, identity_rule),
             Method('overlap', '1', {'module': __name__, 'entrypoint': 'overlap_rule'}, OVERLAP, overlap_rule)]
 

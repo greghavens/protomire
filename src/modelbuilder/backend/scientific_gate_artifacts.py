@@ -32,6 +32,8 @@ def validate_result(result, policy, evidence):
     rows = result.get("rules")
     if not isinstance(rows, list) or len(rows) != len(policy["rules"]):
         raise ValueError("Scientific result must report every declared rule")
+    from ..family_evaluation import scientific_partition_diagnostics
+    partition_diagnostics = scientific_partition_diagnostics(policy, evidence)
     for rule, row in zip(policy["rules"], rows):
         if not isinstance(row, dict):
             raise ValueError("Scientific rule result must be an object")
@@ -48,8 +50,11 @@ def validate_result(result, policy, evidence):
         records = [{"backend_run_id": side, "model_version_ref": side, "status": "succeeded", "metrics": {rule["metric"]: pair[side]["record"].get("value"), "evaluation_record": pair[side]["record"]}}
                    for side in ("baseline", "candidate")]
         comparison = compare_records(records, rule["metric"], rule["direction"], {"allowed_variations": policy["allowed_variations"]})
-        if not comparison["compatible"] and row["outcome"] != "unknown":
+        from ..family_evaluation import scientific_family_diagnostics, scientific_family_failures
+        if (not comparison["compatible"] or scientific_family_diagnostics(policy, rule, pair) or partition_diagnostics) and row["outcome"] != "unknown":
             raise ValueError("Scientific result cannot accept incompatible or missing evaluation evidence")
+        if scientific_family_failures(policy, rule, pair) and row["outcome"] == "passed":
+            raise ValueError("Scientific result cannot accept failed family metric obligations")
         if row.get("alpha") != policy["family_error_rate"] / len(policy["rules"]):
             raise ValueError("Scientific rule error rate differs from declared multiplicity policy")
         if row.get("cohort_digest") != digest(evidence[rule["id"]]["baseline"]["record"].get("split")):

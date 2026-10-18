@@ -14,6 +14,7 @@ import re
 from typing import Mapping, Protocol
 
 from .models import ServiceError
+from .family_coverage import canonical_policy_identity, validate_policy
 from .research import _hash, _text_hash
 from .research_content import literal_matches, page_references
 from .research_context_contract import KINDS
@@ -384,6 +385,52 @@ def _item(document, hit):
     return result
 
 
+def _family_inventory(policy, mappings, selection, eligible, included, omitted, truncated):
+    """Inventory explicit user links, not inferred labels or scientific adequacy.
+
+    Only the authorized, filtered snapshot is resolved. A missing reference may
+    be outside this selection, stale, or nonexistent; no extra lookup reveals it.
+    """
+    eligible_keys = {doc.reference.key for doc in eligible}
+    included_keys = {hit.reference.key for hit in included}
+    families = {}
+    for family in sorted(policy["families"], key=lambda value: value["id"]):
+        links = [link for link in mappings if link["family_id"] == family["id"]]
+        selected_keys, unresolved = set(), 0
+        for link in links:
+            matched = {doc.reference.key for doc in selection
+                       if doc.reference.kind == link["source_kind"]
+                       and doc.reference.source_id == link["source_id"]
+                       and ("revision" not in link or doc.reference.revision == link["revision"])}
+            selected_keys.update(matched)
+            unresolved += not bool(matched)
+        represented = selected_keys & included_keys
+        budget_omitted = selected_keys & omitted - included_keys
+        families[family["id"]] = {
+            "status": "represented" if represented else "budget_omitted" if budget_omitted else "missing",
+            "declared_links": len(links), "unresolved_links": unresolved,
+            "selected_source_revisions": len(selected_keys),
+            "eligible_source_revisions": len(selected_keys & eligible_keys),
+            "excluded_source_revisions": len(selected_keys - eligible_keys),
+            "represented_source_revisions": len(represented),
+            "budget_omitted_source_revisions": len(budget_omitted),
+            "unretrieved_source_revisions": len(selected_keys & eligible_keys - included_keys - omitted),
+            "requirements": {key: value for key, value in family.items() if key != "id"},
+        }
+    return {"policy_id": canonical_policy_identity(policy), "mapping": policy["mapping"],
+            "assignment": "explicit_user_source_links", "families": families,
+            "represented_families": [key for key, value in families.items() if value["status"] == "represented"],
+            "missing_families": [key for key, value in families.items() if value["status"] != "represented"],
+            "budget_omitted_families": [key for key, value in families.items()
+                                        if value["budget_omitted_source_revisions"]],
+            "retrieval_truncated": truncated, "scientific_adequacy": "not_assessed",
+            "dataset_coverage": "not_assessed", "evaluation_coverage": "not_assessed",
+            "claim_verified": False,
+            "notice": "Explicit research links organize evidence only. Citations do not prove dataset coverage, "
+                      "training exposure, evaluation support, or scientific adequacy. Missing means absent "
+                      "from this bounded context, not absent from the literature."}
+
+
 class ResearchContext:
     def __init__(self, service, registry: RetrievalRegistry | None = None):
         self.service, self.store = service, service.store
@@ -440,6 +487,18 @@ class ResearchContext:
     def build(self, p):
         if not p["query"].strip():
             raise ServiceError("validation_error", "Research context needs a nonblank query")
+        family_policy = p.get("family_policy")
+        family_sources = p.get("family_sources", [])
+        if family_policy is None and "family_sources" in p:
+            raise ServiceError("validation_error", "family_sources requires an explicit family_policy")
+        if family_policy is not None:
+            try:
+                validate_policy(family_policy)
+                family_ids = {family["id"] for family in family_policy["families"]}
+                if any(link["family_id"] not in family_ids for link in family_sources):
+                    raise ValueError("family_sources contains an undeclared family")
+            except ValueError as error:
+                raise ServiceError("validation_error", str(error)) from error
         retriever, indexer = self.registry.resolve(p.get("retriever_id", LEXICAL_ID))
         descriptor = retriever.descriptor
         index, scanned_bytes = self.snapshot(p)
@@ -479,7 +538,10 @@ class ResearchContext:
         context = {"schema_version": VERSION, "project_id": index.project_id,
                    "corpus_sha256": index.corpus_sha256, "query": p["query"], "retriever_id": descriptor.retriever_id,
                    "request": request, "authority": TRUST, "use_scope": p.get("use_scope", "local_review"), "items": []}
+        if family_policy is not None:
+            context["family_policy_id"] = canonical_policy_identity(family_policy)
         included, budget_omitted, overlapping = [], 0, 0
+        omitted_keys = set()
         for hit in batch.hits:
             if (not isinstance(hit, RetrievalHit) or not isinstance(hit.reference, SourceReference)
                     or not isinstance(hit.matched_terms, tuple) or len(hit.matched_terms) > 16
@@ -497,18 +559,20 @@ class ResearchContext:
                 continue
             if len(included) == limit:
                 budget_omitted += 1
+                omitted_keys.add(hit.reference.key)
                 continue
             context["items"].append(item)
             if len(canonical_json(context).encode("utf-8")) > maximum:
                 context["items"].pop()
                 budget_omitted += 1
+                omitted_keys.add(hit.reference.key)
                 continue
             included.append(hit)
         encoded = canonical_json(context).encode("utf-8")
         if len(encoded) > maximum:
             raise ServiceError("context_budget_exceeded", "Context envelope exceeds the requested byte budget", status_code=413)
         counts = {state: sum(doc.state == state for doc in selection) for state in sorted({doc.state for doc in selection})}
-        return {"project_id": index.project_id, "context": context,
+        result = {"project_id": index.project_id, "context": context,
                 "context_sha256": hashlib.sha256(encoded).hexdigest(),
                 "usage_receipt": {"requested_scope": p.get("use_scope", "local_review"),
                                   "content_status": "blocked_unresolved_rights" if rights_excluded and selection else "local_review_only",
@@ -529,6 +593,10 @@ class ResearchContext:
                              "overlapping_hits_omitted": overlapping, "complete": False,
                              "search_kind": descriptor.kind, "semantic": descriptor.semantic, "graph": descriptor.graph},
                 "claim_verified": False}
+        if family_policy is not None:
+            result["coverage"]["family_coverage"] = _family_inventory(
+                family_policy, family_sources, selection, eligible, included, omitted_keys, batch.truncated)
+        return result
 
     def inspect(self, p):
         kind, identity = p["source_kind"], p["source_id"]

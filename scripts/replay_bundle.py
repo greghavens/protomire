@@ -144,6 +144,7 @@ def build_wheel(root: Path, destination: Path, kind: str, *, target: str | None 
                     "src/modelbuilder/__init__.py", "src/modelbuilder/recipe.py",
                     "src/modelbuilder/evaluation.py", "src/modelbuilder/tracking.py",
                     "src/modelbuilder/dataset.py", "src/modelbuilder/dataset_streaming.py",
+                    "src/modelbuilder/family_coverage.py", "src/modelbuilder/family_evaluation.py",
                     "src/modelbuilder/platform_file_access.py",
                     "src/modelbuilder/parquet_reader.py", "src/modelbuilder/parquet_decode.py",
                     "src/modelbuilder/parquet_stream.py", "src/modelbuilder/parquet_stream_decode.py",

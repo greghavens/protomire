@@ -26,6 +26,29 @@ def target_descriptor(path, checkpoint_kind=None):
     raise ValueError('Rule target requires an explicit supported export/checkpoint descriptor')
 
 
+def family_exposure_facts(path, policy, checkpoint_kind=None):
+    """Bind exposure to this exact verified checkpoint, never a container's later last."""
+    from .components.transformers_family_exposure import verify_family_exposure_path
+    if checkpoint_kind is not None:
+        # Fixture selection descriptors identify distinct asset bytes. They do not
+        # yet carry independently verified per-selection family exposure receipts.
+        raise ValueError('Selected checkpoint family exposure is unavailable')
+    descriptor = read_checkpoint(Path(path))
+    receipt = verify_family_exposure_path(path, policy)
+    checkpoint_digest = identity(descriptor)
+    return {'policy_id': receipt['policy_id'], 'checkpoint_digest': checkpoint_digest,
+            'expected_checkpoint_digest': checkpoint_digest, 'counts': receipt['counts']}
+
+
+def verify_family_exposure_target(parameters, evidence, path):
+    for rule in parameters['policy']['rules']:
+        if rule['kind'] != 'family_exposure/v1':
+            continue
+        expected = family_exposure_facts(path, rule['policy'], parameters.get('target_checkpoint_kind'))
+        if evidence.get('facts', {}).get(rule['id']) != expected:
+            raise ValueError('rule_blocked:family_exposure_target_mismatch')
+
+
 def inspect_gate(payload, root):
     from .sdk import native_run
     from .native_invocations import output_step
@@ -95,6 +118,7 @@ def inspect_gate(payload, root):
     receipt = next(row for row in receipts if row['input_port'] == 'target')
     with native_directory(target_artifact, root) as path:
         expected = {**receipt, **target_descriptor(path, node['parameters'].get('target_checkpoint_kind'))}
+        verify_family_exposure_target(node['parameters'], evidence, path)
     if identity(target) != identity(expected):
         raise ValueError('Rule gate target descriptor changed')
     recheck({'rule_authorization': authorization})

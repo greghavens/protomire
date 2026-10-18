@@ -24,6 +24,7 @@ from jsonschema import Draft202012Validator
 
 from . import PROTOCOL, identity, read_checkpoint, validate_resume
 from . import transformers_loader as loader
+from ...family_coverage import FAMILY_POLICY_SCHEMA
 
 VERSION = "1"
 _TASKS = ["sequence-classification", "causal-lm"]
@@ -56,6 +57,8 @@ TRAIN_PARAMETERS = _schema({
 EVALUATE_PARAMETERS = _schema({"batch_size": _INTEGER,
     "metrics": {"type": "array", "minItems": 1, "uniqueItems": True,
                 "items": {"enum": ["accuracy", "cross_entropy", "perplexity"]}}})
+EVALUATE_PARAMETERS["properties"]["family_policy"] = deepcopy(FAMILY_POLICY_SCHEMA)
+
 EXPORT_PARAMETERS = _schema({"parity_texts": {"type": "array", "minItems": 1, "maxItems": 32, "items": _STRING},
     "atol": {"type": "number", "minimum": 0}, "verification_timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 3600}})
 
@@ -255,8 +258,13 @@ def _split(data, roles, settings):
                    for column, value in row.items() if value == ids[index]]
         if lineage["sample_digests"][index] not in choices:
             raise ValueError("Dataset row differs from its registered content hash")
+    family_metadata = {}
+    if split["role"] == "train":
+        from .transformers_family_exposure import validate_eager_envelope
+        family_metadata = validate_eager_envelope(data, rows)
     return rows, {"dataset": deepcopy(data["dataset"]), "split": deepcopy(split),
-                  "version_id": lineage["version_id"], "consumption_digest": lineage["digest"]}
+                  "version_id": lineage["version_id"], "consumption_digest": lineage["digest"],
+                  **family_metadata}
 
 
 def _features(rows, tokenizer, settings):
@@ -288,7 +296,7 @@ def _bounded_evaluation_data(data, settings):
     return materialize_stream_split(data, max_rows=maximum, max_bytes=settings["limits"]["max_asset_bytes"])
 
 
-def _training_inputs(data, tokenizer, settings):
+def _training_inputs(data, tokenizer, settings, exposure=None):
     """Use framework datasets; observe lineage at Trainer.training_step, not prefetch."""
     from torch.utils.data import IterableDataset
     if "stream" in data:
@@ -303,7 +311,8 @@ def _training_inputs(data, tokenizer, settings):
                 iterator = iter_stream_rows(data)
                 try:
                     for item in iterator:
-                        yield {**_features([item["row"]], tokenizer, settings)[0], "_lineage": item}
+                        yield {**_features([item["row"]], tokenizer, settings)[0], "_lineage": item,
+                               **({"_family": exposure.row(item["row"], item["sample_id"])} if exposure else {})}
                 finally:
                     iterator.close()
 
@@ -313,6 +322,9 @@ def _training_inputs(data, tokenizer, settings):
     features = _features(rows, tokenizer, settings)
     for feature, item, content in zip(features, stable["split"]["sample_ids"], data["consumption"]["sample_digests"]):
         feature["_lineage"] = {"sample_id": item, "content_digest": content}
+    if exposure:
+        for feature, row, sample in zip(features, rows, stable["split"]["sample_ids"]):
+            feature["_family"] = exposure.row(row, sample)
     chain, count = hashlib.sha256(), 0
 
     def observe(item):
@@ -341,6 +353,8 @@ def _snapshot(model, tokenizer, settings, state, context, data_identity, output)
         tokenizer.save(str(staging / "tokenizer.json"))
         _json(staging / "adapter.json", settings)
         state.save_to_json(str(staging / "trainer-state.json"))
+        if "family_exposure" in data_identity:
+            _json(staging / "family-exposure.json", data_identity["family_exposure"])
         descriptor = {"schema_version": "modelbuilder.checkpoint/v1", "purpose": "last", "step": state.global_step,
             "identities": context["identities"], "resume_modes": ["warm_start"], "state": ["model"],
             "assets": _assets(staging), "framework": {"adapter": "modelbuilder.transformers.train/v1", "packages": _versions()},
@@ -393,7 +407,15 @@ def train(*, inputs, parameters, context):
             _checkpoint_descriptor(previous)
             from safetensors.torch import load_model
             load_model(model, str(previous / "model.safetensors"), strict=True, device="cpu")
-        features, observe, data_identity = _training_inputs(inputs["train"], tokenizer, settings)
+        from . import transformers_family_exposure as family_tracking
+        exposure = family_tracking.Exposure(inputs["train"]["family_policy"]) if "family_policy" in inputs["train"] else None
+        features, observe, source_identity = _training_inputs(inputs["train"], tokenizer, settings, exposure)
+
+        def data_identity():
+            return {**source_identity(), **({"family_policy": exposure.policy,
+                     "family_exposure": exposure.snapshot(),
+                     **({"final_dataset_family_coverage": deepcopy(inputs["train"]["final_dataset_family_coverage"])}
+                        if "final_dataset_family_coverage" in inputs["train"] else {})} if exposure else {})}
         if "validation" in inputs:
             # Shared only with the native live evaluator. Trainer never sees
             # these held-out rows in its optimization dataset.
@@ -407,19 +429,26 @@ def train(*, inputs, parameters, context):
                 if state.global_step % parameters["checkpoint_interval_steps"] == 0 or state.global_step == parameters["max_steps"] or cancelled:
                     final = _snapshot(kwargs["model"], tokenizer, settings, state, context, data_identity(), output)
                 if cancelled:
-                    raise InterruptedError("Training cancelled after preserving a warm-start checkpoint")
+                    raise InterruptedError("Training cancelled after preserving a warm-start checkpoint" +
+                                           ("; family exposure " + exposure.snapshot()["assessment"]["status"] if exposure else ""))
                 return control
 
         class ObservedTrainer(Trainer):
             def training_step(self, model, inputs, num_items_in_batch=None):
                 for item in inputs.pop("_modelbuilder_lineage"):
                     observe(item)
-                return super().training_step(model, inputs, num_items_in_batch)
+                family_rows = inputs.pop("_modelbuilder_family", None)
+                labels = inputs["labels"] if exposure else None
+                loss = super().training_step(model, inputs, num_items_in_batch)
+                if exposure:
+                    exposure.stage(family_rows, labels, settings["task"], loss)
+                return loss
 
         def collate(features):
-            return {**default_data_collator([{key: value for key, value in feature.items() if key != "_lineage"}
+            return {**default_data_collator([{key: value for key, value in feature.items() if key not in {"_lineage", "_family"}}
                                             for feature in features]),
-                    "_modelbuilder_lineage": [feature["_lineage"] for feature in features]}
+                    "_modelbuilder_lineage": [feature["_lineage"] for feature in features],
+                    **({"_modelbuilder_family": [feature["_family"] for feature in features]} if exposure else {})}
 
         options = {key: parameters[key] for key in ("max_steps", "learning_rate", "weight_decay", "warmup_steps",
                     "lr_scheduler_type", "max_grad_norm", "gradient_accumulation_steps", "seed")}
@@ -435,6 +464,9 @@ def train(*, inputs, parameters, context):
                 or trainer.accelerator.num_processes != 1
                 or not _same_device(next(model.parameters()).device, device)):
             raise ValueError("Trainer/Accelerate placement differs from the explicitly selected device; fallback is disabled")
+        if exposure:
+            family_tracking.validate_runtime(trainer, model)
+            trainer.add_callback(family_tracking.callback(exposure, lambda: trainer))
         trainer.train()
         if final is None:
             raise ValueError("Trainer produced no completed update/checkpoint")
@@ -492,35 +524,61 @@ def evaluate(*, inputs, parameters, context):
             dataloader_num_workers=0, dataloader_pin_memory=False)
         trainer = Trainer(model=model, args=args, data_collator=default_data_collator, preprocess_logits_for_metrics=reduce_logits)
         measured = trainer.predict(features).predictions.tolist()
-        if not measured or any(not math.isfinite(value) for row in measured for value in row):
-            raise ValueError("Evaluation produced missing or non-finite predictions")
-        if task == "causal-lm":
-            loss = sum(row[0] for row in measured) / sum(row[1] for row in measured)
-        else:
-            loss = sum(row[0] for row in measured) / len(measured)
-        values = {"cross_entropy": loss}
-        if task == "causal-lm":
-            if "perplexity" in parameters["metrics"]:
-                values["perplexity"] = math.exp(loss)
-        else:
-            values["accuracy"] = sum(row[1] for row in measured) / len(measured)
+        from ...family_evaluation import measured_metrics, family_slices, family_metric_id, evaluation_cohort_identity
+        from ...family_coverage import canonical_policy_identity
+        if len(measured) != len(rows):
+            raise ValueError("Evaluation predictions do not exactly cover registered rows")
+        values = measured_metrics(measured, task)
+        if "perplexity" in parameters["metrics"]:
+            values["perplexity"] = math.exp(values["cross_entropy"])
         records = {}
-        for metric in parameters["metrics"]:
-            predictions = [{"item_id": item, "negative_log_likelihood_sum": row[0], "token_count": int(row[1])}
-                           if task == "causal-lm" else {"item_id": item, "value": row[0 if metric == "cross_entropy" else 1]}
-                           for item, row in zip(data_identity["split"]["sample_ids"], measured)]
-            records[metric] = make_evaluation_record(dataset=data_identity["dataset"], split=data_identity["split"],
-                protocol={"implementation": "modelbuilder.transformers.evaluate", "version": VERSION,
-                    "configuration": {"task": task, "batch_size": parameters["batch_size"]},
-                    "preprocessing": {key: settings[key] for key in ("text_field", "label_field", "labels", "max_length", "truncate", "pad_token_id")}, "seed": 0},
-                metric={"name": metric, "implementation": "torch.nn.functional.cross_entropy" if metric != "accuracy" else "torch.argmax.eq.mean",
-                    "version": versions["torch"], "parameters": {"exponentiate": metric == "perplexity"},
-                    "aggregation": ("exp_token_weighted_mean" if metric == "perplexity" else "token_weighted_mean") if task == "causal-lm" else "mean",
-                    "direction": "maximize" if metric == "accuracy" else "minimize"},
-                treatment={"model": checkpoint["identities"], "checkpoint": identity(checkpoint), "calibration": None, "reference": None},
-                value=values[metric], predictions=predictions,
-                provenance={"packages": versions, "consumption": data_identity, "source": context.get("source", {})})
-    return {"metrics": {**{key: values[key] for key in parameters["metrics"]}, "evaluation_records": records}}
+        policy = parameters.get("family_policy")
+        slices = [(None, list(range(len(rows))), None)]
+        family_report = None
+        if policy:
+            groups = family_slices(rows, data_identity["split"]["sample_ids"], policy)
+            family_report = {"policy_id": canonical_policy_identity(policy), "families": {}}
+            slices.extend((family["id"], groups[family["id"]], family) for family in policy["families"])
+        for family_id, indexes, family in slices:
+            sample_ids = [data_identity["split"]["sample_ids"][index] for index in indexes]
+            contributions = [measured[index] for index in indexes]
+            if family:
+                sufficient = len(indexes) >= family["min_eval_support"]
+                family_report["families"][family_id] = {"support": len(indexes),
+                    "minimum_support": family["min_eval_support"], "status": "available" if sufficient else "unavailable",
+                    "cohort_digest": identity(sample_ids), "metric_ids": {metric: family_metric_id(family_id, metric) for metric in parameters["metrics"]}}
+                if not sufficient:
+                    continue  # Explicit unavailable report; native scientific gate sees missing evidence and blocks.
+            sliced_values = measured_metrics(contributions, task)
+            if "perplexity" in parameters["metrics"]:
+                sliced_values["perplexity"] = math.exp(sliced_values["cross_entropy"])
+            for metric in parameters["metrics"]:
+                name = family_metric_id(family_id, metric) if family else metric
+                predictions = [{"item_id": item, "negative_log_likelihood_sum": row[0], "token_count": int(row[1])}
+                               if task == "causal-lm" else {"item_id": item, "value": row[0 if metric == "cross_entropy" else 1]}
+                               for item, row in zip(sample_ids, contributions)]
+                configuration = {"task": task, "batch_size": parameters["batch_size"],
+                    "evaluation_cohort": evaluation_cohort_identity(data_identity["dataset"], data_identity["split"])}
+                if family:
+                    configuration["family"] = {"policy_id": canonical_policy_identity(policy), "family_id": family_id,
+                        "minimum_support": family["min_eval_support"], "cohort_digest": identity(sample_ids)}
+                records[name] = make_evaluation_record(dataset=data_identity["dataset"], split={**data_identity["split"], "sample_ids": sample_ids},
+                    protocol={"implementation": "modelbuilder.transformers.evaluate", "version": VERSION,
+                        "configuration": configuration,
+                        "preprocessing": {key: settings[key] for key in ("text_field", "label_field", "labels", "max_length", "truncate", "pad_token_id")}, "seed": 0},
+                    metric={"name": name, "implementation": "torch.nn.functional.cross_entropy" if metric != "accuracy" else "torch.argmax.eq.mean",
+                        "version": versions["torch"], "parameters": {"exponentiate": metric == "perplexity"},
+                        "aggregation": ("exp_token_weighted_mean" if metric == "perplexity" else "token_weighted_mean") if task == "causal-lm" else "mean",
+                        "direction": "maximize" if metric == "accuracy" else "minimize"},
+                    treatment={"model": checkpoint["identities"], "checkpoint": identity(checkpoint), "calibration": None, "reference": None},
+                    value=sliced_values[metric], predictions=predictions,
+                    provenance={"packages": versions, "consumption": data_identity, "source": context.get("source", {})})
+                values[name] = sliced_values[metric]
+    result = {key: record["value"] for key, record in records.items()}
+    result["evaluation_records"] = records
+    if family_report is not None:
+        result["family_evaluation"] = family_report
+    return {"metrics": result}
 
 
 def export(*, inputs, parameters, context):

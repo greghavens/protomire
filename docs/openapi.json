@@ -17029,6 +17029,163 @@
                     "pattern": "^[0-9a-f]{64}$",
                     "type": "string"
                   },
+                  "family_policy": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "additionalProperties": false,
+                    "properties": {
+                      "families": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "maxLength": 200,
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "metrics": {
+                              "additionalProperties": {
+                                "additionalProperties": false,
+                                "dependentRequired": {
+                                  "direction": [
+                                    "max_regression"
+                                  ],
+                                  "max_regression": [
+                                    "direction"
+                                  ]
+                                },
+                                "minProperties": 1,
+                                "properties": {
+                                  "direction": {
+                                    "enum": [
+                                      "higher",
+                                      "lower"
+                                    ]
+                                  },
+                                  "max": {
+                                    "type": "number"
+                                  },
+                                  "max_regression": {
+                                    "minimum": 0,
+                                    "type": "number"
+                                  },
+                                  "min": {
+                                    "type": "number"
+                                  }
+                                },
+                                "type": "object"
+                              },
+                              "maxProperties": 256,
+                              "propertyNames": {
+                                "maxLength": 200,
+                                "minLength": 1
+                              },
+                              "type": "object"
+                            },
+                            "min_eval_support": {
+                              "minimum": 1,
+                              "type": "integer"
+                            },
+                            "min_exposure": {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "min_rows": {
+                              "minimum": 0,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "min_rows",
+                            "min_exposure",
+                            "min_eval_support"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 256,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "mapping": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "field": {
+                            "maxLength": 200,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "version": {
+                            "maxLength": 200,
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "version",
+                          "field"
+                        ],
+                        "type": "object"
+                      },
+                      "research_sources": {
+                        "items": {
+                          "maxLength": 2048,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "maxItems": 256,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "schema_version": {
+                        "const": "modelbuilder.family-policy.v1"
+                      }
+                    },
+                    "required": [
+                      "schema_version",
+                      "mapping",
+                      "families"
+                    ],
+                    "type": "object"
+                  },
+                  "family_sources": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "family_id": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "revision": {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "source_id": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "source_kind": {
+                          "enum": [
+                            "evidence",
+                            "research_text",
+                            "claim",
+                            "hypothesis",
+                            "decision",
+                            "research_finding",
+                            "research_proposal"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "family_id",
+                        "source_kind",
+                        "source_id"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 256,
+                    "type": "array",
+                    "uniqueItems": true
+                  },
                   "include_history": {
                     "default": false,
                     "type": "boolean"
@@ -21988,6 +22145,143 @@
                             {
                               "additionalProperties": false,
                               "properties": {
+                                "id": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "kind": {
+                                  "const": "family_exposure/v1"
+                                },
+                                "policy": {
+                                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "families": {
+                                      "items": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                          "id": {
+                                            "maxLength": 200,
+                                            "minLength": 1,
+                                            "type": "string"
+                                          },
+                                          "metrics": {
+                                            "additionalProperties": {
+                                              "additionalProperties": false,
+                                              "dependentRequired": {
+                                                "direction": [
+                                                  "max_regression"
+                                                ],
+                                                "max_regression": [
+                                                  "direction"
+                                                ]
+                                              },
+                                              "minProperties": 1,
+                                              "properties": {
+                                                "direction": {
+                                                  "enum": [
+                                                    "higher",
+                                                    "lower"
+                                                  ]
+                                                },
+                                                "max": {
+                                                  "type": "number"
+                                                },
+                                                "max_regression": {
+                                                  "minimum": 0,
+                                                  "type": "number"
+                                                },
+                                                "min": {
+                                                  "type": "number"
+                                                }
+                                              },
+                                              "type": "object"
+                                            },
+                                            "maxProperties": 256,
+                                            "propertyNames": {
+                                              "maxLength": 200,
+                                              "minLength": 1
+                                            },
+                                            "type": "object"
+                                          },
+                                          "min_eval_support": {
+                                            "minimum": 1,
+                                            "type": "integer"
+                                          },
+                                          "min_exposure": {
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          },
+                                          "min_rows": {
+                                            "minimum": 0,
+                                            "type": "integer"
+                                          }
+                                        },
+                                        "required": [
+                                          "id",
+                                          "min_rows",
+                                          "min_exposure",
+                                          "min_eval_support"
+                                        ],
+                                        "type": "object"
+                                      },
+                                      "maxItems": 256,
+                                      "minItems": 1,
+                                      "type": "array"
+                                    },
+                                    "mapping": {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "field": {
+                                          "maxLength": 200,
+                                          "minLength": 1,
+                                          "type": "string"
+                                        },
+                                        "version": {
+                                          "maxLength": 200,
+                                          "minLength": 1,
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "version",
+                                        "field"
+                                      ],
+                                      "type": "object"
+                                    },
+                                    "research_sources": {
+                                      "items": {
+                                        "maxLength": 2048,
+                                        "minLength": 1,
+                                        "type": "string"
+                                      },
+                                      "maxItems": 256,
+                                      "type": "array",
+                                      "uniqueItems": true
+                                    },
+                                    "schema_version": {
+                                      "const": "modelbuilder.family-policy.v1"
+                                    }
+                                  },
+                                  "required": [
+                                    "schema_version",
+                                    "mapping",
+                                    "families"
+                                  ],
+                                  "type": "object"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "kind",
+                                "policy"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
                                 "expected": {
                                   "additionalProperties": {
                                     "type": [
@@ -24941,6 +25235,136 @@
                         "exclusiveMinimum": 0,
                         "type": "number"
                       },
+                      "family_metrics": {
+                        "items": {
+                          "enum": [
+                            "cross_entropy",
+                            "accuracy",
+                            "perplexity"
+                          ]
+                        },
+                        "minItems": 1,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "family_policy": {
+                        "$schema": "https://json-schema.org/draft/2020-12/schema",
+                        "additionalProperties": false,
+                        "properties": {
+                          "families": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "id": {
+                                  "maxLength": 200,
+                                  "minLength": 1,
+                                  "type": "string"
+                                },
+                                "metrics": {
+                                  "additionalProperties": {
+                                    "additionalProperties": false,
+                                    "dependentRequired": {
+                                      "direction": [
+                                        "max_regression"
+                                      ],
+                                      "max_regression": [
+                                        "direction"
+                                      ]
+                                    },
+                                    "minProperties": 1,
+                                    "properties": {
+                                      "direction": {
+                                        "enum": [
+                                          "higher",
+                                          "lower"
+                                        ]
+                                      },
+                                      "max": {
+                                        "type": "number"
+                                      },
+                                      "max_regression": {
+                                        "minimum": 0,
+                                        "type": "number"
+                                      },
+                                      "min": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "type": "object"
+                                  },
+                                  "maxProperties": 256,
+                                  "propertyNames": {
+                                    "maxLength": 200,
+                                    "minLength": 1
+                                  },
+                                  "type": "object"
+                                },
+                                "min_eval_support": {
+                                  "minimum": 1,
+                                  "type": "integer"
+                                },
+                                "min_exposure": {
+                                  "minimum": 0,
+                                  "type": "integer"
+                                },
+                                "min_rows": {
+                                  "minimum": 0,
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "min_rows",
+                                "min_exposure",
+                                "min_eval_support"
+                              ],
+                              "type": "object"
+                            },
+                            "maxItems": 256,
+                            "minItems": 1,
+                            "type": "array"
+                          },
+                          "mapping": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "field": {
+                                "maxLength": 200,
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "version": {
+                                "maxLength": 200,
+                                "minLength": 1,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "version",
+                              "field"
+                            ],
+                            "type": "object"
+                          },
+                          "research_sources": {
+                            "items": {
+                              "maxLength": 2048,
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "maxItems": 256,
+                            "type": "array",
+                            "uniqueItems": true
+                          },
+                          "schema_version": {
+                            "const": "modelbuilder.family-policy.v1"
+                          }
+                        },
+                        "required": [
+                          "schema_version",
+                          "mapping",
+                          "families"
+                        ],
+                        "type": "object"
+                      },
                       "id": {
                         "minLength": 1,
                         "type": "string"
@@ -24954,6 +25378,35 @@
                           "continuation",
                           "promotion"
                         ]
+                      },
+                      "required_benchmark": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "required_evaluation": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "dataset_digest": {
+                            "maxLength": 64,
+                            "minLength": 64,
+                            "type": "string"
+                          },
+                          "sample_count": {
+                            "minimum": 1,
+                            "type": "integer"
+                          },
+                          "split_digest": {
+                            "maxLength": 64,
+                            "minLength": 64,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "dataset_digest",
+                          "split_digest",
+                          "sample_count"
+                        ],
+                        "type": "object"
                       },
                       "rules": {
                         "items": {

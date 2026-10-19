@@ -75,7 +75,8 @@ def package_flatpak(app: Path, output: Path, target: str, artifact: Path, profil
         raise ValueError("Reviewed Electron base lacks zypak-wrapper; no sandbox-disable fallback") from error
     shutil.copytree(app, files / "lib/modelbuilder", symlinks=True)
     launcher = files / "bin/modelbuilder"
-    launcher.write_text('#!/bin/sh\nset -eu\nexec /app/bin/zypak-wrapper /app/lib/modelbuilder/modelbuilder-ide "$@"\n')
+    launcher.write_text('#!/bin/sh\nset -eu\nexec /app/bin/zypak-wrapper /app/lib/modelbuilder/modelbuilder-ide '
+                        '--ozone-platform-hint=auto --password-store=gnome-libsecret "$@"\n')
     launcher.chmod(0o755)
     core_root = "/app/lib/modelbuilder/resources/app/extensions/modelbuilder-workbench/resources/core"
     manifest = json.loads((app / "resources/app/extensions/modelbuilder-workbench/resources/core/runtime.json").read_text())

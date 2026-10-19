@@ -64,6 +64,8 @@ def test_staged_mandatory_core_bundle_and_permissions(payload, tmp_path, monkeyp
     assert (core/'runtime.json').is_file() and (core/'managed_core.py').is_file()
     launcher = (tmp_path/'output/flatpak-build/files/bin/modelbuilder').read_text()
     assert 'zypak-wrapper' in launcher and '--no-sandbox' not in launcher
+    assert '--ozone-platform-hint=auto' in launcher
+    assert '--password-store=gnome-libsecret' in launcher and '--password-store=basic' not in launcher
     assert any(command[1:] == ['build', str(tmp_path/'output/flatpak-build'), '/usr/bin/test', '-x', '/app/bin/zypak-wrapper'] for command in calls)
     assert not any('install' in command[1] or 'remote-add' in command for command in calls)
     assert '--filesystem=host' not in pack.PERMISSIONS and '--device=all' not in pack.PERMISSIONS

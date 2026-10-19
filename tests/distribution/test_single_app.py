@@ -1,5 +1,7 @@
 """Offline package recipe tests. Fake payloads/tools do not establish native support."""
 import json
+import base64
+import hashlib
 import plistlib
 from pathlib import Path
 import shutil
@@ -53,6 +55,10 @@ def app_fixture(root, target):
     css.parent.mkdir(parents=True, exist_ok=True)
     css.write_text('\n'.join(f'.fixture-icon-{i} {{ background-image: url("../../media/code-icon.svg"); }}' for i in range(5)) + '\n' +
                    '\n'.join(f'.fixture-watermark-{theme} {{ background-image: url("../../media/letterpress-{theme}.svg"); }}' for theme in ('light', 'dark', 'hcLight', 'hcDark')))
+    product = json.loads((app_root / "product.json").read_text())
+    product["checksums"] = {"vs/workbench/workbench.desktop.main.css": base64.b64encode(hashlib.sha256(css.read_bytes()).digest()).decode().rstrip("="),
+                            "untouched-fixture.js": "preserve-this-integrity-receipt"}
+    (app_root / "product.json").write_text(json.dumps(product))
     if target.startswith("darwin-"):
         (app_root.parents[1] / "Info.plist").write_bytes(plistlib.dumps({"LSMinimumSystemVersion": "11.0"}))
     return root

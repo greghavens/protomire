@@ -3,12 +3,19 @@
 Application IDs, executable names, profiles and the sealed core stay unchanged.
 The approved icon is a raster PNG; only the supplied wordmark has vector outlines.
 """
+import base64
+import hashlib
 import json
 from pathlib import Path
 import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "distribution/assets/protomire"
+
+
+def integrity_checksum(data: bytes) -> str:
+    """Match the unchanged upstream SHA256/base64 integrity service format."""
+    return base64.b64encode(hashlib.sha256(data).digest()).decode().rstrip("=")
 
 
 def owned_target(root: Path, relative: str) -> Path:
@@ -30,6 +37,12 @@ def apply_linux_branding(app_root: Path, desktop_id: str) -> None:
     # upstream source; never disguise the approved raster as an SVG.
     stylesheet_path = owned_target(app_root, "out/vs/workbench/workbench.desktop.main.css")
     stylesheet = stylesheet_path.read_text()
+    product_path = owned_target(app_root, "product.json")
+    product = json.loads(product_path.read_text())
+    checksum_key = "vs/workbench/workbench.desktop.main.css"
+    checksums = product.get("checksums")
+    if not isinstance(checksums, dict) or checksums.get(checksum_key) != integrity_checksum(stylesheet_path.read_bytes()):
+        raise ValueError("Workbench input integrity checksum mismatch; refuse to reseal unknown bytes")
     old_icon = 'url("../../media/code-icon.svg")'
     new_icon = 'url("../../media/protomire-icon.png")'
     counts = (stylesheet.count(old_icon), stylesheet.count(new_icon))
@@ -45,17 +58,14 @@ def apply_linux_branding(app_root: Path, desktop_id: str) -> None:
             stylesheet = stylesheet.replace(url, new_watermark)
     elif watermark_counts != (0, 0, 0, 0) or stylesheet.count(new_watermark) != 4:
         raise ValueError("Unrecognized pinned workbench watermark stylesheet; no branding export")
-    watermark_style = '\n/* Protomire visual branding; approved PNG, no editor behavior changes. */\n.monaco-workbench .editor-group-watermark > .letterpress { opacity: 0.16; }\n'
+    watermark_style = '\n/* Protomire visual branding; approved PNG, no editor behavior changes. */\n.monaco-workbench .editor-group-watermark > .letterpress { opacity: 1; }\n'
     if watermark_style not in stylesheet:
         stylesheet += watermark_style
-    product_path = owned_target(app_root, "product.json")
-    product = json.loads(product_path.read_text())
     if product.get("applicationName") != "modelbuilder-ide":
         raise ValueError("Brand only the existing compatible application identity")
     overlay = json.loads((ROOT / "distribution/overlay/product.json").read_text())
     for field in ("nameShort", "nameLong"):
         product[field] = overlay[field]
-    product_path.write_text(json.dumps(product, indent=2) + "\n")
     # Electron uses desktopName for Wayland app identity and desktop icon
     # matching. Keep name unchanged: it also owns the native credential identity.
     package_path = owned_target(app_root, "package.json")
@@ -76,3 +86,7 @@ def apply_linux_branding(app_root: Path, desktop_id: str) -> None:
         notice = owned_target(app_root, "protomire-brand/" + name)
         notice.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ASSETS / source, notice)
+    # Finalize the receipt after the approved visual bytes have been written.
+    # Preserve every other checksum and the upstream integrity service itself.
+    product["checksums"] = {**checksums, checksum_key: integrity_checksum(stylesheet_path.read_bytes())}
+    product_path.write_text(json.dumps(product, indent=2) + "\n")

@@ -1,6 +1,8 @@
 """Packaging command contracts, not a real Flatpak build or installation claim."""
 from copy import deepcopy
 import json
+import base64
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -86,6 +88,8 @@ def test_staged_mandatory_core_bundle_and_permissions(payload, tmp_path, monkeyp
     assert stylesheet.count('url("../../media/protomire-watermark.png")') == 4
     assert 'letterpress-dark.svg' not in stylesheet
     assert (resources/'out/media/protomire-watermark.png').read_bytes() == (pack.ASSETS/'icons/light-tile/protomire-512.png').read_bytes()
+    assert product['checksums']['vs/workbench/workbench.desktop.main.css'] == base64.b64encode(hashlib.sha256(stylesheet.encode()).digest()).decode().rstrip('=')
+    assert product['checksums']['untouched-fixture.js'] == 'preserve-this-integrity-receipt'
     assert (resources/'protomire-brand/InterTight-OFL.txt').read_bytes() == (pack.ASSETS/'fonts/OFL.txt').read_bytes()
     for size in (16, 24, 32, 48, 64, 96, 128, 192, 256, 512):
         exported = tmp_path/f'output/flatpak-build/files/share/icons/hicolor/{size}x{size}/apps/io.github.greghavens.Modelbuilder.png'
@@ -110,9 +114,33 @@ def test_workbench_branding_is_idempotent_and_rejects_unknown_or_mixed_css(tmp_p
     assert css.read_bytes() == first
     css.write_text(css.read_text().replace('protomire-icon.png', 'code-icon.svg', 1))
     mixed = css.read_bytes()
+    product_path = source/'product.json'
+    product = json.loads(product_path.read_text())
+    product['checksums']['vs/workbench/workbench.desktop.main.css'] = base64.b64encode(hashlib.sha256(mixed).digest()).decode().rstrip('=')
+    product_path.write_text(json.dumps(product))
     with pytest.raises(ValueError, match='Unrecognized pinned workbench icon'):
         apply_linux_branding(source, profile()['app_id'])
     assert css.read_bytes() == mixed
+
+
+@pytest.mark.parametrize('change', ['missing-map', 'missing-entry', 'changed-bytes'])
+def test_branding_refuses_unverified_input_instead_of_disabling_integrity(tmp_path, change):
+    from branding import apply_linux_branding
+    source = app_fixture(tmp_path/'app', 'linux-x64')/'resources/app'
+    product_path = source/'product.json'
+    product = json.loads(product_path.read_text())
+    if change == 'missing-map':
+        product.pop('checksums')
+    elif change == 'missing-entry':
+        product['checksums'].pop('vs/workbench/workbench.desktop.main.css')
+    else:
+        css = source/'out/vs/workbench/workbench.desktop.main.css'
+        css.write_text(css.read_text()+'\n.unreviewed { display:none; }\n')
+    product_path.write_text(json.dumps(product))
+    before = product_path.read_bytes()
+    with pytest.raises(ValueError, match='input integrity checksum mismatch'):
+        apply_linux_branding(source, profile()['app_id'])
+    assert product_path.read_bytes() == before
 
 
 def test_runtime_commit_drift_blocks_before_build(tmp_path, monkeypatch):

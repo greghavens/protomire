@@ -25,6 +25,17 @@ def owned_target(root: Path, relative: str) -> Path:
 
 
 def apply_linux_branding(app_root: Path, desktop_id: str) -> None:
+    # The custom workbench titlebar/banner icons are separate from the native
+    # BrowserWindow icon. Keep this a pinned visual-resource overlay, outside
+    # upstream source; never disguise the approved raster as an SVG.
+    stylesheet_path = owned_target(app_root, "out/vs/workbench/workbench.desktop.main.css")
+    stylesheet = stylesheet_path.read_text()
+    old_icon = 'url("../../media/code-icon.svg")'
+    new_icon = 'url("../../media/protomire-icon.png")'
+    counts = (stylesheet.count(old_icon), stylesheet.count(new_icon))
+    if counts not in {(5, 0), (0, 5)}:
+        raise ValueError("Unrecognized pinned workbench icon stylesheet; no branding export")
+    stylesheet = stylesheet.replace(old_icon, new_icon)
     product_path = owned_target(app_root, "product.json")
     product = json.loads(product_path.read_text())
     if product.get("applicationName") != "modelbuilder-ide":
@@ -42,6 +53,10 @@ def apply_linux_branding(app_root: Path, desktop_id: str) -> None:
     icon = owned_target(app_root, "resources/linux/code.png")
     icon.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(ASSETS / "icons/light-tile/protomire-512.png", icon)
+    workbench_icon = owned_target(app_root, "out/media/protomire-icon.png")
+    workbench_icon.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(ASSETS / "icons/light-tile/protomire-32.png", workbench_icon)
+    stylesheet_path.write_text(stylesheet)
     for source, name in (("README.md", "README.md"), ("fonts/OFL.txt", "InterTight-OFL.txt"),
                          ("asset-manifest.json", "asset-manifest.json")):
         notice = owned_target(app_root, "protomire-brand/" + name)

@@ -79,6 +79,10 @@ def test_staged_mandatory_core_bundle_and_permissions(payload, tmp_path, monkeyp
     assert native_package['name'] == 'Modelbuilder'  # Native credential identity.
     assert native_package['desktopName'] == 'io.github.greghavens.Modelbuilder.desktop'
     assert (resources/'resources/linux/code.png').read_bytes() == (pack.ASSETS/'icons/light-tile/protomire-512.png').read_bytes()
+    assert (resources/'out/media/protomire-icon.png').read_bytes() == (pack.ASSETS/'icons/light-tile/protomire-32.png').read_bytes()
+    stylesheet = (resources/'out/vs/workbench/workbench.desktop.main.css').read_text()
+    assert 'code-icon.svg' not in stylesheet
+    assert stylesheet.count('url("../../media/protomire-icon.png")') == 5
     assert (resources/'protomire-brand/InterTight-OFL.txt').read_bytes() == (pack.ASSETS/'fonts/OFL.txt').read_bytes()
     for size in (16, 24, 32, 48, 64, 96, 128, 192, 256, 512):
         exported = tmp_path/f'output/flatpak-build/files/share/icons/hicolor/{size}x{size}/apps/io.github.greghavens.Modelbuilder.png'
@@ -91,6 +95,21 @@ def test_staged_mandatory_core_bundle_and_permissions(payload, tmp_path, monkeyp
     assert not any('install' in command[1] or 'remote-add' in command for command in calls)
     assert '--filesystem=host' not in pack.PERMISSIONS and '--device=all' not in pack.PERMISSIONS
     assert '--filesystem=home' in pack.PERMISSIONS  # Explicit IDE project access, documented.
+
+
+def test_workbench_branding_is_idempotent_and_rejects_unknown_or_mixed_css(tmp_path):
+    from branding import apply_linux_branding
+    source = app_fixture(tmp_path/'app', 'linux-x64')/'resources/app'
+    apply_linux_branding(source, profile()['app_id'])
+    css = source/'out/vs/workbench/workbench.desktop.main.css'
+    first = css.read_bytes()
+    apply_linux_branding(source, profile()['app_id'])
+    assert css.read_bytes() == first
+    css.write_text(css.read_text().replace('protomire-icon.png', 'code-icon.svg', 1))
+    mixed = css.read_bytes()
+    with pytest.raises(ValueError, match='Unrecognized pinned workbench icon'):
+        apply_linux_branding(source, profile()['app_id'])
+    assert css.read_bytes() == mixed
 
 
 def test_runtime_commit_drift_blocks_before_build(tmp_path, monkeypatch):

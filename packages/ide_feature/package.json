@@ -1,7 +1,7 @@
 {
   "name": "modelbuilder-workbench",
-  "displayName": "ModelBuilder Workbench",
-  "description": "Permanent model lifecycle workbench for the ModelBuilder Code - OSS distribution.",
+  "displayName": "Protomire Workbench",
+  "description": "Permanent model lifecycle workbench for the Protomire Code - OSS distribution.",
   "version": "0.1.0",
   "publisher": "modelbuilder",
   "license": "UNLICENSED",
@@ -29,97 +29,97 @@
     "commands": [
       {
         "command": "modelbuilder.openWorkbench",
-        "title": "ModelBuilder: Open Model Workbench"
+        "title": "Protomire: Open Model Workbench"
       },
       {
         "command": "modelbuilder.configureConnection",
-        "title": "ModelBuilder: Configure Service Connection"
+        "title": "Protomire: Configure Service Connection"
       },
       {
         "command": "modelbuilder.createProject",
-        "title": "ModelBuilder: New Model Project"
+        "title": "Protomire: New Model Project"
       },
       {
         "command": "modelbuilder.refresh",
-        "title": "ModelBuilder: Refresh Model Explorer",
+        "title": "Protomire: Refresh Model Explorer",
         "icon": "$(refresh)"
       },
       {
         "command": "modelbuilder.openRecipeSource",
-        "title": "ModelBuilder: Open Recipe JSON Source"
+        "title": "Protomire: Open Recipe JSON Source"
       },
       {
         "command": "modelbuilder.closeProject",
-        "title": "ModelBuilder: Close Model Project"
+        "title": "Protomire: Close Model Project"
       },
       {
         "command": "modelbuilder.importRecipeBundle",
-        "title": "ModelBuilder: Import Recipe\u2026",
+        "title": "Protomire: Import Recipe\u2026",
         "enablement": "modelbuilder.projectOpen"
       },
       {
         "command": "modelbuilder.exportRecipeBundle",
-        "title": "ModelBuilder: Export Recipe\u2026",
+        "title": "Protomire: Export Recipe\u2026",
         "enablement": "modelbuilder.projectOpen"
       },
       {
         "command": "modelbuilder.setupAssistant",
-        "title": "ModelBuilder: Set Up Optional Coding Tool"
+        "title": "Protomire: Set Up Optional Coding Tool"
       },
       {
         "command": "modelbuilder.discoverPrivateRecipe",
-        "title": "ModelBuilder: Discover Private Recipes\u2026",
+        "title": "Protomire: Discover Private Recipes\u2026",
         "enablement": "modelbuilder.projectOpen"
       },
       {
         "command": "modelbuilder.publishPrivateRecipe",
-        "title": "ModelBuilder: Publish Recipe Privately\u2026",
+        "title": "Protomire: Publish Recipe Privately\u2026",
         "enablement": "modelbuilder.projectOpen"
       },
       {
         "command": "modelbuilder.registerProjectSource",
-        "title": "ModelBuilder: Register Trusted Project Source",
+        "title": "Protomire: Register Trusted Project Source",
         "enablement": "modelbuilder.projectOpen"
       },
       {
         "command": "modelbuilder.openHub",
-        "title": "ModelBuilder: Open Hugging Face Repository",
+        "title": "Protomire: Open Hugging Face Repository",
         "enablement": "modelbuilder.projectOpen",
         "icon": "$(cloud)"
       },
       {
         "command": "modelbuilder.hubStage",
-        "title": "ModelBuilder: Stage Hub File",
+        "title": "Protomire: Stage Hub File",
         "enablement": "modelbuilder.projectOpen",
         "icon": "$(add)"
       },
       {
         "command": "modelbuilder.hubUnstage",
-        "title": "ModelBuilder: Unstage Hub File",
+        "title": "Protomire: Unstage Hub File",
         "enablement": "modelbuilder.projectOpen",
         "icon": "$(remove)"
       },
       {
         "command": "modelbuilder.hubPublishStaged",
-        "title": "ModelBuilder: Preview Staged Hub Publication",
+        "title": "Protomire: Preview Staged Hub Publication",
         "enablement": "modelbuilder.projectOpen",
         "icon": "$(cloud-upload)"
       },
       {
         "command": "modelbuilder.reviewAgentRequests",
-        "title": "ModelBuilder: Review Agent Requests"
+        "title": "Protomire: Review Agent Requests"
       },
       {
         "command": "modelbuilder.configureHub",
         "title": "Configure project Hub account and publication folder",
-        "category": "ModelBuilder"
+        "category": "Protomire"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "modelbuilder",
-          "title": "ModelBuilder",
+          "title": "Protomire",
           "icon": "media/model.svg"
         }
       ]
@@ -177,7 +177,7 @@
       ]
     },
     "configuration": {
-      "title": "ModelBuilder",
+      "title": "Protomire",
       "properties": {
         "modelbuilder.serviceUrl": {
           "type": "string",

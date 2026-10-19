@@ -2,13 +2,22 @@
 
 The intended end-user install is one app:
 
-- Linux / Bazzite: install the Modelbuilder Flatpak (required delivery; not built yet)
-- macOS: drag Modelbuilder from its DMG into Applications
-- Windows: run the Modelbuilder user installer
+- Linux / Bazzite: install the Protomire Flatpak (unsigned development build tested on one host)
+- macOS: drag Protomire from its DMG into Applications
+- Windows: run the Protomire user installer
 
-## Current delivery gate, 2026-10-18
+## Linux development checkpoint, 2026-10-19
 
-The newest functionality-family safeguards, migration skill and harness changes are source changes, not a newly built native app. Flatpak packaging is now the Linux default; see [Flatpak delivery and acceptance](FLATPAK.md). No ready-to-use Flatpak or clean-machine release is claimed. [Current verification](../docs/CURRENT_VERIFICATION.md) takes precedence over the historical artifact records below.
+An unsigned Linux x64 Flatpak at source `1e122de9c710acdf7d0a7ea7465870cf9e892366`
+was built and installed on a Bazzite host under the former Modelbuilder name.
+Native launch, wizard creation/cancellation, project persistence, bundled CPU
+dependencies, HTTPS Git, and all four generated Claude/Codex/OpenCode/Kilo MCP
+commands with the IDE closed passed scoped acceptance. The sealed runtime has
+48,161 files. These checks do not establish authenticated vendor-agent acceptance,
+GPU training, clean-machine installation, signing or complete redistribution
+clearance. No public binary release is claimed. Later Protomire branding changes
+require a new artifact and fresh verification; the earlier artifact is not relabeled.
+See [Flatpak delivery and acceptance](FLATPAK.md). Mac records below are historical.
 
 ## Historical unsigned development DMG: v12
 

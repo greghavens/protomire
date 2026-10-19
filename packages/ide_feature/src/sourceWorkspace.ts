@@ -27,7 +27,7 @@ export async function chooseLocalSource(client:ServiceTransport,projectId?:strin
 }
 export async function acknowledgeSource(choice:{source:SourceChoice;folder:vscode.Uri}):Promise<boolean> {
   const {source,folder}=choice;
-  if(!vscode.workspace.isTrusted)throw new Error('Review and trust this native workspace before binding executable source. ModelBuilder never grants workspace trust automatically.');
+  if(!vscode.workspace.isTrusted)throw new Error('Review and trust this native workspace before binding executable source. Protomire never grants workspace trust automatically.');
   return await vscode.window.showWarningMessage(`Bind this model project to ${source.label??source.alias} (${source.alias})?\nLocal folder: ${folder.fsPath}\n${sourceIdentityLines(source).join('\n')}\nThis is trusted local code with your filesystem and process access, not a hostile-code sandbox. ${source.operator_trusted?'The operator has approved execution.':'The operator has not approved execution; runs remain blocked.'} Binding requires your explicit source-trust decision and grants no asset rights or license. Binding does not run code. Each run still requires a separate decision.`,{modal:true},'Bind trusted source')==='Bind trusted source';
 }
 export function sourceBindingPayload(choice:{source:SourceChoice},projectId:string,revision:number,key:string):RecordValue {

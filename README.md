@@ -1,8 +1,12 @@
-# Modelbuilder
+# Protomire
 
 A source-built Code - OSS model-development IDE, shared operation service, native
 MCP server, and provisional ZenML 0.97.0 backend. The workbench is a permanent
 built-in feature, not a chatbot or a replacement training framework.
+
+Source repository: [greghavens/protomire](https://github.com/greghavens/protomire).
+The product was previously called Modelbuilder. Existing app IDs, profile paths,
+project formats and MCP command names remain compatible with that installation.
 
 ## Implementation status
 
@@ -12,7 +16,11 @@ reason to defer the remaining requirements. The implementation below is real;
 test fixtures and accounting simulations do not establish production acceptance.
 
 Linux delivery for Bazzite is a **Flatpak**, with the mandatory MCP service bundled.
-It is not built or installation-accepted yet; see [delivery gates](distribution/FLATPAK.md).
+An unsigned Linux x64 development Flatpak has been built, installed and tested on
+a Bazzite host. This covers native startup, the project wizard and persistence,
+bundled CPU dependencies, and project-scoped MCP cold starts with the IDE closed.
+Authenticated vendor agents, GPU training, clean-machine installation, signing
+and complete redistribution clearance remain open; see [delivery gates](distribution/FLATPAK.md).
 
 - One model project per workspace, with its research, data, training/evaluation
   recipe, runs, exports and native model-version lineage. Build the recipe or
@@ -46,7 +54,7 @@ It is not built or installation-accepted yet; see [delivery gates](distribution/
 - Optional Codex, Claude Code, Triggerfish, OpenCode and Kilo Code harness choices.
   OpenCode/Kilo have reviewed project-local skill/MCP configuration support; vendor
   installation and upstream acceptance remain separate [gates](docs/OPENCODE_KILOCODE.md). Triggerfish has a
-  locally tested ModelBuilder-side flat MCP adapter and reviewed inactive
+  locally tested Protomire-side flat MCP adapter and reviewed inactive
   project setup; upstream execution and complete harness acceptance remain
   unverified. The adapter is included in the current unsigned Mac development
   app; gateway-port, command-allowlist, provider and native GUI gates remain.
@@ -65,15 +73,16 @@ policy unit test or earlier evaluation is counted as a GUI/backend acceptance pa
 
 ## App installation
 
-The required product delivery is one desktop installation: AppImage on Linux,
+The required product delivery is one desktop installation: Flatpak on Linux,
 a DMG containing the app on macOS, and a native Windows installer. The native
 MCP server is mandatory and managed by the app alongside its service and isolated
 runtime payloads. It is not an optional plugin or a separate end-user setup step.
 
 An unsigned arm64 Mac development DMG has passed mounted runtime/MCP checks
 and actual bundled MLX/MPS tests on the build host. Graphical acceptance,
-signing/notarization and clean-machine testing remain open. Linux/Windows
-installer delivery is unfinished; there is no verified downloadable release. See
+signing/notarization and clean-machine testing remain open. The Linux development
+Flatpak has scoped build-host acceptance; Windows installer delivery is unfinished.
+There is no published, signed, clean-machine-accepted release. See
 [packaging and installation status](distribution/INSTALLATION.md).
 
 ## Developer source build

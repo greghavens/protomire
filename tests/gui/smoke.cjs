@@ -37,7 +37,7 @@ exports.run = async function () {
     await vscode.workspace.getConfiguration('basedpyright').update('analysis.typeCheckingMode','standard',vscode.ConfigurationTarget.Workspace);
     return {python};
   });
-  await check('branded-app',async()=>{assert.match(vscode.env.appName,/Modelbuilder/);return vscode.env.appName;});
+  await check('branded-app',async()=>{assert.equal(vscode.env.appName,'Protomire');return vscode.env.appName;});
   await check('builtin-workbench',async()=>{const e=vscode.extensions.getExtension('modelbuilder.modelbuilder-workbench');assert(e,'Permanent built-in feature absent');await e.activate();assert(e.isActive);return {id:e.id,extensionPath:e.extensionPath};});
   await check('python-edit-and-lsp',async()=>{
     const e=vscode.extensions.getExtension('detachhead.basedpyright');assert(e,'Pinned LSP absent');await e.activate();

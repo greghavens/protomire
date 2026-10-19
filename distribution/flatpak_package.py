@@ -75,8 +75,7 @@ def package_flatpak(app: Path, output: Path, target: str, artifact: Path, profil
         raise ValueError("Reviewed Electron base lacks zypak-wrapper; no sandbox-disable fallback") from error
     shutil.copytree(app, files / "lib/modelbuilder", symlinks=True)
     launcher = files / "bin/modelbuilder"
-    launcher.write_text('#!/bin/sh\nset -eu\nexec /app/bin/zypak-wrapper /app/lib/modelbuilder/modelbuilder-ide '
-                        '--ozone-platform-hint=auto --password-store=gnome-libsecret "$@"\n')
+    shutil.copyfile(Path(__file__).resolve().parent / "assets/flatpak-launcher.sh", launcher)
     launcher.chmod(0o755)
     core_root = "/app/lib/modelbuilder/resources/app/extensions/modelbuilder-workbench/resources/core"
     manifest = json.loads((app / "resources/app/extensions/modelbuilder-workbench/resources/core/runtime.json").read_text())
@@ -96,7 +95,7 @@ def package_flatpak(app: Path, output: Path, target: str, artifact: Path, profil
     app_id = profile["app_id"]
     desktop = files / "share/applications" / (app_id + ".desktop")
     desktop.parent.mkdir(parents=True, exist_ok=True)
-    desktop.write_text("[Desktop Entry]\nType=Application\nName=Modelbuilder\nExec=modelbuilder %F\nIcon=" + app_id +
+    desktop.write_text("[Desktop Entry]\nType=Application\nName=Protomire\nExec=modelbuilder %F\nIcon=" + app_id +
                        "\nCategories=Development;Science;\nTerminal=false\nStartupWMClass=Modelbuilder\n")
     icon = files / "share/icons/hicolor/scalable/apps" / (app_id + ".svg")
     icon.parent.mkdir(parents=True, exist_ok=True)

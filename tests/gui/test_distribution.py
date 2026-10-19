@@ -50,7 +50,16 @@ def test_source_and_toolchain_are_immutable():
 
 def test_product_has_no_marketplace_or_bundled_agent():
     p = json.loads((ROOT / "distribution/overlay/product.json").read_text())
-    assert p["nameShort"] == "Modelbuilder"
+    assert p["nameShort"] == "Protomire"
+    assert p["nameLong"] == "Protomire"
+    # Display branding must not strand existing profiles, links or installs.
+    assert p["applicationName"] == "modelbuilder-ide"
+    assert p["dataFolderName"] == ".modelbuilder-ide"
+    assert p["urlProtocol"] == "modelbuilder-ide"
+    assert p["darwinBundleIdentifier"] == "org.modelbuilder.IDE"
+    assert p["win32DirName"] == "Modelbuilder IDE"
+    assert p["win32RegValueName"] == "ModelbuilderIDE"
+    assert p["win32AppUserModelId"] == "Modelbuilder.IDE"
     assert p["builtInExtensions"] == []
     assert not p.get("extensionsGallery")
     assert not p.get("defaultChatAgent")

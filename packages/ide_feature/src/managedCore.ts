@@ -13,7 +13,7 @@ export interface HubSettings {max_bytes:number;project_id:string;revision:number
 export interface HubSettingsReview {plan:{project_id:string;expected_revision:number;account:HubAccountReference|null;folder:HubSettings['folder'];max_bytes:number;expires_at:number};review_digest:string}
 export type CoreSpawner = typeof spawn;
 function contained(root:string,name:unknown):string {
-  if(typeof name!=='string'||!name||isAbsolute(name))throw new Error('Bundled runtime path is invalid. Reinstall ModelBuilder.');
+  if(typeof name!=='string'||!name||isAbsolute(name))throw new Error('Bundled runtime path is invalid. Reinstall Protomire.');
   const path=join(root,name),rel=relative(realpathSync(root),realpathSync(path));
   if(rel==='..'||rel.startsWith('..'+sep)||isAbsolute(rel))throw new Error('Bundled runtime path escapes the installation.');
   return path;
@@ -23,10 +23,10 @@ export function corePaths(extensionPath:string,stateDir:string,appRoot?:string):
   const root=join(extensionPath,'resources','core');
   let required=false;
   if(appRoot&&existsSync(join(appRoot,'product.json')))required=JSON.parse(readFileSync(join(appRoot,'product.json'),'utf8')).modelbuilderBundledCore===true;
-  if(!existsSync(join(root,'runtime.json'))){if(required)throw new Error('Mandatory ModelBuilder core is missing. Reinstall the application.');return undefined;}
+  if(!existsSync(join(root,'runtime.json'))){if(required)throw new Error('Mandatory Protomire core is missing. Reinstall the application.');return undefined;}
   if(!isAbsolute(stateDir))throw new Error('Private native app storage is unavailable; the bundled core cannot start.');
   const manifest=JSON.parse(readFileSync(join(root,'runtime.json'),'utf8'));
-  if(manifest.schema_version!==1)throw new Error('Unsupported bundled core version. Reinstall ModelBuilder.');
+  if(manifest.schema_version!==1)throw new Error('Unsupported bundled core version. Reinstall Protomire.');
   return {python:contained(root,manifest.service_python),entrypoint:contained(root,'managed_core.py'),runtimeRoot:root,stateDir};
 }
 export function coreEnvironment(source:NodeJS.ProcessEnv):NodeJS.ProcessEnv {
@@ -43,7 +43,7 @@ export class ManagedCore {
   get url():string|undefined{return this.current?.url;}
   constructor(readonly paths:CorePaths,private readonly launcher:CoreSpawner=spawn,private readonly timeoutMs=45000,private readonly request:typeof fetch=fetch){}
   connection():Promise<CoreConnection>{
-    if(this.disposed)return Promise.reject(new Error('The ModelBuilder core lease is closed.'));
+    if(this.disposed)return Promise.reject(new Error('The Protomire core lease is closed.'));
     if(this.current)return Promise.resolve(this.current);
     if(this.pending)return this.pending;
     const pending=new Promise<CoreConnection>((resolve,reject)=>{
@@ -51,11 +51,11 @@ export class ManagedCore {
       this.child=child;let output='',settled=false;
       const timer=setTimeout(()=>fail('The bundled core did not become ready. Check the installation and private app storage.'),this.timeoutMs);
       const fail=(message:string)=>{if(!settled){settled=true;clearTimeout(timer);reject(new Error(message));}child.stdin.end();child.kill();if(this.child===child){this.child=undefined;this.current=undefined;this.pending=undefined;}};
-      this.cancelStartup=()=>fail('The ModelBuilder core lease is closed.');
+      this.cancelStartup=()=>fail('The Protomire core lease is closed.');
       child.stdin.on('error',()=>{});
       // Never forward subprocess output: it may contain the local session credential.
       child.stderr.resume();
-      child.on('error',()=>fail('The bundled core could not launch. Reinstall ModelBuilder.'));
+      child.on('error',()=>fail('The bundled core could not launch. Reinstall Protomire.'));
       child.on('exit',()=>{if(!settled)fail('The bundled core exited before it was ready.');if(this.child===child){this.child=undefined;this.current=undefined;this.pending=undefined;}});
       child.stdout.on('data',(data:Buffer)=>{
         if(settled)return;

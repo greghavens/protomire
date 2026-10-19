@@ -79,7 +79,7 @@ class RecipeFileSystem implements vscode.FileSystemProvider {
   }
   async stat(uri:vscode.Uri):Promise<vscode.FileStat> { const data=await this.readFile(uri); return {type:vscode.FileType.File,ctime:0,mtime:0,size:data.length}; }
   readDirectory():[string,vscode.FileType][] { return []; }
-  createDirectory() { throw vscode.FileSystemError.NoPermissions('Create recipes in ModelBuilder.'); }
+  createDirectory() { throw vscode.FileSystemError.NoPermissions('Create recipes in Protomire.'); }
   delete() { throw vscode.FileSystemError.NoPermissions('Recipe deletion is not exposed by this editor.'); }
   rename() { throw vscode.FileSystemError.NoPermissions('Change the recipe name, not its identity.'); }
   private async document(uri:vscode.Uri) {
@@ -594,7 +594,7 @@ export class Workbench implements vscode.Disposable {
     const nonce=randomBytes(24).toString('base64');
     const script=webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri,'media','workbench.js'));
     const css=webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri,'media','workbench.css'));
-    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src 'nonce-${nonce}'; connect-src 'none'; font-src ${webview.cspSource};"><link rel="stylesheet" href="${escapeHtml(css.toString())}"><title>ModelBuilder Workbench</title></head><body><div id="app"></div><script nonce="${nonce}" src="${escapeHtml(script.toString())}"></script></body></html>`;
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src 'nonce-${nonce}'; connect-src 'none'; font-src ${webview.cspSource};"><link rel="stylesheet" href="${escapeHtml(css.toString())}"><title>Protomire Workbench</title></head><body><div id="app"></div><script nonce="${nonce}" src="${escapeHtml(script.toString())}"></script></body></html>`;
   }
 }
 
@@ -671,14 +671,14 @@ export function activate(context:vscode.ExtensionContext) {
   register('modelbuilder.closeProject',()=>workbench.closeProject());
   register('modelbuilder.refresh',()=>explorer.refresh());
   register('modelbuilder.configureConnection',async(options?:{url?:string;token?:string})=>{
-    if(managed){await managed.connection();await client.catalog();explorer.refresh();void vscode.window.showInformationMessage('The bundled ModelBuilder core is connected.');return;}
+    if(managed){await managed.connection();await client.catalog();explorer.refresh();void vscode.window.showInformationMessage('The bundled Protomire core is connected.');return;}
     if(!vscode.workspace.isTrusted) throw new Error('Trust this workspace before configuring a service credential.');
-    const url=options?.url ?? await vscode.window.showInputBox({title:'ModelBuilder service URL',value:vscode.workspace.getConfiguration('modelbuilder').get('serviceUrl','http://127.0.0.1:8765'),validateInput:value=>{try{serviceUrl(value);return null;}catch(e){return (e as Error).message;}}});
+    const url=options?.url ?? await vscode.window.showInputBox({title:'Protomire service URL',value:vscode.workspace.getConfiguration('modelbuilder').get('serviceUrl','http://127.0.0.1:8765'),validateInput:value=>{try{serviceUrl(value);return null;}catch(e){return (e as Error).message;}}});
     if(!url)return; serviceUrl(url);
-    const token=options?.token ?? await vscode.window.showInputBox({title:'ModelBuilder scoped service token',password:true,prompt:'Stored in the operating system secret store. Never sent to the webview or written to settings.',ignoreFocusOut:true});
+    const token=options?.token ?? await vscode.window.showInputBox({title:'Protomire scoped service token',password:true,prompt:'Stored in the operating system secret store. Never sent to the webview or written to settings.',ignoreFocusOut:true});
     if(!token)return;
     await context.secrets.store(TOKEN_KEY,JSON.stringify({url:serviceUrl(url),token}));await vscode.workspace.getConfiguration('modelbuilder').update('serviceUrl',url,vscode.ConfigurationTarget.Global);
-    await client.catalog();explorer.refresh();void vscode.window.showInformationMessage('Connected to the ModelBuilder operation service.');
+    await client.catalog();explorer.refresh();void vscode.window.showInformationMessage('Connected to the Protomire operation service.');
   });
   register('modelbuilder.createProject',()=>newProject.open());
   register('modelbuilder.openRecipeSource',async(projectId?:string,recipeId?:string)=>{

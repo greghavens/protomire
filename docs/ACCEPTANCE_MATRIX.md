@@ -282,4 +282,4 @@ not establish the owner-corrected UI or final source. Runtime-pin preparation
 commits intentionally skip CI while shipping manifests are being repinned;
 the coherent correction publication must run both CI jobs normally.
 
-Corrected source CI [37954882683](https://github.com/greghavens/modelbuilder/actions/runs/37954882683) passed both contracts and CPU lifecycle at `8ac10dfba4da0681566515c92c66e7e3924d01a4`. Later GUI-driver timing/evidence publication is checked separately.
+Corrected source CI [37954882683](https://github.com/greghavens/protomire/actions/runs/37954882683) passed both contracts and CPU lifecycle at `8ac10dfba4da0681566515c92c66e7e3924d01a4`. Later GUI-driver timing/evidence publication is checked separately.

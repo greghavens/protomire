@@ -944,7 +944,7 @@ to this source.
 
 # Historical 2026-10-10 verification
 
-Runtime source: `decf680d96ed92e28170580c09bf388c17a1ff22`, with an **86-file verified source closure**. This is an implementation checkpoint, not full-product completion. The [preceding 84-file report and passing d14 local CI](https://github.com/greghavens/modelbuilder/blob/5475d94145ae68bca06fd3bca05bd52e3f43143c/docs/CURRENT_VERIFICATION.md) remain historical evidence.
+Runtime source: `decf680d96ed92e28170580c09bf388c17a1ff22`, with an **86-file verified source closure**. This is an implementation checkpoint, not full-product completion. The [preceding 84-file report and passing d14 local CI](https://github.com/greghavens/protomire/blob/5475d94145ae68bca06fd3bca05bd52e3f43143c/docs/CURRENT_VERIFICATION.md) remain historical evidence.
 
 ## Verified at this checkpoint
 
@@ -971,7 +971,7 @@ CPU placement is demonstrated. MPS requires the reviewed macOS ARM64 profile and
 - Native GUI/notification acceptance remains blocked by display/local-socket restrictions. macOS GUI requires a connected user environment; none was connected at the latest check. Build, dialog doubles and HTTP tests do not establish native interaction or other-platform acceptance.
 - Controlled research tests pass. The latest actual Europe PMC request failed with `source_unavailable`; the same helper identified temporary DNS failure (`errno -3`). No content was retained or security fallback attempted. Online W&B, authenticated Claude/Codex inference and production remote-provider execution/billing are not established. Production remote execution remains disabled.
 - Broader gaps remain: a comprehensive reusable catalog, arbitrary publisher/PDF/OCR retrieval and scientific synthesis, general branching/iteration/concurrency beyond supported conditions, and hostile-code isolation.
-- Hosted CI is intentionally disabled by the owner; workflows are manual-only and no hosted run is authorized. Historical [run 38013134412](https://github.com/greghavens/modelbuilder/actions/runs/38013134412) was canceled at its 40-minute cap and is not a pass. Earlier hosted runs are not asserted to have been free. This checkpoint's complete CI was run locally and passed as recorded above.
+- Hosted CI is intentionally disabled by the owner; workflows are manual-only and no hosted run is authorized. Historical [run 38013134412](https://github.com/greghavens/protomire/actions/runs/38013134412) was canceled at its 40-minute cap and is not a pass. Earlier hosted runs are not asserted to have been free. This checkpoint's complete CI was run locally and passed as recorded above.
 - Raw reports, hash/comparison attestations and environment metadata remain local. Completed generated environments were archived with full comparison/integrity checks and restoration instructions; source trees, native stores and proof remain preserved. No raw evidence publication is implied.
 
 ## Reproduce from source

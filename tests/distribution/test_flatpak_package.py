@@ -1,6 +1,9 @@
 """Packaging command contracts, not a real Flatpak build or installation claim."""
 from copy import deepcopy
+import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -63,6 +66,11 @@ def test_staged_mandatory_core_bundle_and_permissions(payload, tmp_path, monkeyp
     core = tmp_path/'output/flatpak-build/files/lib/modelbuilder/resources/app/extensions/modelbuilder-workbench/resources/core'
     assert (core/'runtime.json').is_file() and (core/'managed_core.py').is_file()
     launcher = (tmp_path/'output/flatpak-build/files/bin/modelbuilder').read_text()
+    desktop = (tmp_path/'output/flatpak-build/files/share/applications/io.github.greghavens.Modelbuilder.desktop').read_text()
+    assert 'Name=Protomire\n' in desktop
+    assert 'Exec=modelbuilder %F\n' in desktop
+    assert 'Icon=io.github.greghavens.Modelbuilder\n' in desktop
+    assert 'StartupWMClass=Modelbuilder\n' in desktop
     assert 'zypak-wrapper' in launcher and '--no-sandbox' not in launcher
     assert '--ozone-platform-hint=auto' in launcher
     assert '--password-store=gnome-libsecret' in launcher and '--password-store=basic' not in launcher
@@ -81,6 +89,35 @@ def test_runtime_commit_drift_blocks_before_build(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match='commit lock'):
         pack.package_flatpak(tmp_path, tmp_path, 'linux-x64', tmp_path/'app', deepcopy(profile()), tool='/usr/bin/flatpak')
     assert all(command[1] == 'info' for command in calls)
+
+
+@pytest.mark.parametrize('settings,args,expected', [
+    ({}, [], ['--user-data-dir=/fixture home/.config/Modelbuilder']),
+    ({'XDG_CONFIG_HOME': '/private config'}, ['project with spaces'], ['--user-data-dir=/private config/Modelbuilder', 'project with spaces']),
+    ({}, ['--user-data-dir=/explicit profile'], ['--user-data-dir=/explicit profile']),
+    ({}, ['--user-data-dir', '/explicit profile'], ['--user-data-dir', '/explicit profile']),
+    ({'VSCODE_APPDATA': '/app data'}, ['--user-data-dir=/lower priority'], ['--user-data-dir=/app data/Modelbuilder']),
+    ({'VSCODE_APPDATA': '/app data'}, ['--user-data-dir', '/lower priority', '--', 'folder'], ['--user-data-dir=/app data/Modelbuilder', '--', 'folder']),
+    ({}, ['--', '--user-data-dir=folder-name'], ['--user-data-dir=/fixture home/.config/Modelbuilder', '--', '--user-data-dir=folder-name']),
+    ({'VSCODE_PORTABLE': '/portable', 'VSCODE_APPDATA': '/app data'}, ['project'], ['project']),
+])
+def test_renamed_launcher_preserves_profile_precedence_and_argument_boundaries(tmp_path, settings, args, expected):
+    source = (Path(pack.__file__).parent/'assets/flatpak-launcher.sh').read_text()
+    # Substitute only the final Electron transport with an argv/env recorder;
+    # execute the actual shell profile selection with normal argument parsing.
+    recorder = tmp_path/'record.py'
+    recorder.write_text('import json, os, sys; print(json.dumps({"args":sys.argv[1:], "appdata":os.environ.get("VSCODE_APPDATA")}))')
+    import shlex
+    command = 'exec ' + shlex.quote(sys.executable) + ' ' + shlex.quote(str(recorder)) + ' "$@"'
+    script = tmp_path/'launcher.sh'
+    marker = 'exec /app/bin/zypak-wrapper '
+    assert source.count(marker) == 1
+    script.write_text(source[:source.index(marker)] + command + '\n')
+    env = {k:v for k,v in os.environ.items() if k not in {'VSCODE_PORTABLE', 'VSCODE_APPDATA', 'XDG_CONFIG_HOME'}}
+    env.update(HOME='/fixture home', **settings)
+    result = json.loads(subprocess.check_output(['/bin/sh', str(script), *args], env=env, text=True))
+    assert result['args'] == expected
+    assert result['appdata'] == (settings.get('VSCODE_APPDATA') if settings.get('VSCODE_PORTABLE') else None)
 
 
 def test_missing_executable_electron_wrapper_still_blocks_packaging(tmp_path, monkeypatch):

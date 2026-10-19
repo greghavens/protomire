@@ -21,7 +21,7 @@ def verify(source: pathlib.Path, target: str | None = None) -> dict:
     assert sha == pin["commit"], "Upstream commit mismatch"
     changed = inspect_boundary(source)
     product = json.loads((source / "product.json").read_text())
-    assert product["nameShort"] == "Modelbuilder"
+    assert product["nameShort"] == "Protomire"
     assert not product.get("extensionsGallery"), "No Microsoft Marketplace integration is permitted"
     assert not product.get("defaultChatAgent"), "No bundled assistant runtime"
     assert product["builtInExtensions"] == [], "Unaudited downloaded built-ins"

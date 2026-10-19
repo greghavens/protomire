@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Modelbuilder
+Name=Protomire
 Comment=Model lifecycle workbench
 Exec=AppRun %F
 Icon=modelbuilder

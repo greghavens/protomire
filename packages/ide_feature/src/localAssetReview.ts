@@ -76,7 +76,7 @@ async function guidedPolicy(invoke:LocalRightsInvoke,evidence:RecordValue,check:
 
 export async function reviewLocalAssetRights(invoke:LocalRightsInvoke,capabilities:RecordValue,check:()=>void):Promise<RecordValue|undefined>{
   const aliases:string[]=capabilities.publication_sources??[];
-  if(!aliases.length){await vscode.window.showInformationMessage('No local folders are registered for this project. Use ModelBuilder: Configure Hub to register a folder, then start this review again. Folder registration grants no asset rights.');check();return;}
+  if(!aliases.length){await vscode.window.showInformationMessage('No local folders are registered for this project. Use Protomire: Configure Hub to register a folder, then start this review again. Folder registration grants no asset rights.');check();return;}
   const repoType=await choose('Local artifact type',[{label:'Source origin for scratch outputs',description:'One pinned source review for future lineage; no pretrained model required',value:'source'},{label:'Model files',value:'model'},{label:'Dataset files',value:'dataset'}],check);if(!repoType)return;
   const source=await choose('Approved local source',aliases.map(alias=>({label:alias,value:alias})),check);if(!source)return;
   let sourceSnapshot:RecordValue|undefined;

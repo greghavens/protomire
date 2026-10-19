@@ -1,0 +1,41 @@
+{
+  "approved_icon_sha256": "5d4ae2fdb6a5652a233d15dfb8c4814e77632c9eb6fe997800fb8cfe4ade5020",
+  "font": {
+    "family": "Inter Tight",
+    "weight": 900,
+    "style": "Black",
+    "version": "3.004",
+    "tracking_em": 0.0,
+    "optical_pair_spacing_em": {
+      "ro": 0.015,
+      "re": 0.015
+    },
+    "source": "https://github.com/google/fonts/tree/main/ofl/intertight",
+    "license": "SIL Open Font License 1.1"
+  },
+  "source_icon_pixels": [
+    1254,
+    1254
+  ],
+  "visible_crop_box": [
+    80,
+    104,
+    1171,
+    1069
+  ],
+  "icon_sizes": [
+    16,
+    24,
+    32,
+    48,
+    64,
+    96,
+    128,
+    192,
+    256,
+    512,
+    1024
+  ],
+  "geometry_changes": "None. Approved source file preserved byte-for-byte; derived PNGs only cropped to visible bounds, placed and resampled.",
+  "vector_scope": "Wordmark outlines only. No vector icon master is claimed."
+}

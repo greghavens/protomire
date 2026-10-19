@@ -13,6 +13,8 @@ import shlex
 import shutil
 import subprocess
 
+from branding import ASSETS, apply_linux_branding
+
 
 PERMISSIONS = ["--share=network", "--share=ipc", "--socket=wayland", "--socket=fallback-x11",
                "--socket=pulseaudio", "--device=dri", "--filesystem=home",
@@ -74,6 +76,7 @@ def package_flatpak(app: Path, output: Path, target: str, artifact: Path, profil
     except subprocess.CalledProcessError as error:
         raise ValueError("Reviewed Electron base lacks zypak-wrapper; no sandbox-disable fallback") from error
     shutil.copytree(app, files / "lib/modelbuilder", symlinks=True)
+    apply_linux_branding(files / "lib/modelbuilder/resources/app")
     launcher = files / "bin/modelbuilder"
     shutil.copyfile(Path(__file__).resolve().parent / "assets/flatpak-launcher.sh", launcher)
     launcher.chmod(0o755)
@@ -97,9 +100,10 @@ def package_flatpak(app: Path, output: Path, target: str, artifact: Path, profil
     desktop.parent.mkdir(parents=True, exist_ok=True)
     desktop.write_text("[Desktop Entry]\nType=Application\nName=Protomire\nExec=modelbuilder %F\nIcon=" + app_id +
                        "\nCategories=Development;Science;\nTerminal=false\nStartupWMClass=Modelbuilder\n")
-    icon = files / "share/icons/hicolor/scalable/apps" / (app_id + ".svg")
-    icon.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(Path(__file__).resolve().parents[1] / "packages/ide_feature/media/model.svg", icon)
+    for size in (16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 1024):
+        icon = files / f"share/icons/hicolor/{size}x{size}/apps" / (app_id + ".png")
+        icon.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ASSETS / f"icons/light-tile/protomire-{size}.png", icon)
     run("build-finish", "--command=modelbuilder", *PERMISSIONS, build)
     verify_dependencies()
     run("build-export", "--arch=" + arch, repo, build, profile["branch"])

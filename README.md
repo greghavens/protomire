@@ -1,5 +1,7 @@
 # Protomire
 
+<img src="distribution/assets/protomire/lockups/protomire-horizontal-on-bone.png" alt="Protomire approved volcanic icon and wordmark" width="560">
+
 A source-built Code - OSS model-development IDE, shared operation service, native
 MCP server, and provisional ZenML 0.97.0 backend. The workbench is a permanent
 built-in feature, not a chatbot or a replacement training framework.
@@ -142,3 +144,7 @@ features. See the matrix for exact assistant-extension compatibility gates.
 First-party licensing has not been selected by the owner. Public source visibility
 is not a grant of an open-source license. Retained third-party components keep
 their own licenses and notices.
+
+The approved [brand assets](distribution/assets/protomire/README.md) retain their
+original raster icon geometry. The outlined wordmark uses Inter Tight Black 900;
+the font and its SIL Open Font License 1.1 are included with the assets.

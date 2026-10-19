@@ -83,6 +83,9 @@ def test_staged_mandatory_core_bundle_and_permissions(payload, tmp_path, monkeyp
     stylesheet = (resources/'out/vs/workbench/workbench.desktop.main.css').read_text()
     assert 'code-icon.svg' not in stylesheet
     assert stylesheet.count('url("../../media/protomire-icon.png")') == 5
+    assert stylesheet.count('url("../../media/protomire-watermark.png")') == 4
+    assert 'letterpress-dark.svg' not in stylesheet
+    assert (resources/'out/media/protomire-watermark.png').read_bytes() == (pack.ASSETS/'icons/light-tile/protomire-512.png').read_bytes()
     assert (resources/'protomire-brand/InterTight-OFL.txt').read_bytes() == (pack.ASSETS/'fonts/OFL.txt').read_bytes()
     for size in (16, 24, 32, 48, 64, 96, 128, 192, 256, 512):
         exported = tmp_path/f'output/flatpak-build/files/share/icons/hicolor/{size}x{size}/apps/io.github.greghavens.Modelbuilder.png'

@@ -51,7 +51,8 @@ def app_fixture(root, target):
     (app_root / "package.json").write_text(json.dumps({"name": "Modelbuilder", "desktopName": "modelbuilder-ide.desktop"}))
     css = app_root / "out/vs/workbench/workbench.desktop.main.css"
     css.parent.mkdir(parents=True, exist_ok=True)
-    css.write_text('\n'.join(f'.fixture-icon-{i} {{ background-image: url("../../media/code-icon.svg"); }}' for i in range(5)))
+    css.write_text('\n'.join(f'.fixture-icon-{i} {{ background-image: url("../../media/code-icon.svg"); }}' for i in range(5)) + '\n' +
+                   '\n'.join(f'.fixture-watermark-{theme} {{ background-image: url("../../media/letterpress-{theme}.svg"); }}' for theme in ('light', 'dark', 'hcLight', 'hcDark')))
     if target.startswith("darwin-"):
         (app_root.parents[1] / "Info.plist").write_bytes(plistlib.dumps({"LSMinimumSystemVersion": "11.0"}))
     return root

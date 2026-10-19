@@ -36,6 +36,18 @@ def apply_linux_branding(app_root: Path, desktop_id: str) -> None:
     if counts not in {(5, 0), (0, 5)}:
         raise ValueError("Unrecognized pinned workbench icon stylesheet; no branding export")
     stylesheet = stylesheet.replace(old_icon, new_icon)
+    watermark_urls = [f'url("../../media/letterpress-{theme}.svg")'
+                      for theme in ("light", "dark", "hcLight", "hcDark")]
+    new_watermark = 'url("../../media/protomire-watermark.png")'
+    watermark_counts = tuple(stylesheet.count(url) for url in watermark_urls)
+    if watermark_counts == (1, 1, 1, 1) and not stylesheet.count(new_watermark):
+        for url in watermark_urls:
+            stylesheet = stylesheet.replace(url, new_watermark)
+    elif watermark_counts != (0, 0, 0, 0) or stylesheet.count(new_watermark) != 4:
+        raise ValueError("Unrecognized pinned workbench watermark stylesheet; no branding export")
+    watermark_style = '\n/* Protomire visual branding; approved PNG, no editor behavior changes. */\n.monaco-workbench .editor-group-watermark > .letterpress { opacity: 0.16; }\n'
+    if watermark_style not in stylesheet:
+        stylesheet += watermark_style
     product_path = owned_target(app_root, "product.json")
     product = json.loads(product_path.read_text())
     if product.get("applicationName") != "modelbuilder-ide":
@@ -56,6 +68,8 @@ def apply_linux_branding(app_root: Path, desktop_id: str) -> None:
     workbench_icon = owned_target(app_root, "out/media/protomire-icon.png")
     workbench_icon.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(ASSETS / "icons/light-tile/protomire-32.png", workbench_icon)
+    shutil.copyfile(ASSETS / "icons/light-tile/protomire-512.png",
+                    owned_target(app_root, "out/media/protomire-watermark.png"))
     stylesheet_path.write_text(stylesheet)
     for source, name in (("README.md", "README.md"), ("fonts/OFL.txt", "InterTight-OFL.txt"),
                          ("asset-manifest.json", "asset-manifest.json")):

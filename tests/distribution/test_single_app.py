@@ -48,6 +48,7 @@ def app_fixture(root, target):
     for name in ["package.json", "out/extension.js", "out/managedCore.js", "out/nativeReview.js"]:
         (feature / name).write_text("inert fixture")
     (app_root / "product.json").write_text(json.dumps({"applicationName": "modelbuilder-ide", "updateUrl": "https://invalid.example"}))
+    (app_root / "package.json").write_text(json.dumps({"name": "Modelbuilder", "desktopName": "modelbuilder-ide.desktop"}))
     if target.startswith("darwin-"):
         (app_root.parents[1] / "Info.plist").write_bytes(plistlib.dumps({"LSMinimumSystemVersion": "11.0"}))
     return root

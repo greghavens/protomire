@@ -76,7 +76,7 @@ def package_flatpak(app: Path, output: Path, target: str, artifact: Path, profil
     except subprocess.CalledProcessError as error:
         raise ValueError("Reviewed Electron base lacks zypak-wrapper; no sandbox-disable fallback") from error
     shutil.copytree(app, files / "lib/modelbuilder", symlinks=True)
-    apply_linux_branding(files / "lib/modelbuilder/resources/app")
+    apply_linux_branding(files / "lib/modelbuilder/resources/app", profile["app_id"])
     launcher = files / "bin/modelbuilder"
     shutil.copyfile(Path(__file__).resolve().parent / "assets/flatpak-launcher.sh", launcher)
     launcher.chmod(0o755)
@@ -99,7 +99,7 @@ def package_flatpak(app: Path, output: Path, target: str, artifact: Path, profil
     desktop = files / "share/applications" / (app_id + ".desktop")
     desktop.parent.mkdir(parents=True, exist_ok=True)
     desktop.write_text("[Desktop Entry]\nType=Application\nName=Protomire\nExec=modelbuilder %F\nIcon=" + app_id +
-                       "\nCategories=Development;Science;\nTerminal=false\nStartupWMClass=Modelbuilder\n")
+                       "\nCategories=Development;Science;\nTerminal=false\nStartupWMClass=" + app_id + "\n")
     # Flatpak validates exported raster icons with a 512px maximum. Preserve
     # the approved 1024px/source assets in the repository, outside the export.
     for size in (16, 24, 32, 48, 64, 96, 128, 192, 256, 512):

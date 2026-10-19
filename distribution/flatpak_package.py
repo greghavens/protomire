@@ -100,7 +100,9 @@ def package_flatpak(app: Path, output: Path, target: str, artifact: Path, profil
     desktop.parent.mkdir(parents=True, exist_ok=True)
     desktop.write_text("[Desktop Entry]\nType=Application\nName=Protomire\nExec=modelbuilder %F\nIcon=" + app_id +
                        "\nCategories=Development;Science;\nTerminal=false\nStartupWMClass=Modelbuilder\n")
-    for size in (16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 1024):
+    # Flatpak validates exported raster icons with a 512px maximum. Preserve
+    # the approved 1024px/source assets in the repository, outside the export.
+    for size in (16, 24, 32, 48, 64, 96, 128, 192, 256, 512):
         icon = files / f"share/icons/hicolor/{size}x{size}/apps" / (app_id + ".png")
         icon.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ASSETS / f"icons/light-tile/protomire-{size}.png", icon)

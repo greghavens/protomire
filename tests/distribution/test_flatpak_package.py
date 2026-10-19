@@ -77,9 +77,10 @@ def test_staged_mandatory_core_bundle_and_permissions(payload, tmp_path, monkeyp
     assert product['applicationName'] == 'modelbuilder-ide'
     assert (resources/'resources/linux/code.png').read_bytes() == (pack.ASSETS/'icons/light-tile/protomire-512.png').read_bytes()
     assert (resources/'protomire-brand/InterTight-OFL.txt').read_bytes() == (pack.ASSETS/'fonts/OFL.txt').read_bytes()
-    for size in (16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 1024):
+    for size in (16, 24, 32, 48, 64, 96, 128, 192, 256, 512):
         exported = tmp_path/f'output/flatpak-build/files/share/icons/hicolor/{size}x{size}/apps/io.github.greghavens.Modelbuilder.png'
         assert exported.read_bytes() == (pack.ASSETS/f'icons/light-tile/protomire-{size}.png').read_bytes()
+    assert not (tmp_path/'output/flatpak-build/files/share/icons/hicolor/1024x1024').exists()
     assert 'zypak-wrapper' in launcher and '--no-sandbox' not in launcher
     assert '--ozone-platform-hint=auto' in launcher
     assert '--password-store=gnome-libsecret' in launcher and '--password-store=basic' not in launcher

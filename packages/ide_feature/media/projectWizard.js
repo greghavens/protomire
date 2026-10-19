@@ -1,7 +1,7 @@
 (function(root){'use strict';
 const screens=guided=>guided?['assistant','goal','start','project']:['assistant','project'];
 function validate(step,draft,folder){
- if(step==='assistant'&&!['none','codex','claude','triggerfish'].includes(draft.assistant))return 'Choose a supported coding assistant, or continue without one.';
+ if(step==='assistant'&&!['none','codex','claude','triggerfish','opencode','kilocode'].includes(draft.assistant))return 'Choose a supported coding assistant, or continue without one.';
  if(step==='goal'&&(!draft.goal.trim()||draft.goal.length>8000))return 'Describe your model’s goal in 1–8,000 characters.';
  if(step==='start'&&!['research','base_model','scratch'].includes(draft.startingPoint))return 'Choose research, an existing base model, or building from scratch.';
  if(step==='project'){

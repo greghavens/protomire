@@ -149,6 +149,49 @@ def instruction_block(client):
             f"<!-- modelbuilder:{client}:v{VERSION}:end -->\n").encode()
 
 
+def instruction_ownership(root, client, project_id, raw, *, allow_applying=False):
+    """Recognize exact blocks only when their client has an active receipt.
+
+    Whole-file hashes still guard each reviewed transaction. Across transactions
+    the append receipt owns its block, not user text or another client's block.
+    """
+    instructions = "CLAUDE.md" if client == "claude" else "AGENTS.md"
+    remaining = raw or b""
+    guards = {}
+    managed_file_created = raw is None
+    for owner in sorted(SKILL_ROOTS):
+        if ("CLAUDE.md" if owner == "claude" else "AGENTS.md") != instructions:
+            continue
+        receipt, receipt_raw = load_receipt(root, owner)
+        if not receipt or receipt["state"] == "rolled_back":
+            continue
+        code = "managed_file_changed" if owner == client else "instruction_conflict"
+        permitted_state = receipt["state"] == "applied" or (allow_applying and owner == client)
+        items = [item for item in receipt["files"] if item["path"] == instructions and item["kind"] == "append"]
+        block = instruction_block(owner)
+        if (not permitted_state or receipt.get("project_id") != project_id
+                or receipt.get("template_version") != VERSION or len(items) != 1
+                or items[0].get("managed_block") != block.decode()
+                or remaining.count(block) != 1):
+            raise setup.SetupError(code, "Managed instruction ownership changed. No instructions were changed.")
+        remaining = remaining.replace(block, b"", 1)
+        guards[receipt_name(owner)] = hash_bytes(receipt_raw)
+        managed_file_created |= items[0].get("created") is True or items[0].get("managed_file_created") is True
+    if b"<!-- modelbuilder:" in remaining:
+        raise setup.SetupError("instruction_conflict", "Untracked managed instruction markers exist. No instructions were changed.")
+    return guards, managed_file_created
+
+
+def receipt_files_match(root, receipt):
+    for item in receipt["files"]:
+        raw = setup.config_bytes(checked_path(root, item["path"]))
+        if item["kind"] == "append":
+            instruction_ownership(root, receipt["client"], receipt["project_id"], raw)
+        elif hash_bytes(raw) != item["after_sha256"]:
+            return False
+    return True
+
+
 def preview_project(client, workspace, project_id, *, command=None, python=None, service_url=None):
     if client not in CLIENTS:
         raise setup.SetupError("capability_unavailable", "This assistant has no supported project preparation path.")
@@ -178,9 +221,8 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
         if (current["state"] != "applied" or current.get("project_id") != project_id
                 or current.get("entry") != entry or current.get("template_version") != VERSION):
             raise setup.SetupError("receipt_conflict", "A different or interrupted managed setup exists. Review rollback before replacing it.")
-        for item in current["files"]:
-            if hash_bytes(setup.config_bytes(root / item["path"])) != item["after_sha256"]:
-                raise setup.SetupError("managed_file_changed", "A managed file changed since setup. Review rollback before reconfiguring; edits are preserved.")
+        if not receipt_files_match(root, current):
+            raise setup.SetupError("managed_file_changed", "A managed file changed since setup. Review rollback before reconfiguring; edits are preserved.")
     if client == "triggerfish":
         return preview_triggerfish(root, project_id, entry, current, receipt_raw)
     config = CONFIG_PATHS[client]
@@ -201,10 +243,10 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
     updated, _ = setup.render_config(client, originals[config], entry)
     block = instruction_block(client)
     files = [{"path": config, "kind": "config", "content": updated.decode()}]
-    if not current and b"<!-- modelbuilder:" in (originals[instructions] or b""):
-        raise setup.SetupError("instruction_conflict", "Untracked managed instruction markers exist. No instructions were changed.")
+    instruction_receipts, managed_file_created = instruction_ownership(root, client, project_id, originals[instructions])
     files.append({"path": instructions, "kind": "append", "content":
-                  ((originals[instructions] or b"") + (b"" if current else block)).decode(), "managed_block": block.decode()})
+                  ((originals[instructions] or b"") + (b"" if current else block)).decode(),
+                  "managed_block": block.decode(), "managed_file_created": managed_file_created})
     for path, content in owned_templates.items():
         if originals[path] is not None and not current:
             raise setup.SetupError("skill_conflict", "A project skill already occupies the managed name. It was preserved.")
@@ -222,6 +264,7 @@ def preview_project(client, workspace, project_id, *, command=None, python=None,
             "workspace": str(root), "scope": "project", "template_version": VERSION,
             "entry": entry, "files": [{k: v for k, v in item.items() if k not in {"content", "managed_block"}} for item in files],
             "receipt_before_sha256": hash_bytes(receipt_raw), "change": "unchanged" if current else "add",
+            "instruction_receipts": instruction_receipts,
             "warnings": warnings, "credentials_stored": False,
             "capability": "project_read_only" if command else "external_service_scopes",
             "notice": "Review the exact project paths. Only managed files/blocks are added. Vendor sign-in, trust, approval settings and global files are unchanged. Runtime permissions are enforced by the service."}
@@ -318,7 +361,7 @@ def _atomic(path, data):
         Path(name).unlink(missing_ok=True)
 
 
-def _transaction(root, changes, receipt_before, receipt_after):
+def _transaction(root, changes, receipt_before, receipt_after, guards=None):
     receipt_path = checked_path(root, receipt_name(receipt_after["client"]))
     receipt_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     lock = receipt_path.parent / "project.lock"
@@ -332,6 +375,9 @@ def _transaction(root, changes, receipt_before, receipt_after):
     try:
         if setup.config_bytes(receipt_path) != receipt_before:
             raise setup.SetupError("config_changed", "Setup receipt changed since preview. Review again.")
+        for relative, expected in (guards or {}).items():
+            if hash_bytes(setup.config_bytes(checked_path(root, relative))) != expected:
+                raise setup.SetupError("config_changed", "Instruction ownership changed since preview. Review again.")
         for item in changes:
             path = checked_path(root, item["path"])
             originals[path] = setup.config_bytes(path)
@@ -373,11 +419,13 @@ def apply_project(preview, files, approval):
     receipt, receipt_raw = load_receipt(root, plan["client"])
     if hash_bytes(receipt_raw) != plan["receipt_before_sha256"]:
         # The same approved transaction is safe to retry if every result still matches.
-        if receipt and receipt.get("approval") == approval and receipt["state"] == "applied" and all(
-                hash_bytes(setup.config_bytes(root / item["path"])) == item["after_sha256"] for item in receipt["files"]):
+        if receipt and receipt.get("approval") == approval and receipt["state"] == "applied" and receipt_files_match(root, receipt):
             return {"ok": True, "status": "unchanged", "receipt": str(root / receipt_name(plan["client"]))}
         raise setup.SetupError("config_changed", "Setup receipt changed since review.")
     if plan["change"] == "unchanged":
+        for relative, expected in plan.get("instruction_receipts", {}).items():
+            if hash_bytes(setup.config_bytes(checked_path(root, relative))) != expected:
+                raise setup.SetupError("config_changed", "Instruction ownership changed since review.")
         for item in files:
             if hash_bytes(setup.config_bytes(root / item["path"])) != item["before_sha256"]:
                 raise setup.SetupError("config_changed", "A project file changed since review.")
@@ -385,7 +433,7 @@ def apply_project(preview, files, approval):
     receipt = {"schema_version": VERSION, "template_version": VERSION, "client": plan["client"],
                "project_id": plan["project_id"], "state": "applied", "approval": approval,
                "entry": plan["entry"], "files": [{k: v for k, v in item.items() if k != "content"} for item in files]}
-    _transaction(root, files, receipt_raw, receipt)
+    _transaction(root, files, receipt_raw, receipt, plan.get("instruction_receipts"))
     return {"ok": True, "status": "prepared" if plan["client"] == "triggerfish" else "configured",
             "capability": plan.get("capability"), "receipt": str(root / receipt_name(plan["client"])),
             "files": [item["path"] for item in files], "credentials_stored": False,
@@ -421,6 +469,7 @@ def preview_rollback(client, workspace):
     if not receipt:
         raise setup.SetupError("receipt_required", "No managed project setup receipt exists.")
     changes = []
+    instruction_receipts = {}
     if receipt["state"] != "rolled_back":
         for item in receipt["files"]:
             raw = setup.config_bytes(root / item["path"])
@@ -432,11 +481,13 @@ def preview_rollback(client, workspace):
                     raise setup.SetupError("managed_file_changed", "A managed skill was edited. Rollback preserves it and requires review.")
                 updated = None
             elif item["kind"] == "append":
+                guards, _ = instruction_ownership(root, client, receipt["project_id"], raw, allow_applying=True)
+                instruction_receipts.update(guards)
                 block = item["managed_block"].encode()
                 if raw is None or raw.count(block) != 1:
                     raise setup.SetupError("managed_file_changed", "Managed instructions were edited. Rollback preserves them and requires review.")
                 updated = raw.replace(block, b"", 1)
-                if not updated and item["created"]:
+                if not updated and (item["created"] or item.get("managed_file_created") is True):
                     updated = None
             else:
                 updated = remove_entry(client, raw, receipt["entry"])
@@ -446,6 +497,7 @@ def preview_rollback(client, workspace):
                             "after_sha256": hash_bytes(updated), "content": updated.decode() if updated is not None else None})
     plan = {"action": "rollback-project", "client": client, "workspace": str(root),
             "receipt_before_sha256": setup.digest(raw_receipt),
+            "instruction_receipts": instruction_receipts,
             "files": [{k: v for k, v in item.items() if k != "content"} for item in changes],
             "notice": "Only managed content is removed. Unrelated project edits and vendor override files remain."}
     return {"ok": True, "plan": plan, "approval": setup.digest(plan)}, changes
@@ -460,5 +512,6 @@ def rollback_project(preview, changes, approval):
         raise setup.SetupError("config_changed", "Setup receipt changed since rollback review.")
     if receipt["state"] == "rolled_back":
         return {"ok": True, "status": "unchanged"}
-    _transaction(root, changes, raw, {**receipt, "state": "rolled_back", "rollback_approval": approval})
+    _transaction(root, changes, raw, {**receipt, "state": "rolled_back", "rollback_approval": approval},
+                 plan.get("instruction_receipts"))
     return {"ok": True, "status": "rolled_back", "credentials_stored": False}

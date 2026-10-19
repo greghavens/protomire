@@ -6,6 +6,17 @@ operation service through the shipped native MCP module. It does not add a chat
 UI, bundle or redistribute vendor binaries, create an account, sign in, issue
 credentials, or send a model prompt.
 
+## Managed project integrations
+
+Packaged projects support separate Claude, Codex, OpenCode and Kilo project-local
+skills and MCP configurations. Codex, OpenCode and Kilo can share `AGENTS.md`:
+each client owns one exact instruction block backed by its applied receipt.
+Setup and disconnect preserve user text and the other clients' blocks. Unknown,
+unreceipted, duplicated or edited managed markers require conflict review.
+Reviewed transactions check both file hashes and the peer receipts under the
+project setup lock. Disconnecting one client leaves the others configured.
+These files grant no execution authority or vendor authentication.
+
 ## Native workbench flow
 
 Use **ModelBuilder: Set Up Optional Coding Tool** (also available from the

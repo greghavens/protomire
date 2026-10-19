@@ -49,7 +49,9 @@ def test_staged_mandatory_core_bundle_and_permissions(payload, tmp_path, monkeyp
         if command[1] == 'build-init':
             files = Path(command[5])/'files'
             (files/'bin').mkdir(parents=True)
-            (files/'bin/zypak-wrapper').write_text('fixture')
+            (files/'bin/zypak-wrapper.sh').write_text('fixture')
+            (files/'bin/zypak-wrapper.sh').chmod(0o755)
+            (files/'bin/zypak-wrapper').symlink_to('/app/bin/zypak-wrapper.sh')
         if command[1] == 'build-bundle':
             Path(command[4]).write_bytes(b'unit-test-bundle-not-an-installable-flatpak')
         return SimpleNamespace(stdout='')
@@ -62,6 +64,7 @@ def test_staged_mandatory_core_bundle_and_permissions(payload, tmp_path, monkeyp
     assert (core/'runtime.json').is_file() and (core/'managed_core.py').is_file()
     launcher = (tmp_path/'output/flatpak-build/files/bin/modelbuilder').read_text()
     assert 'zypak-wrapper' in launcher and '--no-sandbox' not in launcher
+    assert any(command[1:] == ['build', str(tmp_path/'output/flatpak-build'), '/usr/bin/test', '-x', '/app/bin/zypak-wrapper'] for command in calls)
     assert not any('install' in command[1] or 'remote-add' in command for command in calls)
     assert '--filesystem=host' not in pack.PERMISSIONS and '--device=all' not in pack.PERMISSIONS
     assert '--filesystem=home' in pack.PERMISSIONS  # Explicit IDE project access, documented.
@@ -76,3 +79,19 @@ def test_runtime_commit_drift_blocks_before_build(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match='commit lock'):
         pack.package_flatpak(tmp_path, tmp_path, 'linux-x64', tmp_path/'app', deepcopy(profile()), tool='/usr/bin/flatpak')
     assert all(command[1] == 'info' for command in calls)
+
+
+def test_missing_executable_electron_wrapper_still_blocks_packaging(tmp_path, monkeypatch):
+    def run(command, **kwargs):
+        if command[1] == 'info':
+            key = next(key for key in ['runtime', 'sdk', 'base'] if command[-1].startswith(profile()[key]+'//'))
+            return SimpleNamespace(stdout=profile()['commits'][key]+'\n')
+        if command[1] == 'build-init':
+            (Path(command[5])/'files').mkdir(parents=True)
+        if command[1] == 'build':
+            raise pack.subprocess.CalledProcessError(1, command)
+        return SimpleNamespace(stdout='')
+    monkeypatch.setattr(pack.subprocess, 'run', run)
+    with pytest.raises(ValueError, match='lacks zypak-wrapper'):
+        pack.package_flatpak(tmp_path/'app', tmp_path/'output', 'linux-x64', tmp_path/'app', profile(), tool='/usr/bin/flatpak')
+    assert not (tmp_path/'app.flatpak').exists()
